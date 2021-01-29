@@ -1,8 +1,8 @@
 import numpy as np
 import os
-#import tkFileDialog as filedialog
 from tkinter import filedialog
 import globs as gl
+
 
 def maketxtpath():
 	txtpath = gl.basicpath_sig + "/saves"

@@ -1,10 +1,9 @@
 import globs as gl
-import tkFileDialog as filedialog
 from os import listdir
 from os.path import isfile, join
 import numpy as np
 import os
-import tkFileDialog as filedialog
+from tkinter import filedialog
 
 def selectBodyFile_sig():
 	filename = filedialog.askopenfilename(initialdir=gl.basicpath_sig, title="Select any signal file", filetypes=(("correlation files", "*.corr"),("all files","*.*")))

@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import subprocess
 import os
 import time
-from Tkinter import *
+from tkinter import *
 import scipy.signal as ss
 from threading import Thread
 
