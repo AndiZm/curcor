@@ -44,6 +44,10 @@ def displayCorrelation():
 		plt.plot(gl.g2_ref, color="grey", label="Reference")
 	if gl.boolSig == True and gl.boolRef == True:
 		plt.plot(gl.g2_diff, color="#003366", linewidth = 2, label="Difference")
+	#try:
+	#	gl.fit_plot = plt.plot(gl.fit_plot)
+	#except:
+	#	pass
 	plt.legend(); plt.show()
 def displayFFT():
 	plt.figure("Fourier Transforms", figsize=(10,7))
@@ -118,7 +122,7 @@ def refresh_display(binning):
 		gl.g2_sig_plot = gl.corrAx.plot(gl.g2_sig, color="blue")
 		# FFT
 		formax = max(formax + np.abs(gl.g2_sig_fft[1:]))
-		x_fft = np.linspace(0,1e-9/binning, len(gl.g2_sig), endpoint= True)
+		x_fft = np.linspace(0,1e-9/binning, len(gl.g2_sig_fft), endpoint= True)
 		gl.g2_sig_fft_plot = gl.fftAx.plot(x_fft, np.abs(gl.g2_sig_fft), color="blue")
 		# Rates
 		gl.rates_a_sig_plot = gl.ratesAx.plot(gl.rates_a_sig, color="blue")
@@ -135,7 +139,7 @@ def refresh_display(binning):
 		gl.g2_ref_plot = gl.corrAx.plot(gl.g2_ref, color="grey")
 		# FFT
 		formax = max(formax + np.abs(gl.g2_ref_fft[1:]))
-		x_fft = np.linspace(0,1e-9/binning, len(gl.g2_ref), endpoint= True)
+		x_fft = np.linspace(0,1e-9/binning, len(gl.g2_ref_fft), endpoint= True)
 		gl.g2_ref_fft_plot = gl.fftAx.plot(x_fft, np.abs(gl.g2_ref_fft), color="grey")
 		# Rates
 		gl.rates_a_ref_plot = gl.ratesAx.plot(gl.rates_a_ref, color="blue", alpha=0.3)
@@ -152,7 +156,7 @@ def refresh_display(binning):
 			gl.g2_diff_plot = gl.corrAx.plot(gl.g2_diff, color="#003366", linewidth=2)
 			# FFT
 			formax = max(formax + np.abs(gl.g2_diff_fft[1:]))
-			x_fft = np.linspace(0,1e-9/binning, len(gl.g2_diff), endpoint= True)
+			x_fft = np.linspace(0,1e-9/binning, len(gl.g2_diff_fft), endpoint= True)
 			gl.g2_sig_fft_plot = gl.fftAx.plot(x_fft, np.abs(gl.g2_diff_fft), color="#003366", linewidth=2)
 
 	gl.fftAx.set_xlim(0,0.5e-9/binning)

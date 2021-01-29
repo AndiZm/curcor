@@ -1,10 +1,10 @@
 import globs as gl
+import tkFileDialog as filedialog
 from os import listdir
 from os.path import isfile, join
 import numpy as np
 import os
-#import tkFileDialog as filedialog
-from tkinter import filedialog
+import tkFileDialog as filedialog
 
 def selectBodyFile_sig():
 	filename = filedialog.askopenfilename(initialdir=gl.basicpath_sig, title="Select any signal file", filetypes=(("correlation files", "*.corr"),("all files","*.*")))
@@ -38,6 +38,7 @@ def delSigFiles():
 	gl.calibSigLabel.config(text="No calib selected")
 	gl.offASigLabel.config(text="--"); gl.offBSigLabel.config(text="--")
 	gl.avgChargeASigLabel.config(text="--"); gl.avgChargeBSigLabel.config(text="--")
+	gl.corrSigEntry.delete(0,'end'); gl.corrSigEntry.insert(0,"1")
 	gl.boolSig = False
 def delRefFiles():
 	gl.bodyRefLabel.config(text="no files selected")
@@ -46,6 +47,7 @@ def delRefFiles():
 	gl.calibRefLabel.config(text="No calib selected")
 	gl.offARefLabel.config(text="--"); gl.offBRefLabel.config(text="--")
 	gl.avgChargeARefLabel.config(text="--"); gl.avgChargeBRefLabel.config(text="--")
+	gl.corrRefEntry.delete(0,'end'); gl.corrRefEntry.insert(0,"1")
 	gl.boolRef = False
 
 ### Calibration files ###

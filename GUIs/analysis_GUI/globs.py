@@ -1,8 +1,9 @@
-basicpath_sig = "/mnt/c/Users/ii/Documents/curcor/python/results"
-basicpath_ref = "/mnt/c/Users/ii/Documents/curcor/python/results"
+basicpath_sig = "/mnt/c/Users/andiz/Documents/ii/curcor/measurements"
+basicpath_ref = "/mnt/c/Users/andiz/Documents/ii/curcor/measurements"
 body_sig = ""; body_ref = ""
 boolSig = False; boolRef = False
 boolLP = False
+boolPatCorr = True
 
 G2_cum_sig = []; G2_cum_ref = []
 

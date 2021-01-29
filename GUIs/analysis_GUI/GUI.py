@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import subprocess
 import os
 import time
-from tkinter import *
+from Tkinter import *
 import scipy.signal as ss
 from threading import Thread
 
@@ -111,6 +111,13 @@ displayCalibButton = Button(calibsFrame, text="Display Calib", bg="#ccf2ff", com
 
 # Digital Low pass filter
 lpFrame = Frame(optionsFrame, bg="#f2b2a7"); lpFrame.grid(row=2,column=0)
+def switch_patCorrButton():
+	if gl.boolPatCorr == False:
+		gl.boolPatCorr = True
+		patCorrButton.config(text="Pattern Correction  ON", bg="#f77059")
+	else:
+		gl.boolPatCorr = False
+		patCorrButton.config(text="Pattern Correction OFF", bg="#fad1ca")
 def switch_lpButton():
 	if gl.boolLP == False:
 		gl.boolLP = True
@@ -118,8 +125,9 @@ def switch_lpButton():
 	else:
 		gl.boolLP = False
 		lpButton.config(text="Low pass filter OFF", bg="#fad1ca")
-lpButton = Button(lpFrame, text="Low pass filter Off", bg="#fad1ca", command=switch_lpButton); lpButton.grid(row=0,column=0)
-lpParamFrame = Frame(lpFrame, bg="#f2b2a7"); lpParamFrame.grid(row=1,column=0)
+patCorrButton = Button(lpFrame, text="Pattern Correction  ON", bg ="#f77059", command=switch_patCorrButton); patCorrButton.grid(row=0,column=0)
+lpButton = Button(lpFrame, text="Low pass filter Off", bg="#fad1ca", command=switch_lpButton); lpButton.grid(row=1,column=0)
+lpParamFrame = Frame(lpFrame, bg="#f2b2a7"); lpParamFrame.grid(row=2,column=0)
 cutOffLabel = Label(lpParamFrame, text="Cut off freq. [GHz]", bg="#f2b2a7"); cutOffLabel.grid(row=0,column=0)
 orderLabel = Label(lpParamFrame, text="Order", bg="#f2b2a7"); orderLabel.grid(row=1,column=0)
 gl.cutOffEntry = Entry(lpParamFrame, width=5, bg="#f2b2a7"); gl.cutOffEntry.insert(0,"0.2"); gl.cutOffEntry.grid(row=0,column=1)
@@ -146,8 +154,8 @@ fitSigButton = Button(fitFrame, text="Fit Sig", command=f_signal); fitSigButton.
 fitDiffButton = Button(fitFrame, text="Fit Diff", command=f_difference); fitDiffButton.grid(row=0,column=1)
 intLabel = Label(fitFrame, text="Coherence time"); intLabel.grid(row=1,column=0)
 timeResLabel = Label(fitFrame, text="Time resolution"); timeResLabel.grid(row=2,column=0)
-gl.intValLabel = Label(fitFrame, text="--", fg="orange", bg="black"); gl.intValLabel.grid(row=1,column=1)
-gl.timeResValLabel = Label(fitFrame, text="--", fg="orange", bg="black"); gl.timeResValLabel.grid(row=2,column=1)
+gl.intValLabel = Label(fitFrame, text="-.--- +/- -.--- ps", fg="orange", bg="black", font="Courier 11"); gl.intValLabel.grid(row=1,column=1)
+gl.timeResValLabel = Label(fitFrame, text="-.-- +/- -.-- ns", fg="orange", bg="black", font="Courier 11"); gl.timeResValLabel.grid(row=2,column=1)
 
 # Big displays
 bigdisplayFrame = Frame(optionsFrame); bigdisplayFrame.grid(row=5,column=0)
