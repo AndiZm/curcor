@@ -376,6 +376,53 @@ rates_a = []; rates_b = []
 plotFig = []; rate_a_plot = []; rate_b_plot = []
 wav_a = []; wav_b = []
 
+
+def analyze_file(newest_file):
+	global stop_thread, plotting, rates_a, rates_b, wav_a, wav_b
+	
+	statusLabel.config(text="New file found" ); root.update()
+	with open(newest_file, 'rb') as f:
+		means_a = []; means_b = []
+		for allpkt in range(0, int(startstopPEntry.get())):
+			buf = (f.read(2*int(startstopLEntry.get())))
+			packet = np.frombuffer(buf, dtype=np.int8)
+			packet = packet.reshape(int(startstopLEntry.get()), 2)
+			a_np = np.array(packet[:,0]).flatten(); b_np = np.array(packet[:,1]).flatten()
+			means_a.append(np.mean(a_np)); means_b.append(np.mean(b_np))
+			del(a_np); del(b_np)
+	vRange = int(voltageoptions[voltages.get()])
+	binRange = float(binningoptions[binning.get()])
+	
+	mean_a_ADC = np.mean(means_a); mean_b_ADC = np.mean(means_b)
+	mean_a_ADC = mean_a_ADC - off_a; mean_b_ADC = mean_b_ADC - off_b
+	# Rates 
+	r_a = 1e-6 * mean_a_ADC/(avg_charge_a*binRange); r_b = 1e-6 * mean_b_ADC/(avg_charge_b*binRange)
+	CHa_Label_rate.config(text="{:.1f}".format(r_a)); CHb_Label_rate.config(text="{:.1f}".format(r_b))				
+	# mV
+	mean_a_mV = ADC_to_mV(adc=mean_a_ADC, range=vRange); mean_b_mV = ADC_to_mV(adc=mean_b_ADC, range=vRange)
+	CHa_Label_mean.config(text="{:.2f}".format(mean_a_mV)); CHb_Label_mean.config(text="{:.2f}".format(mean_b_mV))
+	# PMT current
+	curr_a_microamp = 1e3 * mean_a_mV/float(ampAEntry.get())/50; curr_b_microamp = 1e3 * mean_b_mV/float(ampBEntry.get())/50
+	if curr_a_microamp > -100:      
+		CHa_Label_curr.config(text="{:.1f}".format(curr_a_microamp), bg="black", fg="orange")
+	else:
+		CHa_Label_curr.config(text="{:.1f}".format(curr_a_microamp), bg="#edd266", fg="red")
+	if curr_b_microamp > -100:
+		CHb_Label_curr.config(text="{:.1f}".format(curr_b_microamp), bg="black", fg="orange")
+	else:
+		CHb_Label_curr.config(text="{:.1f}".format(curr_b_microamp), bg="#edd266", fg="red")
+	root.update()
+	if plotting == True:
+		rates_a.append(r_a); rates_b.append(r_b)
+		wav_a, wav_b = wv.execute(file=newest_file, length=1000)
+		global rate_a_plot, rate_b_plot, wav_a_plot, wav_b_plot
+		plotFigAxis.cla(); plotFigAxis.set_xlabel("File index"); plotFigAxis.set_ylabel("Rates [MHz]")
+		rate_a_plot = plotFigAxis.plot(rates_a, "o--", color="blue"); rate_b_plot = plotFigAxis.plot(rates_b, "o--", color="red")
+		plotWfAxis.cla(); plotWfAxis.set_xlabel("Time bin"); plotWfAxis.set_ylabel("ADC")
+		wav_a_plot = plotWfAxis.plot(wav_a, color="blue"); wav_b_plot = plotWfAxis.plot(wav_b, color="red")
+		plt.draw()
+	root.update()
+
 def analyze_files():
 	global stop_thread, plotting, rates_a, rates_b, wav_a, wav_b
 
@@ -383,50 +430,8 @@ def analyze_files():
 		statusLabel.config(text="Scanning files for Rates..." ); root.update()
 		newest_file = wff.execute(basicpath=basicpath, samples=int(sampleoptions[samples.get()]))
 		if gl.stop_wait_for_file_thread == False:
-			statusLabel.config(text="New file found" ); root.update()
-	
-			with open(newest_file, 'rb') as f:
-				means_a = []; means_b = []
-				for allpkt in range(0, int(startstopPEntry.get())):
-					buf = (f.read(2*int(startstopLEntry.get())))
-					packet = np.frombuffer(buf, dtype=np.int8)
-					packet = packet.reshape(int(startstopLEntry.get()), 2)
-					a_np = np.array(packet[:,0]).flatten(); b_np = np.array(packet[:,1]).flatten()
-					means_a.append(np.mean(a_np)); means_b.append(np.mean(b_np))
-					del(a_np); del(b_np)
-			vRange = int(voltageoptions[voltages.get()])
-			binRange = float(binningoptions[binning.get()])
-	
-			mean_a_ADC = np.mean(means_a); mean_b_ADC = np.mean(means_b)
-			mean_a_ADC = mean_a_ADC - off_a; mean_b_ADC = mean_b_ADC - off_b
-			# Rates 
-			r_a = 1e-6 * mean_a_ADC/(avg_charge_a*binRange); r_b = 1e-6 * mean_b_ADC/(avg_charge_b*binRange)
-			CHa_Label_rate.config(text="{:.1f}".format(r_a)); CHb_Label_rate.config(text="{:.1f}".format(r_b))				
-			# mV
-			mean_a_mV = ADC_to_mV(adc=mean_a_ADC, range=vRange); mean_b_mV = ADC_to_mV(adc=mean_b_ADC, range=vRange)
-			CHa_Label_mean.config(text="{:.2f}".format(mean_a_mV)); CHb_Label_mean.config(text="{:.2f}".format(mean_b_mV))
-			# PMT current
-			curr_a_microamp = 1e3 * mean_a_mV/float(ampAEntry.get())/50; curr_b_microamp = 1e3 * mean_b_mV/float(ampBEntry.get())/50
-			if curr_a_microamp > -100:      
-				CHa_Label_curr.config(text="{:.1f}".format(curr_a_microamp), bg="black", fg="orange")
-			else:
-				CHa_Label_curr.config(text="{:.1f}".format(curr_a_microamp), bg="#edd266", fg="red")
-			if curr_b_microamp > -100:
-				CHb_Label_curr.config(text="{:.1f}".format(curr_b_microamp), bg="black", fg="orange")
-			else:
-				CHb_Label_curr.config(text="{:.1f}".format(curr_b_microamp), bg="#edd266", fg="red")
-			root.update()
-			if plotting == True:
-				rates_a.append(r_a); rates_b.append(r_b)
-				wav_a, wav_b = wv.execute(file=newest_file, length=1000)
-				global rate_a_plot, rate_b_plot, wav_a_plot, wav_b_plot
-				plotFigAxis.cla(); plotFigAxis.set_xlabel("File index"); plotFigAxis.set_ylabel("Rates [MHz]")
-				rate_a_plot = plotFigAxis.plot(rates_a, "o--", color="blue"); rate_b_plot = plotFigAxis.plot(rates_b, "o--", color="red")
-				plotWfAxis.cla(); plotWfAxis.set_xlabel("Time bin"); plotWfAxis.set_ylabel("ADC")
-				wav_a_plot = plotWfAxis.plot(wav_a, color="blue"); wav_b_plot = plotWfAxis.plot(wav_b, color="red")
-				plt.draw()
-			statusLabel.config(text="Scanning files for Rates..." ); root.update()
-	
+			analyze_file(newest_file)
+			statusLabel.config(text="Scanning files for Rates..." ); root.update()	
 			time.sleep(0.2)
 
 def startstop():
@@ -467,11 +472,22 @@ def clearPlot():
 	global rates_a, rates_b, wav_a, wav_b
 	rates_a = []; rates_b = []; wav_a = []; wav_b = []
 	switchplot(); switchplot()
+def singleFileRate():
+	global stop_thread, running
+	if running == True:
+		running = False
+		stop_thread = True
+		gl.stop_wait_for_file_thread = True
+		startstopButton.config(text="Start!", bg="#e8fcae")
+	idle()
+	root.filename = filedialog.askopenfilename(initialdir = basicpath, title = "Select file for rate", filetypes = (("binary files","*.bin"),("all files","*.*")))
+	analyze_file(root.filename)
+	idle()
 
-clearPlotButon = Button(startFrame, text="Clear", bg="#ccf2ff", command=clearPlot); clearPlotButon.grid(row=0,column=0)
-plotButton = Button(startFrame, text="Plotting off", bg="#cdcfd1", width=10, command=switchplot); plotButton.grid(row=0,column=1)
-startstopButton = Button(startFrame, text="Start!", bg="#e8fcae", command=startstop, width=10); startstopButton.grid(row=0,column=2)
-
+clearPlotButon = Button(startFrame, text="Clear", bg="#ccf2ff", command=clearPlot, width=12); clearPlotButon.grid(row=0,column=0)
+plotButton = Button(startFrame, text="Plotting off", bg="#cdcfd1", command=switchplot, width=12); plotButton.grid(row=0,column=1)
+startstopButton = Button(startFrame, text="Start!", bg="#e8fcae", command=startstop, width=12); startstopButton.grid(row=1,column=0)
+singleFileButton = Button(startFrame, text="Single", bg = "#e8fcae", command=singleFileRate, width=12); singleFileButton.grid(row=1, column=1)
 
 #############################
 ## STATUS FRAME AND BUTTON ##
