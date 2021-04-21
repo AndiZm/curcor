@@ -1,8 +1,8 @@
 import numpy as np
 import os
+#import tkFileDialog as filedialog
 from tkinter import filedialog
 import globs as gl
-
 
 def maketxtpath():
 	txtpath = gl.basicpath_sig + "/saves"
@@ -72,6 +72,23 @@ def save_rms_single():
 		savearrays.append(gl.rmssin_ref)
 		header += "\tRef"
 	with open(gl.basicpath_sig + "/saves/rms_single.txt", "w") as f:
+		f.write(header + "\n")
+		for j in range (0,len(savearrays[0])):
+			for arrays in range(0, len(savearrays)):
+				f.write("{}\t".format(savearrays[arrays][j]))
+			f.write("\n")
+
+def save_rms_cumulative():
+	maketxtpath()
+	savearrays = []; header = "#"
+	if gl.boolSig == True:
+		savearrays.append(gl.rmscum_sig)
+		savearrays.append(gl.rmscum_sig_exp)
+		header += "\tSig\tSig_exp\t"
+	if gl.boolRef == True:
+		savearrays.append(gl.rmscum_ref)
+		header += "\tRef\tRef_exp\t"
+	with open(gl.basicpath_sig + "/saves/rms_cumulative.txt", "w") as f:
 		f.write(header + "\n")
 		for j in range (0,len(savearrays[0])):
 			for arrays in range(0, len(savearrays)):
