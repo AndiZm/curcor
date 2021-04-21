@@ -4,6 +4,7 @@ body_sig = ""; body_ref = ""
 boolSig = False; boolRef = False
 boolLP = False
 boolPatCorr = True
+boolRMSlogx = True; boolRMSlogy = True
 
 G2_cum_sig = []; G2_cum_ref = []
 

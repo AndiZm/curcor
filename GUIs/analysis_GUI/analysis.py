@@ -294,8 +294,11 @@ def cumulate_signal(binning):
 def experimental_correction_factors():
 	if gl.boolSig == True:
 		corr_frac_old = float(gl.corrSigEntry.get())
+		#print ("corr frac old:\t{}".format(corr_frac_old))
 		avg = np.mean(gl.rmssin_sig_frac)
+		#print ("avg RMS:\t{}".format(avg))
 		corr_frac_new = avg/corr_frac_old
+		#print ("New = {:.3f}/{:.3f} = {:.3f}".format(avg,corr_frac_old,corr_frac_new))
 		gl.corrSigEntry.delete(0,"end"); gl.corrSigEntry.insert(0,"{}".format(corr_frac_new))
 	if gl.boolRef == True:
 		corr_frac_old = float(gl.corrRefEntry.get())

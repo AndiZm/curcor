@@ -6,7 +6,7 @@ import os
 from tkinter import filedialog
 
 def selectBodyFile_sig():
-	filename = filedialog.askopenfilename(initialdir=gl.basicpath_sig, title="Select any signal file", filetypes=(("correlation files", "*.corr"),("all files","*.*")))
+	filename = filedialog.askopenfilename(initialdir=gl.basicpath_sig, title="Select any signal file", filetypes=(("correlation files", "*00001.corr"),("all files","*.*")))
 	gl.body_sig = filename[:filename.find(".")-6]
 	gl.basicpath_sig = gl.body_sig.rpartition("/")[0] + "/"
 	gl.bodySigLabel.config(text=gl.body_sig.split("/")[-1])
@@ -18,7 +18,7 @@ def selectBodyFile_sig():
 	gl.boolSig = True
 	selectSigCalib(); selectSigOffset()
 def selectBodyFile_ref():
-	filename = filedialog.askopenfilename(initialdir=gl.basicpath_ref, title="Select any signal file", filetypes=(("correlation files", "*.corr"),("all files","*.*")))
+	filename = filedialog.askopenfilename(initialdir=gl.basicpath_ref, title="Select any signal file", filetypes=(("correlation files", "*00001.corr"),("all files","*.*")))
 	gl.body_ref = filename[:filename.find(".")-6]
 	gl.basicpath_ref = gl.body_ref.rpartition("/")[0] + "/"
 	gl.bodyRefLabel.config(text=gl.body_ref.split("/")[-1])

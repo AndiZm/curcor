@@ -150,12 +150,12 @@ def f_signal():
 	ana.fit_signal(binning = float(binningoptions[binning.get()])); gl.corrCanvas.draw()
 def f_difference():
 	ana.fit_difference(binning = float(binningoptions[binning.get()])); gl.corrCanvas.draw()
-fitSigButton = Button(fitFrame, text="Fit Sig", command=f_signal); fitSigButton.grid(row=0,column=0)
-fitDiffButton = Button(fitFrame, text="Fit Diff", command=f_difference); fitDiffButton.grid(row=0,column=1)
+fitSigButton = Button(fitFrame, text="Fit Sig", command=f_signal, width=7); fitSigButton.grid(row=0,column=0)
+fitDiffButton = Button(fitFrame, text="Fit Diff", command=f_difference, width=7); fitDiffButton.grid(row=0,column=1)
 intLabel = Label(fitFrame, text="Coherence time"); intLabel.grid(row=1,column=0)
 timeResLabel = Label(fitFrame, text="Time resolution"); timeResLabel.grid(row=2,column=0)
-gl.intValLabel = Label(fitFrame, text="-.--- +/- -.--- ps", fg="orange", bg="black", font="Courier 11"); gl.intValLabel.grid(row=1,column=1)
-gl.timeResValLabel = Label(fitFrame, text="-.-- +/- -.-- ns", fg="orange", bg="black", font="Courier 11"); gl.timeResValLabel.grid(row=2,column=1)
+gl.intValLabel = Label(fitFrame, text="-.--- +/- -.--- ps", fg="orange", bg="black", font="Courier 10"); gl.intValLabel.grid(row=1,column=1)
+gl.timeResValLabel = Label(fitFrame, text="-.-- +/- -.-- ns", fg="orange", bg="black", font="Courier 10"); gl.timeResValLabel.grid(row=2,column=1)
 
 # Big displays
 bigdisplayFrame = Frame(optionsFrame); bigdisplayFrame.grid(row=5,column=0)
@@ -174,5 +174,29 @@ rmscumSaveButton = Button(bigdisplayFrame, text="Save"); rmscumSaveButton.grid(r
 saveAllLabel = Label(bigdisplayFrame, text="Save All Results"); saveAllLabel.grid(row=5,column=0)
 saveAllButton = Button(bigdisplayFrame, text="Save", command=sal.saveAll); saveAllButton.grid(row=5,column=1)
 
+# RMS Scale Buttons
+RMSscaleFrame = Frame(optionsFrame); RMSscaleFrame.grid(row=6, column=0)
+def switch_logxButton():
+	if gl.boolRMSlogx == False:
+		gl.boolRMSlogx = True
+		RMSlogxButton.config(text="RMS log(x) ON", bg="#f77059")
+	else:
+		gl.boolRMSlogx = False
+		RMSlogxButton.config(text="RMS log(x) OFF", bg="#fad1ca")
+	xlim = gl.corrAx.get_xlim(); ylim = gl.corrAx.get_ylim()
+	disp.refresh_display(binning = float(binningoptions[binning.get()]))
+	gl.corrAx.set_xlim(xlim); gl.corrAx.set_ylim(ylim)
+def switch_logyButton():
+	if gl.boolRMSlogy == False:
+		gl.boolRMSlogy = True
+		RMSlogyButton.config(text="RMS log(y) ON", bg="#f77059")
+	else:
+		gl.boolRMSlogy = False
+		RMSlogyButton.config(text="RMS log(y) OFF", bg="#fad1ca")
+	xlim = gl.corrAx.get_xlim(); ylim = gl.corrAx.get_ylim()
+	disp.refresh_display(binning = float(binningoptions[binning.get()]))
+	gl.corrAx.set_xlim(xlim); gl.corrAx.set_ylim(ylim)
+RMSlogxButton = Button(RMSscaleFrame, text= "RMS log(x) ON", bg="#f77059", command=switch_logxButton); RMSlogxButton.grid(row=0,column=0)
+RMSlogyButton = Button(RMSscaleFrame, text= "RMS log(y) ON", bg="#f77059", command=switch_logyButton); RMSlogyButton.grid(row=1,column=0)
 
 root.mainloop()

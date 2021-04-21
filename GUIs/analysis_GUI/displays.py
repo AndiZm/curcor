@@ -107,14 +107,25 @@ def displayCumulativeRMS():
 			plt.plot(gl.rmscum_diff_exp, color="#003366", linestyle="--", zorder=2)
 			plt.subplot(212)
 			plt.plot(gl.rmscum_diff_frac, color="#003366", zorder=2)
-	plt.subplot(211); plt.legend(); plt.yscale("log"); plt.show()
+	plt.subplot(211); plt.legend()
+	if gl.boolRMSlogx == True:
+		plt.xscale("log")
+		plt.xlim(1,)
+	if gl.boolRMSlogy == True:
+		plt.yscale("log")
+	plt.show()
 
 def refresh_display(binning):
 	gl.corrAx.cla(); gl.corrAx.set_title("Correlations"); gl.corrAx.set_xlabel("Time bins"); gl.corrAx.set_ylabel("$g^{(2)}$")
 	gl.fftAx.cla(); gl.fftAx.set_xlabel("Frequency [GHz]")
 	gl.rmssinAx.cla(); gl.rmssinAx.set_ylabel("Single files RMS")
 	gl.ratesAx.cla(); gl.ratesAx.set_ylabel("Rates [MHz]"); gl.ratesAx.set_title("Photon rates")
-	gl.rmscumAx.cla(); gl.rmscumAx.set_ylabel("Cumulative RMS"); gl.rmscumAx.set_yscale("log")
+	gl.rmscumAx.cla(); gl.rmscumAx.set_ylabel("Cumulative RMS")
+	if gl.boolRMSlogx == True:
+		gl.rmscumAx.set_xscale("log")
+		gl.rmscumAx.set_xlim(1,)
+	if gl.boolRMSlogy == True:
+		gl.rmscumAx.set_yscale("log")
 
 	formax = 0.
 	if gl.boolSig == True:
