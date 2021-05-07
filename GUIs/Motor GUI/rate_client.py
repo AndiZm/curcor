@@ -4,8 +4,8 @@ import threading
 
 class rate_client:
 
-	#length of each rate information. In the used protocol the length of the message is the no of valid numbers of the MHz measurement + 1 character for the dot.
-	msg_length = 6
+	#length of each rate information. In the used protocol the length of the message is the no of valid numbers of the MHz measurement +1 times 2 (two channels A and B) + 1 character for the seperator.
+	msg_length = 13
 
 	#info about the server to connect to
 	port = 2610 
@@ -19,8 +19,9 @@ class rate_client:
 	#thread which executes the listening function
 	listen_thread = None
 	
-	#value of the last transmitted rate
-	rate = None
+	#value of the last transmitted rates
+	rateA = None
+	rateB = None
 	
 	def __init__(self):
 		#check if config file exists and load it, otherwise standard parameters are kept
@@ -45,14 +46,23 @@ class rate_client:
 			print("Error in the connect method of the rate client! There shouldn't be a socket but in fact there is! Did you connect once too often?")
 		
 
-	#returns the value of the last rate transmitted
-	def getRate(self):
-		if self.rate != None:
-			return self.rate
+	#returns the value of the last rate in channel A transmitted
+	def getRateA(self):
+		if self.rateA != None:
+			return self.rateA
 		else:
 			print("No rate has yet been received")
 			return -1
-		
+			
+
+	#returns the value of the last rate in channel B transmitted
+	def getRateB(self):
+		if self.rateB != None:
+			return self.rateB
+		else:
+			print("No rate has yet been received")
+			return -1
+	
 	
 #makes the client listen to incoming rates
 def listen(self):
@@ -65,4 +75,8 @@ def listen(self):
 				raise RuntimeError("socket connection broken")
 			chunks.append(chunk)
 			bytes_recd = bytes_recd + len(chunk)
-		self.rate=float(b''.join(chunks))
+		org=str(b''.join(chunks))
+		print(org)
+		parts=org.split(";")
+		self.rateA=float(parts[0].split("'")[1])
+		self.rateB=float(parts[1].split("'")[0])

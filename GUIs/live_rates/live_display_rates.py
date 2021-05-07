@@ -131,6 +131,8 @@ while (True):
         r_b = 1e-6 * d_means_b_mV/(t_bin * C_b)      
         CHa_Label_rate.config(text="{:.1f}  MHz".format(r_a))
         CHb_Label_rate.config(text="{:.1f}  MHz".format(r_b))
+        if server != None:
+        	server.sendRate("{0:6.1f};{1:6.1f}".format(r_a, r_b))
 
         root.update()
     time.sleep(0.5)   

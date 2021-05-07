@@ -4,8 +4,8 @@ import time
 
 class server:
 
-	#length of each rate information. In the used protocol the length of the message is the no of valid numbers of the MHz measurement + 1 character for the dot.
-	msg_length = 6
+	#length of each rate information. In the used protocol the length of the message is the no of valid numbers of the MHz measurement +1 times 2 (two channels A and B) + 1 character for the seperator.
+	msg_length = 13
 	
 	#listening port and address for the server
 	port = 2610 
