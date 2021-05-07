@@ -3,8 +3,9 @@ import threading
 import time
 
 class server:
-	
-	#declare global variables. Note that these might be changed at initialization of the server object
+
+	#length of each rate information. In the used protocol the length of the message is the no of valid numbers of the MHz measurement + 1 character for the dot.
+	msg_length = 6
 	
 	#listening port and address for the server
 	port = 2610 
@@ -58,8 +59,6 @@ class server:
 		server_cache=self.serversocket
 		self.serversocket=None
 		self.still_listening=False
-		#soc.socket(soc.AF_INET, soc.SOCK_STREAM).connect( (soc.hostname, server_cache.port))
-#		time.sleep(0.3)
 		server_cache.shutdown(soc.SHUT_RDWR)
 		server_cache.close()
 		for i in self.clientsockets:
@@ -69,6 +68,11 @@ class server:
 		print("Shutdown the server and closed all sockets!")
 				
 	def sendRate(self, rate):
+		rate=str(rate)
+		if len(rate) != self.msg_length :
+			print("The rate which was supposed to be sent had the wrong length! The configured msg_length is {0} but the one given as a parameter '{1}' had length {2}".format(self.msg_length, rate, len(rate)))
+			return
+		rate=rate.encode('utf8');
 		for i in self.clientsockets:
 			sent = i.send(rate)
 			if sent == 0:
@@ -85,9 +89,9 @@ def listen(self):
 			(clientsocket, address) = self.serversocket.accept()
 			
 			# create a new thread for each client and put it in the list of clientsockets
-			ct = client_thread(clientsocket)
-			ct.run()
+			ct = clientsocket
 			self.clientsockets.append(ct)
+			print("Created new client socket for new client which connected to the rate server!")
 		except OSError:
 			if self.still_listening :
 				print("There was an error in the accept() statement of the server while listening for incoming connections. How could that be?")
