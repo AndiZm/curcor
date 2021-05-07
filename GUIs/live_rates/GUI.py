@@ -371,7 +371,7 @@ CHb_Label_rate = Label(abFrame, text="0.0", fg="orange", bg="black", font=("Helv
 ## START FRAME ##
 #################
 startFrame = Frame (rootMainFrame); startFrame.grid(row=5, column=0)
-running = False; stop_thread = False; plotting = False; server = False;
+running = False; stop_thread = False; plotting = False; server = None
 # For plotting
 rates_a = []; rates_b = []
 plotFig = []; rate_a_plot = []; rate_b_plot = []
@@ -487,21 +487,22 @@ def singleFileRate():
 
 #starts/stops the server which sends the rate to the RASPI
 def startStopServer():
-	#check if server is running
 	global server
-	if server == True :
-		#shutdown server
+	#check if server is running
+	if server == None :	
+		#start server
+		server=svr.server()
+		server.start()
+		#change button label
+		startStopServerButton.config(text="Stop Server")	
 		
+	else:
+		#shutdown server
+		server.stop()
 		#change button label
 		startStopServerButton.config(text="Start Server")
 		
-		server=False
-	else:
-		#start server
-		
-		#change button label
-		startStopServerButton.config(text="Stop Server")	
-		server=True
+		server = None
 
 clearPlotButon = Button(startFrame, text="Clear", bg="#ccf2ff", command=clearPlot, width=12); clearPlotButon.grid(row=0,column=0)
 plotButton = Button(startFrame, text="Plotting off", bg="#cdcfd1", command=switchplot, width=12); plotButton.grid(row=0,column=1)
