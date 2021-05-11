@@ -31,6 +31,7 @@ class rate_client:
 		if "connection" in config:
 			self.port=int(config["connection"]["port"])
 			self.address=config["connection"]["address"]
+			self.msg_length=int(config["connection"]["msg_length"])
 
 		
 	#connects the rate client to the rate server

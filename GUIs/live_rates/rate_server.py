@@ -30,6 +30,7 @@ class server:
 		if "connection" in config:
 			self.port=int(config["connection"]["port"])
 			self.address=config["connection"]["address"]
+			self.msg_length=int(config["connection"]["msg_length"])
 	
 	#starts the server by opening a listening socket			
 	def start(self):
