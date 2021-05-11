@@ -400,7 +400,7 @@ def analyze_file(newest_file):
 	r_a = 1e-6 * mean_a_ADC/(avg_charge_a*binRange); r_b = 1e-6 * mean_b_ADC/(avg_charge_b*binRange)
 	CHa_Label_rate.config(text="{:.1f}".format(r_a)); CHb_Label_rate.config(text="{:.1f}".format(r_b))
 	if server != None:
-		server.sendRate("{0:6.1f};{1:6.1f}".format(a, b))
+		server.sendRate("{0:6.1f};{1:6.1f}".format(r_a, r_b))
 	# mV
 	mean_a_mV = ADC_to_mV(adc=mean_a_ADC, range=vRange); mean_b_mV = ADC_to_mV(adc=mean_b_ADC, range=vRange)
 	CHa_Label_mean.config(text="{:.2f}".format(mean_a_mV)); CHb_Label_mean.config(text="{:.2f}".format(mean_b_mV))
