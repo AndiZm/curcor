@@ -28,7 +28,7 @@ def ADC_to_mV(adc, range):
 def mV_to_ADC(mV, range):
 	return mV*127/range
 
-root = Tk(); root.wm_title("Almost live measures"); root.geometry("+1600+100")
+root = Tk(); root.wm_title("Almost live measures"); root.geometry("+100+100")
 rootMainFrame = Frame(root); rootMainFrame.grid(row=0,column=0)
 
 ## Common Frame ##
