@@ -1,6 +1,7 @@
 import socket as soc
 from time import sleep
 import threading
+import configparser
 
 class rate_client:
 
@@ -9,7 +10,7 @@ class rate_client:
 
 	#info about the server to connect to
 	port = 2610 
-	address = "127.0.1.1"#"192.168.0.103"
+	address = "192.168.0.103"#"192.168.0.103"
 	
 	#client socket that is used to connect to the rate server
 	socket = None
@@ -25,14 +26,21 @@ class rate_client:
 	
 	def __init__(self):
 		#check if config file exists and load it, otherwise standard parameters are kept
-		return
+		config = configparser.ConfigParser()
+		config.read('rate_transmission.conf')
+		if "connection" in config:
+			self.port=config["connection"]["port"]
+			self.address=config["connection"]["address"]
+
 		
 	#connects the rate client to the rate server
 #NEED TO ADD ERROR HANDLING!
 	def connect(self):
 		#create a client socket to connect to the rate server
 		if self.socket is None:
+			print("ch1")
 			self.socket = soc.socket(soc.AF_INET, soc.SOCK_STREAM)
+			print("ch2")
 			self.socket.connect((self.address, self.port))
 			print("Client started!")	
 			
@@ -51,7 +59,7 @@ class rate_client:
 		if self.rateA != None:
 			return self.rateA
 		else:
-			print("No rate has yet been received")
+			#print("No rate has yet been received")
 			return -1
 			
 
@@ -60,9 +68,14 @@ class rate_client:
 		if self.rateB != None:
 			return self.rateB
 		else:
-			print("No rate has yet been received")
+			#print("No rate has yet been received")
 			return -1
-	
+
+	#stops the client and closes all connections
+	def stop(self):
+		self.socket.shutdown(soc.SHUT_RDWR)
+		self.socket.close()
+		print("Shutdown the client and closed the socket!")
 	
 #makes the client listen to incoming rates
 def listen(self):
