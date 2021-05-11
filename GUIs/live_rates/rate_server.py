@@ -73,10 +73,9 @@ class server:
 			i.close()
 			self.clientsockets.remove(i)
 		print("Shutdown the server and closed all sockets!")
-	def sendRate(self, rate_a, rate_b)
-		sendRate("{0:6.1f};{1:6.1f}".format(a, b))
-	def sendRate(self, rate):
-		rate=str(rate)
+
+	def sendRate(self, rate_a, rate_b):
+		rate = "{0:6.1f};{1:6.1f}".format(rate_a, rate_b)
 		if len(rate) != self.msg_length :
 			print("The rate (which was supposed to be sent) had the wrong length! The configured msg_length is {0} but the one given as a parameter '{1}' had length {2}".format(self.msg_length, rate, len(rate)))
 			return
@@ -98,7 +97,7 @@ class server:
 				print("The socket connection on one of the sockets is broken. Socket will be eliminated")
 #				i.shutdown(soc.SHUT_RDWR)
 				i.close()
-				self.clientsockets.remove(i)			
+				self.clientsockets.remove(i)
 
 				
 def listen(self):
