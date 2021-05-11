@@ -398,7 +398,9 @@ def analyze_file(newest_file):
 	mean_a_ADC = mean_a_ADC - off_a; mean_b_ADC = mean_b_ADC - off_b
 	# Rates 
 	r_a = 1e-6 * mean_a_ADC/(avg_charge_a*binRange); r_b = 1e-6 * mean_b_ADC/(avg_charge_b*binRange)
-	CHa_Label_rate.config(text="{:.1f}".format(r_a)); CHb_Label_rate.config(text="{:.1f}".format(r_b))				
+	CHa_Label_rate.config(text="{:.1f}".format(r_a)); CHb_Label_rate.config(text="{:.1f}".format(r_b))
+	if server != None:
+		server.sendRate("{0:6.1f};{1:6.1f}".format(a, b))
 	# mV
 	mean_a_mV = ADC_to_mV(adc=mean_a_ADC, range=vRange); mean_b_mV = ADC_to_mV(adc=mean_b_ADC, range=vRange)
 	CHa_Label_mean.config(text="{:.2f}".format(mean_a_mV)); CHb_Label_mean.config(text="{:.2f}".format(mean_b_mV))
@@ -492,9 +494,15 @@ def startStopServer():
 	if server == None :	
 		#start server
 		server=svr.server()
-		server.start()
-		#change button label
-		startStopServerButton.config(text="Stop Server")	
+		try:
+			server.start()
+			#change button label
+			startStopServerButton.config(text="Stop Server")
+		except OSError as err:
+			print("The OS did not allow start the server on {0}:{1} . Are address and port correct? Maybe an old instance is still blocking this resource?".format(server.address, server.port))
+			print(err)
+			server = None
+			
 		
 	else:
 		#shutdown server
