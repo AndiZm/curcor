@@ -23,7 +23,11 @@ class server:
 
 	def __init__(self):
 		#check if config file exists and load it, otherwise standard parameters are kept
-		return
+		config = configparser.ConfigParser()
+		config.read('rate_transmission.conf')
+		if "connection" in config:
+			self.port=config["connection"]["port"]
+			self.address=config["connection"]["address"]
 	
 	#starts the server by opening a listening socket			
 	def start(self):
