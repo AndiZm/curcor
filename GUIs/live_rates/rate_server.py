@@ -1,6 +1,8 @@
 import socket as soc
 import threading
 import time
+import configparser
+
 
 class server:
 
@@ -26,7 +28,7 @@ class server:
 		config = configparser.ConfigParser()
 		config.read('rate_transmission.conf')
 		if "connection" in config:
-			self.port=config["connection"]["port"]
+			self.port=int(config["connection"]["port"])
 			self.address=config["connection"]["address"]
 	
 	#starts the server by opening a listening socket			
@@ -63,7 +65,7 @@ class server:
 		server_cache=self.serversocket
 		self.serversocket=None
 		self.still_listening=False
-		server_cache.shutdown(soc.SHUT_RDWR)
+	#	server_cache.shutdown(soc.SHUT_RDWR)
 		server_cache.close()
 		for i in self.clientsockets:
 			i.shutdown(soc.SHUT_RDWR)
@@ -74,16 +76,28 @@ class server:
 	def sendRate(self, rate):
 		rate=str(rate)
 		if len(rate) != self.msg_length :
-			print("The rate which was supposed to be sent had the wrong length! The configured msg_length is {0} but the one given as a parameter '{1}' had length {2}".format(self.msg_length, rate, len(rate)))
+			print("The rate (which was supposed to be sent) had the wrong length! The configured msg_length is {0} but the one given as a parameter '{1}' had length {2}".format(self.msg_length, rate, len(rate)))
 			return
 		rate=rate.encode('utf8');
 		for i in self.clientsockets:
-			sent = i.send(rate)
-			if sent == 0:
-				print("The Socket connection on one of the sockets is broken. Socket will be eliminated")
-				i.shutdown(soc.SHUT_RDWR)
+			try:
+				sent = i.send(rate)
+				if sent == 0:
+					print("The socket connection on one of the sockets is broken. Socket will be eliminated")
+#					i.shutdown(soc.SHUT_RDWR)
+					i.close()
+					self.clientsockets.remove(i)
+			except ConnectionAbortedError:
+				print("The socket connection on one of the sockets is broken. Socket will be eliminated")
+#				i.shutdown(soc.SHUT_RDWR)
 				i.close()
 				self.clientsockets.remove(i)
+			except ConnectionResetError:
+				print("The socket connection on one of the sockets is broken. Socket will be eliminated")
+#				i.shutdown(soc.SHUT_RDWR)
+				i.close()
+				self.clientsockets.remove(i)			
+
 				
 def listen(self):
 	while self.still_listening:

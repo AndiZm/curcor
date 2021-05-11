@@ -5,6 +5,7 @@ from time import sleep
 
 import stepper_drive as sd
 import motor_switch as ms
+import rate_client as rcl
 
 import _thread
 from threading import Thread
@@ -100,6 +101,9 @@ def exitGUI():
     for i in range (4,6):
         savepos.write(str(steps_to_degree(sd.position(a[i])))+"\n")        
     savepos.close()
+    if client != None:
+        client.stop()
+        client = None
     root.destroy()
 
 def save_this_position():
@@ -172,7 +176,30 @@ def refsearch_all():
     refsearch_mirror_psi()
     refsearch_camera_x()
     refsearch_camera_z()
-
+    
+#metods used for the rate client
+    
+client = None
+    
+def startStopClient():
+    global client
+    if client == None:
+        client_cache = rcl.rate_client()
+        try:
+            client_cache.connect()
+            rateClientButton.config(text="Disconnect")
+            client=client_cache
+            print("Started the rate client. Rates will be displayed once they arrive.")
+        except:
+            print("Could not connect to server. Please check if server address and port are correct!")
+    else:
+        client.stop()
+        CHa_Label_rate.config(fg="orange")
+        CHb_Label_rate.config(fg="orange")
+        rateClientButton.config(text="Connect")
+        client = None
+        
+        
 #-----------------#
 #---- Movetos ----#
 #-----------------#
@@ -327,6 +354,9 @@ MirrorRFrame.grid(row=1, column=1, padx=10, pady=3)
 CameraFrame = Frame(mainFrame, width=200, height=400)
 CameraFrame.grid(row=1, column=2, padx=10, pady=3)
 
+RateFrame = Frame(mainFrame, width=200, height=40)
+RateFrame.grid(row=2, column=1, pady=3)
+
 #SwitchFrame Content
 ms.init(); ms.motor_on(); motoron = True
 switchLabel = Label(switchFrame, text="Motor is ")
@@ -346,7 +376,6 @@ onoffButton.config(command=switchMotor)
 onoffButton.grid(row=0, column=1)
 
 
-    
 
 #MirrorT-Content
 MirrorTHeadFrame = Frame(MirrorTFrame, width=200, height=20); MirrorTHeadFrame.grid(row=0, column=0, padx=10, pady=3)
@@ -464,6 +493,14 @@ CameraZ = Scale(CameraBottomFrame,variable=camera_z_pos, from_= 150, to=0, resol
 CameraZ.bind("<ButtonRelease-1>", moveto_camera_z); CameraZ.set(lastpositions[0])
 CameraZ_RSTOP = Canvas(CameraBottomFrame, bg=LEDColors[a[0].axis.get(11)], width=10, height=20); CameraZ_RSTOP.grid(row=0, column=2)
 
+#Rate-Content
+desc_Label_rate = Label(RateFrame, text="Photon rate [MHz]"); desc_Label_rate.grid(row=4, column=0, padx=5)
+desc_Label_rate_A = Label(RateFrame, text="Ch A"); desc_Label_rate_A.grid(row=4, column=1, padx=3, pady=3)
+desc_Label_rate_B = Label(RateFrame, text="Ch B"); desc_Label_rate_B.grid(row=4, column=3, padx=3, pady=3)
+CHa_Label_rate = Label(RateFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 15 bold"));   CHa_Label_rate.grid(row=4, column=2, padx=3, pady=3)
+CHb_Label_rate = Label(RateFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 15 bold"));   CHb_Label_rate.grid(row=4, column=4, padx=3, pady=3)
+rateClientButton = Button(RateFrame, text="Connect", bg="#cdcfd1", command=startStopClient, width=8); rateClientButton.grid(row=4,column=5, padx=3, pady=3)
+
 # Displays with LEDs
 MirrorHeightLED = MirrorHeightDisplay.create_oval(1,1,19,19, fill=LEDColors[0], width=0)
 MirrorZLED = MirrorZDisplay.create_oval(1,1,19,19, fill=LEDColors[0], width=0)
@@ -514,6 +551,13 @@ def update_items():
     CameraZ_LSTOP.config(bg=LEDColors[a[0].axis.get(10)])
     CameraZ_RSTOP.config(bg=LEDColors[a[0].axis.get(11)])
     
+    if client != None:
+        try:
+            CHa_Label_rate.config(text="{:.1f}".format(client.getRateA()), fg="#00ff00")
+            CHb_Label_rate.config(text="{:.1f}".format(client.getRateB()), fg="#00ff00")
+        except RuntimeError:
+            startStopClient()
+            
     root.update_idletasks()
     
 stop_thread = False
@@ -615,6 +659,12 @@ CameraBottomFrame.config(background = CameraColor)
 CameraZ.config(background = CameraColor)
 CameraZSpeed.config(background = CameraColor)
 CameraZCurrent.config(background = CameraColor)
+
+RateColor = "#b3daff"
+RateFrame.config(background = RateColor)
+desc_Label_rate.config(background = RateColor)
+desc_Label_rate_A.config(background = RateColor)
+desc_Label_rate_B.config(background = RateColor)
 
 root.mainloop()
 os._exit(0)

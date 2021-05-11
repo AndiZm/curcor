@@ -29,7 +29,7 @@ class rate_client:
 		config = configparser.ConfigParser()
 		config.read('rate_transmission.conf')
 		if "connection" in config:
-			self.port=config["connection"]["port"]
+			self.port=int(config["connection"]["port"])
 			self.address=config["connection"]["address"]
 
 		
@@ -38,10 +38,10 @@ class rate_client:
 	def connect(self):
 		#create a client socket to connect to the rate server
 		if self.socket is None:
-			print("ch1")
 			self.socket = soc.socket(soc.AF_INET, soc.SOCK_STREAM)
-			print("ch2")
+			self.socket.settimeout(1)
 			self.socket.connect((self.address, self.port))
+			self.socket.settimeout(None)
 			print("Client started!")	
 			
 			#routine to start a client thread as soon as a connection is requested (in own thread)
@@ -57,7 +57,11 @@ class rate_client:
 	#returns the value of the last rate in channel A transmitted
 	def getRateA(self):
 		if self.rateA != None:
-			return self.rateA
+			if self.still_listening:
+				return self.rateA
+			else:
+#				print("TEST")
+				raise RuntimeError("Connection to server lost!")
 		else:
 			#print("No rate has yet been received")
 			return -1
@@ -66,7 +70,10 @@ class rate_client:
 	#returns the value of the last rate in channel B transmitted
 	def getRateB(self):
 		if self.rateB != None:
-			return self.rateB
+			if self.still_listening:
+				return self.rateB
+			else:
+				raise RuntimeError("Connection to server lost!")
 		else:
 			#print("No rate has yet been received")
 			return -1
@@ -76,20 +83,25 @@ class rate_client:
 		self.socket.shutdown(soc.SHUT_RDWR)
 		self.socket.close()
 		print("Shutdown the client and closed the socket!")
+		self.socket = None;
 	
 #makes the client listen to incoming rates
 def listen(self):
-	while True:
+	while self.still_listening:
 		chunks = []
 		bytes_recd = 0
 		while bytes_recd < self.msg_length:
 			chunk = self.socket.recv(min(self.msg_length - bytes_recd, 2048))
 			if chunk == b'':
-				raise RuntimeError("socket connection broken")
+				if self.socket != None:
+					print("Socket connection broken. Destroyed on purpose?")
+					self.still_listening = False
+					break
 			chunks.append(chunk)
 			bytes_recd = bytes_recd + len(chunk)
+		if self.still_listening == False:
+			break
 		org=str(b''.join(chunks))
-		print(org)
 		parts=org.split(";")
 		self.rateA=float(parts[0].split("'")[1])
 		self.rateB=float(parts[1].split("'")[0])
