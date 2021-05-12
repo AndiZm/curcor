@@ -84,6 +84,8 @@ def save_rms_cumulative():
 	if gl.boolSig == True:
 		savearrays.append(gl.rmscum_sig)
 		savearrays.append(gl.rmscum_sig_exp)
+		# temporarily
+		savearrays.append(gl.rms_cum_err)
 		header += "\tSig\tSig_exp\t"
 	if gl.boolRef == True:
 		savearrays.append(gl.rmscum_ref)

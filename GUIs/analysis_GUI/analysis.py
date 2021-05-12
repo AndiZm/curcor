@@ -193,10 +193,22 @@ def cumulative_RMS_sig(binning):
 	g2 = get_cumulative_g2_sig(lowpass = gl.boolLP, binning=binning)
 	range_left = int(gl.rmsRangeLeftEntry.get()); range_right = int(gl.rmsRangeRightEntry.get())
 	gl.rmscum_sig.append(np.std(g2[range_left:range_right]))
+	# Error on RMS is calculated via several ranges of 25 bins
+	rmss = []
+	i_starts = np.arange(range_left, range_right, 25)
+	for i in i_starts:
+		rmss.append(np.std(g2[i:i+25]))
+	gl.rmscum_sig_err.append(np.std(rmss))
 def cumulative_RMS_ref(binning):
 	g2 = get_cumulative_g2_ref(lowpass = gl.boolLP, binning=binning)
 	range_left = int(gl.rmsRangeLeftEntry.get()); range_right = int(gl.rmsRangeRightEntry.get())
 	gl.rmscum_ref.append(np.std(g2[range_left:range_right]))
+	# Error on RMS is calculated via several ranges of 25 bins
+	rmss = []
+	i_starts = np.arange(range_left, range_right, 25)
+	for i in i_starts:
+		rmss.append(np.std(g2[i:i+25]))
+	gl.rmscum_ref_err.append(np.std(rmss))
 def cumulative_RMS_diff(binning):
 	g2 = get_cumulative_g2_diff(binning=binning)
 	range_left = int(gl.rmsRangeLeftEntry.get()); range_right = int(gl.rmsRangeRightEntry.get())
@@ -253,6 +265,7 @@ def cumulate_signal(binning):
 	gl.rmssin_sig_exp = []; gl.rmssin_ref_exp = []; gl.rmscum_sig_exp = []; gl.rmscum_ref_exp = [];	gl.rmscum_diff_exp = []
 	gl.rmssin_sig_frac = []; gl.rmssin_ref_frac = []; gl.rmscum_sig_frac = []; gl.rmscum_ref_frac = [];	gl.rmscum_diff_frac = []
 	gl.G2_cum_sig = []; gl.G2_cum_ref = []
+	gl.rmscum_sig_err = []; gl.rmscum_ref_err = []; gl.rmscum_diff_err = []
 	gl.N_e_sig = 0.; gl.N_e_ref = 0.
 
 	gl.intValLabel.config(text="-.--- +/- -.--- ps")

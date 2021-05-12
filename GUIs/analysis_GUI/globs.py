@@ -70,5 +70,15 @@ rmscum_diff_plot = []
 rmssin_sig_exp_plot = []; rmssin_ref_exp_plot = []
 rmscum_sig_exp_plot = []; rmscum_ref_exp_plot = []
 rmscum_diff_exp_plot = []
+
+rmscum_sig_err_plot = []
+rmscum_ref_err_plot = []
+rmscum_diff_err_plot = []
+
 rates_a_sig_plot = []; rates_b_sig_plot = []
 fit_plot = []
+
+# temporarily
+rmscum_sig_err = []
+rmscum_ref_err = []
+rmscum_diff_err = []

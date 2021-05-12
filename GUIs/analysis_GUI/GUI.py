@@ -140,7 +140,7 @@ RightBorderLabel = Label(paramFrame, text="Right"); RightBorderLabel.grid(row=0,
 rmsRangeLabel = Label(paramFrame, text="RMS Range"); rmsRangeLabel.grid(row=1,column=0)
 fitRangeLabel = Label(paramFrame, text="Fit Range"); fitRangeLabel.grid(row=2,column=0)
 gl.rmsRangeLeftEntry = Entry(paramFrame, width=4); gl.rmsRangeLeftEntry.insert(0,"100"); gl.rmsRangeLeftEntry.grid(row=1,column=1)
-gl.rmsRangeRightEntry = Entry(paramFrame, width=4); gl.rmsRangeRightEntry.insert(0,"200"); gl.rmsRangeRightEntry.grid(row=1,column=2)
+gl.rmsRangeRightEntry = Entry(paramFrame, width=4); gl.rmsRangeRightEntry.insert(0,"300"); gl.rmsRangeRightEntry.grid(row=1,column=2)
 gl.fitRangeLeftEntry = Entry(paramFrame, width=4); gl.fitRangeLeftEntry.insert(0,"60"); gl.fitRangeLeftEntry.grid(row=2,column=1)
 gl.fitRangeRightEntry = Entry(paramFrame, width=4); gl.fitRangeRightEntry.insert(0,"75"); gl.fitRangeRightEntry.grid(row=2,column=2)
 
@@ -170,7 +170,7 @@ corrSaveButton = Button(bigdisplayFrame, text="Save", command=sal.save_g2); corr
 fftSaveButton = Button(bigdisplayFrame, text="Save", command=sal.save_fft); fftSaveButton.grid(row=1,column=1)
 ratesSaveButton = Button(bigdisplayFrame, text="Save", command=sal.save_rate); ratesSaveButton.grid(row=2,column=1)
 rmssinSaveButton = Button(bigdisplayFrame, text="Save", command=sal.save_rms_single); rmssinSaveButton.grid(row=3,column=1)
-rmscumSaveButton = Button(bigdisplayFrame, text="Save"); rmscumSaveButton.grid(row=4,column=1)
+rmscumSaveButton = Button(bigdisplayFrame, text="Save", command=sal.save_rms_cumulative); rmscumSaveButton.grid(row=4,column=1)
 saveAllLabel = Label(bigdisplayFrame, text="Save All Results"); saveAllLabel.grid(row=5,column=0)
 saveAllButton = Button(bigdisplayFrame, text="Save", command=sal.saveAll); saveAllButton.grid(row=5,column=1)
 
