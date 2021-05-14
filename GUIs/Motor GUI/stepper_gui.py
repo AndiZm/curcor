@@ -77,6 +77,7 @@ mirror_phi_pos = DoubleVar()
 mirror_psi_pos = DoubleVar()
 camera_x_pos = DoubleVar()
 camera_z_pos = DoubleVar()
+servo_pos = DoubleVar()
 
 
 #not used
@@ -247,6 +248,10 @@ def center_mirror_angle():
     center_mirror_phi()
     center_mirror_psi()    
 
+#def moveto_servo(val):
+#    print("Move servo to",
+#    WarningStatus
+
 #not used
 def verify_command(command):
     if messagebox.askyesno('Verify', 'Execute command {}?'.format(command)):
@@ -343,7 +348,7 @@ mainFrame.grid(row=0, column=0, padx=10,pady=3)
 mainFrame.config(background = "#003366")
 
 switchFrame = Frame(mainFrame, width=200, height=20)
-switchFrame.grid(row=0,column=1, padx=10, pady=3)
+switchFrame.grid(row=0,column=0, padx=10, pady=3)
 
 MirrorTFrame = Frame(mainFrame, width=200, height=400)
 MirrorTFrame.grid(row=1, column=0, padx=10, pady=3)
@@ -355,7 +360,10 @@ CameraFrame = Frame(mainFrame, width=200, height=400)
 CameraFrame.grid(row=1, column=2, padx=10, pady=3)
 
 RateFrame = Frame(mainFrame, width=200, height=40)
-RateFrame.grid(row=2, column=1, pady=3)
+RateFrame.grid(row=0, column=1, pady=3)
+
+ServoFrame = Frame(mainFrame, width=200, height=40)
+ServoFrame.grid(row=2, column=0, pady=3)
 
 #SwitchFrame Content
 ms.init(); ms.motor_on(); motoron = True
@@ -493,6 +501,32 @@ CameraZ = Scale(CameraBottomFrame,variable=camera_z_pos, from_= 150, to=0, resol
 CameraZ.bind("<ButtonRelease-1>", moveto_camera_z); CameraZ.set(lastpositions[0])
 CameraZ_RSTOP = Canvas(CameraBottomFrame, bg=LEDColors[a[0].axis.get(11)], width=10, height=20); CameraZ_RSTOP.grid(row=0, column=2)
 
+#Serco Content
+ServoHeadFrame = Frame(ServoFrame, width=200, height=20);
+ServoHeadFrame.grid(row=0, column=0)
+lbl_shutter = Label(ServoHeadFrame, text="Shutter");
+lbl_shutter.grid(row=0, column=0, padx=10, pady=3)
+ServoDisplay = Canvas(ServoHeadFrame, width=20,height=20)
+ServoDisplay.grid(row=0, column=1, padx=3, pady=3)
+ServoPositionLabel = Label(ServoHeadFrame, fg=LEDColors[1], bg="black", font=("Helvetica 15 bold"), text=str(round(steps_to_mm(sd.position(a[3])),1)));
+ServoPositionLabel.grid(row=0, column=2, padx=10, pady=3)
+OpenButton = Button(ServoHeadFrame, text="Open", width=4);
+OpenButton.grid(row=0,column=3)
+CloseButton = Button(ServoHeadFrame, text="Close", width=4);
+CloseButton.grid(row=0, column=4)
+
+ServoUpperFrame = Frame(ServoFrame, width=200, height=300);
+ServoUpperFrame.grid(row=1, column=0)
+lbl_up = Label(ServoUpperFrame, text="0 \N{DEGREE SIGN}")
+lbl_down = Label(ServoUpperFrame, text="180 \N{DEGREE SIGN}")
+Shutter = Scale(ServoUpperFrame,from_=0, to=180, orient=HORIZONTAL);
+lbl_up.grid(row=0, column=0, sticky="e")
+Shutter.grid(row=0, column=1, columnspan=2)
+lbl_down.grid(row=0, column=3, sticky="w")
+
+#Shutter.bind("<ButtonRelease-1>", set_max_speed_camera_x);
+#Shutter.set(v_start[1])
+
 #Rate-Content
 desc_Label_rate = Label(RateFrame, text="Photon rate [MHz]"); desc_Label_rate.grid(row=4, column=0, padx=5)
 desc_Label_rate_A = Label(RateFrame, text="Ch A"); desc_Label_rate_A.grid(row=4, column=1, padx=3, pady=3)
@@ -510,6 +544,8 @@ MirrorPsiLED = MirrorPsiDisplay.create_oval(1,1,19,19, fill=LEDColors[0], width=
 
 CameraXLED = CameraXDisplay.create_oval(1,1,19,19, fill=LEDColors[0], width=0)
 CameraZLED = CameraZDisplay.create_oval(1,1,19,19, fill=LEDColors[0], width=0)
+
+ServoLED = ServoDisplay.create_oval(1,1,19,19, fill=LEDColors[0], width=0)
 
 
 #-----------------------------------#
@@ -665,6 +701,18 @@ RateFrame.config(background = RateColor)
 desc_Label_rate.config(background = RateColor)
 desc_Label_rate_A.config(background = RateColor)
 desc_Label_rate_B.config(background = RateColor)
+
+ServoColor = "cornsilk"
+ServoFrame.config(bg=ServoColor)
+ServoHeadFrame.config(bg=ServoColor)
+lbl_shutter.config(bg=ServoColor)
+ServoDisplay.config(bg=ServoColor)
+ServoUpperFrame.config(bg=ServoColor)
+lbl_up.config(bg=ServoColor)
+lbl_down.config(bg=ServoColor)
+Shutter.config(bg=ServoColor)
+
+
 
 root.mainloop()
 os._exit(0)
