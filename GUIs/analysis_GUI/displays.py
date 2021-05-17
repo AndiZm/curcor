@@ -140,8 +140,10 @@ def refresh_display(binning):
 		gl.rates_b_sig_plot = gl.ratesAx.plot(gl.rates_b_sig, color="red")
 		# RMS
 		gl.rmssin_sig_plot = gl.rmssinAx.plot(gl.rmssin_sig, color="blue", alpha=0.5, zorder=1)
-		gl.rmscum_sig_plot = gl.rmscumAx.plot(gl.rmscum_sig, color="blue", alpha=0.5, zorder=1)
 		gl.rmssin_sig_exp_plot = gl.rmssinAx.plot(gl.rmssin_sig_exp, color="blue", linestyle="--", zorder=2)
+
+		gl.rmscum_sig_err_plot = gl.rmscumAx.fill_between(x=np.arange(0,len(gl.rmscum_sig)), y1=np.array(gl.rmscum_sig)+np.array(gl.rmscum_sig_err), y2=np.array(gl.rmscum_sig)-np.array(gl.rmscum_sig_err), color="blue", alpha=0.1)
+		gl.rmscum_sig_plot = gl.rmscumAx.plot(gl.rmscum_sig, color="blue", alpha=0.5, zorder=1)		
 		gl.rmscum_sig_exp_plot = gl.rmscumAx.plot(gl.rmscum_sig_exp, color="blue", linestyle="--", zorder=2)
 
 
@@ -159,6 +161,8 @@ def refresh_display(binning):
 		gl.rmssin_ref_plot = gl.rmssinAx.plot(gl.rmssin_ref, color="grey", alpha=0.5, zorder=1)
 		gl.rmscum_ref_plot = gl.rmscumAx.plot(gl.rmscum_ref, color="grey", alpha=0.5, zorder=1)
 		gl.rmssin_ref_exp_plot = gl.rmssinAx.plot(gl.rmssin_ref_exp, color="black", linestyle="--", zorder=2)
+		
+		gl.rmscum_sig_err_plot = gl.rmscumAx.fill_between(x=np.arange(0,len(gl.rmscum_ref)), y1=np.array(gl.rmscum_ref)+np.array(gl.rmscum_ref_err), y2=np.array(gl.rmscum_ref)-np.array(gl.rmscum_ref_err), color="grey", alpha=0.1)
 		gl.rmscum_ref_exp_plot = gl.rmscumAx.plot(gl.rmscum_ref_exp, color="grey", linestyle="--", zorder=2)
 		if gl.boolSig == True:
 			gl.rmscum_diff_plot = gl.rmscumAx.plot(gl.rmscum_diff, color="#003366", alpha=0.5, linewidth=2)

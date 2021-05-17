@@ -2,15 +2,19 @@ from tkinter import *
 from tkinter import messagebox
 from numpy import random
 from time import sleep
+
 import stepper_drive as sd
 import motor_switch as ms
+import rate_client as rcl
+import servo_test as servo
+
 import _thread
 from threading import Thread
 from PIL import Image
 import os
 
 # Get motors
-a=sd.init()
+a=sd.init()  #stepper_drive
 
 microsteps_nano = 32
 
@@ -31,6 +35,7 @@ readpos = open("stepper_items/current_positions.txt","r")
 for line in readpos:
     lastpositions.append(float(line))
 
+#Umrechnung zwischen motor parametern und python
 def degree_to_mm(degree):
     return (8./9.)*degree ##8mm/9°
   
@@ -60,36 +65,40 @@ def set_driving_speed(motor,speed):
     motor.axis.max_positioning_speed=int(speed)
     motor.set_axis_parameter(194, 300)
 
-
-
+#Tkinter open window
 root = Tk()
 root.wm_title("II Motor Control")
 root.config(background = "#003366")
 
-
-
+#motor postions
 mirror_z_pos = DoubleVar()
 mirror_height_pos = DoubleVar()
 mirror_phi_pos = DoubleVar()
 mirror_psi_pos = DoubleVar()
 camera_x_pos = DoubleVar()
 camera_z_pos = DoubleVar()
+servo_pos = IntVar()
 
 
-
+#not used
 def callback2(moveto):
     print(moveto)
-    
+   
+#fkt fuer roten stop button   
 def stop_all():
     for motor in a:
         motor.stop()
-    for i in range (0,6):
-        if sd.ismoving(a[i]) == 1:
+    for i in range (0,6):   #prueft ob motor an zielposition angekommen war oder nicht 
+        if sd.ismoving(a[i]) == 1:   #1 wenn noch faehrt und 0 wenn schon angekommen, graues widget
             WarningStatus[i] = 1
     print("Stop all motors!")
-
     
+client = None
+
+#save postions and exit gui schliessen
 def exitGUI():
+    servo.shutter_clean(90)
+    global client
     savepos = open("stepper_items/current_positions.txt","w")
     for i in range (0,3):
         savepos.write(str(steps_to_mm(sd.position(a[i])))+"\n")
@@ -97,6 +106,10 @@ def exitGUI():
     for i in range (4,6):
         savepos.write(str(steps_to_degree(sd.position(a[i])))+"\n")        
     savepos.close()
+    if client != None:
+        client.stop()
+        client = None
+    
     root.destroy()
 
 def save_this_position():
@@ -169,10 +182,34 @@ def refsearch_all():
     refsearch_mirror_psi()
     refsearch_camera_x()
     refsearch_camera_z()
+    
+#metods used for the rate client
+    
 
+    
+def startStopClient():
+    global client
+    if client == None:
+        client_cache = rcl.rate_client()
+        try:
+            client_cache.connect()
+            rateClientButton.config(text="Disconnect")
+            client=client_cache
+            print("Started the rate client. Rates will be displayed once they arrive.")
+        except:
+            print("Could not connect to server. Please check if server address and port are correct!")
+    else:
+        client.stop()
+        CHa_Label_rate.config(fg="orange")
+        CHb_Label_rate.config(fg="orange")
+        rateClientButton.config(text="Connect")
+        client = None
+        
+        
 #-----------------#
 #---- Movetos ----#
 #-----------------#
+#fahrbalken
 def moveto_mirror_height(val):
     print("Move mirror height to",mirror_height_pos.get(),"in steps",mm_to_steps(mirror_height_pos.get()))
     WarningStatus[3]=0
@@ -199,10 +236,10 @@ def moveto_camera_z(val):
     a[0].move_absolute(mm_to_steps(camera_z_pos.get()))
     
 def center_camera():
-    CameraX.set(150)
-    moveto_camera_x(150)
-    CameraZ.set(150)
-    moveto_camera_z(150)    
+    CameraX.set(70)
+    moveto_camera_x(70)
+    CameraZ.set(70)
+    moveto_camera_z(70)    
 def center_mirror_pos():
     MirrorHeight.set(20)
     MirrorZ.set(150)    
@@ -216,6 +253,26 @@ def center_mirror_angle():
     center_mirror_phi()
     center_mirror_psi()    
 
+<<<<<<< HEAD:GUIs/Motor GUI/stepper_gui.py
+=======
+servo_angle=0
+def open_shutter():
+    servo.shutter(180)
+def close_shutter():
+    servo.shutter(0)
+def shutter_scale(val):
+    servo.shutter(servo_pos.get())
+    servo_angle=servo_pos.get()
+def shutter_pos(val):
+    return servo_pos.get()
+            
+
+>>>>>>> 6587f62ad0a6404170abe1427e25d91aa8e0f4b2:GUIs/Motor/stepper_gui.py
+#def moveto_servo(val):
+#    print("Move servo to",
+#    WarningStatus
+
+#not used
 def verify_command(command):
     if messagebox.askyesno('Verify', 'Execute command {}?'.format(command)):
         print('I will execute command {} '.format(command))
@@ -243,6 +300,13 @@ def set_camera_x():
 def set_camera_z():
     CameraZ.set(steps_to_mm(sd.position(a[0])))
     moveto_camera_z(0)
+def set_all():
+    set_mirror_height()
+    set_mirror_z()
+    set_mirror_phi()
+    set_mirror_psi()
+    set_camera_x()
+    set_camera_z()
 
 #--------------------#
 #---- Regulation ----#
@@ -304,7 +368,7 @@ mainFrame.grid(row=0, column=0, padx=10,pady=3)
 mainFrame.config(background = "#003366")
 
 switchFrame = Frame(mainFrame, width=200, height=20)
-switchFrame.grid(row=0,column=1, padx=10, pady=3)
+switchFrame.grid(row=0,column=0, padx=10, pady=3)
 
 MirrorTFrame = Frame(mainFrame, width=200, height=400)
 MirrorTFrame.grid(row=1, column=0, padx=10, pady=3)
@@ -314,6 +378,12 @@ MirrorRFrame.grid(row=1, column=1, padx=10, pady=3)
 
 CameraFrame = Frame(mainFrame, width=200, height=400)
 CameraFrame.grid(row=1, column=2, padx=10, pady=3)
+
+RateFrame = Frame(mainFrame, width=200, height=40)
+RateFrame.grid(row=0, column=1, pady=3)
+
+ServoFrame = Frame(mainFrame, width=200, height=40)
+ServoFrame.grid(row=2, column=0, pady=3)
 
 #SwitchFrame Content
 ms.init(); ms.motor_on(); motoron = True
@@ -334,7 +404,6 @@ onoffButton.config(command=switchMotor)
 onoffButton.grid(row=0, column=1)
 
 
-    
 
 #MirrorT-Content
 MirrorTHeadFrame = Frame(MirrorTFrame, width=200, height=20); MirrorTHeadFrame.grid(row=0, column=0, padx=10, pady=3)
@@ -422,7 +491,7 @@ B7 = Button(CameraHeadFrame, text="Ref", width=2, command=refsearch_camera_x); B
 
 CameraUpperFrame = Frame(CameraFrame, width=200, height=300); CameraUpperFrame.grid(row=1, column=0)
 CameraX_OSTOP = Canvas(CameraUpperFrame, bg=LEDColors[a[1].axis.get(10)], width=20, height=10); CameraX_OSTOP.grid(row=0, column=0)
-CameraX = Scale(CameraUpperFrame, variable=camera_x_pos,from_=300, to=0, resolution=0.1, orient=VERTICAL, length=300); CameraX.grid(row=1, column=0, padx=10, pady=3)
+CameraX = Scale(CameraUpperFrame, variable=camera_x_pos,from_=130, to=0, resolution=0.1, orient=VERTICAL, length=300); CameraX.grid(row=1, column=0, padx=10, pady=3)
 CameraX.bind("<ButtonRelease-1>", moveto_camera_x); CameraX.set(lastpositions[1])
 CameraX_USTOP = Canvas(CameraUpperFrame, bg=LEDColors[a[1].axis.get(11)], width=20, height=10); CameraX_USTOP.grid(row=2, column=0)
 CameraButtonFrame = Frame(CameraUpperFrame, width=100, height=150); CameraButtonFrame.grid(row=1, column=1)
@@ -446,16 +515,48 @@ CameraZPositionLabel.grid(row=0, column=2, padx=10, pady=3)
 CameraZSetButton = Button(CameraLowerFrame, text="Set", width=2, command=set_camera_z); CameraZSetButton.grid(row=0,column=3)
 B8 = Button(CameraLowerFrame, text="Ref", width=2, command=refsearch_camera_z); B8.grid(row=0, column=4)
 
-CameraBottomFrame = Frame(CameraFrame, width=200, height=60)
-CameraBottomFrame.grid(row=3, column=0)
-CameraZ_LSTOP = Canvas(CameraBottomFrame, bg=LEDColors[a[0].axis.get(10)], width=10, height=20)
-CameraZ_LSTOP.grid(row=0, column=0)
-CameraZ = Scale(CameraBottomFrame,variable=camera_z_pos, from_= 150, to=0, resolution=0.1, orient=HORIZONTAL, length=250)
-CameraZ.bind("<ButtonRelease-1>", moveto_camera_z)
-CameraZ.grid(row=0, column=1, padx=10, pady=3)
-CameraZ.set(lastpositions[0])
-CameraZ_RSTOP = Canvas(CameraBottomFrame, bg=LEDColors[a[0].axis.get(11)], width=10, height=20)
-CameraZ_RSTOP.grid(row=0, column=2)
+CameraBottomFrame = Frame(CameraFrame, width=200, height=60); CameraBottomFrame.grid(row=3, column=0)
+CameraZ_LSTOP = Canvas(CameraBottomFrame, bg=LEDColors[a[0].axis.get(10)], width=10, height=20); CameraZ_LSTOP.grid(row=0, column=0)
+CameraZ = Scale(CameraBottomFrame,variable=camera_z_pos, from_= 150, to=0, resolution=0.1, orient=HORIZONTAL, length=250); CameraZ.grid(row=0, column=1, padx=10, pady=3)
+CameraZ.bind("<ButtonRelease-1>", moveto_camera_z); CameraZ.set(lastpositions[0])
+CameraZ_RSTOP = Canvas(CameraBottomFrame, bg=LEDColors[a[0].axis.get(11)], width=10, height=20); CameraZ_RSTOP.grid(row=0, column=2)
+
+
+#Servo Content
+ServoHeadFrame = Frame(ServoFrame, width=200, height=20);
+ServoHeadFrame.grid(row=0, column=0)
+lbl_shutter = Label(ServoHeadFrame, text="Shutter");
+lbl_shutter.grid(row=0, column=0, padx=10, pady=3)
+ServoDisplay = Canvas(ServoHeadFrame, width=20,height=20)
+ServoDisplay.grid(row=0, column=1, padx=3, pady=3)
+
+OpenButton = Button(ServoHeadFrame, text="Open", width=4, command=open_shutter);
+OpenButton.grid(row=0,column=3)
+CloseButton = Button(ServoHeadFrame, text="Close", width=4, command=close_shutter);
+CloseButton.grid(row=0, column=4)
+
+ServoUpperFrame = Frame(ServoFrame, width=200, height=300);
+ServoUpperFrame.grid(row=1, column=0)
+lbl_up = Label(ServoUpperFrame, text="0 \N{DEGREE SIGN}")
+lbl_down = Label(ServoUpperFrame, text="180 \N{DEGREE SIGN}")
+
+Shutter = Scale(ServoUpperFrame,from_=0, to=180, orient=HORIZONTAL, variable=servo_pos);
+Shutter.bind("<ButtonRelease-1>", shutter_scale); Shutter.set(servo_angle)
+lbl_up.grid(row=0, column=0, sticky="e")
+Shutter.grid(row=0, column=1, columnspan=2)
+lbl_down.grid(row=0, column=3, sticky="w")
+
+
+ServoPositionLabel = Label(ServoHeadFrame, fg=LEDColors[1], bg="black", font=("Helvetica 15 bold"), text=str(servo_angle));
+ServoPositionLabel.grid(row=0, column=2, padx=10, pady=3)
+
+#Rate-Content
+desc_Label_rate = Label(RateFrame, text="Photon rate [MHz]"); desc_Label_rate.grid(row=4, column=0, padx=5)
+desc_Label_rate_A = Label(RateFrame, text="Ch A"); desc_Label_rate_A.grid(row=4, column=1, padx=3, pady=3)
+desc_Label_rate_B = Label(RateFrame, text="Ch B"); desc_Label_rate_B.grid(row=4, column=3, padx=3, pady=3)
+CHa_Label_rate = Label(RateFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 15 bold"));   CHa_Label_rate.grid(row=4, column=2, padx=3, pady=3)
+CHb_Label_rate = Label(RateFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 15 bold"));   CHb_Label_rate.grid(row=4, column=4, padx=3, pady=3)
+rateClientButton = Button(RateFrame, text="Connect", bg="#cdcfd1", command=startStopClient, width=8); rateClientButton.grid(row=4,column=5, padx=3, pady=3)
 
 # Displays with LEDs
 MirrorHeightLED = MirrorHeightDisplay.create_oval(1,1,19,19, fill=LEDColors[0], width=0)
@@ -467,51 +568,70 @@ MirrorPsiLED = MirrorPsiDisplay.create_oval(1,1,19,19, fill=LEDColors[0], width=
 CameraXLED = CameraXDisplay.create_oval(1,1,19,19, fill=LEDColors[0], width=0)
 CameraZLED = CameraZDisplay.create_oval(1,1,19,19, fill=LEDColors[0], width=0)
 
-#Permanently update screen
+ServoLED = ServoDisplay.create_oval(1,1,19,19, fill=LEDColors[0], width=0)
+
+
+#-----------------------------------#
+#---- Permanently update screen ----#
+#-----------------------------------#
+def update_items():
+    #print (WarningStatus)
+    #for i in range (0,6):
+    #    print (str(sd.ismoving(a[i])) + "\t" + str(WarningStatus[i]) + "\t" + str(sd.ismoving(a[i])+WarningStatus[i]))
+    #print (" ")
+        
+    MirrorHeightDisplay.itemconfig(MirrorHeightLED, fill=LEDColors[sd.ismoving(a[3])+WarningStatus[3]])
+    MirrorHeightPositionLabel.config(text=str(round(steps_to_hmm(sd.position(a[3])),1)))
+    MirrorHeight_OSTOP.config(bg=LEDColors[a[3].axis.get(10)])
+    MirrorHeight_USTOP.config(bg=LEDColors[a[3].axis.get(11)])   
+        
+    MirrorZDisplay.itemconfig(MirrorZLED, fill=LEDColors[sd.ismoving(a[2])+WarningStatus[2]])
+    MirrorZPositionLabel.config(text=str(round(steps_to_mm(sd.position(a[2])),1)))
+    MirrorZ_LSTOP.config(bg=LEDColors[a[2].axis.get(11)])
+    MirrorZ_RSTOP.config(bg=LEDColors[a[2].axis.get(10)])
+        
+    MirrorPsiPositionLabel.config(text=str(round(steps_to_degree(sd.position(a[4])),2)))
+    MirrorPsiDisplay.itemconfig(MirrorPsiLED, fill=LEDColors[sd.ismoving(a[4])+WarningStatus[4]])
+    MirrorPsi_OSTOP.config(bg=LEDColors[a[4].axis.get(10)])
+    MirrorPsi_USTOP.config(bg=LEDColors[a[4].axis.get(11)])
+
+    MirrorPhiPositionLabel.config(text=str(round(steps_to_degree(sd.position(a[5])),2)))
+    MirrorPhiDisplay.itemconfig(MirrorPhiLED, fill=LEDColors[sd.ismoving(a[5])+WarningStatus[5]])
+    MirrorPhi_LSTOP.config(bg=LEDColors[a[5].axis.get(11)])
+    MirrorPhi_RSTOP.config(bg=LEDColors[a[5].axis.get(10)])
+    
+    CameraXPositionLabel.config(text=str(round(steps_to_mm(sd.position(a[1])),1)))
+    CameraXDisplay.itemconfig(CameraXLED, fill=LEDColors[sd.ismoving(a[1])+WarningStatus[1]])
+    CameraX_OSTOP.config(bg=LEDColors[a[1].axis.get(10)])
+    CameraX_USTOP.config(bg=LEDColors[a[1].axis.get(11)])        
+        
+    CameraZPositionLabel.config(text=str(round(steps_to_mm(sd.position(a[0])),1)))
+    CameraZDisplay.itemconfig(CameraZLED, fill=LEDColors[sd.ismoving(a[0])+WarningStatus[0]])
+    CameraZ_LSTOP.config(bg=LEDColors[a[0].axis.get(10)])
+    CameraZ_RSTOP.config(bg=LEDColors[a[0].axis.get(11)])
+    
+    if client != None:
+        try:
+            CHa_Label_rate.config(text="{:.1f}".format(client.getRateA()), fg="#00ff00")
+            CHb_Label_rate.config(text="{:.1f}".format(client.getRateB()), fg="#00ff00")
+        except RuntimeError:
+            startStopClient()
+            
+    root.update_idletasks()
+    
 stop_thread = False
 def update_motor_status():
     global stop_thread
     stop_thread = False
     while True:
-        #print (WarningStatus)
-        #for i in range (0,6):
-        #    print (str(sd.ismoving(a[i])) + "\t" + str(WarningStatus[i]) + "\t" + str(sd.ismoving(a[i])+WarningStatus[i]))
-        #print (" ")
-        
-        MirrorHeightDisplay.itemconfig(MirrorHeightLED, fill=LEDColors[sd.ismoving(a[3])+WarningStatus[3]])
-        MirrorHeightPositionLabel.config(text=str(round(steps_to_hmm(sd.position(a[3])),1)))
-        MirrorHeight_OSTOP.config(bg=LEDColors[a[3].axis.get(10)])
-        MirrorHeight_USTOP.config(bg=LEDColors[a[3].axis.get(11)])   
-        
-        MirrorZDisplay.itemconfig(MirrorZLED, fill=LEDColors[sd.ismoving(a[2])+WarningStatus[2]])
-        MirrorZPositionLabel.config(text=str(round(steps_to_mm(sd.position(a[2])),1)))
-        MirrorZ_LSTOP.config(bg=LEDColors[a[2].axis.get(11)])
-        MirrorZ_RSTOP.config(bg=LEDColors[a[2].axis.get(10)])
-        
-        MirrorPsiPositionLabel.config(text=str(round(steps_to_degree(sd.position(a[4])),2)))
-        MirrorPsiDisplay.itemconfig(MirrorPsiLED, fill=LEDColors[sd.ismoving(a[4])+WarningStatus[4]])
-        MirrorPsi_OSTOP.config(bg=LEDColors[a[4].axis.get(10)])
-        MirrorPsi_USTOP.config(bg=LEDColors[a[4].axis.get(11)])
-
-        MirrorPhiPositionLabel.config(text=str(round(steps_to_degree(sd.position(a[5])),2)))
-        MirrorPhiDisplay.itemconfig(MirrorPhiLED, fill=LEDColors[sd.ismoving(a[5])+WarningStatus[5]])
-        MirrorPhi_LSTOP.config(bg=LEDColors[a[5].axis.get(11)])
-        MirrorPhi_RSTOP.config(bg=LEDColors[a[5].axis.get(10)])
-    
-        CameraXPositionLabel.config(text=str(round(steps_to_mm(sd.position(a[1])),1)))
-        CameraXDisplay.itemconfig(CameraXLED, fill=LEDColors[sd.ismoving(a[1])+WarningStatus[1]])
-        CameraX_OSTOP.config(bg=LEDColors[a[1].axis.get(10)])
-        CameraX_USTOP.config(bg=LEDColors[a[1].axis.get(11)])        
-        
-        CameraZPositionLabel.config(text=str(round(steps_to_mm(sd.position(a[0])),1)))
-        CameraZDisplay.itemconfig(CameraZLED, fill=LEDColors[sd.ismoving(a[0])+WarningStatus[0]])
-        CameraZ_LSTOP.config(bg=LEDColors[a[0].axis.get(10)])
-        CameraZ_RSTOP.config(bg=LEDColors[a[0].axis.get(11)])
-        
-    
-        root.update_idletasks()
         if stop_thread:
+            update_screen()
             break
+        try:
+            update_items()
+        except:
+            print ("\tInformation: screen thread died, create new one")
+            stop_thread = True
         sleep(0.1)
 
 screenthreads = []
@@ -523,28 +643,23 @@ def update_screen():
     stop_thread= True
     screenthreads.append(Thread(target=update_motor_status, args=()))
     screenthreads[-1].start()
+    
+
 
 
 #ButtonFrame
-buttonFrame = Frame(root, width=30, height = 400, bg="#003366")
-buttonFrame.grid(row=0, column=1, padx=10,pady=3)
-img=PhotoImage(file="/home/pi/stepper_items/ecap_blue.png")
-ecap = Label(buttonFrame, image=img, bg="#003366")
-ecap.grid(row=0,column=0)
-titlelabel= Label(buttonFrame, text="II Motor Control", font="Helvetica 18 bold", fg="white", bg="#003366")
-titlelabel.grid(row=1, column=0)
-B10 = Button(buttonFrame, text="STOP", font="Helvetica 10 bold", fg="white", bg="#FF0000", width=17, height=7, command=stop_all)
-B10.grid(row=8, column=0, padx=10, pady=3)
-B11 = Button(buttonFrame, text ="Update screen", bg="#A9A9A9", width=17, command=update_screen)
-B11.grid(row=9, column=0, padx=10, pady=3)
-B12 = Button(buttonFrame, text="Global reference search", bg="#A9A9A9", width=17, command=refsearch_all)
-B12.grid(row=10, column=0, padx=10, pady=3)
-B13 = Button(buttonFrame, text="Save current positions", bg="#A9A9A9", width=17, command=save_this_position)
-B13.grid(row=11, column=0, padx=10, pady=3)
-B14 = Button(buttonFrame, text="Go to saved position", bg = "#A9A9A9", width=17, command=goto_saved_position)
-B14.grid(row=12, column=0, padx=10, pady=3)
-exit_button = Button(buttonFrame, text="Save Positions and exit", bg="#A9A9A9", width=17, command=exitGUI)
-exit_button.grid(row=13, column=0, padx=10, pady=3)
+buttonFrame = Frame(root, width=30, height = 400, bg="#003366"); buttonFrame.grid(row=0, column=1, padx=10,pady=3)
+img=PhotoImage(file="stepper_items/ecap_blue.png")
+ecap = Label(buttonFrame, image=img, bg="#003366"); ecap.grid(row=0,column=0)
+titlelabel= Label(buttonFrame, text="II Motor Control", font="Helvetica 18 bold", fg="white", bg="#003366"); titlelabel.grid(row=1, column=0)
+B10 = Button(buttonFrame, text="STOP", font="Helvetica 10 bold", fg="white", bg="#FF0000", width=17, height=7, command=stop_all); B10.grid(row=8, column=0, padx=10, pady=3)
+B11 = Button(buttonFrame, text ="Update screen", bg="#A9A9A9", width=17, command=update_screen); B11.grid(row=9, column=0, padx=10, pady=3)
+globFrame = Frame(buttonFrame, bg="#003366"); globFrame.grid(row=10,column=0)
+B12 = Button(globFrame, text="Ref All", bg="#A9A9A9", width=6, command=refsearch_all); B12.grid(row=0, column=0, padx=1, pady=3)
+B15 = Button(globFrame, text="Set All", bg="#A9A9A9", width=6, command=set_all); B15.grid(row=0, column=1, padx=1, pady=3)
+B13 = Button(buttonFrame, text="Save current positions", bg="#A9A9A9", width=17, command=save_this_position); B13.grid(row=11, column=0, padx=10, pady=3)
+B14 = Button(buttonFrame, text="Go to saved position", bg = "#A9A9A9", width=17, command=goto_saved_position); B14.grid(row=12, column=0, padx=10, pady=3)
+exit_button = Button(buttonFrame, text="Save Positions and exit", bg="#A9A9A9", width=17, command=exitGUI); exit_button.grid(row=13, column=0, padx=10, pady=3)
 
 
 
@@ -603,6 +718,24 @@ CameraBottomFrame.config(background = CameraColor)
 CameraZ.config(background = CameraColor)
 CameraZSpeed.config(background = CameraColor)
 CameraZCurrent.config(background = CameraColor)
+
+RateColor = "#b3daff"
+RateFrame.config(background = RateColor)
+desc_Label_rate.config(background = RateColor)
+desc_Label_rate_A.config(background = RateColor)
+desc_Label_rate_B.config(background = RateColor)
+
+ServoColor = "cornsilk"
+ServoFrame.config(bg=ServoColor)
+ServoHeadFrame.config(bg=ServoColor)
+lbl_shutter.config(bg=ServoColor)
+ServoDisplay.config(bg=ServoColor)
+ServoUpperFrame.config(bg=ServoColor)
+lbl_up.config(bg=ServoColor)
+lbl_down.config(bg=ServoColor)
+Shutter.config(bg=ServoColor)
+
+
 
 root.mainloop()
 os._exit(0)
