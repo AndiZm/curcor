@@ -253,8 +253,6 @@ def center_mirror_angle():
     center_mirror_phi()
     center_mirror_psi()    
 
-<<<<<<< HEAD:GUIs/Motor GUI/stepper_gui.py
-=======
 servo_angle=0
 def open_shutter():
     servo.shutter(180)
@@ -266,8 +264,6 @@ def shutter_scale(val):
 def shutter_pos(val):
     return servo_pos.get()
             
-
->>>>>>> 6587f62ad0a6404170abe1427e25d91aa8e0f4b2:GUIs/Motor/stepper_gui.py
 #def moveto_servo(val):
 #    print("Move servo to",
 #    WarningStatus
