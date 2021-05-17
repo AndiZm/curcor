@@ -643,7 +643,7 @@ def update_screen():
 
 #ButtonFrame
 buttonFrame = Frame(root, width=30, height = 400, bg="#003366"); buttonFrame.grid(row=0, column=1, padx=10,pady=3)
-img=PhotoImage(file="/home/pi/stepper_items/ecap_blue.png")
+img=PhotoImage(file="stepper_items/ecap_blue.png")
 ecap = Label(buttonFrame, image=img, bg="#003366"); ecap.grid(row=0,column=0)
 titlelabel= Label(buttonFrame, text="II Motor Control", font="Helvetica 18 bold", fg="white", bg="#003366"); titlelabel.grid(row=1, column=0)
 B10 = Button(buttonFrame, text="STOP", font="Helvetica 10 bold", fg="white", bg="#FF0000", width=17, height=7, command=stop_all); B10.grid(row=8, column=0, padx=10, pady=3)
