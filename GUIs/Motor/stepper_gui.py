@@ -37,10 +37,10 @@ for line in readpos:
 
 #Umrechnung zwischen motor parametern und python
 def degree_to_mm(degree):
-    return (8./9.)*degree ##8mm/9°
+    return (8./9.)*degree ##8mm/9degrees
   
 def mm_to_degree(mm):
-    return (9./8.)*mm #9°/8mm
+    return (9./8.)*mm #9degrees/8mm
 
 def steps_to_degree(steps):
     return mm_to_degree(steps/(800.*microsteps_standa))-4.5  #1mm /800step*microsteps_standa
@@ -54,7 +54,7 @@ def steps_to_mm(steps):
 def mm_to_steps(mm):
     return int(mm*200*microsteps_nano) #200steps*microsteps_nano / 1mm
 
-#Für Höhenmotor
+#Fuer Hoehenmotor
 def steps_to_hmm(steps):
     return steps/(200.*microsteps_nano) #CHANGE
 
