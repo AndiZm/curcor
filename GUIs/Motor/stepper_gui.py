@@ -253,16 +253,13 @@ def center_mirror_angle():
     center_mirror_phi()
     center_mirror_psi()    
 
-servo_angle=0
 def open_shutter():
     servo.shutter(180)
 def close_shutter():
     servo.shutter(0)
 def shutter_scale(val):
     servo.shutter(servo_pos.get())
-    servo_angle=servo_pos.get()
-def shutter_pos(val):
-    return servo_pos.get()
+
             
 #def moveto_servo(val):
 #    print("Move servo to",
@@ -355,7 +352,30 @@ def set_max_current_mirror_phi(val):
     a[5].set_axis_parameter(6,I_current[5].get())
     print ("Set Mirror Phi current limit to {}".format(a[5].get_axis_parameter(6)))
 
-
+# Acceleration Regulation
+a_start = []; a_current = []
+for i in range (0,6):
+    a_start.append(a[i].get_axis_parameter(5))
+    a_current.append(DoubleVar())
+def set_max_acc_camera_z(val):
+    a[0].set_axis_parameter(5,a_current[0].get())
+    print ("Set Camera Z acceleration limit to {}".format(a[0].get_axis_parameter(5)))
+def set_max_acc_camera_x(val):
+    a[1].set_axis_parameter(5,a_current[1].get())
+    print ("Set Camera X acceleration limit to {}".format(a[1].get_axis_parameter(5)))
+def set_max_acc_mirror_z(val):
+    a[2].set_axis_parameter(5,a_current[2].get())
+    print ("Set Mirror Z acceleration limit to {}".format(a[2].get_axis_parameter(5)))
+def set_max_acc_mirror_height(val):
+    a[3].set_axis_parameter(5,a_current[3].get())
+    print ("Set Mirror Height acceleration limit to {}".format(a[3].get_axis_parameter(5)))
+def set_max_acc_mirror_psi(val):
+    a[4].set_axis_parameter(5,a_current[4].get())
+    print ("Set Mirror Psi acceleration limit to {}".format(a[4].get_axis_parameter(5)))
+def set_max_acc_mirror_phi(val):
+    a[5].set_axis_parameter(5,a_current[5].get())
+    print ("Set Mirror Phi acceleration limit to {}".format(a[5].get_axis_parameter(5)))
+    
 #----------------#
 #---- Frames ----#
 #----------------#
@@ -410,19 +430,23 @@ MirrorHeightSetButton = Button(MirrorTHeadFrame, text="Set", width=2, command=se
 B1 = Button(MirrorTHeadFrame, text="Ref", width=2, command=refsearch_mirror_height); B1.grid(row=0, column=4) 
 
 MirrorTUpperFrame = Frame(MirrorTFrame, width=200, height=300); MirrorTUpperFrame.grid(row=1, column=0)
-MirrorHeight_OSTOP = Canvas(MirrorTUpperFrame, bg=LEDColors[a[3].axis.get(10)], width=20, height=10); MirrorHeight_OSTOP.grid(row=0, column=0)
-MirrorHeight = Scale(MirrorTUpperFrame, variable=mirror_height_pos,from_=40, to=0, resolution=0.1, orient=VERTICAL, length=300); MirrorHeight.grid(row=1, column=0, padx=10, pady=3)
+MirrorHeight_OSTOP = Canvas(MirrorTUpperFrame, bg=LEDColors[a[3].axis.get(11)], width=20, height=10); MirrorHeight_OSTOP.grid(row=0, column=0)
+MirrorHeight = Scale(MirrorTUpperFrame, variable=mirror_height_pos,from_=40, to=0, resolution=0.1, orient=VERTICAL, length=400); MirrorHeight.grid(row=1, column=0, padx=10, pady=3)
 MirrorHeight.bind("<ButtonRelease-1>", moveto_mirror_height); MirrorHeight.set(lastpositions[3])
 MirrorHeight_USTOP = Canvas(MirrorTUpperFrame, bg=LEDColors[a[3].axis.get(10)], width=20, height=10); MirrorHeight_USTOP.grid(row=2, column=0)
 MirrorTButtonFrame = Frame(MirrorTUpperFrame, width=100, height=150); MirrorTButtonFrame.grid(row=1, column=1)
 MirrorHeightSpeed = Scale(MirrorTButtonFrame,from_=1, to=300, resolution=1, variable=v_current[3], orient=HORIZONTAL, length=140, label="Speed"); MirrorHeightSpeed.grid(row=0, column=0, padx=10, pady=3)
 MirrorHeightSpeed.bind("<ButtonRelease-1>", set_max_speed_mirror_height); MirrorHeightSpeed.set(v_start[3])
-MirrorHeightCurrent = Scale(MirrorTButtonFrame,from_=50, to=300, resolution=1, variable=I_current[3], orient=HORIZONTAL, length=140, label="Max I"); MirrorHeightCurrent.grid(row=1, column=0, padx=10, pady=3)
+MirrorHeightAcc = Scale(MirrorTButtonFrame,from_=1, to=300, resolution=1, variable=a_current[3], orient=HORIZONTAL, length=140, label="Acceleration"); MirrorHeightAcc.grid(row=1, column=0, padx=10, pady=3)
+MirrorHeightAcc.bind("<ButtonRelease-1>", set_max_acc_mirror_height); MirrorHeightAcc.set(a_start[3])
+MirrorHeightCurrent = Scale(MirrorTButtonFrame,from_=50, to=300, resolution=1, variable=I_current[3], orient=HORIZONTAL, length=140, label="Max I"); MirrorHeightCurrent.grid(row=2, column=0, padx=10, pady=3)
 MirrorHeightCurrent.bind("<ButtonRelease-1>", set_max_current_mirror_height); MirrorHeightCurrent.set(I_start[3])
-B3 = Button(MirrorTButtonFrame, text="Center Mirror Pos", bg="#C0C0C0", width=16, command=center_mirror_pos); B3.grid(row=2, column=0)
-MirrorZSpeed = Scale(MirrorTButtonFrame,from_=1, to=300, resolution=1, variable=v_current[2], orient=HORIZONTAL, length=140, label="Speed"); MirrorZSpeed.grid(row=3, column=0, padx=10, pady=3)
+B3 = Button(MirrorTButtonFrame, text="Center Mirror Pos", bg="#C0C0C0", width=16, command=center_mirror_pos); B3.grid(row=3, column=0)
+MirrorZSpeed = Scale(MirrorTButtonFrame,from_=1, to=300, resolution=1, variable=v_current[2], orient=HORIZONTAL, length=140, label="Speed"); MirrorZSpeed.grid(row=4, column=0, padx=10, pady=3)
 MirrorZSpeed.bind("<ButtonRelease-1>", set_max_speed_mirror_z); MirrorZSpeed.set(v_start[2])
-MirrorZCurrent = Scale(MirrorTButtonFrame,from_=50, to=300, resolution=1, variable=I_current[2], orient=HORIZONTAL, length=140, label="Max I"); MirrorZCurrent.grid(row=4, column=0, padx=10, pady=3)
+MirrorZAcc = Scale(MirrorTButtonFrame,from_=1, to=300, resolution=1, variable=a_current[2], orient=HORIZONTAL, length=140, label="Acceleration"); MirrorZAcc.grid(row=5, column=0, padx=10, pady=3)
+MirrorZAcc.bind("<ButtonRelease-1>", set_max_acc_mirror_z); MirrorZAcc.set(a_start[2])
+MirrorZCurrent = Scale(MirrorTButtonFrame,from_=50, to=300, resolution=1, variable=I_current[2], orient=HORIZONTAL, length=140, label="Max I"); MirrorZCurrent.grid(row=6, column=0, padx=10, pady=3)
 MirrorZCurrent.bind("<ButtonRelease-1>", set_max_current_mirror_z); MirrorZCurrent.set(I_start[2])
 
 MirrorTLowerFrame = Frame(MirrorTFrame, width=200, height=20); MirrorTLowerFrame.grid(row=2, column=0)
@@ -433,10 +457,10 @@ MirrorZSetButton = Button(MirrorTLowerFrame, text="Set", width=2, command=set_mi
 B2 = Button(MirrorTLowerFrame, text="Ref", width=2, command=refsearch_mirror_z); B2.grid(row=0, column=4)
 
 MirrorTBottomFrame = Frame(MirrorTFrame, width=200, height=60); MirrorTBottomFrame.grid(row=3, column=0)
-MirrorZ_LSTOP = Canvas(MirrorTBottomFrame, bg=LEDColors[a[2].axis.get(10)], width=10, height=20); MirrorZ_LSTOP.grid(row=0, column=0)
-MirrorZ = Scale(MirrorTBottomFrame, variable=mirror_z_pos, from_=0, to=120, resolution=0.1, orient=HORIZONTAL, length=250); MirrorZ.grid(row=0, column=1, padx=10, pady=3)
+MirrorZ_LSTOP = Canvas(MirrorTBottomFrame, bg=LEDColors[a[2].axis.get(10)], width=10, height=20); MirrorZ_LSTOP.grid(row=0, column=2)
+MirrorZ = Scale(MirrorTBottomFrame, variable=mirror_z_pos, from_=0, to=-200, resolution=0.1, orient=HORIZONTAL, length=250); MirrorZ.grid(row=0, column=1, padx=10, pady=3)
 MirrorZ.bind("<ButtonRelease-1>", moveto_mirror_z); MirrorZ.set(lastpositions[2])
-MirrorZ_RSTOP = Canvas(MirrorTBottomFrame, bg=LEDColors[a[2].axis.get(11)], width=10, height=20); MirrorZ_RSTOP.grid(row=0, column=2)
+MirrorZ_RSTOP = Canvas(MirrorTBottomFrame, bg=LEDColors[a[2].axis.get(11)], width=10, height=20); MirrorZ_RSTOP.grid(row=0, column=0)
 
 
 #MirrorR-Content
@@ -487,18 +511,22 @@ B7 = Button(CameraHeadFrame, text="Ref", width=2, command=refsearch_camera_x); B
 
 CameraUpperFrame = Frame(CameraFrame, width=200, height=300); CameraUpperFrame.grid(row=1, column=0)
 CameraX_OSTOP = Canvas(CameraUpperFrame, bg=LEDColors[a[1].axis.get(10)], width=20, height=10); CameraX_OSTOP.grid(row=0, column=0)
-CameraX = Scale(CameraUpperFrame, variable=camera_x_pos,from_=130, to=0, resolution=0.1, orient=VERTICAL, length=300); CameraX.grid(row=1, column=0, padx=10, pady=3)
+CameraX = Scale(CameraUpperFrame, variable=camera_x_pos,from_=300, to=0, resolution=0.1, orient=VERTICAL, length=400); CameraX.grid(row=1, column=0, padx=10, pady=3)
 CameraX.bind("<ButtonRelease-1>", moveto_camera_x); CameraX.set(lastpositions[1])
 CameraX_USTOP = Canvas(CameraUpperFrame, bg=LEDColors[a[1].axis.get(11)], width=20, height=10); CameraX_USTOP.grid(row=2, column=0)
 CameraButtonFrame = Frame(CameraUpperFrame, width=100, height=150); CameraButtonFrame.grid(row=1, column=1)
-CameraXSpeed = Scale(CameraButtonFrame,from_=1, to=300, resolution=1, variable=v_current[1], orient=HORIZONTAL, length=140, label="Speed"); CameraXSpeed.grid(row=0, column=0, padx=10, pady=3)
+CameraXSpeed = Scale(CameraButtonFrame,from_=1, to=2047, resolution=1, variable=v_current[1], orient=HORIZONTAL, length=140, label="Speed"); CameraXSpeed.grid(row=0, column=0, padx=10, pady=3)
 CameraXSpeed.bind("<ButtonRelease-1>", set_max_speed_camera_x); CameraXSpeed.set(v_start[1])
-CameraXCurrent = Scale(CameraButtonFrame,from_=10, to=200, resolution=1, variable=I_current[1], orient=HORIZONTAL, length=140, label="Max I"); CameraXCurrent.grid(row=1, column=0, padx=10, pady=3)
+CameraXAcc = Scale(CameraButtonFrame,from_=1, to=2047, resolution=1, variable=a_current[1], orient=HORIZONTAL, length=140, label="Acceleration"); CameraXAcc.grid(row=1, column=0, padx=10, pady=3)
+CameraXAcc.bind("<ButtonRelease-1>", set_max_acc_camera_x); CameraXAcc.set(a_start[1])
+CameraXCurrent = Scale(CameraButtonFrame,from_=10, to=255, resolution=1, variable=I_current[1], orient=HORIZONTAL, length=140, label="Max I"); CameraXCurrent.grid(row=2, column=0, padx=10, pady=3)
 CameraXCurrent.bind("<ButtonRelease-1>", set_max_current_camera_x); CameraXCurrent.set(I_start[1])
-B9 = Button(CameraButtonFrame, text="Center Camera", bg="#C0C0C0", width=16, command=center_camera); B9.grid(row=2, column=0, padx=10, pady=3)
-CameraZSpeed = Scale(CameraButtonFrame,from_=1, to=300, resolution=1, variable=v_current[0], orient=HORIZONTAL, length=140, label="Speed"); CameraZSpeed.grid(row=3, column=0, padx=10, pady=3)
+B9 = Button(CameraButtonFrame, text="Center Camera", bg="#C0C0C0", width=16, command=center_camera); B9.grid(row=3, column=0, padx=10, pady=3)
+CameraZSpeed = Scale(CameraButtonFrame,from_=1, to=2047, resolution=1, variable=v_current[0], orient=HORIZONTAL, length=140, label="Speed"); CameraZSpeed.grid(row=4, column=0, padx=10, pady=3)
 CameraZSpeed.bind("<ButtonRelease-1>", set_max_speed_camera_z); CameraZSpeed.set(v_start[0])
-CameraZCurrent = Scale(CameraButtonFrame,from_=10, to=300, resolution=1, variable=I_current[0], orient=HORIZONTAL, length=140, label="Max I"); CameraZCurrent.grid(row=4, column=0, padx=10, pady=3)
+CameraZAcc = Scale(CameraButtonFrame,from_=1, to=2047, resolution=1, variable=a_current[0], orient=HORIZONTAL, length=140, label="Acceleration"); CameraZAcc.grid(row=5, column=0, padx=10, pady=3)
+CameraZAcc.bind("<ButtonRelease-1>", set_max_acc_camera_z); CameraZAcc.set(a_start[0])
+CameraZCurrent = Scale(CameraButtonFrame,from_=10, to=255, resolution=1, variable=I_current[0], orient=HORIZONTAL, length=140, label="Max I"); CameraZCurrent.grid(row=6, column=0, padx=10, pady=3)
 CameraZCurrent.bind("<ButtonRelease-1>", set_max_current_camera_z); CameraZCurrent.set(I_start[0])
 
 
@@ -512,19 +540,19 @@ CameraZSetButton = Button(CameraLowerFrame, text="Set", width=2, command=set_cam
 B8 = Button(CameraLowerFrame, text="Ref", width=2, command=refsearch_camera_z); B8.grid(row=0, column=4)
 
 CameraBottomFrame = Frame(CameraFrame, width=200, height=60); CameraBottomFrame.grid(row=3, column=0)
-CameraZ_LSTOP = Canvas(CameraBottomFrame, bg=LEDColors[a[0].axis.get(10)], width=10, height=20); CameraZ_LSTOP.grid(row=0, column=0)
-CameraZ = Scale(CameraBottomFrame,variable=camera_z_pos, from_= 150, to=0, resolution=0.1, orient=HORIZONTAL, length=250); CameraZ.grid(row=0, column=1, padx=10, pady=3)
+CameraZ_LSTOP = Canvas(CameraBottomFrame, bg=LEDColors[a[0].axis.get(10)], width=10, height=20); CameraZ_LSTOP.grid(row=0, column=2)
+CameraZ = Scale(CameraBottomFrame,variable=camera_z_pos, from_= -300, to=0, resolution=0.1, orient=HORIZONTAL, length=250); CameraZ.grid(row=0, column=1, padx=10, pady=3)
 CameraZ.bind("<ButtonRelease-1>", moveto_camera_z); CameraZ.set(lastpositions[0])
-CameraZ_RSTOP = Canvas(CameraBottomFrame, bg=LEDColors[a[0].axis.get(11)], width=10, height=20); CameraZ_RSTOP.grid(row=0, column=2)
+CameraZ_RSTOP = Canvas(CameraBottomFrame, bg=LEDColors[a[0].axis.get(11)], width=10, height=20); CameraZ_RSTOP.grid(row=0, column=0)
 
 
 #Servo Content
 ServoHeadFrame = Frame(ServoFrame, width=200, height=20);
 ServoHeadFrame.grid(row=0, column=0)
 lbl_shutter = Label(ServoHeadFrame, text="Shutter");
-lbl_shutter.grid(row=0, column=0, padx=10, pady=3)
-ServoDisplay = Canvas(ServoHeadFrame, width=20,height=20)
-ServoDisplay.grid(row=0, column=1, padx=3, pady=3)
+lbl_shutter.grid(row=0, column=0, padx=10, pady=3, columnspan=2)
+#ServoDisplay = Canvas(ServoHeadFrame, width=20,height=20)
+#ServoDisplay.grid(row=0, column=1, padx=3, pady=3)
 
 OpenButton = Button(ServoHeadFrame, text="Open", width=4, command=open_shutter);
 OpenButton.grid(row=0,column=3)
@@ -537,14 +565,14 @@ lbl_up = Label(ServoUpperFrame, text="0 \N{DEGREE SIGN}")
 lbl_down = Label(ServoUpperFrame, text="180 \N{DEGREE SIGN}")
 
 Shutter = Scale(ServoUpperFrame,from_=0, to=180, orient=HORIZONTAL, variable=servo_pos);
-Shutter.bind("<ButtonRelease-1>", shutter_scale); Shutter.set(servo_angle)
+Shutter.bind("<ButtonRelease-1>", shutter_scale); 
 lbl_up.grid(row=0, column=0, sticky="e")
 Shutter.grid(row=0, column=1, columnspan=2)
 lbl_down.grid(row=0, column=3, sticky="w")
 
 
-ServoPositionLabel = Label(ServoHeadFrame, fg=LEDColors[1], bg="black", font=("Helvetica 15 bold"), text=str(servo_angle));
-ServoPositionLabel.grid(row=0, column=2, padx=10, pady=3)
+#ServoPositionLabel = Label(ServoHeadFrame, fg=LEDColors[1], bg="black", font=("Helvetica 15 bold"), text=str(servo_angle));
+#ServoPositionLabel.grid(row=0, column=2, padx=10, pady=3)
 
 #Rate-Content
 desc_Label_rate = Label(RateFrame, text="Photon rate [MHz]"); desc_Label_rate.grid(row=4, column=0, padx=5)
@@ -564,7 +592,7 @@ MirrorPsiLED = MirrorPsiDisplay.create_oval(1,1,19,19, fill=LEDColors[0], width=
 CameraXLED = CameraXDisplay.create_oval(1,1,19,19, fill=LEDColors[0], width=0)
 CameraZLED = CameraZDisplay.create_oval(1,1,19,19, fill=LEDColors[0], width=0)
 
-ServoLED = ServoDisplay.create_oval(1,1,19,19, fill=LEDColors[0], width=0)
+#ServoLED = ServoDisplay.create_oval(1,1,19,19, fill=LEDColors[0], width=0)
 
 
 #-----------------------------------#
@@ -669,6 +697,7 @@ MirrorHeightDisplay.config(background = MirrorTColor)
 MirrorTUpperFrame.config(background = MirrorTColor)
 MirrorHeight.config(background = MirrorTColor)
 MirrorHeightSpeed.config(background = MirrorTColor)
+MirrorHeightAcc.config(background = MirrorTColor)
 MirrorHeightCurrent.config(background = MirrorTColor)
 MirrorTButtonFrame.config(background = MirrorTColor)
 MirrorTLowerFrame.config(background = MirrorTColor)
@@ -677,6 +706,7 @@ MirrorZDisplay.config(background = MirrorTColor)
 MirrorTBottomFrame.config(background = MirrorTColor)
 MirrorZ.config(background = MirrorTColor)
 MirrorZSpeed.config(background = MirrorTColor)
+MirrorZAcc.config(background = MirrorTColor)
 MirrorZCurrent.config(background = MirrorTColor)
 
 MirrorRColor = "#66b5ff"
@@ -705,6 +735,7 @@ CameraXDisplay.config(background = CameraColor)
 CameraUpperFrame.config(background = CameraColor)
 CameraX.config(background = CameraColor)
 CameraXSpeed.config(background = CameraColor)
+CameraXAcc.config(background = CameraColor)
 CameraXCurrent.config(background = CameraColor)
 CameraButtonFrame.config(background = CameraColor)
 CameraLowerFrame.config(background = CameraColor)
@@ -713,6 +744,7 @@ CameraZDisplay.config(background = CameraColor)
 CameraBottomFrame.config(background = CameraColor)
 CameraZ.config(background = CameraColor)
 CameraZSpeed.config(background = CameraColor)
+CameraZAcc.config(background = CameraColor)
 CameraZCurrent.config(background = CameraColor)
 
 RateColor = "#b3daff"
@@ -725,7 +757,7 @@ ServoColor = "cornsilk"
 ServoFrame.config(bg=ServoColor)
 ServoHeadFrame.config(bg=ServoColor)
 lbl_shutter.config(bg=ServoColor)
-ServoDisplay.config(bg=ServoColor)
+#ServoDisplay.config(bg=ServoColor)
 ServoUpperFrame.config(bg=ServoColor)
 lbl_up.config(bg=ServoColor)
 lbl_down.config(bg=ServoColor)
