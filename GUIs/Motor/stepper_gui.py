@@ -6,6 +6,7 @@ from time import sleep
 import stepper_drive as sd
 import motor_switch as ms
 import rate_client as rcl
+import mirror_optimizer as mopt
 import servo_test as servo
 
 import _thread
@@ -185,7 +186,8 @@ def refsearch_all():
     
 #metods used for the rate client
     
-
+def optimize():
+	mopt.optimizeBluntlyNoHeight()
     
 def startStopClient():
     global client
@@ -259,11 +261,6 @@ def close_shutter():
     servo.shutter(0)
 def shutter_scale(val):
     servo.shutter(servo_pos.get())
-
-            
-#def moveto_servo(val):
-#    print("Move servo to",
-#    WarningStatus
 
 #not used
 def verify_command(command):
@@ -400,6 +397,9 @@ RateFrame.grid(row=0, column=1, pady=3)
 
 ServoFrame = Frame(mainFrame, width=200, height=40)
 ServoFrame.grid(row=2, column=0, pady=3)
+
+OptFrame = Frame(mainFrame, width=200, height=40)
+OptFrame.grid(row=2, column=1, pady=3)
 
 #SwitchFrame Content
 ms.init(); ms.motor_on(); motoron = True
@@ -581,6 +581,10 @@ desc_Label_rate_B = Label(RateFrame, text="Ch B"); desc_Label_rate_B.grid(row=4,
 CHa_Label_rate = Label(RateFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 15 bold"));   CHa_Label_rate.grid(row=4, column=2, padx=3, pady=3)
 CHb_Label_rate = Label(RateFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 15 bold"));   CHb_Label_rate.grid(row=4, column=4, padx=3, pady=3)
 rateClientButton = Button(RateFrame, text="Connect", bg="#cdcfd1", command=startStopClient, width=8); rateClientButton.grid(row=4,column=5, padx=3, pady=3)
+
+#optimziation content
+optimizationButton = Button(OptFrame, text="optimize Mirrors", bg="#cdcfd1", command=optimize, width=16); optimizationButton.grid(row=4,column=5, padx=3, pady=3)
+
 
 # Displays with LEDs
 MirrorHeightLED = MirrorHeightDisplay.create_oval(1,1,19,19, fill=LEDColors[0], width=0)

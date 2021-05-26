@@ -10,7 +10,7 @@ def init():
     for i in range (6):
         a.append(module.get_motor(i))  # 6 motoren eingefuegt
 
-    a[3].set_pullups(1) #disable pullups for Mirror motors
+    a[3].set_pullups(3) #disable pullups for Mirror 
     
     for i in range (4):
         a[i].set_axis_parameter(140,5) #32 Microsteps
@@ -31,10 +31,10 @@ def init():
     a[5].set_axis_parameter(6,100)
     
     # Reference search direction settings
-    a[0].set_axis_parameter(193,1) #Right Ref Search
+    a[0].set_axis_parameter(193,65) #Right Ref Search
     a[1].set_axis_parameter(193,1) #Left Ref Search
-    a[1].set_axis_parameter(160,0) #Interpolate steps
-    a[2].set_axis_parameter(193,1)
+    a[1].set_axis_parameter(160,65) #Interpolate steps
+    a[2].set_axis_parameter(193,65)
     a[3].set_axis_parameter(193,1)
     
     #max speed
