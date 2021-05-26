@@ -569,8 +569,6 @@ Shutter.bind("<ButtonRelease-1>", shutter_scale);
 lbl_up.grid(row=0, column=0, sticky="e")
 Shutter.grid(row=0, column=1, columnspan=2)
 lbl_down.grid(row=0, column=3, sticky="w")
-
-
 #ServoPositionLabel = Label(ServoHeadFrame, fg=LEDColors[1], bg="black", font=("Helvetica 15 bold"), text=str(servo_angle));
 #ServoPositionLabel.grid(row=0, column=2, padx=10, pady=3)
 

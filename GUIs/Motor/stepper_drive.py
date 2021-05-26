@@ -9,7 +9,8 @@ def init():
     a=[]
     for i in range (6):
         a.append(module.get_motor(i))  # 6 motoren eingefuegt
-
+        a[i].set_axis_parameter(5,20)  # acceleration einstellen
+        
     a[3].set_pullups(3) #disable pullups for Mirror 
     
     for i in range (4):
