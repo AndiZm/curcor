@@ -22,7 +22,8 @@ def displayCalib():
 		axphdSig.set_ylim(0,1.5*max(gl.pa_sig[0],gl.pb_sig[0])); axphdSig.set_xlim(-128,10); axphdSig.legend(); axphdSig.set_title("Signal Pulse heights")
 		
 		axpsSig.plot(gl.ps_x_sig,gl.ps_a_sig, color="blue", label="Channel A: Sum = {:.2f}".format(gl.nsum_a_sig)); axpsSig.plot(gl.ps_x_sig,gl.ps_b_sig, color="red", label="Channel B: Sum = {:.2f}".format(gl.nsum_b_sig))
-		axpsSig.set_title("Signal Peak shapes"); axpsSig.legend()
+		axpsSig.plot(gl.peakshape_x, gl.peakshape_y, color="black", label="Correlation Peak Shape")
+		axpsSig.set_title("Signal Peak shapes"); axpsSig.legend(); axpsSig.set_xlim(-50,100)
 
 	if gl.boolRef == True:
 		axphdRef.plot(gl.histo_x_ref, gl.histo_a_ref, color="blue", label="Channel A: Avg height = {:.2f}".format(gl.ph_a_ref), alpha=0.5)
@@ -32,7 +33,7 @@ def displayCalib():
 		axphdRef.set_ylim(0,1.5*max(gl.pa_ref[0],gl.pb_ref[0])); axphdRef.set_xlim(-128,10); axphdRef.legend(); axphdRef.set_title("Reference Pulse heights")
 		
 		axpsRef.plot(gl.ps_x_ref,gl.ps_a_ref, color="blue", label="Channel A: Sum = {:.2f}".format(gl.nsum_a_ref)); axpsRef.plot(gl.ps_x_ref,gl.ps_b_ref, color="red", label="Channel B: Sum = {:.2f}".format(gl.nsum_b_ref))
-		axpsRef.set_title("Reference Peak shapes"); axpsRef.legend()
+		axpsRef.set_title("Reference Peak shapes"); axpsRef.legend(); axpsRef.set_xlim(-50,100)
 	plt.show()
 
 def displayCorrelation():

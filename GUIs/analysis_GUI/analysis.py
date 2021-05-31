@@ -5,6 +5,9 @@ from operator import add
 from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 from scipy.signal import butter, filtfilt
+from scipy.interpolate import interp1d
+import basics as bas
+
 # g2 calculations
 zeroadder = []
 zeroadder.append("0000"); zeroadder.append("0000"); zeroadder.append("000"); zeroadder.append("00"); zeroadder.append("0"); zeroadder.append("")
@@ -269,7 +272,7 @@ def cumulate_signal(binning):
 	gl.N_e_sig = 0.; gl.N_e_ref = 0.
 
 	gl.intValLabel.config(text="-.--- +/- -.--- ps")
-	gl.timeResValLabel.config(text="-.-- +/- -.--ns")
+	#gl.timeResValLabel.config(text="-.-- +/- -.--ns")
 
 	if gl.boolSig == True:
 		print ("Analyze Signal ...")
@@ -280,7 +283,8 @@ def cumulate_signal(binning):
 			single_RMS_sig(i, binning); single_RMS_sig_exp(i, binning)
 			cumulative_G2_offsetcorr_sig(i, binning)
 			cumulative_RMS_sig(binning); cumulative_RMS_sig_exp(i, binning)
-		gl.g2_sig = get_cumulative_g2_sig(lowpass=gl.boolLP, binning=binning)	
+		gl.g2_sig = get_cumulative_g2_sig(lowpass=gl.boolLP, binning=binning)
+		bas.correlate_shapes()
 
 	if gl.boolRef == True:
 		print ("Analyze Reference ...")
@@ -322,6 +326,7 @@ def experimental_correction_factors():
 #----------------#
 # Signal fitting #
 #----------------#
+# Gauss fit
 def gauss(x,a,m,s,d):
 	return a * np.exp(-(x-m)**2/2/s/s) + d
 def get_integral(fitpar, e_fitpar, binning):
@@ -331,8 +336,17 @@ def get_integral(fitpar, e_fitpar, binning):
 	I = 1e3 * amp * sig * np.sqrt(2*np.pi)
 	dI = 1e3 * np.sqrt(2*np.pi) * np.sqrt((amp*d_sig)**2 + (sig*d_amp)**2)
 	return I, dI
+# Peak shape fit
+sum_peak = []; the_peak_fu = []
+def make_peak_fu():
+	global sum_peak, the_peak_fu
+	the_peak_fu = interp1d(gl.peakshape_x, gl.peakshape_y)
+	sum_peak = np.sum(gl.peakshape_y)
+def peak_fu(x,I,b,d):
+	global the_peak_fu
+	return I/sum_peak * the_peak_fu(x-b) + d
 
-def fit_signal(binning):
+def fit_signal_gauss(binning):
 	xlim = gl.corrAx.get_xlim(); ylim = gl.corrAx.get_ylim()
 	disp.refresh_display(binning)
 	if gl.boolSig == True:
@@ -353,11 +367,11 @@ def fit_signal(binning):
 		gl.corrAx.set_xlim(xlim); gl.corrAx.set_ylim(ylim)
 		I, dI = get_integral(popt, perr, binning)
 		gl.intValLabel.config(text="{:.3f} +/- {:.3f} ps".format(I,dI))
-		gl.timeResValLabel.config(text="{:.2f} +/- {:.2f} ns".format(1e9*binning*popt[2], binning*perr[2]))
+		#gl.timeResValLabel.config(text="{:.2f} +/- {:.2f} ns".format(1e9*binning*popt[2], binning*perr[2]))
  
 	else:
 		print ("No Signal measurement available")
-def fit_difference(binning):
+def fit_difference_gauss(binning):
 	xlim = gl.corrAx.get_xlim(); ylim = gl.corrAx.get_ylim()
 	disp.refresh_display(binning)
 	if gl.boolSig == True and gl.boolRef == True:
@@ -368,7 +382,7 @@ def fit_difference(binning):
 		y_fit = gl.g2_diff[lborder:rborder+1]
 		med_start = np.argmax(y_fit)+lborder
 		amp_start = np.argmax(y_fit)-1.
-		popt, pcov = curve_fit(gauss, x_fit, y_fit, p0=[amp_start,med_start,sig_start,1.]); perr = np.sqrt(np.diag(pcov))
+		popt, pcov = curve_fit(gauss, x_fit, y_fit, p0=[amp_start,med_start,sig_start,1.]);	perr = np.sqrt(np.diag(pcov))
 		gl.x_plot = np.arange(lborder,rborder+1,0.01)
 		try:
 			gl.corrAx.gl.fit_plot.remove()
@@ -378,7 +392,60 @@ def fit_difference(binning):
 		gl.corrAx.set_xlim(xlim); gl.corrAx.set_ylim(ylim)
 		I, dI = get_integral(popt, perr, binning)
 		gl.intValLabel.config(text="{:.3f} +/- {:.3f} ps".format(I,dI))
-		gl.timeResValLabel.config(text="{:.2f} +/- {:.2f} ns".format(1e9*binning*popt[2], 1e9*binning*perr[2]))
+		#gl.timeResValLabel.config(text="{:.2f} +/- {:.2f} ns".format(1e9*binning*popt[2], 1e9*binning*perr[2]))
 
 	else:
 		print ("No Difference measurement available")
+def fit_signal_shape(binning):
+	make_peak_fu()
+	xlim = gl.corrAx.get_xlim(); ylim = gl.corrAx.get_ylim()
+	disp.refresh_display(binning)
+	if gl.boolSig == True:
+		lborder = int(gl.fitRangeLeftEntry.get())
+		rborder = int(gl.fitRangeRightEntry.get())
+		sig_start = 2.
+		x_fit = np.arange(lborder,rborder+1,1)
+		y_fit = gl.g2_sig[lborder:rborder+1]
+		med_start = np.argmax(y_fit)+lborder
+		amp_start = np.argmax(y_fit)-1.
+		popt, pcov = curve_fit(peak_fu, x_fit, y_fit, p0=[amp_start,med_start,1.]); perr = np.sqrt(np.diag(pcov))
+		gl.x_plot = np.arange(lborder,rborder+1,0.01)
+		try:
+			gl.corrAx.gl.fit_plot.remove()
+		except:
+			pass
+		gl.fit_plot = gl.corrAx.plot(gl.x_plot, peak_fu(gl.x_plot, *popt), color="red")
+		gl.corrAx.set_xlim(xlim); gl.corrAx.set_ylim(ylim)
+		I = 1e3*1e9*binning * popt[0]; dI =  1e3*1e9 * binning * perr[0]
+		gl.intValLabel.config(text="{:.3f} +/- {:.3f} ps".format(I,dI))
+		#gl.timeResValLabel.config(text="{:.2f} +/- {:.2f} ns".format(1e9*binning*popt[2], binning*perr[2]))
+ 
+	else:
+		print ("No Signal measurement available")
+def fit_difference_shape(binning):
+	make_peak_fu()
+	xlim = gl.corrAx.get_xlim(); ylim = gl.corrAx.get_ylim()
+	disp.refresh_display(binning)
+	if gl.boolSig == True and gl.boolRef == True:
+		lborder = int(gl.fitRangeLeftEntry.get())
+		rborder = int(gl.fitRangeRightEntry.get())
+		sig_start = 2.
+		x_fit = np.arange(lborder,rborder+1,1)
+		y_fit = gl.g2_diff[lborder:rborder+1]
+		med_start = np.argmax(y_fit)+lborder
+		amp_start = np.argmax(y_fit)-1.
+		popt, pcov = curve_fit(peak_fu, x_fit, y_fit, p0=[amp_start,med_start,1.]); perr = np.sqrt(np.diag(pcov))
+		gl.x_plot = np.arange(lborder,rborder+1,0.01)
+		try:
+			gl.corrAx.gl.fit_plot.remove()
+		except:
+			pass
+		gl.fit_plot = gl.corrAx.plot(gl.x_plot, peak_fu(gl.x_plot, *popt), color="orange")
+		gl.corrAx.set_xlim(xlim); gl.corrAx.set_ylim(ylim)
+		I = popt[0]; dI = perr[0]
+		gl.intValLabel.config(text="{:.3f} +/- {:.3f} ps".format(I,dI))
+		#gl.timeResValLabel.config(text="{:.2f} +/- {:.2f} ns".format(1e9*binning*popt[2], 1e9*binning*perr[2]))
+
+	else:
+		print ("No Difference measurement available")
+

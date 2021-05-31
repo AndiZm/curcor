@@ -146,16 +146,22 @@ gl.fitRangeRightEntry = Entry(paramFrame, width=4); gl.fitRangeRightEntry.insert
 
 # Signal fitting
 fitFrame = Frame(optionsFrame); fitFrame.grid(row=4, column=0)
-def f_signal():
-	ana.fit_signal(binning = float(binningoptions[binning.get()])); gl.corrCanvas.draw()
-def f_difference():
-	ana.fit_difference(binning = float(binningoptions[binning.get()])); gl.corrCanvas.draw()
-fitSigButton = Button(fitFrame, text="Fit Sig", command=f_signal, width=7); fitSigButton.grid(row=0,column=0)
-fitDiffButton = Button(fitFrame, text="Fit Diff", command=f_difference, width=7); fitDiffButton.grid(row=0,column=1)
-intLabel = Label(fitFrame, text="Coherence time"); intLabel.grid(row=1,column=0)
-timeResLabel = Label(fitFrame, text="Time resolution"); timeResLabel.grid(row=2,column=0)
-gl.intValLabel = Label(fitFrame, text="-.--- +/- -.--- ps", fg="orange", bg="black", font="Courier 10"); gl.intValLabel.grid(row=1,column=1)
-gl.timeResValLabel = Label(fitFrame, text="-.-- +/- -.-- ns", fg="orange", bg="black", font="Courier 10"); gl.timeResValLabel.grid(row=2,column=1)
+def f_signal_gauss():
+	ana.fit_signal_gauss(binning = float(binningoptions[binning.get()])); gl.corrCanvas.draw()
+def f_difference_gauss():
+	ana.fit_difference_gauss(binning = float(binningoptions[binning.get()])); gl.corrCanvas.draw()
+def f_signal_shape():
+	ana.fit_signal_shape(binning = float(binningoptions[binning.get()])); gl.corrCanvas.draw()
+def f_difference_shape():
+	ana.fit_difference_shape(binning = float(binningoptions[binning.get()])); gl.corrCanvas.draw()
+fitSigGaussButton = Button(fitFrame, text="Fit Sig [Gauss]", command=f_signal_gauss, width=10); fitSigGaussButton.grid(row=0,column=0)
+fitDiffGaussButton = Button(fitFrame, text="Fit Diff [Gauss]", command=f_difference_gauss, width=10); fitDiffGaussButton.grid(row=0,column=1)
+fitSigShapeButton = Button(fitFrame, text="Fit Sig [Shape]", command=f_signal_shape, width=10); fitSigShapeButton.grid(row=1,column=0)
+fitDiffShapeButton = Button(fitFrame, text="Fit Diff [Shape]", command=f_difference_shape, width=10); fitDiffShapeButton.grid(row=1,column=1)
+intLabel = Label(fitFrame, text="Coherence time"); intLabel.grid(row=2,column=0)
+#timeResLabel = Label(fitFrame, text="Time resolution"); timeResLabel.grid(row=3,column=0)
+gl.intValLabel = Label(fitFrame, text="-.--- +/- -.--- ps", fg="orange", bg="black", font="Courier 10"); gl.intValLabel.grid(row=2,column=1)
+#gl.timeResValLabel = Label(fitFrame, text="-.-- +/- -.-- ns", fg="orange", bg="black", font="Courier 10"); gl.timeResValLabel.grid(row=3,column=1)
 
 # Big displays
 bigdisplayFrame = Frame(optionsFrame); bigdisplayFrame.grid(row=5,column=0)

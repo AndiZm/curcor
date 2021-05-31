@@ -55,9 +55,23 @@ rmsRangeLeftEntry = []; rmsRangeRightEntry = []
 fitRangeLeftEntry = []; fitRangeRightEntry = []
 cutOffEntry = []; orderEntry = []
 
-# Calib data
-histo_x_sig = []; histo_a_sig = []; histo_b_sig = []; pa_sig = [[],[],[]]; pb_sig = [[],[],[]]; xplot_sig = []; nsum_a_sig = []; nsum_b_sig = []; ps_a_sig = []; ps_b_sig = []; ps_x_sig = []; ph_a_sig = []; ph_b_sig = []; avg_charge_a_sig = []; avg_charge_b_sig = []
-histo_x_ref = []; histo_a_ref = []; histo_b_ref = []; pa_ref = [[],[],[]]; pb_ref = [[],[],[]]; xplot_ref = []; nsum_a_ref = []; nsum_b_ref = []; ps_a_ref = []; ps_b_ref = []; ps_x_ref = []; ph_a_ref = []; ph_b_ref = []; avg_charge_a_ref = []; avg_charge_b_ref = []
+# -----------#
+# Calib data #
+#------------#
+histo_x_sig = []; histo_a_sig = []; histo_b_sig = []; pa_sig = [[],[],[]]; pb_sig = [[],[],[]]; xplot_sig = []; nsum_a_sig = []; nsum_b_sig = []
+
+# Photon pulse Shapes
+ps_a_sig = []; ps_b_sig = []; ps_x_sig = []
+ps_a_ref = []; ps_b_ref = []; ps_x_ref = []
+# The signal pulse shapes will yield the correlation peak shape
+peakshape_x = []; peakshape_y = []
+
+ph_a_sig = []; ph_b_sig = []; avg_charge_a_sig = []; avg_charge_b_sig = []
+histo_x_ref = []; histo_a_ref = []; histo_b_ref = []; pa_ref = [[],[],[]]; pb_ref = [[],[],[]]; xplot_ref = []; nsum_a_ref = []; nsum_b_ref = []
+
+
+ph_a_ref = []; ph_b_ref = []; avg_charge_a_ref = []; avg_charge_b_ref = []
+
 
 # Plottings
 corrCanvas = []
