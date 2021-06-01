@@ -1,15 +1,37 @@
 import numpy as np
 import os
-#import tkFileDialog as filedialog
 from tkinter import filedialog
 import globs as gl
+from tkinter import *
+
+savename = []; nwindow = []; savefileentry = []
+header = []; savearrays = []
 
 def maketxtpath():
 	txtpath = gl.basicpath_sig + "/saves"
 	if not os.path.exists(txtpath):
 		os.mkdir(txtpath)
 
+def confirm_save():
+	global savename, nwindow, savefileentry, header, savearrays
+	savename = str(savefileentry.get())
+	nwindow.destroy()
+	with open(gl.basicpath_sig + "/saves/" + savename, "w") as f:
+		f.write(header + "\n")
+		for j in range (0,len(savearrays[0])):
+			for arrays in range(0, len(savearrays)):
+				f.write("{}\t".format(savearrays[arrays][j]))
+			f.write("\n")
+
+def namewindow(prename):
+	global savename, nwindow, savefileentry
+	nwindow = Tk()
+	savefileentry = Entry(nwindow); savefileentry.grid(row=0,column=0); savefileentry.insert(0,prename)
+	okbutton = Button(nwindow, text="OK", command=confirm_save); okbutton.grid(row=0,column=1)
+	nwindow.mainloop()
+
 def save_g2():
+	global savename, savearrays, header
 	maketxtpath()
 	savearrays = []; header = "#"
 	if gl.boolSig == True:
@@ -21,13 +43,10 @@ def save_g2():
 		if gl.boolSig == True:
 			savearrays.append(gl.g2_diff)
 			header += "\tDiff"
-	with open(gl.basicpath_sig + "/saves/g2.txt", "w") as f:
-		f.write(header + "\n")
-		for j in range (0,len(savearrays[0])):
-			for arrays in range(0, len(savearrays)):
-				f.write("{}\t".format(savearrays[arrays][j]))
-			f.write("\n")
+	namewindow("g2.txt")
+	
 def save_fft():
+	global savename, savearrays, header
 	maketxtpath()
 	savearrays = []; header = "#"
 	if gl.boolSig == True:
@@ -39,13 +58,10 @@ def save_fft():
 		if gl.boolSig == True:
 			savearrays.append(gl.g2_diff_fft)
 			header += "\tDiff"
-	with open(gl.basicpath_sig + "/saves/fft.txt", "w") as f:
-		f.write(header + "\n")
-		for j in range (0,len(savearrays[0])):
-			for arrays in range(0, len(savearrays)):
-				f.write("{}\t".format(savearrays[arrays][j]))
-			f.write("\n")
+	namewindow("fft.txt")
+
 def save_rate():
+	global savename, savearrays, header
 	maketxtpath()
 	savearrays = []; header = "#"
 	if gl.boolSig == True:
@@ -56,13 +72,10 @@ def save_rate():
 		savearrays.append(gl.rates_a_ref)
 		savearrays.append(gl.rates_b_ref)
 		header += "\tRefA\tRefB"
-	with open(gl.basicpath_sig + "/saves/rates.txt", "w") as f:
-		f.write(header + "\n")
-		for j in range (0,len(savearrays[0])):
-			for arrays in range(0, len(savearrays)):
-				f.write("{}\t".format(savearrays[arrays][j]))
-			f.write("\n")
+	namewindow("rates.txt")
+
 def save_rms_single():
+	global savename, savearrays, header
 	maketxtpath()
 	savearrays = []; header = "#"
 	if gl.boolSig == True:
@@ -71,34 +84,26 @@ def save_rms_single():
 	if gl.boolRef == True:
 		savearrays.append(gl.rmssin_ref)
 		header += "\tRef"
-	with open(gl.basicpath_sig + "/saves/rms_single.txt", "w") as f:
-		f.write(header + "\n")
-		for j in range (0,len(savearrays[0])):
-			for arrays in range(0, len(savearrays)):
-				f.write("{}\t".format(savearrays[arrays][j]))
-			f.write("\n")
+	namewindow("rms_single.txt")
 
 def save_rms_cumulative():
+	global savename, savearrays, header
 	maketxtpath()
 	savearrays = []; header = "#"
 	if gl.boolSig == True:
 		savearrays.append(gl.rmscum_sig)
+		savearrays.append(gl.rmscum_sig_err) # temporarily?
 		savearrays.append(gl.rmscum_sig_exp)
-		# temporarily
-		savearrays.append(gl.rms_cum_err)
-		header += "\tSig\tSig_exp\t"
+		
+		header += "\tSig\tSig_Err\tSig_exp\t"
 	if gl.boolRef == True:
 		savearrays.append(gl.rmscum_ref)
 		header += "\tRef\tRef_exp\t"
-	with open(gl.basicpath_sig + "/saves/rms_cumulative.txt", "w") as f:
-		f.write(header + "\n")
-		for j in range (0,len(savearrays[0])):
-			for arrays in range(0, len(savearrays)):
-				f.write("{}\t".format(savearrays[arrays][j]))
-			f.write("\n")
+	namewindow("rms_cumulative.txt")
 
 def saveAll():
 	save_g2()
 	save_fft()
 	save_rate()
 	save_rms_single()
+	save_rms_cumulative()

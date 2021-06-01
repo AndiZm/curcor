@@ -38,6 +38,7 @@ def displayCalib():
 
 def displayCorrelation():
 	plt.figure("Correlations", figsize=(10,7))
+	plt.ticklabel_format(useOffset=False)
 	plt.xlabel("Time bins"); plt.ylabel("$g^{(2)}$")
 	if gl.boolSig == True:
 		plt.plot(gl.g2_sig, color="blue", label="Signal")
@@ -92,6 +93,7 @@ def displayCumulativeRMS():
 	plt.axhline(y=1.0, color="grey", linestyle="--")
 	if gl.boolSig == True:
 		plt.subplot(211)
+		plt.fill_between(x=np.arange(0,len(gl.rmscum_sig)), y1=np.array(gl.rmscum_sig)+np.array(gl.rmscum_sig_err), y2=np.array(gl.rmscum_sig)-np.array(gl.rmscum_sig_err), color="blue", alpha=0.1)
 		plt.plot(gl.rmscum_sig, color="blue", label="Signal", alpha=0.5, zorder=1)
 		plt.plot(gl.rmscum_sig_exp, color="blue", linestyle="--", zorder=2)
 		plt.subplot(212)
@@ -117,7 +119,7 @@ def displayCumulativeRMS():
 	plt.show()
 
 def refresh_display(binning):
-	gl.corrAx.cla(); gl.corrAx.set_title("Correlations"); gl.corrAx.set_xlabel("Time bins"); gl.corrAx.set_ylabel("$g^{(2)}$")
+	gl.corrAx.cla(); gl.corrAx.set_title("Correlations"); gl.corrAx.set_xlabel("Time bins"); gl.corrAx.set_ylabel("$g^{(2)}$"); gl.corrAx.ticklabel_format(useOffset=False)
 	gl.fftAx.cla(); gl.fftAx.set_xlabel("Frequency [GHz]")
 	gl.rmssinAx.cla(); gl.rmssinAx.set_ylabel("Single files RMS")
 	gl.ratesAx.cla(); gl.ratesAx.set_ylabel("Rates [MHz]"); gl.ratesAx.set_title("Photon rates")

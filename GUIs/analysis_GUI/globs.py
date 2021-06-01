@@ -1,6 +1,8 @@
 basicpath_sig = "/mnt/c/Users/andiz/Documents/ii/curcor/measurements"
 basicpath_ref = "/mnt/c/Users/andiz/Documents/ii/curcor/measurements"
 body_sig = ""; body_ref = ""
+
+# Boolean initials
 boolSig = False; boolRef = False
 boolLP = False
 boolPatCorr = True
@@ -13,9 +15,14 @@ files_sig = []; files_ref = []
 
 g2_sig_fft = []; g2_ref_fft = []; g2_diff_fft = []
 
+#------------#
+# RMS arrays #
+#------------#
 rmssin_sig = []; rmssin_ref = []
-rmscum_sig = []; rmscum_ref = []
-rmscum_diff = []
+
+rmscum_sig = []; rmscum_sig_err = []
+rmscum_ref = []; rmscum_ref_err = []
+rmscum_diff = []; rmscum_diff_err = []
 
 rmssin_sig_exp = []; rmssin_ref_exp = []
 rmscum_sig_exp = []; rmscum_ref_exp = []
@@ -55,7 +62,7 @@ rmsRangeLeftEntry = []; rmsRangeRightEntry = []
 fitRangeLeftEntry = []; fitRangeRightEntry = []
 cutOffEntry = []; orderEntry = []
 
-# -----------#
+#------------#
 # Calib data #
 #------------#
 histo_x_sig = []; histo_a_sig = []; histo_b_sig = []; pa_sig = [[],[],[]]; pb_sig = [[],[],[]]; xplot_sig = []; nsum_a_sig = []; nsum_b_sig = []
@@ -72,8 +79,9 @@ histo_x_ref = []; histo_a_ref = []; histo_b_ref = []; pa_ref = [[],[],[]]; pb_re
 
 ph_a_ref = []; ph_b_ref = []; avg_charge_a_ref = []; avg_charge_b_ref = []
 
-
-# Plottings
+#-----------#
+# Plottings #
+#-----------#
 corrCanvas = []
 corrAx = []; fftAx = []; ratesAx = []; rmssingAx = []; rmscumAx = []
 g2_sig_plot = []; g2_ref_plot = []; g2_diff_plot = []
