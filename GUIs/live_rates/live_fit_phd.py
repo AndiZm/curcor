@@ -3,7 +3,6 @@ from tqdm import tqdm
 from multiprocessing import Process, Value, Array
 import scipy.signal as ss
 import numpy as np
-#import pyopencl as cl
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 

@@ -25,7 +25,7 @@ def execute(basicpath, samples):
 			return newest_file
 			break
 
-		time.sleep(0.5)
+		#time.sleep(0.5)
 
 def execute_single(basicpath, samples):
 
@@ -47,4 +47,4 @@ def execute_single(basicpath, samples):
 			return newest_file
 			break
 
-		time.sleep(0.5)
+		#time.sleep(0.5)

@@ -4,7 +4,7 @@ import scipy.signal as sig
 from tqdm import tqdm
 from scipy.optimize import curve_fit
 from multiprocessing import Process, Value, Array
-#from numba import jit, cuda
+from numba import jit, cuda
 
 import globals as gl
 

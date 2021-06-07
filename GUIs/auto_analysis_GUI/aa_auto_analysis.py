@@ -3,6 +3,7 @@ from pathlib import Path
 from tqdm import tqdm
 import numpy as np
 import os
+import aa_sendmail as mail
 
 zeroadder = []
 zeroadder.append("dummy")
@@ -13,7 +14,7 @@ zeroadder.append("0")    # vierstellig
 zeroadder.append("")     # fuenfstellig
 
 
-def execute(infiles, outfilepath, shifts, offset, packetlength, npackets, threshold):
+def execute(infiles, outfilepath, shifts, offset, packetlength, npackets, threshold, sendmail, mail_address):
 	#print ("\nThreshold: "+ str(threshold))
 	#print ("Shifts: " + str(shifts))
 	#print ("Offset: " + str(offset))
@@ -30,10 +31,12 @@ def execute(infiles, outfilepath, shifts, offset, packetlength, npackets, thresh
 
 		#print (infile); print ("\t" + resultpath)
 
-		commands.append("python.exe ../pur_bin/curcor_int8_cpu_V2.py -i " + infile + " -f " + resultpath + " -a " + str(threshold) + " -b " + str(threshold) + " -s " + str(shifts) + " -o " + str(offset) + " -l " + str(packetlength) + " -p " + str(npackets))		
+		commands.append("python.exe ../../programs/correlator/curcor_int8_cpu_V2.py -i " + infile + " -f " + resultpath + " -a " + str(threshold) + " -b " + str(threshold) + " -s " + str(shifts) + " -o " + str(offset) + " -l " + str(packetlength) + " -p " + str(npackets))		
 
 	# Executing the commands
 	for i in tqdm(range(len(commands))):
 		runstring = "xterm -e \"" + commands[i] + "\""
 		print(commands[i])
 		subprocess.run(commands[i])
+	if sendmail == True:
+		mail.send_email(mail_address)

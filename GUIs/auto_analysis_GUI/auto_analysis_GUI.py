@@ -19,6 +19,7 @@ root = Tk()
 root.wm_title("Correlation Analysis GUI")
 
 threshold = 0
+sendmail = False; mailEntry = []
 
 # Header details
 nCHN=1
@@ -139,12 +140,14 @@ filemin_entry  = Entry(minmaxframe, width=7); filemin_entry.grid(row=2, column=0
 filemax_entry  = Entry(minmaxframe, width=7); filemax_entry.grid(row=2, column=1)
 
 def go():
+	global sendmail
 	shifts = int(shiftsEntry.get())
 	offset = int(offsetEntry.get())
 	packetlength = int(packetlengthEntry.get())
 	npackets = int(npacketsEntry.get())
 
 	resultfilepath = resultentry.get()
+	mail_address = str(mailEntry.get())
 	
 	file_begin = numbers.index(int(filemin_entry.get())); file_end = numbers.index(int(filemax_entry.get()))
 	filearray_eval = []
@@ -169,7 +172,7 @@ def go():
 
 
 	root.destroy()
-	ana.execute(filearray_eval, resultfilepath, shifts, offset, packetlength, npackets, threshold)
+	ana.execute(filearray_eval, resultfilepath, shifts, offset, packetlength, npackets, threshold, sendmail, mail_address)
 
 	
 
@@ -198,8 +201,20 @@ offsetEntry = Entry(settingsFrame, width=10); offsetEntry.grid(row=1, column=1);
 packetlengthEntry = Entry(settingsFrame, width=10); packetlengthEntry.grid(row=1, column=2); packetlengthEntry.insert(0, "1000000")
 npacketsEntry = Entry(settingsFrame, width=10); npacketsEntry.grid(row=1, column=3); npacketsEntry.insert(0, "2143")
 
+#mail
+mailFrame = Frame(correlationFrame); mailFrame.grid(row=7)
+mailEntry = Entry(mailFrame); mailEntry.grid(row=0,column=0); mailEntry.insert(0,"andi.zmija@fau.de")
+mailButton = Button(mailFrame, text="Sending mail OFF"); mailButton.grid(row=0,column=1)
+def switch_mail():
+	global sendmail
+	if sendmail == False:
+		sendmail = True
+		mailButton.config(text="Sending mail  ON")
+	else:
+		sendmail = False
+		mailButton.config(text="Sending mail OFF")
+mailButton.config(command=switch_mail)
 
-
-goButton = Button(correlationFrame, text="Go !", command=go, width=20, height=5, bg="#ccf2ff"); goButton.grid(row=7)
+goButton = Button(correlationFrame, text="Go !", command=go, width=20, height=5, bg="#ccf2ff"); goButton.grid(row=8)
 
 root.mainloop()

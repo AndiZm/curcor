@@ -1,6 +1,5 @@
 from multiprocessing import Process, Value, Array
 import numpy as np
-#import pyopencl as cl
 
 def execute(file, length):
     a_np = np.array([]); b_np = np.array([])

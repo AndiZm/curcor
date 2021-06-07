@@ -19,7 +19,6 @@ import live_peakshape as ps
 import live_waveform_reader as wv
 import live_wait_for_file as wff
 import globals as gl
-import rate_server as svr
 
 from threading import Thread
 
@@ -28,7 +27,7 @@ def ADC_to_mV(adc, range):
 def mV_to_ADC(mV, range):
 	return mV*127/range
 
-root = Tk(); root.wm_title("Almost live measures"); root.geometry("+100+100")
+root = Tk(); root.wm_title("Almost live measures"); root.geometry("+1600+100")
 rootMainFrame = Frame(root); rootMainFrame.grid(row=0,column=0)
 
 ## Common Frame ##
@@ -371,7 +370,7 @@ CHb_Label_rate = Label(abFrame, text="0.0", fg="orange", bg="black", font=("Helv
 ## START FRAME ##
 #################
 startFrame = Frame (rootMainFrame); startFrame.grid(row=5, column=0)
-running = False; stop_thread = False; plotting = False; server = None
+running = False; stop_thread = False; plotting = False
 # For plotting
 rates_a = []; rates_b = []
 plotFig = []; rate_a_plot = []; rate_b_plot = []
@@ -398,9 +397,7 @@ def analyze_file(newest_file):
 	mean_a_ADC = mean_a_ADC - off_a; mean_b_ADC = mean_b_ADC - off_b
 	# Rates 
 	r_a = 1e-6 * mean_a_ADC/(avg_charge_a*binRange); r_b = 1e-6 * mean_b_ADC/(avg_charge_b*binRange)
-	CHa_Label_rate.config(text="{:.1f}".format(r_a)); CHb_Label_rate.config(text="{:.1f}".format(r_b))
-	if server != None:
-		server.sendRate(r_a, r_b)
+	CHa_Label_rate.config(text="{:.1f}".format(r_a)); CHb_Label_rate.config(text="{:.1f}".format(r_b))				
 	# mV
 	mean_a_mV = ADC_to_mV(adc=mean_a_ADC, range=vRange); mean_b_mV = ADC_to_mV(adc=mean_b_ADC, range=vRange)
 	CHa_Label_mean.config(text="{:.2f}".format(mean_a_mV)); CHb_Label_mean.config(text="{:.2f}".format(mean_b_mV))
@@ -421,6 +418,8 @@ def analyze_file(newest_file):
 		global rate_a_plot, rate_b_plot, wav_a_plot, wav_b_plot
 		plotFigAxis.cla(); plotFigAxis.set_xlabel("File index"); plotFigAxis.set_ylabel("Rates [MHz]")
 		rate_a_plot = plotFigAxis.plot(rates_a, "o--", color="blue"); rate_b_plot = plotFigAxis.plot(rates_b, "o--", color="red")
+		if len(rates_a) > 200:
+			plotFigAxis.set_xlim(len(rates_a)-200,)
 		plotWfAxis.cla(); plotWfAxis.set_xlabel("Time bin"); plotWfAxis.set_ylabel("ADC")
 		wav_a_plot = plotWfAxis.plot(wav_a, color="blue"); wav_b_plot = plotWfAxis.plot(wav_b, color="red")
 		plt.draw()
@@ -435,7 +434,7 @@ def analyze_files():
 		if gl.stop_wait_for_file_thread == False:
 			analyze_file(newest_file)
 			statusLabel.config(text="Scanning files for Rates..." ); root.update()	
-			time.sleep(0.2)
+			#time.sleep(0.2)
 
 def startstop():
 	global running, stop_thread
@@ -487,36 +486,10 @@ def singleFileRate():
 	analyze_file(root.filename)
 	idle()
 
-#starts/stops the server which sends the rate to the RASPI
-def startStopServer():
-	global server
-	#check if server is running
-	if server == None :	
-		#start server
-		server=svr.server()
-		try:
-			server.start()
-			#change button label
-			startStopServerButton.config(text="Stop Server")
-		except OSError as err:
-			print("The OS did not allow start the server on {0}:{1} . Are address and port correct? Maybe an old instance is still blocking this resource?".format(server.address, server.port))
-			print(err)
-			server = None
-			
-		
-	else:
-		#shutdown server
-		server.stop()
-		#change button label
-		startStopServerButton.config(text="Start Server")
-		
-		server = None
-
 clearPlotButon = Button(startFrame, text="Clear", bg="#ccf2ff", command=clearPlot, width=12); clearPlotButon.grid(row=0,column=0)
 plotButton = Button(startFrame, text="Plotting off", bg="#cdcfd1", command=switchplot, width=12); plotButton.grid(row=0,column=1)
-startStopServerButton = Button(startFrame, text="Start Server", bg="#cdcfd1", command=startStopServer, width=12); startStopServerButton.grid(row=1,column=0)
-startstopButton = Button(startFrame, text="Start!", bg="#e8fcae", command=startstop, width=12); startstopButton.grid(row=2,column=0)
-singleFileButton = Button(startFrame, text="Single", bg = "#e8fcae", command=singleFileRate, width=12); singleFileButton.grid(row=2, column=1)
+startstopButton = Button(startFrame, text="Start!", bg="#e8fcae", command=startstop, width=12); startstopButton.grid(row=1,column=0)
+singleFileButton = Button(startFrame, text="Single", bg = "#e8fcae", command=singleFileRate, width=12); singleFileButton.grid(row=1, column=1)
 
 #############################
 ## STATUS FRAME AND BUTTON ##
