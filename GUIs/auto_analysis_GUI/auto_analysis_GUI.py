@@ -20,6 +20,8 @@ root.wm_title("Correlation Analysis GUI")
 
 threshold = 0
 sendmail = False; mailEntry = []
+message_adds = ""
+
 
 # Header details
 nCHN=1
@@ -80,7 +82,7 @@ def select_file():
 	filemin_label.config(text = str(f_min)); filemax_label.config(text = str(f_max))
 	filemin_entry.delete(0, END); filemin_entry.insert(0,str(f_min))
 	filemax_entry.delete(0,END); filemax_entry.insert(10,str(f_max))
-	resultentry.insert(0,resultfilepath)
+	resultentry.delete(0,'end'); resultentry.insert(0,resultfilepath)
 	# Plot waveforms
 	nCHN,nLen,px,py0,py3 = waveforms.execute(root.filename)
 	nCHN, nvRange, nvOffset, nLen = header.execute(root.filename)
@@ -140,41 +142,14 @@ filemin_entry  = Entry(minmaxframe, width=7); filemin_entry.grid(row=2, column=0
 filemax_entry  = Entry(minmaxframe, width=7); filemax_entry.grid(row=2, column=1)
 
 def go():
-	global sendmail
-	shifts = int(shiftsEntry.get())
-	offset = int(offsetEntry.get())
-	packetlength = int(packetlengthEntry.get())
-	npackets = int(npacketsEntry.get())
+	global sendmail, message_adds
 
-	resultfilepath = resultentry.get()
+	message = "Subject: Correlation Finished\n\n" + message_adds
+	#print (message)
+
 	mail_address = str(mailEntry.get())
-	
-	file_begin = numbers.index(int(filemin_entry.get())); file_end = numbers.index(int(filemax_entry.get()))
-	filearray_eval = []
-	for i in range (file_begin, file_end+1):
-		filearray_eval.append(filearray[i])
-
-
-	# Create result files directory
-	if not os.path.exists(resultentry.get()):
-		os.mkdir(resultentry.get())
-	# Copy the calibration file directory
-	dirparts = filearray_eval[0].split("/")
-	dirparts[-1] = "calibs"
-	builddir = dirparts[0]
-	for i in range (1,len(dirparts)):
-		builddir += "/" + dirparts[i]
-	print (builddir)
-	if not os.path.exists(resultfilepath + "/calibs"):
-		os.mkdir(resultfilepath+"/calibs")
-	if os.path.exists(builddir):
-		copy_tree(builddir, resultfilepath+"/calibs")
-
-
 	root.destroy()
-	ana.execute(filearray_eval, resultfilepath, shifts, offset, packetlength, npackets, threshold, sendmail, mail_address)
-
-	
+	ana.execute_commands(sendmail, mail_address, message)
 
 # Resultpath
 resultoptions = Frame(correlationFrame); resultoptions.grid(row=3)
@@ -187,6 +162,7 @@ def selectDirectory():
 	resultfilepath = resDirectory
 	resultentry.delete(0,END); resultentry.insert(0, resultfilepath)
 selectDirButton = Button(resultoptions, text="Select directory", command=selectDirectory); selectDirButton.grid(row=0,column=1)
+
 
 # Further correlation settings
 furtherLabel = Label(correlationFrame, text="Further correlation settings", bg="#ccffcc"); furtherLabel.grid(row=5)
@@ -215,6 +191,49 @@ def switch_mail():
 		mailButton.config(text="Sending mail OFF")
 mailButton.config(command=switch_mail)
 
-goButton = Button(correlationFrame, text="Go !", command=go, width=20, height=5, bg="#ccf2ff"); goButton.grid(row=8)
+queueFrame = Frame(correlationFrame); queueFrame.grid(row=9)
+queueLabels = []
+def add_to_queue():
+	global message_adds
+	shifts = int(shiftsEntry.get())
+	offset = int(offsetEntry.get())
+	packetlength = int(packetlengthEntry.get())
+	npackets = int(npacketsEntry.get())
+
+	resultfilepath = resultentry.get()
+	
+	file_begin = numbers.index(int(filemin_entry.get())); file_end = numbers.index(int(filemax_entry.get()))
+	filearray_eval = []
+	for i in range (file_begin, file_end+1):
+		filearray_eval.append(filearray[i])
+
+	# Create result files directory
+	if not os.path.exists(resultentry.get()):
+		os.mkdir(resultentry.get())
+	# Copy the calibration file directory
+	dirparts = filearray_eval[0].split("/")
+	dirparts[-1] = "calibs"
+	builddir = dirparts[0]
+	for i in range (1,len(dirparts)):
+		builddir += "/" + dirparts[i]
+	print (builddir)
+	if not os.path.exists(resultfilepath + "/calibs"):
+		os.mkdir(resultfilepath+"/calibs")
+	if os.path.exists(builddir):
+		copy_tree(builddir, resultfilepath+"/calibs")
+
+	message_adds = message_adds + "\n" + "{} [{}] to [{}]".format(str(fileseries_label.cget("text")), int(filemin_entry.get()), int(filemax_entry.get()))
+
+	ana.add_commands(filearray_eval, resultfilepath, shifts, offset, packetlength, npackets, threshold)
+	queueLabels.append(Label(queueFrame, text="{} [{}] to [{}]".format(str(fileseries_label.cget("text")), int(filemin_entry.get()), int(filemax_entry.get())), bg="grey"))
+	queueLabels[-1].grid(row=len(queueLabels)-1)
+
+buttonFrame = Frame(correlationFrame); buttonFrame.grid(row=8)
+addButton = Button(buttonFrame, text="Add to queue", command=add_to_queue, width=15, height=5); addButton.grid(row=0,column=0)
+goButton = Button(buttonFrame, text="Go !", command=go, width=15, height=5, bg="#ccf2ff"); goButton.grid(row=0,column=1)
+
+
+
+
 
 root.mainloop()
