@@ -271,7 +271,7 @@ def cumulate_signal(binning):
 	gl.rmscum_sig_err = []; gl.rmscum_ref_err = []; gl.rmscum_diff_err = []
 	gl.N_e_sig = 0.; gl.N_e_ref = 0.
 
-	gl.intValLabel.config(text="-.--- +/- -.--- ps")
+	gl.intValLabel.config(text="---.- +/- ---.- fs")
 	#gl.timeResValLabel.config(text="-.-- +/- -.--ns")
 
 	if gl.boolSig == True:
@@ -329,12 +329,12 @@ def experimental_correction_factors():
 # Gauss fit
 def gauss(x,a,m,s,d):
 	return a * np.exp(-(x-m)**2/2/s/s) + d
-def get_integral(fitpar, e_fitpar, binning):
+def get_integral(fitpar, e_fitpar, binning):# now in femtoseconds
 	amp = fitpar[0]; d_amp = e_fitpar[0]
 	sig = 1e9*binning * np.abs(fitpar[2]); d_sig = 1e9*binning * e_fitpar[2]
 
-	I = 1e3 * amp * sig * np.sqrt(2*np.pi)
-	dI = 1e3 * np.sqrt(2*np.pi) * np.sqrt((amp*d_sig)**2 + (sig*d_amp)**2)
+	I = 1e6 * amp * sig * np.sqrt(2*np.pi)
+	dI = 1e6 * np.sqrt(2*np.pi) * np.sqrt((amp*d_sig)**2 + (sig*d_amp)**2)
 	return I, dI
 # Peak shape fit
 sum_peak = []; the_peak_fu = []
@@ -366,7 +366,7 @@ def fit_signal_gauss(binning):
 		gl.fit_plot = gl.corrAx.plot(gl.x_plot, gauss(gl.x_plot, *popt), color="red")
 		gl.corrAx.set_xlim(xlim); gl.corrAx.set_ylim(ylim)
 		I, dI = get_integral(popt, perr, binning)
-		gl.intValLabel.config(text="{:.3f} +/- {:.3f} ps".format(I,dI))
+		gl.intValLabel.config(text="{:.1f} +/- {:.1f} fs".format(I,dI))
 		#gl.timeResValLabel.config(text="{:.2f} +/- {:.2f} ns".format(1e9*binning*popt[2], binning*perr[2]))
  
 	else:
@@ -391,7 +391,7 @@ def fit_difference_gauss(binning):
 		gl.fit_plot = gl.corrAx.plot(gl.x_plot, gauss(gl.x_plot, *popt), color="orange")
 		gl.corrAx.set_xlim(xlim); gl.corrAx.set_ylim(ylim)
 		I, dI = get_integral(popt, perr, binning)
-		gl.intValLabel.config(text="{:.3f} +/- {:.3f} ps".format(I,dI))
+		gl.intValLabel.config(text="{:.1f} +/- {:.1f} fs".format(I,dI))
 		#gl.timeResValLabel.config(text="{:.2f} +/- {:.2f} ns".format(1e9*binning*popt[2], 1e9*binning*perr[2]))
 
 	else:
@@ -416,8 +416,8 @@ def fit_signal_shape(binning):
 			pass
 		gl.fit_plot = gl.corrAx.plot(gl.x_plot, peak_fu(gl.x_plot, *popt), color="red")
 		gl.corrAx.set_xlim(xlim); gl.corrAx.set_ylim(ylim)
-		I = 1e3*1e9*binning * popt[0]; dI =  1e3*1e9 * binning * perr[0]
-		gl.intValLabel.config(text="{:.3f} +/- {:.3f} ps".format(I,dI))
+		I = 1e6*1e9*binning * popt[0]; dI =  1e6*1e9 * binning * perr[0]
+		gl.intValLabel.config(text="{:.1f} +/- {:.1f} fs".format(I,dI))
 		#gl.timeResValLabel.config(text="{:.2f} +/- {:.2f} ns".format(1e9*binning*popt[2], binning*perr[2]))
  
 	else:
@@ -442,8 +442,8 @@ def fit_difference_shape(binning):
 			pass
 		gl.fit_plot = gl.corrAx.plot(gl.x_plot, peak_fu(gl.x_plot, *popt), color="orange")
 		gl.corrAx.set_xlim(xlim); gl.corrAx.set_ylim(ylim)
-		I = popt[0]; dI = perr[0]
-		gl.intValLabel.config(text="{:.3f} +/- {:.3f} ps".format(I,dI))
+		I = 1e6*1e9*binning * popt[0]; dI =  1e6*1e9 * binning * perr[0]
+		gl.intValLabel.config(text="{:.1f} +/- {:.1f} fs".format(I,dI))
 		#gl.timeResValLabel.config(text="{:.2f} +/- {:.2f} ns".format(1e9*binning*popt[2], 1e9*binning*perr[2]))
 
 	else:

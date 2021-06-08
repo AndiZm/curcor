@@ -160,7 +160,7 @@ fitSigShapeButton = Button(fitFrame, text="Fit Sig [Shape]", command=f_signal_sh
 fitDiffShapeButton = Button(fitFrame, text="Fit Diff [Shape]", command=f_difference_shape, width=10); fitDiffShapeButton.grid(row=1,column=1)
 intLabel = Label(fitFrame, text="Coherence time"); intLabel.grid(row=2,column=0)
 #timeResLabel = Label(fitFrame, text="Time resolution"); timeResLabel.grid(row=3,column=0)
-gl.intValLabel = Label(fitFrame, text="-.--- +/- -.--- ps", fg="orange", bg="black", font="Courier 10"); gl.intValLabel.grid(row=2,column=1)
+gl.intValLabel = Label(fitFrame, text="---.- +/- ---.- fs", fg="orange", bg="black", font="Courier 10"); gl.intValLabel.grid(row=2,column=1)
 #gl.timeResValLabel = Label(fitFrame, text="-.-- +/- -.-- ns", fg="orange", bg="black", font="Courier 10"); gl.timeResValLabel.grid(row=3,column=1)
 
 # Big displays
