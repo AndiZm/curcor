@@ -1,5 +1,7 @@
 import RPi.GPIO as GPIO
 
+print("MOTOR_SWITCH")
+
 def init():
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(23, GPIO.OUT)
