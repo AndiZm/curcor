@@ -187,7 +187,7 @@ def refsearch_all():
 #metods used for the rate client
     
 def optimize():
-	mopt.optimizeBluntlyNoHeight()
+	mopt.optimizeBluntlyNoHeight(client)
     
 def startStopClient():
     global client
