@@ -99,32 +99,55 @@ def get_photon_rate_ref(fileindex, binning):
 	gl.rates_a_ref.append(1e-6*rate_a); gl.rates_b_ref.append(1e-6*rate_b)
 
 # Offset correction
-def single_G2_offsetcorr_sig(fileindex, binning): # get_photon_rate_sig() needs to be calculated before
+def single_G2_offsetcorr_sig(fileindex, binning):
 	G2 = np.loadtxt(gl.files_sig[fileindex])[:,1]
 	file = open(gl.files_sig[fileindex]).read(); lines = file.split("\n")
 	samples = int(lines[4].split("\t")[1])
-	T = binning * samples
 	# Offset correction
-	rate_a = gl.rates_a_sig[fileindex]; rate_b = gl. rates_b_sig[fileindex]
-	ya_x_bb = rate_a*gl.avg_charge_a_sig * T * gl.offset_b_sig
-	yb_x_ba = rate_b*gl.avg_charge_b_sig * T * gl.offset_a_sig
-	ba_x_bb = gl.offset_a_sig * gl.offset_b_sig * T/(binning)
+	mean_a = float(lines[14].split(" ")[1])
+	mean_b = float(lines[15].split(" ")[1])
 	for j in range (0,len(G2)):
-		G2[j] -= ya_x_bb + yb_x_ba + ba_x_bb
+		G2[j] -= samples * (mean_a*gl.offset_b_sig + mean_b*gl.offset_a_sig - gl.offset_a_sig*gl.offset_b_sig)
 	return G2
-def single_G2_offsetcorr_ref(fileindex, binning): # get_photon_rate_ref() needs to be calculated before
+def single_G2_offsetcorr_ref(fileindex, binning):
 	G2 = np.loadtxt(gl.files_ref[fileindex])[:,1]
 	file = open(gl.files_ref[fileindex]).read(); lines = file.split("\n")
 	samples = int(lines[4].split("\t")[1])
-	T = binning * samples
 	# Offset correction
-	rate_a = gl.rates_a_ref[fileindex]; rate_b = gl. rates_b_ref[fileindex]
-	ya_x_bb = rate_a*gl.avg_charge_a_ref * T * gl.offset_b_ref
-	yb_x_ba = rate_b*gl.avg_charge_b_ref * T * gl.offset_a_ref
-	ba_x_bb = gl.offset_a_ref * gl.offset_b_ref * T/(binning)
+	mean_a = float(lines[14].split(" ")[1])
+	mean_b = float(lines[15].split(" ")[1])
 	for j in range (0,len(G2)):
-		G2[j] -= ya_x_bb + yb_x_ba + ba_x_bb
+		G2[j] -= samples * (mean_a*gl.offset_b_ref + mean_b*gl.offset_a_ref - gl.offset_a_ref*gl.offset_b_ref)
 	return G2
+
+# OLD METHOD
+#def single_G2_offsetcorr_sig(fileindex, binning): # get_photon_rate_sig() needs to be calculated before
+#	G2 = np.loadtxt(gl.files_sig[fileindex])[:,1]
+#	file = open(gl.files_sig[fileindex]).read(); lines = file.split("\n")
+#	samples = int(lines[4].split("\t")[1])
+#	T = binning * samples
+#	# Offset correction
+#	rate_a = gl.rates_a_sig[fileindex]; rate_b = gl. rates_b_sig[fileindex]
+#	ya_x_bb = rate_a*gl.avg_charge_a_sig * T * gl.offset_b_sig
+#	yb_x_ba = rate_b*gl.avg_charge_b_sig * T * gl.offset_a_sig
+#	ba_x_bb = gl.offset_a_sig * gl.offset_b_sig * T/(binning)
+#	for j in range (0,len(G2)):
+#		G2[j] -= ya_x_bb + yb_x_ba + ba_x_bb
+#	return G2
+#def single_G2_offsetcorr_ref(fileindex, binning): # get_photon_rate_ref() needs to be calculated before
+#	G2 = np.loadtxt(gl.files_ref[fileindex])[:,1]
+#	file = open(gl.files_ref[fileindex]).read(); lines = file.split("\n")
+#	samples = int(lines[4].split("\t")[1])
+#	T = binning * samples
+#	# Offset correction
+#	rate_a = gl.rates_a_ref[fileindex]; rate_b = gl. rates_b_ref[fileindex]
+#	ya_x_bb = rate_a*gl.avg_charge_a_ref * T * gl.offset_b_ref
+#	yb_x_ba = rate_b*gl.avg_charge_b_ref * T * gl.offset_a_ref
+#	ba_x_bb = gl.offset_a_ref * gl.offset_b_ref * T/(binning)
+#	for j in range (0,len(G2)):
+#		G2[j] -= ya_x_bb + yb_x_ba + ba_x_bb
+#	return G2
+
 def cumulative_G2_offsetcorr_sig(fileindex, binning):
 	gl.G2_cum_sig = list(map(add, gl.G2_cum_sig, single_G2_offsetcorr_sig(fileindex,binning)))
 def cumulative_G2_offsetcorr_ref(fileindex, binning):
