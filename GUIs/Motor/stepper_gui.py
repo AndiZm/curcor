@@ -2,11 +2,11 @@ from tkinter import *
 from tkinter import messagebox
 from numpy import random
 from time import sleep
+import scipy.optimize as opt
 
 import stepper_drive as sd
 import motor_switch as ms
 import rate_client as rcl
-import mirror_optimizer as mopt
 import servo_test as servo
 
 import _thread
@@ -187,7 +187,7 @@ def refsearch_all():
 #metods used for the rate client
     
 def optimize():
-	mopt.optimizeBluntlyNoHeight(client)
+	optimizeBluntlyNoHeight()
     
 def startStopClient():
     global client
@@ -765,7 +765,66 @@ lbl_up.config(bg=ServoColor)
 lbl_down.config(bg=ServoColor)
 Shutter.config(bg=ServoColor)
 
+'''In this section the optimization for the mirrors is programmed. I tried to put it in a seperate file, to make everything more orderly but circular import issues made me integrate the whole functionality here into this file'''
 
+#optimizes all motor-values bluntly
+def optimizeAllBluntly():
+	global client
+	if client == None:
+		print("No rate Server connected. The rate can not be optimzied witout knowing the rate!")
+		return
+
+	#stop all current movements of the motors
+	stop_all()
+	
+	#set all motors to center position
+	center_camera()
+	center_mirror_pos()
+	center_mirror_angle()
+	
+	#run an optimizer on the setup
+	res=opt.minimize(testState, [gui.mirror_height_pos, gui.mirror_z_pos, gui.mirror_phi_pos, gui.mirror_psi_pos, gui.camera_x_pos, gui.camera_z_pos])
+	print("Optimal Position was found to be: {0}".format(res))
+
+def optimizeBluntlyNoHeight():
+	global client
+	print("Bluntly")
+	
+	if client == None:
+			print("No rate Server connected. The rate can not be optimzied witout knowing the rate!")
+			return
+
+	#stop all current movements of the motors
+	stop_all()
+	
+	#set all motors to center position
+	center_camera()
+	#gui.center_mirror_pos()
+	center_mirror_angle()
+	
+	#run an optimizer on the setup
+	res=opt.minimize(testStateNoHeight, [gui.mirror_z_pos, gui.mirror_phi_pos, gui.mirror_psi_pos, gui.camera_x_pos, gui.camera_z_pos])
+	print("Optimal Position was found to be: {0}".format(res))
+
+def testState(mirror_height, mirror_z, mirror_phi, mirror_psi, camera_x, camera_z):
+	global client
+	moveto_mirror_height(mirror_height)
+	moveto_mirror_z(mirror_z)
+	moveto_mirror_phi(mirror_phi)
+	moveto_mirror_psi(mirror_psi)
+	moveto_camera_x(camera_x)
+	moveto_camera_z(camera_z)
+	return 1./client.getRateA()
+
+def testStateNoHeight(mirror_z, mirror_phi, mirror_psi, camera_x, camera_z):
+	global client
+	moveto_mirror_z(mirror_z)
+	moveto_mirror_phi(mirror_phi)
+	moveto_mirror_psi(mirror_psi)
+	moveto_camera_x(camera_x)
+	moveto_camera_z(camera_z)
+	return 1./client.getRateA()
 
 root.mainloop()
 os._exit(0)
+
