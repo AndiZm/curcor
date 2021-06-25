@@ -98,6 +98,9 @@ def get_photon_rate_ref(fileindex, binning):
 	rate_a = mean_a/(binning*gl.avg_charge_a_ref); rate_b = mean_b/(binning*gl.avg_charge_b_ref)
 	gl.rates_a_ref.append(1e-6*rate_a); gl.rates_b_ref.append(1e-6*rate_b)
 
+#------------------------#
+# G2 and g2 calculations #
+#------------------------#
 # Offset correction
 def single_G2_offsetcorr_sig(fileindex, binning):
 	G2 = np.loadtxt(gl.files_sig[fileindex])[:,1]
@@ -152,7 +155,7 @@ def cumulative_G2_offsetcorr_sig(fileindex, binning):
 	gl.G2_cum_sig = list(map(add, gl.G2_cum_sig, single_G2_offsetcorr_sig(fileindex,binning)))
 def cumulative_G2_offsetcorr_ref(fileindex, binning):
 	gl.G2_cum_ref = list(map(add, gl.G2_cum_ref, single_G2_offsetcorr_ref(fileindex,binning)))
-# g2
+# g2 ----------------------------------------#
 def get_cumulative_g2_sig(lowpass, binning):
 	range_left = int(gl.rmsRangeLeftEntry.get()); range_right = int(gl.rmsRangeRightEntry.get())
 	#corr_factor = float(gl.corrSigEntry.get())
@@ -186,6 +189,37 @@ def get_cumulative_g2_diff(binning):
 	if gl.boolLP == True:
 		g2_diff = butter_lowpass_filter(g2_diff, binning)
 	return g2_diff
+def get_cumulative_g2_diff_per_file():
+	g2_sig = get_g2_per_file_sig()
+	g2_ref = get_g2_per_file_ref()
+	g2_diff = []
+	for j in range (0,len(g2_sig)):
+		g2_diff.append(g2_sig[j]-g2_ref[j] + 1.)
+	return g2_diff
+
+# ----------------------- #
+# g2 per File calculation #
+# ------------------------#
+def cumulative_g2_per_file_sig(fileindex): # First do single_RMS_sig
+	theRMS = gl.rmssin_sig[fileindex]
+	gl.n_N_sig += 1./theRMS**2
+	for j in range (0,len(gl.isum_sig)):
+		gl.isum_sig[j] += gl.g2_current[j]/theRMS**2
+def cumulative_g2_per_file_ref(fileindex): # First do single_RMS_ref
+	theRMS = gl.rmssin_ref[fileindex]
+	gl.n_N_ref += 1./theRMS**2
+	for j in range (0,len(gl.isum_ref)):
+		gl.isum_ref[j] += gl.g2_current[j]/theRMS**2
+def get_g2_per_file_sig():
+	g2 = []; n = 1./gl.n_N_sig
+	for j in range (0,len(gl.isum_sig)):
+		g2.append(n * gl.isum_sig[j])
+	return g2
+def get_g2_per_file_ref():
+	g2 = []; n = 1./gl.n_N_ref
+	for j in range (0,len(gl.isum_ref)):
+		g2.append(n * gl.isum_ref[j])
+	return g2
 
 # --------------- #
 # RMS calculation #
@@ -202,6 +236,8 @@ def single_RMS_sig(fileindex, binning):
 	if gl.boolLP == True:
 		g2 = butter_lowpass_filter(g2, binning)
 	gl.rmssin_sig.append(np.std(g2[range_left:range_right]))
+	gl.ffts_sig.append(np.abs(np.fft.fft([x-1 for x in g2][range_left:range_right])))
+	gl.g2_current = g2 # for per-file calculation
 def single_RMS_ref(fileindex, binning):
 	G2 = single_G2_offsetcorr_ref(fileindex, binning)
 	range_left = int(gl.rmsRangeLeftEntry.get()); range_right = int(gl.rmsRangeRightEntry.get())
@@ -215,8 +251,12 @@ def single_RMS_ref(fileindex, binning):
 	if gl.boolLP == True:
 		g2 = butter_lowpass_filter(g2, binning)
 	gl.rmssin_ref.append(np.std(g2[range_left:range_right]))
-def cumulative_RMS_sig(binning):
-	g2 = get_cumulative_g2_sig(lowpass = gl.boolLP, binning=binning)
+	gl.g2_current = g2 # for per-file calculation
+def cumulative_RMS_sig(binning, method):
+	if method == 0: # Conventional calculation
+		g2 = get_cumulative_g2_sig(lowpass = gl.boolLP, binning=binning)
+	elif method == 1: # per-file calculation
+		g2 = get_g2_per_file_sig()
 	range_left = int(gl.rmsRangeLeftEntry.get()); range_right = int(gl.rmsRangeRightEntry.get())
 	gl.rmscum_sig.append(np.std(g2[range_left:range_right]))
 	# Error on RMS is calculated via several ranges of 25 bins
@@ -225,8 +265,11 @@ def cumulative_RMS_sig(binning):
 	for i in i_starts:
 		rmss.append(np.std(g2[i:i+25]))
 	gl.rmscum_sig_err.append(np.std(rmss))
-def cumulative_RMS_ref(binning):
-	g2 = get_cumulative_g2_ref(lowpass = gl.boolLP, binning=binning)
+def cumulative_RMS_ref(binning, method):
+	if method == 0: # Conventional calculation
+		g2 = get_cumulative_g2_ref(lowpass = gl.boolLP, binning=binning)
+	elif method == 1: # per-file calculation:
+		g2 = get_g2_per_file_ref()
 	range_left = int(gl.rmsRangeLeftEntry.get()); range_right = int(gl.rmsRangeRightEntry.get())
 	gl.rmscum_ref.append(np.std(g2[range_left:range_right]))
 	# Error on RMS is calculated via several ranges of 25 bins
@@ -235,8 +278,11 @@ def cumulative_RMS_ref(binning):
 	for i in i_starts:
 		rmss.append(np.std(g2[i:i+25]))
 	gl.rmscum_ref_err.append(np.std(rmss))
-def cumulative_RMS_diff(binning):
-	g2 = get_cumulative_g2_diff(binning=binning)
+def cumulative_RMS_diff(binning, method):
+	if method == 0: # Conventional calculation
+		g2 = get_cumulative_g2_diff(binning=binning)
+	elif method == 1: # per-file calculation
+		g2 = get_cumulative_g2_diff_per_file()
 	range_left = int(gl.rmsRangeLeftEntry.get()); range_right = int(gl.rmsRangeRightEntry.get())
 	gl.rmscum_diff.append(np.std(g2[range_left:range_right]))
 # Expectations
@@ -286,16 +332,7 @@ def cumulative_RMS_diff_exp(fileindex):
 # Cumulative analyis #
 #--------------------#
 def cumulate_signal(binning):
-	gl.rates_a_sig = []; gl.rates_b_sig = []; gl.rates_a_ref = []; gl.rates_b_ref = []
-	gl.rmssin_sig = []; gl.rmssin_ref = []; gl.rmscum_sig = []; gl.rmscum_ref = [];	gl.rmscum_diff = []
-	gl.rmssin_sig_exp = []; gl.rmssin_ref_exp = []; gl.rmscum_sig_exp = []; gl.rmscum_ref_exp = [];	gl.rmscum_diff_exp = []
-	gl.rmssin_sig_frac = []; gl.rmssin_ref_frac = []; gl.rmscum_sig_frac = []; gl.rmscum_ref_frac = [];	gl.rmscum_diff_frac = []
-	gl.G2_cum_sig = []; gl.G2_cum_ref = []
-	gl.rmscum_sig_err = []; gl.rmscum_ref_err = []; gl.rmscum_diff_err = []
-	gl.N_e_sig = 0.; gl.N_e_ref = 0.
-
-	gl.intValLabel.config(text="---.- +/- ---.- fs")
-	#gl.timeResValLabel.config(text="-.-- +/- -.--ns")
+	bas.reset_values()
 
 	if gl.boolSig == True:
 		print ("Analyze Signal ...")
@@ -305,7 +342,7 @@ def cumulate_signal(binning):
 			get_photon_rate_sig(i, binning)
 			single_RMS_sig(i, binning); single_RMS_sig_exp(i, binning)
 			cumulative_G2_offsetcorr_sig(i, binning)
-			cumulative_RMS_sig(binning); cumulative_RMS_sig_exp(i, binning)
+			cumulative_RMS_sig(binning, method=0); cumulative_RMS_sig_exp(i, binning)
 		gl.g2_sig = get_cumulative_g2_sig(lowpass=gl.boolLP, binning=binning)
 		bas.correlate_shapes()
 
@@ -317,12 +354,46 @@ def cumulate_signal(binning):
 			get_photon_rate_ref(i, binning)
 			single_RMS_ref(i, binning); single_RMS_ref_exp(i, binning)
 			cumulative_G2_offsetcorr_ref(i, binning)
-			cumulative_RMS_ref(binning); cumulative_RMS_ref_exp(i, binning)
+			cumulative_RMS_ref(binning, method=0); cumulative_RMS_ref_exp(i, binning)
 			if gl.boolSig == True:
-				cumulative_RMS_diff(binning); cumulative_RMS_diff_exp(i)
+				cumulative_RMS_diff(binning, method=0); cumulative_RMS_diff_exp(i)
 		gl.g2_ref = get_cumulative_g2_ref(lowpass=gl.boolLP, binning=binning)
 		if gl.boolSig == True:
 			gl.g2_diff = get_cumulative_g2_diff(binning)
+
+	fft(binning)
+	disp.refresh_display(binning)
+	print ("Done\n")
+
+def cumulate_signal_per_file(binning):
+	bas.reset_values()
+
+	if gl.boolSig == True:
+		print ("Analyze Signal ...")
+		file_list_sig()
+		gl.isum_sig = np.zeros(len(np.loadtxt(gl.files_sig[0])[:,1]))
+		for i in range (0,len(gl.files_sig)):
+			get_photon_rate_sig(i, binning)
+			single_RMS_sig(i, binning); single_RMS_sig_exp(i, binning)
+			cumulative_g2_per_file_sig(i)
+			cumulative_RMS_sig(binning, method=1); cumulative_RMS_sig_exp(i, binning)
+		gl.g2_sig = get_g2_per_file_sig()
+		bas.correlate_shapes()
+
+	if gl.boolRef == True:
+		print ("Analyze Reference ...")
+		file_list_ref()
+		gl.isum_ref = np.zeros(len(np.loadtxt(gl.files_ref[0])[:,1]))
+		for i in range (0,len(gl.files_ref)):
+			get_photon_rate_ref(i, binning)
+			single_RMS_ref(i, binning); single_RMS_ref_exp(i, binning)
+			cumulative_g2_per_file_ref(i)
+			cumulative_RMS_ref(binning, method=1); cumulative_RMS_ref_exp(i, binning)
+			if gl.boolSig == True:
+				cumulative_RMS_diff(binning, method=1); cumulative_RMS_diff_exp(i)
+		gl.g2_ref = get_g2_per_file_ref()
+		if gl.boolSig == True:
+			gl.g2_diff = get_cumulative_g2_diff_per_file()
 
 	fft(binning)
 	disp.refresh_display(binning)

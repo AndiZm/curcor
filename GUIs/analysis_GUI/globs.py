@@ -15,6 +15,11 @@ files_sig = []; files_ref = []
 
 g2_sig_fft = []; g2_ref_fft = []; g2_diff_fft = []
 
+# Parameters for per-file g2
+isum_sig = []; n_N_sig = 0
+isum_ref = []; n_N_ref = 0
+g2_current = []
+
 #------------#
 # RMS arrays #
 #------------#
@@ -32,6 +37,8 @@ rmssin_sig_frac = []; rmssin_ref_frac = []
 rmscum_sig_frac = []; rmscum_ref_frac = []
 rmscum_diff_frac = []
 
+ffts_sig = []; ffts_sig_plot = []
+
 N_e_sig = 0; N_e_ref = 0.
 
 offset_a_sig = 0.; offset_b_sig = 0.
@@ -42,6 +49,7 @@ rates_a_ref = []; rates_b_ref = []
 
 # Buttons
 updateButton = []
+updateNButton = []
 expcorrButton = []
 
 # Labels

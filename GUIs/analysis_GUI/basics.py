@@ -26,4 +26,17 @@ def correlate_shapes():
 	maxx = np.argmax(gl.peakshape_y); maxy = np.max(gl.peakshape_y)
 	gl.peakshape_x = np.arange(-maxx,len(gl.peakshape_y)-maxx,1)
 	for i in range (0,len(gl.peakshape_x)):
-		gl.peakshape_y[i] /= maxy
+		gl.peakshape_y[i] /= maxy#
+
+def reset_values():
+	gl.rates_a_sig = []; gl.rates_b_sig = []; gl.rates_a_ref = []; gl.rates_b_ref = []
+	gl.rmssin_sig = []; gl.rmssin_ref = []; gl.rmscum_sig = []; gl.rmscum_ref = [];	gl.rmscum_diff = []
+	gl.rmssin_sig_exp = []; gl.rmssin_ref_exp = []; gl.rmscum_sig_exp = []; gl.rmscum_ref_exp = [];	gl.rmscum_diff_exp = []
+	gl.rmssin_sig_frac = []; gl.rmssin_ref_frac = []; gl.rmscum_sig_frac = []; gl.rmscum_ref_frac = [];	gl.rmscum_diff_frac = []
+	gl.G2_cum_sig = []; gl.G2_cum_ref = []
+	gl.rmscum_sig_err = []; gl.rmscum_ref_err = []; gl.rmscum_diff_err = []
+	gl.ffts_sig = []
+	gl.N_e_sig = 0.; gl.N_e_ref = 0.
+	gl.intValLabel.config(text="---.- +/- ---.- fs")
+	gl.isum_sig = []; gl.n_N_sig = 0
+	gl.isum_ref = []; gl.n_N_ref = 0

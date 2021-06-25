@@ -78,8 +78,9 @@ updateFrame = Frame(upperFrame); updateFrame.grid(row=0,column=1)
 binning = StringVar(root); binning.set("Sampling: 1.6 ns")
 binningoptions = {"Sampling: 0.8 ns": 0.8e-9, "Sampling: 1.6 ns": 1.6e-9, "Sampling: 3.2 ns": 3.2e-9}
 binningDropdown = OptionMenu(updateFrame, binning, *binningoptions); binningDropdown.grid(row=0,column=0)
-gl.updateButton = Button(updateFrame, text="Update", bg="green", fg="white", height=3, command=lambda: ana.cumulate_signal(binning = float(binningoptions[binning.get()]))); gl.updateButton.grid(row=0,column=1)
-gl.expcorrButton = Button(updateFrame, text="Experimental\ncorr factors", bg="orange", fg="white", height=3, command=ana.experimental_correction_factors); gl.expcorrButton.grid(row=0,column=2)
+gl.updateButton = Button(updateFrame, text="Update", bg="#7df777", height=3, command=lambda: ana.cumulate_signal(binning = float(binningoptions[binning.get()]))); gl.updateButton.grid(row=0,column=1)
+gl.updateNButton = Button(updateFrame, text="Update\nper file", bg="green", fg="white", height=3, command=lambda: ana.cumulate_signal_per_file(binning = float(binningoptions[binning.get()]))); gl.updateNButton.grid(row=0,column=2)
+gl.expcorrButton = Button(updateFrame, text="Experimental\ncorr factors", bg="orange", fg="white", height=3, command=ana.experimental_correction_factors); gl.expcorrButton.grid(row=0,column=3)
 
 ######################
 #### SIDE OPTIONS ####

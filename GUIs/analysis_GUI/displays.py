@@ -1,6 +1,7 @@
 import globs as gl
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib import cm
 
 def gauss(x,a,m,s):
 	return a * np.exp(-(x-m)**2/2/s/s)
@@ -119,7 +120,7 @@ def displayCumulativeRMS():
 	plt.show()
 
 def refresh_display(binning):
-	gl.corrAx.cla(); gl.corrAx.set_title("Correlations"); gl.corrAx.set_xlabel("Time bins"); gl.corrAx.set_ylabel("$g^{(2)}$"); gl.corrAx.ticklabel_format(useOffset=False)
+	gl.corrAx.cla(); gl.corrAx.set_title("Correlations"); gl.corrAx.set_xlabel("Time bins"); gl.corrAx.set_ylabel("$g^{(2)}$"); gl.corrAx.ticklabel_format(useOffset=False); gl.corrAx.grid(alpha=0.3)
 	gl.fftAx.cla(); gl.fftAx.set_xlabel("Frequency [GHz]")
 	gl.rmssinAx.cla(); gl.rmssinAx.set_ylabel("Single files RMS")
 	gl.ratesAx.cla(); gl.ratesAx.set_ylabel("Rates [MHz]"); gl.ratesAx.set_title("Photon rates")
@@ -177,7 +178,11 @@ def refresh_display(binning):
 			x_fft = np.linspace(0,1e-9/binning, len(gl.g2_diff_fft), endpoint= True)
 			gl.g2_sig_fft_plot = gl.fftAx.plot(x_fft, np.abs(gl.g2_diff_fft), color="#003366", linewidth=2)
 
+	if gl.boolSig == True:
+		gl.ffts_sig_plot = gl.fftAx.imshow(gl.ffts_sig, aspect="auto", extent=[0,1e-9/binning,0,formax], cmap=cm.binary, vmin=np.min(gl.ffts_sig), vmax=np.max(gl.ffts_sig))
+
 	gl.fftAx.set_xlim(0,0.5e-9/binning)
 	gl.fftAx.set_ylim(0,formax)
+
 
 	gl.corrCanvas.draw()
