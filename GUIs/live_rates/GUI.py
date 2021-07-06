@@ -19,6 +19,7 @@ import live_peakshape as ps
 import live_waveform_reader as wv
 import live_wait_for_file as wff
 import globals as gl
+import rate_server as svr
 
 from threading import Thread
 
@@ -398,6 +399,8 @@ def analyze_file(newest_file):
 	# Rates 
 	r_a = 1e-6 * mean_a_ADC/(avg_charge_a*binRange); r_b = 1e-6 * mean_b_ADC/(avg_charge_b*binRange)
 	CHa_Label_rate.config(text="{:.1f}".format(r_a)); CHb_Label_rate.config(text="{:.1f}".format(r_b))				
+	if server != None:
+		server.sendRate(r_a, r_b)
 	# mV
 	mean_a_mV = ADC_to_mV(adc=mean_a_ADC, range=vRange); mean_b_mV = ADC_to_mV(adc=mean_b_ADC, range=vRange)
 	CHa_Label_mean.config(text="{:.2f}".format(mean_a_mV)); CHb_Label_mean.config(text="{:.2f}".format(mean_b_mV))
@@ -486,8 +489,35 @@ def singleFileRate():
 	analyze_file(root.filename)
 	idle()
 
+#starts/stops the server which sends the rate to the RASPI
+def startStopServer():
+	global server
+	#check if server is running
+	if server == None :	
+		#start server
+		server=svr.server()
+		try:
+			server.start()
+			#change button label
+			startStopServerButton.config(text="Stop Server")
+		except OSError as err:
+			print("The OS did not allow start the server on {0}:{1} . Are address and port correct? Maybe an old instance is still blocking this resource?".format(server.address, server.port))
+			print(err)
+			server = None
+
+
+	else:
+		#shutdown server
+		server.stop()
+		#change button label
+		startStopServerButton.config(text="Start Server")
+
+		server = None
+
+
 clearPlotButon = Button(startFrame, text="Clear", bg="#ccf2ff", command=clearPlot, width=12); clearPlotButon.grid(row=0,column=0)
 plotButton = Button(startFrame, text="Plotting off", bg="#cdcfd1", command=switchplot, width=12); plotButton.grid(row=0,column=1)
+startStopServerButton = Button(startFrame, text="Start Server", bg="#cdcfd1", command=startStopServer, width=12); startStopServerButton.grid(row=1,column=0)
 startstopButton = Button(startFrame, text="Start!", bg="#e8fcae", command=startstop, width=12); startstopButton.grid(row=1,column=0)
 singleFileButton = Button(startFrame, text="Single", bg = "#e8fcae", command=singleFileRate, width=12); singleFileButton.grid(row=1, column=1)
 
