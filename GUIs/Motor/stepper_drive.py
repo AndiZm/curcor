@@ -34,7 +34,7 @@ def init():
     # Reference search direction settings
     a[0].set_axis_parameter(193,65) #Right Ref Search
     a[1].set_axis_parameter(193,1) #Left Ref Search
-    a[1].set_axis_parameter(160,65) #Interpolate steps
+    #a[1].set_axis_parameter(160,65) #Interpolate steps
     a[2].set_axis_parameter(193,65)
     a[3].set_axis_parameter(193,1)
     

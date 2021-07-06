@@ -32,6 +32,7 @@ class rate_client:
 			self.port=int(config["connection"]["port"])
 			self.address=config["connection"]["address"]
 			self.msg_length=int(config["connection"]["msg_length"])
+		print("rate-client inti completed. Configuation: addr {0} port {1} msg_length {2}".format(self.address, self.port, self.msg_length))
 
 		
 	#connects the rate client to the rate server
@@ -41,6 +42,7 @@ class rate_client:
 		if self.socket is None:
 			self.socket = soc.socket(soc.AF_INET, soc.SOCK_STREAM)
 			self.socket.settimeout(1)
+			print("Connecing to {0} on port {1}".format(self.port, self.address))
 			self.socket.connect((self.address, self.port))
 			self.socket.settimeout(None)
 			print("Client started!")	
