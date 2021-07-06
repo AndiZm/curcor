@@ -9,8 +9,8 @@ class rate_client:
 	msg_length = 13
 
 	#info about the server to connect to
-	port = 2610 
-	address = "192.168.0.103"#"192.168.0.103"
+	port = 2610
+	address = "131.188.167.100"#"192.168.0.103"
 	
 	#client socket that is used to connect to the rate server
 	socket = None
