@@ -371,7 +371,7 @@ CHb_Label_rate = Label(abFrame, text="0.0", fg="orange", bg="black", font=("Helv
 ## START FRAME ##
 #################
 startFrame = Frame (rootMainFrame); startFrame.grid(row=5, column=0)
-running = False; stop_thread = False; plotting = False
+running = False; stop_thread = False; plotting = False; server=None
 # For plotting
 rates_a = []; rates_b = []
 plotFig = []; rate_a_plot = []; rate_b_plot = []
@@ -518,8 +518,8 @@ def startStopServer():
 clearPlotButon = Button(startFrame, text="Clear", bg="#ccf2ff", command=clearPlot, width=12); clearPlotButon.grid(row=0,column=0)
 plotButton = Button(startFrame, text="Plotting off", bg="#cdcfd1", command=switchplot, width=12); plotButton.grid(row=0,column=1)
 startStopServerButton = Button(startFrame, text="Start Server", bg="#cdcfd1", command=startStopServer, width=12); startStopServerButton.grid(row=1,column=0)
-startstopButton = Button(startFrame, text="Start!", bg="#e8fcae", command=startstop, width=12); startstopButton.grid(row=1,column=0)
-singleFileButton = Button(startFrame, text="Single", bg = "#e8fcae", command=singleFileRate, width=12); singleFileButton.grid(row=1, column=1)
+startstopButton = Button(startFrame, text="Start!", bg="#e8fcae", command=startstop, width=12); startstopButton.grid(row=2,column=0)
+singleFileButton = Button(startFrame, text="Single", bg = "#e8fcae", command=singleFileRate, width=12); singleFileButton.grid(row=2, column=1)
 
 #############################
 ## STATUS FRAME AND BUTTON ##
