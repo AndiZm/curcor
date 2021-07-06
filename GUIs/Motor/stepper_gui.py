@@ -217,11 +217,10 @@ def showRateDistribution(spacing_phi=10, spacing_psi=10, min_phi=-4.0, max_phi=4
 				sleep(0.05)
 				#print("wait_4")
 			rates[j][i]=client.getRateA()+client.getRateB()
-	print(rates)
 	plt.figure("Heatmap of the mirror Postions", figsize=(6,6))
-	plt.imshow(rates, cmap='hot')
-	plt.xlabel("PSI")
-	plt.ylabel("PHI")
+	plt.imshow(rates, cmap='cool', extent=(min_psi-(max_psi-min_psi)/(spacing_psi)/2, max_psi+(max_psi-min_psi)/(spacing_psi)/2, min_phi-(max_phi-min_phi)/(spacing_phi)/2, max_phi+(max_phi-min_phi)/(spacing_phi)/2))
+	plt.xlabel("$\psi$ [°]")
+	plt.ylabel("$\phi$ [°]")
 	plt.show()
 	
 def startStopClient():
