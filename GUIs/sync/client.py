@@ -2,9 +2,13 @@ import threading
 import socket
 import os
 import mouse as m
+import live_wait_for_file as wff
+import globals as gl
 
-address = "131.188.167.97"
+address = "131.188.167.132"
 port = 2610
+basicpath = "E:/Test/data/"
+samples = 2*1024**3
 
 clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 clientSocket.connect((address,port))
@@ -29,7 +33,21 @@ def listen():
 			m.loop()
 		if data == "stop":
 			m.stop()
+			gl.stop_wait_for_file_thread = True
+			gl.cont_measurement_thread = False
+		if data == "start": # Start synchronized continuous measurements
+			# Start file check thread
+			cm_thread = threading.Thread(target=cont_measurement, args=[])
+			cm_thread.start()
 	os._exit(1)
+
+def cont_measurement():
+	m.single()
+	gl.stop_wait_for_file_thread = False
+	file = wff.execute_single(basicpath, samples)
+	print (file)
+	text = "New measurement: {}".format(file)
+	clientSocket.send(text.encode('utf8'))	
 
 listen_thread = threading.Thread(target=listen, args=[])
 listen_thread.start()
