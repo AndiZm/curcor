@@ -845,7 +845,7 @@ def optimizeMirrorBluntly():
 	global client
 	global mirror_phi_pos
 	global mirror_psi_pos
-	print("Mirror Bluntly")
+	print("Mirror Bluntly...")
 	
 	if client == None:
 			print("No rate Server connected. The rate can not be optimzied witout knowing the rate!")
