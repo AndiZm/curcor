@@ -232,6 +232,27 @@ def calibrate():
 			f.write(str(avg_charge_a) + "\n")
 		calibLoad = to_calib(calibFile, ".calib1"); loadCalibLabel.config(text=calibLoad.split("/")[-1])
 	idle()
+def calibrate_newFit():
+	global histo_x, histo_a, pa, xplot, nsum_a, ps_a, ps_x, ph_a, avg_charge_a, calibLoad
+	histo_x, histo_a, pa, xplot = fphd.onlyFit_single(a_x=histo_x, a_y=histo_a, range_a=[float(fitRangelowEntryA.get()),float(fitRangehighEntryA.get())])
+	ph_a = fphd.phd(pa[1],pa[2])
+	avg_charge_a = nsum_a * ph_a
+	avgChargeLabelA.config(text="{:.2f}".format(avg_charge_a))
+	outfileCalib = to_calib(calibFile, ".calib1")
+	outfilePHD   = to_calib(calibFile, ".phd1")
+	outfilePS    = to_calib(calibFile, ".shape1")
+	outfileXPLOT = to_calib(calibFile, ".xplot1")
+	np.savetxt(outfilePHD, np.c_[histo_x,histo_a])
+	np.savetxt(outfilePS, np.c_[ps_x, ps_a])
+	np.savetxt(outfileXPLOT, xplot)
+	with open(outfileCalib, 'w') as f:
+		f.write(str(pa[0]) + "\n" + str(pa[1]) + "\n" + str(pa[2]) + "\n")
+		f.write(str(nsum_a) + "\n")
+		f.write(str(ph_a) + "\n")
+		f.write(str(avg_charge_a) + "\n")
+	calibLoad = to_calib(calibFile, ".calib1"); loadCalibLabel.config(text=calibLoad.split("/")[-1])
+	print ("New fit range applied")
+	idle()
 calib_thread = []
 def start_calib_thread():
 	gl.stop_calib_thread = False
@@ -257,21 +278,6 @@ def loadCalibration():
 	avg_charge_a = np.loadtxt(calibLoad)[5]
 	avgChargeLabelA.config(text="{:.2f}".format(avg_charge_a))
 	calibFile = to_bin(calibLoad); calibFileLabel.config(text=calibFile.split("/")[-1])
-def quickCalibration():
-	global calibFile
-	statusLabel.config(text="Calibration - wait for file", bg="#edda45")
-	calibFile = wff.execute_single(basicpath=basicpath, samples=int(sampleoptions[samples.get()]))
-	calibFileLabel.config(text=calibFile.split("/")[-1])
-	idle()
-	if gl.stop_wait_for_file_thread == False:
-		start_calib_thread()
-def start_quick_calib_thread():
-	gl.stop_wait_for_file_thread = False
-	gl.stop_calib_thread = False
-	quick_calib_thread = Thread(target=quickCalibration, args=())
-	quick_calib_thread.start()
-def stop_quick_calib_thread():
-	gl.stop_wait_for_file_thread = True
 
 calibGeneralFrame = Frame(calibFrame, background="#ccf2ff"); calibGeneralFrame.grid(row=1,column=0)
 selectCalibFileButton = Button(calibGeneralFrame, text="Select Calib Binary", command=selectCalibFile, background="#ccf2ff"); selectCalibFileButton.grid(row=0, column=0)
@@ -313,7 +319,7 @@ avgChargeLabelA = Label(calibParamFrame, text="--", background="black", fg="oran
 calibDoFrame = Frame(calibFrame, background="#ccf2ff"); calibDoFrame.grid(row=3,column=0)
 recalibrateButton = Button(calibDoFrame, text="Calibrate", background="#ccf2ff", command=start_calib_thread); recalibrateButton.grid(row=0,column=0)
 stopCalibrationButton = Button(calibDoFrame, text="Abort", background="#fa857a", command=stop_calib_thread); stopCalibrationButton.grid(row=0,column=1)
-quickCalibButton = Button(calibDoFrame, text="Wait for file", background="#ccf2ff", command=start_quick_calib_thread); quickCalibButton.grid(row=0,column=2)
+CalibFitButton = Button(calibDoFrame, text="Only Fit", background="#ccf2ff", command=calibrate_newFit); CalibFitButton.grid(row=0,column=2)
 
 
 ######################

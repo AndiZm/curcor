@@ -62,6 +62,16 @@ def execute(file, packet_length, npackets, range_a, range_b):
     pb,cb = curve_fit(gauss, xfit_b, byfit, p0=[byfit[int(len(xfit_b)/2)],-15,5]) 
    
     return a_x, a_y, b_y, pa,pb,xplot
+def onlyFit(a_x,a_y,b_x,b_y, range_a,range_b):
+    #Fits
+    xfit_a = a_x[(a_x>range_a[0]) & (a_x<range_a[1])]; ayfit = a_y[(a_x>range_a[0]) & (a_x<range_a[1])]
+    xfit_b = b_x[(b_x>range_b[0]) & (b_x<range_b[1])]; byfit = b_y[(b_x>range_b[0]) & (b_x<range_b[1])]
+    xplot = np.arange(-128,0,0.1)
+    pa,ca = curve_fit(gauss, xfit_a, ayfit, p0=[ayfit[int(len(xfit_a)/2)],-15,5])
+    pb,cb = curve_fit(gauss, xfit_b, byfit, p0=[byfit[int(len(xfit_b)/2)],-15,5]) 
+   
+    return a_x, a_y, b_y, pa,pb,xplot
+
 
 def execute_single(file, packet_length, npackets, range_a):
 
@@ -89,3 +99,10 @@ def execute_single(file, packet_length, npackets, range_a):
     pa,ca = curve_fit(gauss, xfit_a, ayfit, p0=[ayfit[int(len(xfit_a)/2)],-15,5])
    
     return a_x, a_y, pa, xplot
+def onlyFit_single(a_x,a_y,range_a):
+    #Fits
+    xfit_a = a_x[(a_x>range_a[0]) & (a_x<range_a[1])]; ayfit = a_y[(a_x>range_a[0]) & (a_x<range_a[1])]
+    xplot = np.arange(-128,0,0.1)
+    pa,ca = curve_fit(gauss, xfit_a, ayfit, p0=[ayfit[int(len(xfit_a)/2)],-15,5])
+   
+    return a_x, a_y, pa,xplot

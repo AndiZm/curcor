@@ -237,6 +237,28 @@ def calibrate():
 			f.write(str(avg_charge_a) + "\n" + str(avg_charge_b) + "\n")
 		calibLoad = to_calib(calibFile, ".calib"); loadCalibLabel.config(text=calibLoad.split("/")[-1])
 	idle()
+def calibrate_newFit():
+	global histo_x, histo_a, histo_b, pa, pb, xplot, nsum_a, nsum_b, ps_a, ps_b, ps_x, ph_a, ph_b, avg_charge_a, avg_charge_b, calibLoad
+	histo_x, histo_a, histo_b, pa, pb, xplot = fphd.onlyFit(a_x=histo_x, a_y=histo_a, b_x=histo_x, b_y=histo_b,range_a=[float(fitRangelowEntryA.get()),float(fitRangehighEntryA.get())], range_b=[float(fitRangelowEntryB.get()),float(fitRangehighEntryB.get())])
+	ph_a = fphd.phd(pa[1],pa[2]); ph_b = fphd.phd(pb[1],pb[2])
+	avg_charge_a = nsum_a * ph_a; avg_charge_b = nsum_b * ph_b
+	avgChargeLabelA.config(text="{:.2f}".format(avg_charge_a)); avgChargeLabelB.config(text="{:.2f}".format(avg_charge_b))
+	outfileCalib = to_calib(calibFile, ".calib")
+	outfilePHD   = to_calib(calibFile, ".phd")
+	outfilePS    = to_calib(calibFile, ".shape")
+	outfileXPLOT = to_calib(calibFile, ".xplot")
+	np.savetxt(outfilePHD, np.c_[histo_x,histo_a,histo_b])
+	np.savetxt(outfilePS, np.c_[ps_x, ps_a, ps_b])
+	np.savetxt(outfileXPLOT, xplot)
+	with open(outfileCalib, 'w') as f:
+		f.write(str(pa[0]) + "\n" + str(pa[1]) + "\n" + str(pa[2]) + "\n")
+		f.write(str(pb[0]) + "\n" + str(pb[1]) + "\n" + str(pb[2]) + "\n")
+		f.write(str(nsum_a) + "\n" + str(nsum_b) + "\n")
+		f.write(str(ph_a) + "\n" + str(ph_b) + "\n")
+		f.write(str(avg_charge_a) + "\n" + str(avg_charge_b) + "\n")
+	calibLoad = to_calib(calibFile, ".calib"); loadCalibLabel.config(text=calibLoad.split("/")[-1])
+	print ("New fit range applied")
+	idle()
 calib_thread = []
 def start_calib_thread():
 	gl.stop_calib_thread = False
@@ -263,21 +285,6 @@ def loadCalibration():
 	avg_charge_a = np.loadtxt(calibLoad)[10]; avg_charge_b = np.loadtxt(calibLoad)[11]
 	avgChargeLabelA.config(text="{:.2f}".format(avg_charge_a)); avgChargeLabelB.config(text="{:.2f}".format(avg_charge_b))
 	calibFile = to_bin(calibLoad); calibFileLabel.config(text=calibFile.split("/")[-1])
-def quickCalibration():
-	global calibFile
-	statusLabel.config(text="Calibration - wait for file", bg="#edda45")
-	calibFile = wff.execute(basicpath=basicpath, samples=int(sampleoptions[samples.get()]))
-	calibFileLabel.config(text=calibFile.split("/")[-1])
-	idle()
-	if gl.stop_wait_for_file_thread == False:
-		start_calib_thread()
-def start_quick_calib_thread():
-	gl.stop_wait_for_file_thread = False
-	gl.stop_calib_thread = False
-	quick_calib_thread = Thread(target=quickCalibration, args=())
-	quick_calib_thread.start()
-def stop_quick_calib_thread():
-	gl.stop_wait_for_file_thread = True
 
 calibGeneralFrame = Frame(calibFrame, background="#ccf2ff"); calibGeneralFrame.grid(row=1,column=0)
 selectCalibFileButton = Button(calibGeneralFrame, text="Select Calib Binary", command=selectCalibFile, background="#ccf2ff"); selectCalibFileButton.grid(row=0, column=0)
@@ -326,7 +333,7 @@ avgChargeLabelB = Label(calibParamFrame, text="--", background="black", fg="oran
 calibDoFrame = Frame(calibFrame, background="#ccf2ff"); calibDoFrame.grid(row=3,column=0)
 recalibrateButton = Button(calibDoFrame, text="Calibrate", background="#ccf2ff", command=start_calib_thread); recalibrateButton.grid(row=0,column=0)
 stopCalibrationButton = Button(calibDoFrame, text="Abort", background="#fa857a", command=stop_calib_thread); stopCalibrationButton.grid(row=0,column=1)
-quickCalibButton = Button(calibDoFrame, text="Wait for file", background="#ccf2ff", command=start_quick_calib_thread); quickCalibButton.grid(row=0,column=2)
+CalibFitButton = Button(calibDoFrame, text="Only Fit", background="#ccf2ff", command=calibrate_newFit); CalibFitButton.grid(row=0,column=2)
 
 
 ######################
@@ -517,14 +524,21 @@ def startStopServer():
 
 clearPlotButon = Button(startFrame, text="Clear", bg="#ccf2ff", command=clearPlot, width=12); clearPlotButon.grid(row=0,column=0)
 plotButton = Button(startFrame, text="Plotting off", bg="#cdcfd1", command=switchplot, width=12); plotButton.grid(row=0,column=1)
-startStopServerButton = Button(startFrame, text="Start Server", bg="#cdcfd1", command=startStopServer, width=12); startStopServerButton.grid(row=1,column=0)
+
 startstopButton = Button(startFrame, text="Start!", bg="#e8fcae", command=startstop, width=12); startstopButton.grid(row=2,column=0)
 singleFileButton = Button(startFrame, text="Single", bg = "#e8fcae", command=singleFileRate, width=12); singleFileButton.grid(row=2, column=1)
+
+##################
+## Server Stuff ##
+##################
+socketFrame = Frame(rootMainFrame, bg="#f7df72"); socketFrame.grid(row=6,column=0)
+socketHeaderLabel = Label(socketFrame, text="Server", font=("Helvetica 12 bold"), bg="#f7df72"); socketHeaderLabel.grid(row=0,column=0)
+startStopServerButton = Button(socketFrame, text="Start Server", bg="#cdcfd1", command=startStopServer, width=12); startStopServerButton.grid(row=1,column=0)
 
 #############################
 ## STATUS FRAME AND BUTTON ##
 #############################
-statusFrame = Frame (rootMainFrame); statusFrame.grid(row=6, column=0)
+statusFrame = Frame (rootMainFrame); statusFrame.grid(row=7, column=0)
 statusLabel = Label(statusFrame, text="Starting ...", font=("Helvetica 12 bold"), bg="#ffffff"); statusLabel.grid(row=0, column=0)
 def idle():
 	statusLabel.config(text="Idle", bg="#ffffff"); root.update()
