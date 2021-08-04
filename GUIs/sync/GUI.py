@@ -43,7 +43,8 @@ gl.connectionLabel = Label(connectionFrame, text=gl.connectionLabelText, width=3
 measStatusLabel = Label(connectionFrame, text="Measurement Status"); measStatusLabel.grid(row=2,column=0)
 measStatusFrame = Frame(connectionFrame); measStatusFrame.grid(row=3,column=0)
 mssLabel = Label(measStatusFrame, text="Measurement stopped", bg="#f4f7b7"); mssLabel.grid(row=0,column=0)
-gl.responsesLabel = Label(measStatusFrame, text="", bg="#d6c5f0", width=2); gl.responsesLabel.grid(row=0,column=1)
+gl.responsesLabel = Label(measStatusFrame, text="", bg="black", fg="red", width=2); gl.responsesLabel.grid(row=0,column=1)
+gl.responsetimesLabel = Label(measStatusFrame, text="", width=4, bg="grey", fg="orange"); gl.responsetimesLabel.grid(row=0,column=2)
 
 
 ############

@@ -4,7 +4,6 @@ import os
 import mouse as m
 import live_wait_for_file as wff
 import globals as gl
-import time as t
 
 address = "131.188.167.132"
 port = 2610
@@ -48,9 +47,7 @@ def cont_measurement():
 	file = wff.execute_single(basicpath, samples)
 	print (file)
 	text = "New measurement: {}".format(file)
-	clientSocket.send(text.encode('utf8'))
-	t.sleep(1)
-
+	clientSocket.send(text.encode('utf8'))	
 
 listen_thread = threading.Thread(target=listen, args=[])
 listen_thread.start()

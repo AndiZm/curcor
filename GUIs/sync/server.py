@@ -1,6 +1,6 @@
 import threading
 import socket
-import time
+import time as t
 import globals as gl
 
 address = ""
@@ -10,7 +10,7 @@ connections = 5
 serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 serverSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 #serverSocket.bind((socket.gethostname(), port))
-serverSocket.bind(("131.188.167.132", port))
+serverSocket.bind(("131.188.167.97", port))
 serverSocket.listen(connections)
 
 listening = True
@@ -79,16 +79,16 @@ def listen_msg_from(client):
 			data = str(clientsockets[client].recv(1024).decode())
 			print ("Received message from {}: {}".format(addresses[client], data))
 			if "New measurement" in data:
-				gl.responses += 1
+				gl.responses += 1; gl.response_times.append(t.time())
 				gl.responsesLabel.config(text=str(gl.responses))
 	print ("Server stops listening to messages from {}".format(addresses[client]))
 
 def finish():
 	global listening, clientsockets, listening_msg
 	listening = False; listening_msg = False
-	time.sleep(1)
+	t.sleep(1)
 	send("exit")
-	time.sleep(1)
+	t.sleep(1)
 	for i in clientsockets:
 		i.shutdown(socket.SHUT_RDWR)
 		i.close()
@@ -102,11 +102,16 @@ def measureT():
 	global measure_thread, clientsockets
 	measure_thread = True
 	while measure_thread == True:
-		gl.responses = 0
+		gl.responses = 0; gl.response_times = []
 		gl.responsesLabel.config(text=str(gl.responses))
 		send("start")
 		while gl.responses < len(clientsockets):
 			pass
+		t_diff = gl.response_times[-1] - gl.response_times[0]
+		#print ("Time between responses:\t{:.2f} s".format(t_diff))
+		gl.responsetimesLabel.config(text="{:.2f} s".format(t_diff))
+		t.sleep(0.2)
+
 def measure():
 	m_thread = threading.Thread(target=measureT, args=[])
 	m_thread.start()
