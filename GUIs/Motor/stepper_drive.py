@@ -40,7 +40,7 @@ def init():
     
         a[i].set_axis_parameter(24,0) #1: invert right endswitch status
         a[i].set_axis_parameter(25,0) #1: invert left endswitch status
-        print(i,a[i].axis.get(24),a[i].axis.get(25))
+        #print(i,a[i].axis.get(24),a[i].axis.get(25))
     
     #reduce max drive current
     #current can set in 32 steps, 0..7 = first step = 0.06A .. 248..255 = last step = 1.915A
@@ -88,6 +88,10 @@ def init():
     
 
 def ismoving(themotor):
-    return 1-themotor.get_position_reached()
+    var=themotor.get_position_reached()
+    if var<=1:
+        return var
+    else:
+        return ismoving(themotor)
 def position(themotor):
     return themotor.axis.get(1)
