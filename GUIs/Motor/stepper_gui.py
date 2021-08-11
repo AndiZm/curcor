@@ -43,6 +43,10 @@ WarningStatus=[]
 for i in range (0,6):
     WarningStatus.append(0)
 
+change_mirror_phi=False
+change_mirror_psi=False
+change_mirror_z=False
+
 lastpositions=[]
 readpos = open("stepper_items/current_positions.txt","r")
 for line in readpos:
@@ -276,17 +280,13 @@ def moveto_mirror_height(val):
     WarningStatus[3]=0
     a[3].move_absolute(hmm_to_steps(mirror_height_pos.get()))   
 def moveto_mirror_z(val):
-    print("Move mirror z to",mirror_z_pos.get(),"in steps",mm_to_steps(mirror_z_pos.get()))
-    WarningStatus[2]=0
-    a[2].move_absolute(mm_to_steps(mirror_z_pos.get()))    
+    change_mirror_z=True
 def moveto_mirror_phi(val):
-    print("Move mirror phi to",mirror_phi_pos.get(),"in steps",degree_to_steps(mirror_phi_pos.get()))
-    WarningStatus[5]=0
-    a[5].move_absolute(degree_to_steps(mirror_phi_pos.get())) 
+    global change_mirror_phi
+    change_mirror_phi=True
 def moveto_mirror_psi(val):
-    print("Move mirror psi to",mirror_psi_pos.get(),"in steps",degree_to_steps(mirror_psi_pos.get()))
-    WarningStatus[4]=0
-    a[4].move_absolute(degree_to_steps(mirror_psi_pos.get()))
+    global change_mirror_psi
+    change_mirror_psi=True
 def moveto_camera_x(val):    
     print("Move camera x to",camera_x_pos.get(), "von" , CameraX.get(),"in steps",mm_to_steps(camera_x_pos.get()))
     WarningStatus[1]=0
@@ -673,6 +673,29 @@ CameraZLED = CameraZDisplay.create_oval(1,1,19,19, fill=LEDColors[0], width=0)
 #---- Permanently update screen ----#
 #-----------------------------------#
 def update_items():
+    #move all motors due to changes since last time
+    global change_mirror_phi
+    global change_mirror_psi
+    global change_mirror_z
+    global change
+    global change
+    global change
+    if change_mirror_phi:
+        print("Move mirror phi to",mirror_phi_pos.get(),"in steps",degree_to_steps(mirror_phi_pos.get()))
+        WarningStatus[5]=0
+        a[5].move_absolute(degree_to_steps(mirror_phi_pos.get()))
+        change_mirror_phi=False
+    if change_mirror_psi:
+        print("Move mirror psi to",mirror_psi_pos.get(),"in steps",degree_to_steps(mirror_psi_pos.get()))
+        WarningStatus[4]=0
+        a[4].move_absolute(degree_to_steps(mirror_psi_pos.get()))
+        change_mirror_psi=False
+    if change_mirror_z:
+        print("Move mirror z to",mirror_z_pos.get(),"in steps",mm_to_steps(mirror_z_pos.get()))
+        WarningStatus[2]=0
+        a[2].move_absolute(mm_to_steps(mirror_z_pos.get()))
+        change_mirror_z=False
+        
     #print (WarningStatus)
     #for i in range (0,6):
     #    print (str(sd.ismoving(a[i])) + "\t" + str(WarningStatus[i]) + "\t" + str(sd.ismoving(a[i])+WarningStatus[i]))
