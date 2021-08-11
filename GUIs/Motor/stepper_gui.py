@@ -46,6 +46,9 @@ for i in range (0,6):
 change_mirror_phi=False
 change_mirror_psi=False
 change_mirror_z=False
+change_mirror_height=False
+change_camera_x=False
+change_camera_z=False
 
 lastpositions=[]
 readpos = open("stepper_items/current_positions.txt","r")
@@ -276,9 +279,7 @@ def startStopClient():
 #-----------------#
 #fahrbalken
 def moveto_mirror_height(val):
-    print("Move mirror height to",mirror_height_pos.get(),"in steps",mm_to_steps(mirror_height_pos.get()))
-    WarningStatus[3]=0
-    a[3].move_absolute(hmm_to_steps(mirror_height_pos.get()))   
+    change_camera_height=True
 def moveto_mirror_z(val):
     change_mirror_z=True
 def moveto_mirror_phi(val):
@@ -288,13 +289,9 @@ def moveto_mirror_psi(val):
     global change_mirror_psi
     change_mirror_psi=True
 def moveto_camera_x(val):    
-    print("Move camera x to",camera_x_pos.get(), "von" , CameraX.get(),"in steps",mm_to_steps(camera_x_pos.get()))
-    WarningStatus[1]=0
-    a[1].move_absolute(mm_to_steps(camera_x_pos.get()))    
+    change_camera_x=True  
 def moveto_camera_z(val):
-    print("Move camera z to",camera_z_pos.get(),"in steps",mm_to_steps(camera_z_pos.get()))
-    WarningStatus[0]=0
-    a[0].move_absolute(mm_to_steps(camera_z_pos.get()))
+    change_camera_z=True
     
 def center_camera():
     CameraX.set(70)
@@ -677,9 +674,9 @@ def update_items():
     global change_mirror_phi
     global change_mirror_psi
     global change_mirror_z
-    global change
-    global change
-    global change
+    global change_mirror_height
+    global change_camera_x
+    global change_camera_z
     if change_mirror_phi:
         print("Move mirror phi to",mirror_phi_pos.get(),"in steps",degree_to_steps(mirror_phi_pos.get()))
         WarningStatus[5]=0
@@ -695,7 +692,21 @@ def update_items():
         WarningStatus[2]=0
         a[2].move_absolute(mm_to_steps(mirror_z_pos.get()))
         change_mirror_z=False
-        
+    if change_mirror_height:
+        print("Move mirror height to",mirror_height_pos.get(),"in steps",mm_to_steps(mirror_height_pos.get()))
+  	 	WarningStatus[3]=0
+  		a[3].move_absolute(hmm_to_steps(mirror_height_pos.get()))   
+        change_mirror_height=False
+    if change_camera_z:
+    	print("Move camera z to",camera_z_pos.get(),"in steps",mm_to_steps(camera_z_pos.get()))
+    	WarningStatus[0]=0
+    	a[0].move_absolute(mm_to_steps(camera_z_pos.get()))
+        change_camera_z=False   
+    if change_camera_x:
+   		print("Move camera x to",camera_x_pos.get(), "von" , CameraX.get(),"in steps",mm_to_steps(camera_x_pos.get()))
+   		WarningStatus[1]=0
+   		a[1].move_absolute(mm_to_steps(camera_x_pos.get()))    
+        change_camera_x=False    
     #print (WarningStatus)
     #for i in range (0,6):
     #    print (str(sd.ismoving(a[i])) + "\t" + str(WarningStatus[i]) + "\t" + str(sd.ismoving(a[i])+WarningStatus[i]))
