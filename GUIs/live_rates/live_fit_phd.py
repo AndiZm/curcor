@@ -31,8 +31,9 @@ def phd(mean, sigma):
 
     return avg
 
-def execute(file, packet_length, npackets, range_a, range_b):
+def execute(packet_length, npackets, range_a, range_b):
 
+    file = gl.calibFile
     packets = np.arange(0, npackets)
     peak_height_a = []; peak_height_b = []
     with open(file, 'rb') as f:
@@ -52,26 +53,22 @@ def execute(file, packet_length, npackets, range_a, range_b):
         
     binsx = np.arange(-128,128,1)
     data_a = np.histogram(peak_height_a, binsx); data_b = np.histogram(peak_height_b, binsx)
-    a_x = data_a[1][:-1]; a_y = data_a[0]; b_x = data_b[1][:-1]; b_y = data_b[0]
+    gl.histo_x = data_a[1][:-1]; gl.histo_a = data_a[0]; b_x = data_b[1][:-1]; gl.histo_b = data_b[0]
 
     #Fits
-    xfit_a = a_x[(a_x>range_a[0]) & (a_x<range_a[1])]; ayfit = a_y[(a_x>range_a[0]) & (a_x<range_a[1])]
-    xfit_b = b_x[(b_x>range_b[0]) & (b_x<range_b[1])]; byfit = b_y[(b_x>range_b[0]) & (b_x<range_b[1])]
-    xplot = np.arange(-128,0,0.1)
-    pa,ca = curve_fit(gauss, xfit_a, ayfit, p0=[ayfit[int(len(xfit_a)/2)],-15,5])
-    pb,cb = curve_fit(gauss, xfit_b, byfit, p0=[byfit[int(len(xfit_b)/2)],-15,5]) 
+    xfit_a = gl.histo_x[(gl.histo_x>range_a[0]) & (gl.histo_x<range_a[1])]; ayfit = gl.histo_a[(gl.histo_x>range_a[0]) & (gl.histo_x<range_a[1])]
+    xfit_b = gl.histo_x[(gl.histo_x>range_b[0]) & (gl.histo_x<range_b[1])]; byfit = gl.histo_b[(gl.histo_x>range_b[0]) & (gl.histo_x<range_b[1])]
+    gl.xplot = np.arange(-128,0,0.1)
+    gl.pa,ca = curve_fit(gauss, xfit_a, ayfit, p0=[ayfit[int(len(xfit_a)/2)],-15,5])
+    gl.pb,cb = curve_fit(gauss, xfit_b, byfit, p0=[byfit[int(len(xfit_b)/2)],-15,5])
    
-    return a_x, a_y, b_y, pa,pb,xplot
-def onlyFit(a_x,a_y,b_x,b_y, range_a,range_b):
+def onlyFit(range_a,range_b):
     #Fits
-    xfit_a = a_x[(a_x>range_a[0]) & (a_x<range_a[1])]; ayfit = a_y[(a_x>range_a[0]) & (a_x<range_a[1])]
-    xfit_b = b_x[(b_x>range_b[0]) & (b_x<range_b[1])]; byfit = b_y[(b_x>range_b[0]) & (b_x<range_b[1])]
-    xplot = np.arange(-128,0,0.1)
-    pa,ca = curve_fit(gauss, xfit_a, ayfit, p0=[ayfit[int(len(xfit_a)/2)],-15,5])
-    pb,cb = curve_fit(gauss, xfit_b, byfit, p0=[byfit[int(len(xfit_b)/2)],-15,5]) 
-   
-    return a_x, a_y, b_y, pa,pb,xplot
-
+    xfit_a = gl.histo_x[(gl.histo_x>range_a[0]) & (gl.histo_x<range_a[1])]; ayfit = gl.histo_a[(gl.histo_x>range_a[0]) & (gl.histo_x<range_a[1])]
+    xfit_b = gl.histo_x[(gl.histo_x>range_b[0]) & (gl.histo_x<range_b[1])]; byfit = gl.histo_b[(gl.histo_x>range_b[0]) & (gl.histo_x<range_b[1])]
+    gl.xplot = np.arange(-128,0,0.1)
+    gl.pa,ca = curve_fit(gauss, xfit_a, ayfit, p0=[ayfit[int(len(xfit_a)/2)],-15,5])
+    gl.pb,cb = curve_fit(gauss, xfit_b, byfit, p0=[byfit[int(len(xfit_b)/2)],-15,5])
 
 def execute_single(file, packet_length, npackets, range_a):
 

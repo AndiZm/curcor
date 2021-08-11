@@ -8,7 +8,9 @@ from numba import jit, cuda
 
 import globals as gl
 
-def execute(file, min_pulses, offset, height, cleanheight):
+def execute(min_pulses, offset, height, cleanheight):
+
+	file = gl.calibFile
 	packet_length = 1000000
 
 	# Define the length of the average peak 
@@ -86,9 +88,8 @@ def execute(file, min_pulses, offset, height, cleanheight):
 		y_avg_b[i] = (y_avg_b[i] - mean_tail_b)
 	
 	# Integrated normalized peak
-	int_tot_a = np.sum(y_avg_a); int_tot_b = np.sum(y_avg_b)
-
-	return int_tot_a, int_tot_b, x_normed, y_avg_a, y_avg_b
+	gl.nsum_a = np.sum(y_avg_a); gl.nsum_b = np.sum(y_avg_b)
+	gl.ps_x = x_normed; gl. ps_a = y_avg_a; gl.ps_b = y_avg_b
 
 def execute_single(file, min_pulses, offset, height, cleanheight):
 	packet_length = 1000000
