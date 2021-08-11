@@ -8,7 +8,7 @@ import stepper_drive as sd
 import motor_switch as ms
 import rate_client as rcl
 import servo_test as servo
-
+import time
 import numpy as np #only needed for simulations
 import matplotlib.pyplot as plt
 
@@ -22,7 +22,7 @@ a=sd.init()  #stepper_drive
 
 microsteps_nano = 32
 
-microsteps_standa = 32
+microsteps_standa = 16
 offset_standa = 512000
 
 LEDColors = []
@@ -30,44 +30,65 @@ LEDColors.append("#737373") #Resting
 LEDColors.append("#ff6600") #Moving
 LEDColors.append("#ff0000") #Warning
 
+ENDSwitchColors = []
+ENDSwitchColors.append("#ff6600")
+ENDSwitchColors.append("#737373")
+ENDSwitchColors.append("#ff0000") 
+
 WarningStatus=[]
 for i in range (0,6):
-	WarningStatus.append(0)
+    WarningStatus.append(0)
 
 lastpositions=[]
 readpos = open("stepper_items/current_positions.txt","r")
 for line in readpos:
-	lastpositions.append(float(line))
+    lastpositions.append(float(line))
 
 #Umrechnung zwischen motor parametern und python
 def degree_to_mm(degree):
-	return (8./9.)*degree ##8mm/9degrees
+    return (8./9.)*degree ##8mm/9degrees
   
 def mm_to_degree(mm):
-	return (9./8.)*mm #9degrees/8mm
+    return (9./8.)*mm #9degrees/8mm
 
 def steps_to_degree(steps):
-	return mm_to_degree(steps/(800.*microsteps_standa))-4.5  #1mm /800step*microsteps_standa
+    return mm_to_degree(steps/(800.*microsteps_standa))-4.5  #1mm /800step*microsteps_standa
 
 def degree_to_steps(degree): #800step*microsteps_standa / 1mm
-	return int(degree_to_mm(degree+4.5)*800*microsteps_standa)
+    return int(degree_to_mm(degree+4.5)*800*microsteps_standa)
 
 def steps_to_mm(steps):
-	return steps/(200.*microsteps_nano) #1mm / 200steps*microsteps_nano
+    return steps/(200.*microsteps_nano) #1mm / 200steps*microsteps_nano
 
 def mm_to_steps(mm):
-	return int(mm*200*microsteps_nano) #200steps*microsteps_nano / 1mm
+    return int(mm*200*microsteps_nano) #200steps*microsteps_nano / 1mm
 
-#Fuer Hoehenmotor
+#Für Höhenmotor
 def steps_to_hmm(steps):
-	return steps/(200.*microsteps_nano) #CHANGE
+    return steps/(200.*microsteps_nano) #CHANGE
 
 def hmm_to_steps(mm):
-	return int(mm*200*microsteps_nano) #CHANGE
+    return int(mm*200*microsteps_nano) #CHANGE
 
 def set_driving_speed(motor,speed):
-	motor.axis.max_positioning_speed=int(speed)
-	motor.set_axis_parameter(194, 300)
+    motor.axis.max_positioning_speed=int(speed)
+    motor.set_axis_parameter(194, 300)
+
+#stromrechner
+def i_to_n(cur):
+    if  cur < 0.06:
+        #print("Cur < 0.06A, set to 0.06")
+        return 0
+    if cur > 1.92 :
+        #print("Cur  > 1.92A, set to 1.92")
+        return 255
+    return (int(cur/0.06)*8)-1
+
+def n_to_i(num):
+    if num > 255:
+        #print("Num > 255")
+        return 1.92
+    return (int(num/8)+1)*0.06
 
 #Tkinter open window
 root = Tk()
@@ -86,251 +107,260 @@ servo_pos = IntVar()
 
 #not used
 def callback2(moveto):
-	print(moveto)
+    print(moveto)
    
 #fkt fuer roten stop button   
 def stop_all():
-	for motor in a:
-		motor.stop()
-	for i in range (0,6):   #prueft ob motor an zielposition angekommen war oder nicht 
-		if sd.ismoving(a[i]) == 1:   #1 wenn noch faehrt und 0 wenn schon angekommen, graues widget
-			WarningStatus[i] = 1
-	print("Stop all motors!")
-	
+    for motor in a:
+        motor.stop()
+    for i in range (0,6):   #prueft ob motor an zielposition angekommen war oder nicht 
+        if sd.ismoving(a[i]) == 1:   #1 wenn noch faehrt und 0 wenn schon angekommen, graues widget
+            WarningStatus[i] = 1
+    print("Stop all motors!")
+    
 client = None
 
 #save postions and exit gui schliessen
 def exitGUI():
-	servo.shutter_clean(90)
-	global client
-	savepos = open("stepper_items/current_positions.txt","w")
-	for i in range (0,3):
-		savepos.write(str(steps_to_mm(sd.position(a[i])))+"\n")
-	savepos.write(str(steps_to_hmm(sd.position(a[3])))+"\n")
-	for i in range (4,6):
-		savepos.write(str(steps_to_degree(sd.position(a[i])))+"\n")        
-	savepos.close()
-	if client != None:
-		client.stop()
-		client = None
-	
-	root.destroy()
+    servo.shutter_clean(90)
+    global client
+    savepos = open("stepper_items/current_positions.txt","w")
+    for i in range (0,3):
+        savepos.write(str(steps_to_mm(sd.position(a[i])))+"\n")
+    savepos.write(str(steps_to_hmm(sd.position(a[3])))+"\n")
+    for i in range (4,6):
+        savepos.write(str(steps_to_degree(sd.position(a[i])))+"\n")        
+    savepos.close()
+    if client != None:
+        client.stop()
+        client = None
+    
+    root.destroy()
 
 def save_this_position():
-	thispos = open("stepper_items/saved_position.txt","w")
-	for i in range (0,3):
-		thispos.write(str(steps_to_mm(sd.position(a[i])))+"\n")
-	thispos.write(str(steps_to_hmm(sd.position(a[3])))+"\n")
-	for i in range (4,6):
-		thispos.write(str(steps_to_degree(sd.position(a[i])))+"\n")
+    thispos = open("stepper_items/saved_position.txt","w")
+    for i in range (0,3):
+        thispos.write(str(steps_to_mm(sd.position(a[i])))+"\n")
+    thispos.write(str(steps_to_hmm(sd.position(a[3])))+"\n")
+    for i in range (4,6):
+        thispos.write(str(steps_to_degree(sd.position(a[i])))+"\n")
 
 def goto_saved_position():
-	thispositions = []
-	readpos = open("stepper_items/saved_position.txt","r")
-	for line in readpos:
-		thispositions.append(float(line))
-	CameraZ.set(thispositions[0])
-	CameraX.set(thispositions[1])
-	MirrorZ.set(thispositions[2])
-	MirrorHeight.set(thispositions[3])
-	MirrorPsi.set(thispositions[4])
-	MirrorPhi.set(thispositions[5])
-	moveto_camera_z(None)
-	moveto_camera_x(None)
-	moveto_mirror_z(None)
-	moveto_mirror_height(None)
-	moveto_mirror_psi(None)
-	moveto_mirror_phi(None)
+    thispositions = []
+    readpos = open("stepper_items/saved_position.txt","r")
+    for line in readpos:
+        thispositions.append(float(line))
+    CameraZ.set(thispositions[0])
+    CameraX.set(thispositions[1])
+    MirrorZ.set(thispositions[2])
+    MirrorHeight.set(thispositions[3])
+    MirrorPsi.set(thispositions[4])
+    MirrorPhi.set(thispositions[5])
+    moveto_camera_z(None)
+    moveto_camera_x(None)
+    moveto_mirror_z(None)
+    moveto_mirror_height(None)
+    moveto_mirror_psi(None)
+    moveto_mirror_phi(None)
 
-	
+    
 def refsearch_mirror_height():
-	print("Searching for mirror height position 0mm")
-	WarningStatus[3]=0
-	a[3].reference_search(0)
-	mirror_height_pos.set(0)
-	
+    print("Searching for mirror height position 0mm")
+    WarningStatus[3]=0
+    a[3].reference_search(0)
+    mirror_height_pos.set(0)
+    
 def refsearch_mirror_z():
-	print("Searching for mirror z position 0mm")
-	WarningStatus[2]=0
-	a[2].reference_search(0)
-	mirror_z_pos.set(0)
+    print("Searching for mirror z position 0mm")
+    WarningStatus[2]=0
+    a[2].reference_search(0)
+    mirror_z_pos.set(0)
 
 def refsearch_mirror_phi():
-	print("Searching for mirror phi position -4.5°")
-	WarningStatus[5]=0
-	a[5].reference_search(0)
-	mirror_phi_pos.set(-4.5)    
-	
+    print("Searching for mirror phi position -4.5°")
+    WarningStatus[5]=0
+    a[5].reference_search(0)
+    mirror_phi_pos.set(-4.5)    
+    
 def refsearch_mirror_psi():
-	print("Searching for mirror psi -90°")
-	WarningStatus[4]=0
-	a[4].reference_search(0)
-	mirror_psi_pos.set(-4.5)
-	
+    print("Searching for mirror psi -90°")
+    WarningStatus[4]=0
+    a[4].reference_search(0)
+    mirror_psi_pos.set(-4.5)
+    
 def refsearch_camera_x():
-	print("Searching for camera x-position 0mm")
-	WarningStatus[1]=0
-	a[1].reference_search(0)
-	camera_x_pos.set(0)
-	
+    print("Searching for camera x-position 0mm")
+    WarningStatus[1]=0
+    a[1].reference_search(0)
+    camera_x_pos.set(0)
+    
 def refsearch_camera_z():
-	print("Searching for camera z-position 0mm")
-	WarningStatus[0]=0
-	a[0].reference_search(0)
-	camera_z_pos.set(0)
-	
+    print("Searching for camera z-position 0mm")
+    WarningStatus[0]=0
+    a[0].reference_search(0)
+    camera_z_pos.set(0)
+    
 def refsearch_all():
-	refsearch_mirror_height()
-	refsearch_mirror_z()
-	refsearch_mirror_phi()
-	refsearch_mirror_psi()
-	refsearch_camera_x()
-	refsearch_camera_z()
-	
+    refsearch_mirror_height()
+    refsearch_mirror_z()
+    refsearch_mirror_phi()
+    refsearch_mirror_psi()
+    refsearch_camera_x()
+    refsearch_camera_z()
+    
 #metods used for the rate client
-	
+    
 def optimize():
-	optimizeMirrorBluntly()
+    optimizeMirrorBluntly()
 
 
 def showRateDistribution(spacing_phi=10, spacing_psi=10, min_phi=-4.0, max_phi=4.0, min_psi=-4.0, max_psi=4.0):
-	global client
-	coordinates_psi=np.linspace(min_psi, max_psi, num=spacing_psi)
-	coordinates_phi=np.linspace(min_psi, max_psi, num=spacing_psi)
-	rates=np.empty(shape=(spacing_psi, spacing_phi))
-	for i in range(0, spacing_phi, 1):
-		pos_phi=min_phi+(max_phi-min_phi)/(spacing_phi-1)*i
-		MirrorPhi.set(pos_phi)
-		moveto_mirror_phi(0)
-		while sd.ismoving(a[5]):
-			sleep(0.05)
-			#print("wait_5")
-		for j in range(0, spacing_psi, 1):
-			if i%2==0:
-				pos_psi=min_psi+(max_psi-min_psi)/(spacing_psi-1)*j
-			else:
-				pos_psi=max_psi-(max_psi-min_psi)/(spacing_psi-1)*j
-			#print("PSI: {0} PHI: {1}".format(pos_psi, pos_phi))
-			MirrorPsi.set(pos_psi)
-			moveto_mirror_psi(0)
-			while sd.ismoving(a[4]):
-				sleep(0.05)
-				#print("wait_4")
-			rates[j][i]=client.getRateA()+client.getRateB()
-	plt.figure("Heatmap of the mirror Postions", figsize=(6,6))
-	plt.imshow(rates, cmap='cool', extent=(min_psi-(max_psi-min_psi)/(spacing_psi)/2, max_psi+(max_psi-min_psi)/(spacing_psi)/2, min_phi-(max_phi-min_phi)/(spacing_phi)/2, max_phi+(max_phi-min_phi)/(spacing_phi)/2))
-	plt.xlabel("$\psi$ [°]")
-	plt.ylabel("$\phi$ [°]")
-	plt.show()
-	
+    global client
+    coordinates_psi=np.linspace(min_psi, max_psi, num=spacing_psi)
+    coordinates_phi=np.linspace(min_psi, max_psi, num=spacing_psi)
+    rates=np.empty(shape=(spacing_psi, spacing_phi))
+    for i in range(0, spacing_phi, 1):
+        pos_phi=min_phi+(max_phi-min_phi)/(spacing_phi-1)*i
+        MirrorPhi.set(pos_phi)
+        moveto_mirror_phi(0)
+        while sd.ismoving(a[5]):
+            sleep(0.05)
+            #print("wait_5")
+        for j in range(0, spacing_psi, 1):
+            if i%2==0:
+                pos_psi=min_psi+(max_psi-min_psi)/(spacing_psi-1)*j
+            else:
+                pos_psi=max_psi-(max_psi-min_psi)/(spacing_psi-1)*j
+            #print("PSI: {0} PHI: {1}".format(pos_psi, pos_phi))
+            MirrorPsi.set(pos_psi)
+            moveto_mirror_psi(0)
+            while sd.ismoving(a[4]):
+                sleep(0.05)
+                #print("wait_4")
+            rates[j][i]=client.getRateA()+client.getRateB()
+    plt.figure("Heatmap of the mirror Postions", figsize=(6,6))
+    plt.imshow(rates, cmap='cool', extent=(min_psi-(max_psi-min_psi)/(spacing_psi)/2, max_psi+(max_psi-min_psi)/(spacing_psi)/2, min_phi-(max_phi-min_phi)/(spacing_phi)/2, max_phi+(max_phi-min_phi)/(spacing_phi)/2))
+    plt.xlabel("$\psi$ [°]")
+    plt.ylabel("$\phi$ [°]")
+    plt.show()
+    
 def startStopClient():
-	global client
-	if client == None:
-		client_cache = rcl.rate_client()
-		try:
-			client_cache.connect()
-			rateClientButton.config(text="Disconnect")
-			client=client_cache
-			print("Started the rate client. Rates will be displayed once they arrive.")
-		except:
-			print("Could not connect to server. Please check if server address and port are correct!")
-	else:
-		client.stop()
-		CHa_Label_rate.config(fg="orange")
-		CHb_Label_rate.config(fg="orange")
-		rateClientButton.config(text="Connect")
-		client = None
-		
-		
+    global client
+    if client == None:
+        client_cache = rcl.rate_client()
+        try:
+            client_cache.connect()
+            rateClientButton.config(text="Disconnect")
+            client=client_cache
+            print("Started the rate client. Rates will be displayed once they arrive.")
+        except:
+            print("Could not connect to server. Please check if server address and port are correct!")
+    else:
+        client.stop()
+        CHa_Label_rate.config(fg="orange")
+        CHb_Label_rate.config(fg="orange")
+        rateClientButton.config(text="Connect")
+        client = None
+        
+        
 #-----------------#
 #---- Movetos ----#
 #-----------------#
 #fahrbalken
 def moveto_mirror_height(val):
-	print("Move mirror height to",mirror_height_pos.get(),"in steps",mm_to_steps(mirror_height_pos.get()))
-	WarningStatus[3]=0
-	a[3].move_absolute(hmm_to_steps(mirror_height_pos.get()))   
+    print("Move mirror height to",mirror_height_pos.get(),"in steps",mm_to_steps(mirror_height_pos.get()))
+    WarningStatus[3]=0
+    a[3].move_absolute(hmm_to_steps(mirror_height_pos.get()))   
 def moveto_mirror_z(val):
-	print("Move mirror z to",mirror_z_pos.get(),"in steps",mm_to_steps(mirror_z_pos.get()))
-	WarningStatus[2]=0
-	a[2].move_absolute(mm_to_steps(mirror_z_pos.get()))    
+    print("Move mirror z to",mirror_z_pos.get(),"in steps",mm_to_steps(mirror_z_pos.get()))
+    WarningStatus[2]=0
+    a[2].move_absolute(mm_to_steps(mirror_z_pos.get()))    
 def moveto_mirror_phi(val):
-	print("Move mirror phi to",mirror_phi_pos.get(),"in steps",degree_to_steps(mirror_phi_pos.get()))
-	WarningStatus[5]=0
-	a[5].move_absolute(degree_to_steps(mirror_phi_pos.get()))    
+    print("Move mirror phi to",mirror_phi_pos.get(),"in steps",degree_to_steps(mirror_phi_pos.get()))
+    WarningStatus[5]=0
+    a[5].move_absolute(degree_to_steps(mirror_phi_pos.get()))    
 def moveto_mirror_psi(val):
-	print("Move mirror psi to",mirror_psi_pos.get(),"in steps",degree_to_steps(mirror_psi_pos.get()))
-	WarningStatus[4]=0
-	a[4].move_absolute(degree_to_steps(mirror_psi_pos.get()))    
+    print("Move mirror psi to",mirror_psi_pos.get(),"in steps",degree_to_steps(mirror_psi_pos.get()))
+    WarningStatus[4]=0
+    a[4].move_absolute(degree_to_steps(mirror_psi_pos.get()))    
 def moveto_camera_x(val):    
-	print("Move camera x to",camera_x_pos.get(), "von" , CameraX.get(),"in steps",mm_to_steps(camera_x_pos.get()))
-	WarningStatus[1]=0
-	a[1].move_absolute(mm_to_steps(camera_x_pos.get()))    
+    print("Move camera x to",camera_x_pos.get(), "von" , CameraX.get(),"in steps",mm_to_steps(camera_x_pos.get()))
+    WarningStatus[1]=0
+    a[1].move_absolute(mm_to_steps(camera_x_pos.get()))    
 def moveto_camera_z(val):
-	print("Move camera z to",camera_z_pos.get(),"in steps",mm_to_steps(camera_z_pos.get()))
-	WarningStatus[0]=0
-	a[0].move_absolute(mm_to_steps(camera_z_pos.get()))
-	
+    print("Move camera z to",camera_z_pos.get(),"in steps",mm_to_steps(camera_z_pos.get()))
+    WarningStatus[0]=0
+    a[0].move_absolute(mm_to_steps(camera_z_pos.get()))
+    
 def center_camera():
-	CameraX.set(70)
-	moveto_camera_x(70)
-	CameraZ.set(70)
-	moveto_camera_z(70)    
+    CameraX.set(70)
+    moveto_camera_x(70)
+    CameraZ.set(70)
+    moveto_camera_z(70)    
 def center_mirror_pos():
-	MirrorHeight.set(20)
-	MirrorZ.set(150)    
+    MirrorHeight.set(20)
+    MirrorZ.set(150)    
 def center_mirror_phi():
-	MirrorPhi.set(0)
-	moveto_mirror_phi(0)
+    MirrorPhi.set(0)
+    moveto_mirror_phi(0)
 def center_mirror_psi():
-	MirrorPsi.set(0)
-	moveto_mirror_psi(0)
+    MirrorPsi.set(0)
+    moveto_mirror_psi(0)
 def center_mirror_angle():
-	center_mirror_phi()
-	center_mirror_psi()    
+    center_mirror_phi()
+    center_mirror_psi()    
 
+servo_angle=0
 def open_shutter():
-	servo.shutter(180)
+    servo.shutter(180)
 def close_shutter():
-	servo.shutter(0)
+    servo.shutter(0)
 def shutter_scale(val):
-	servo.shutter(servo_pos.get())
+    servo.shutter(servo_pos.get())
+    servo_angle=servo_pos.get()
+def shutter_pos(val):
+    return servo_pos.get()
+            
+
+#def moveto_servo(val):
+#    print("Move servo to",
+#    WarningStatus
 
 #not used
 def verify_command(command):
-	if messagebox.askyesno('Verify', 'Execute command {}?'.format(command)):
-		print('I will execute command {} '.format(command))
-		return 0
-	else:
-		print('Command {} has been cancelled'.format(command))
-	return 1
+    if messagebox.askyesno('Verify', 'Execute command {}?'.format(command)):
+        print('I will execute command {} '.format(command))
+        return 0
+    else:
+        print('Command {} has been cancelled'.format(command))
+    return 1
 
 # Set current position
 def set_mirror_height():
-	MirrorHeight.set(steps_to_mm(sd.position(a[3])))
-	moveto_mirror_height(0)    
+    MirrorHeight.set(steps_to_mm(sd.position(a[3])))
+    moveto_mirror_height(0)    
 def set_mirror_z():
-	MirrorZ.set(steps_to_mm(sd.position(a[2])))
-	moveto_mirror_z(0)
+    MirrorZ.set(steps_to_mm(sd.position(a[2])))
+    moveto_mirror_z(0)
 def set_mirror_phi():
-	MirrorPhi.set(steps_to_degree(sd.position(a[5])))
-	moveto_mirror_phi(0)
+    MirrorPhi.set(steps_to_degree(sd.position(a[5])))
+    moveto_mirror_phi(0)
 def set_mirror_psi():
-	MirrorPsi.set(steps_to_degree(sd.position(a[4])))
-	moveto_mirror_psi(0)
+    MirrorPsi.set(steps_to_degree(sd.position(a[4])))
+    moveto_mirror_psi(0)
 def set_camera_x():
-	CameraX.set(steps_to_mm(sd.position(a[1])))
-	moveto_camera_x(0)
+    CameraX.set(steps_to_mm(sd.position(a[1])))
+    moveto_camera_x(0)
 def set_camera_z():
-	CameraZ.set(steps_to_mm(sd.position(a[0])))
-	moveto_camera_z(0)
+    CameraZ.set(steps_to_mm(sd.position(a[0])))
+    moveto_camera_z(0)
 def set_all():
-	set_mirror_height()
-	set_mirror_z()
-	set_mirror_phi()
-	set_mirror_psi()
-	set_camera_x()
-	set_camera_z()
+    set_mirror_height()
+    set_mirror_z()
+    set_mirror_phi()
+    set_mirror_psi()
+    set_camera_x()
+    set_camera_z()
 
 #--------------------#
 #---- Regulation ----#
@@ -338,75 +368,75 @@ def set_all():
 # Speed regulation
 v_start = []; v_current = []
 for i in range (0,6):
-	v_start.append(a[i].axis.max_positioning_speed)
-	v_current.append(DoubleVar())
+    v_start.append(a[i].axis.max_positioning_speed)
+    v_current.append(DoubleVar())
 def set_max_speed_camera_z(val):
-	a[0].axis.max_positioning_speed = v_current[0].get()
-	print ("Set Camera Z speed limit to {}".format(a[0].axis.max_positioning_speed))
+    a[0].axis.max_positioning_speed = v_current[0].get()
+    print ("Set Camera Z speed limit to {}".format(a[0].axis.max_positioning_speed))
 def set_max_speed_camera_x(val):
-	a[1].axis.max_positioning_speed = v_current[1].get()
-	print ("Set Camera X speed limit to {}".format(a[1].axis.max_positioning_speed))
+    a[1].axis.max_positioning_speed = v_current[1].get()
+    print ("Set Camera X speed limit to {}".format(a[1].axis.max_positioning_speed))
 def set_max_speed_mirror_z(val):
-	a[2].axis.max_positioning_speed = v_current[2].get()
-	print ("Set Mirror Z speed limit to {}".format(a[2].axis.max_positioning_speed))
+    a[2].axis.max_positioning_speed = v_current[2].get()
+    print ("Set Mirror Z speed limit to {}".format(a[2].axis.max_positioning_speed))
 def set_max_speed_mirror_height(val):
-	a[3].axis.max_positioning_speed = v_current[3].get()
-	print ("Set Mirror Height speed limit to {}".format(a[3].axis.max_positioning_speed))
+    a[3].axis.max_positioning_speed = v_current[3].get()
+    print ("Set Mirror Height speed limit to {}".format(a[3].axis.max_positioning_speed))
 def set_max_speed_mirror_psi(val):
-	a[4].axis.max_positioning_speed = v_current[4].get()
-	print ("Set Mirror Psi speed limit to {}".format(a[4].axis.max_positioning_speed))
+    a[4].axis.max_positioning_speed = v_current[4].get()
+    print ("Set Mirror Psi speed limit to {}".format(a[4].axis.max_positioning_speed))
 def set_max_speed_mirror_phi(val):
-	a[5].axis.max_positioning_speed = v_current[5].get()
-	print ("Set Mirror Phi speed limit to {}".format(a[5].axis.max_positioning_speed))
-	
+    a[5].axis.max_positioning_speed = v_current[5].get()
+    print ("Set Mirror Phi speed limit to {}".format(a[5].axis.max_positioning_speed))
+    
 # Current regulation
 I_start = []; I_current = []
 for i in range (0, 6):
-	I_start.append(a[i].get_axis_parameter(6))
-	I_current.append(DoubleVar())
+    I_start.append(n_to_i(a[i].get_axis_parameter(6)))
+    I_current.append(DoubleVar())
 def set_max_current_camera_z(val):
-	a[0].set_axis_parameter(6,I_current[0].get())
-	print ("Set Camera Z current limit to {}".format(a[0].get_axis_parameter(6)))
+    a[0].set_axis_parameter(6,i_to_n(I_current[0].get()))
+    print ("Set Camera Z current limit to {}".format(n_to_i(a[0].get_axis_parameter(6))))
 def set_max_current_camera_x(val):
-	a[1].set_axis_parameter(6,I_current[1].get())
-	print ("Set Camera X current limit to {}".format(a[1].get_axis_parameter(6)))
+    a[1].set_axis_parameter(6,i_to_n(I_current[1].get()))
+    print ("Set Camera X current limit to {}".format(n_to_i(a[1].get_axis_parameter(6))))
 def set_max_current_mirror_z(val):
-	a[2].set_axis_parameter(6,I_current[2].get())
-	print ("Set Mirror Z current limit to {}".format(a[2].get_axis_parameter(6)))
+    a[2].set_axis_parameter(6,i_to_n(I_current[2].get()))
+    print ("Set Mirror Z current limit to {}".format(n_to_i(a[2].get_axis_parameter(6))))
 def set_max_current_mirror_height(val):
-	a[3].set_axis_parameter(6,I_current[3].get())
-	print ("Set Mirror Height current limit to {}".format(a[3].get_axis_parameter(6)))
+    a[3].set_axis_parameter(6,i_to_n(I_current[3].get()))
+    print ("Set Mirror Height current limit to {}".format(n_to_i(a[3].get_axis_parameter(6))))
 def set_max_current_mirror_psi(val):
-	a[4].set_axis_parameter(6,I_current[4].get())
-	print ("Set Mirror Psi current limit to {}".format(a[4].get_axis_parameter(6)))
+    a[4].set_axis_parameter(6,i_to_n(I_current[4].get()))
+    print ("Set Mirror Psi current limit to {}".format(n_to_i(a[4].get_axis_parameter(6))))
 def set_max_current_mirror_phi(val):
-	a[5].set_axis_parameter(6,I_current[5].get())
-	print ("Set Mirror Phi current limit to {}".format(a[5].get_axis_parameter(6)))
+    a[5].set_axis_parameter(6,i_to_n(I_current[5].get()))
+    print ("Set Mirror Phi current limit to {}".format(n_to_i(a[5].get_axis_parameter(6))))
 
 # Acceleration Regulation
 a_start = []; a_current = []
 for i in range (0,6):
-	a_start.append(a[i].get_axis_parameter(5))
-	a_current.append(DoubleVar())
+    a_start.append(a[i].get_axis_parameter(5))
+    a_current.append(DoubleVar())
 def set_max_acc_camera_z(val):
-	a[0].set_axis_parameter(5,a_current[0].get())
-	print ("Set Camera Z acceleration limit to {}".format(a[0].get_axis_parameter(5)))
+    a[0].set_axis_parameter(5,a_current[0].get())
+    print ("Set Camera Z acceleration limit to {}".format(a[0].get_axis_parameter(5)))
 def set_max_acc_camera_x(val):
-	a[1].set_axis_parameter(5,a_current[1].get())
-	print ("Set Camera X acceleration limit to {}".format(a[1].get_axis_parameter(5)))
+    a[1].set_axis_parameter(5,a_current[1].get())
+    print ("Set Camera X acceleration limit to {}".format(a[1].get_axis_parameter(5)))
 def set_max_acc_mirror_z(val):
-	a[2].set_axis_parameter(5,a_current[2].get())
-	print ("Set Mirror Z acceleration limit to {}".format(a[2].get_axis_parameter(5)))
+    a[2].set_axis_parameter(5,a_current[2].get())
+    print ("Set Mirror Z acceleration limit to {}".format(a[2].get_axis_parameter(5)))
 def set_max_acc_mirror_height(val):
-	a[3].set_axis_parameter(5,a_current[3].get())
-	print ("Set Mirror Height acceleration limit to {}".format(a[3].get_axis_parameter(5)))
+    a[3].set_axis_parameter(5,a_current[3].get())
+    print ("Set Mirror Height acceleration limit to {}".format(a[3].get_axis_parameter(5)))
 def set_max_acc_mirror_psi(val):
-	a[4].set_axis_parameter(5,a_current[4].get())
-	print ("Set Mirror Psi acceleration limit to {}".format(a[4].get_axis_parameter(5)))
+    a[4].set_axis_parameter(5,a_current[4].get())
+    print ("Set Mirror Psi acceleration limit to {}".format(a[4].get_axis_parameter(5)))
 def set_max_acc_mirror_phi(val):
-	a[5].set_axis_parameter(5,a_current[5].get())
-	print ("Set Mirror Phi acceleration limit to {}".format(a[5].get_axis_parameter(5)))
-	
+    a[5].set_axis_parameter(5,a_current[5].get())
+    print ("Set Mirror Phi acceleration limit to {}".format(a[5].get_axis_parameter(5)))
+    
 #----------------#
 #---- Frames ----#
 #----------------#
@@ -442,13 +472,13 @@ switchLabel.grid(row=0, column=0)
 
 onoffButton = Button(switchFrame, text="ON", bg="#91CC66")
 def switchMotor():
-	global motoron
-	if motoron == True:
-		ms.motor_off(); motoron = False
-		onoffButton.config(text="OFF", bg="#a3a3a3")
-	else:
-		ms.motor_on(); motoron = True
-		onoffButton.config(text="ON", bg="#91CC66")
+    global motoron
+    if motoron == True:
+        ms.motor_off(); motoron = False
+        onoffButton.config(text="OFF", bg="#a3a3a3")
+    else:
+        ms.motor_on(); motoron = True
+        onoffButton.config(text="ON", bg="#91CC66")
 
 onoffButton.config(command=switchMotor)
 onoffButton.grid(row=0, column=1)
@@ -464,20 +494,22 @@ MirrorHeightSetButton = Button(MirrorTHeadFrame, text="Set", width=2, command=se
 B1 = Button(MirrorTHeadFrame, text="Ref", width=2, command=refsearch_mirror_height); B1.grid(row=0, column=4) 
 
 MirrorTUpperFrame = Frame(MirrorTFrame, width=200, height=300); MirrorTUpperFrame.grid(row=1, column=0)
-MirrorHeight_OSTOP = Canvas(MirrorTUpperFrame, bg=LEDColors[a[3].axis.get(11)], width=20, height=10); MirrorHeight_OSTOP.grid(row=0, column=0)
-MirrorHeight = Scale(MirrorTUpperFrame, variable=mirror_height_pos,from_=40, to=0, resolution=0.1, orient=VERTICAL, length=400); MirrorHeight.grid(row=1, column=0, padx=10, pady=3)
+MirrorHeight_OSTOP = Canvas(MirrorTUpperFrame, bg=ENDSwitchColors[a[3].axis.get(10)], width=20, height=10); MirrorHeight_OSTOP.grid(row=0, column=0)
+MirrorHeight = Scale(MirrorTUpperFrame, variable=mirror_height_pos,from_=40, to=0, resolution=0.1, orient=VERTICAL, length=300); MirrorHeight.grid(row=1, column=0, padx=10, pady=3)
 MirrorHeight.bind("<ButtonRelease-1>", moveto_mirror_height); MirrorHeight.set(lastpositions[3])
-MirrorHeight_USTOP = Canvas(MirrorTUpperFrame, bg=LEDColors[a[3].axis.get(10)], width=20, height=10); MirrorHeight_USTOP.grid(row=2, column=0)
+MirrorHeight_USTOP = Canvas(MirrorTUpperFrame, bg=ENDSwitchColors[a[3].axis.get(11)], width=20, height=10); MirrorHeight_USTOP.grid(row=2, column=0)
 MirrorTButtonFrame = Frame(MirrorTUpperFrame, width=100, height=150); MirrorTButtonFrame.grid(row=1, column=1)
-MirrorHeightSpeed = Scale(MirrorTButtonFrame,from_=1, to=300, resolution=1, variable=v_current[3], orient=HORIZONTAL, length=140, label="Speed"); MirrorHeightSpeed.grid(row=0, column=0, padx=10, pady=3)
+MirrorHeightSpeed = Scale(MirrorTButtonFrame,from_=0, to=5000, resolution=50, variable=v_current[3], orient=HORIZONTAL, length=140, label="Speed"); MirrorHeightSpeed.grid(row=0, column=0, padx=10, pady=3)
 MirrorHeightSpeed.bind("<ButtonRelease-1>", set_max_speed_mirror_height); MirrorHeightSpeed.set(v_start[3])
+MirrorHeightCurrent = Scale(MirrorTButtonFrame,from_=0.06, to=1.92, resolution=0.06, variable=I_current[3], orient=HORIZONTAL, length=140, label="Max I"); MirrorHeightCurrent.grid(row=1, column=0, padx=10, pady=3)
 MirrorHeightAcc = Scale(MirrorTButtonFrame,from_=1, to=300, resolution=1, variable=a_current[3], orient=HORIZONTAL, length=140, label="Acceleration"); MirrorHeightAcc.grid(row=1, column=0, padx=10, pady=3)
 MirrorHeightAcc.bind("<ButtonRelease-1>", set_max_acc_mirror_height); MirrorHeightAcc.set(a_start[3])
 MirrorHeightCurrent = Scale(MirrorTButtonFrame,from_=50, to=300, resolution=1, variable=I_current[3], orient=HORIZONTAL, length=140, label="Max I"); MirrorHeightCurrent.grid(row=2, column=0, padx=10, pady=3)
 MirrorHeightCurrent.bind("<ButtonRelease-1>", set_max_current_mirror_height); MirrorHeightCurrent.set(I_start[3])
-B3 = Button(MirrorTButtonFrame, text="Center Mirror Pos", bg="#C0C0C0", width=16, command=center_mirror_pos); B3.grid(row=3, column=0)
-MirrorZSpeed = Scale(MirrorTButtonFrame,from_=1, to=300, resolution=1, variable=v_current[2], orient=HORIZONTAL, length=140, label="Speed"); MirrorZSpeed.grid(row=4, column=0, padx=10, pady=3)
+B3 = Button(MirrorTButtonFrame, text="Center Mirror Pos", bg="#C0C0C0", width=16, command=center_mirror_pos); B3.grid(row=2, column=0)
+MirrorZSpeed = Scale(MirrorTButtonFrame,from_=0, to=5000, resolution=50, variable=v_current[2], orient=HORIZONTAL, length=140, label="Speed"); MirrorZSpeed.grid(row=3, column=0, padx=10, pady=3)
 MirrorZSpeed.bind("<ButtonRelease-1>", set_max_speed_mirror_z); MirrorZSpeed.set(v_start[2])
+MirrorZCurrent = Scale(MirrorTButtonFrame,from_=0.06, to=1.44, resolution=0.06, variable=I_current[2], orient=HORIZONTAL, length=140, label="Max I"); MirrorZCurrent.grid(row=4, column=0, padx=10, pady=3)
 MirrorZAcc = Scale(MirrorTButtonFrame,from_=1, to=300, resolution=1, variable=a_current[2], orient=HORIZONTAL, length=140, label="Acceleration"); MirrorZAcc.grid(row=5, column=0, padx=10, pady=3)
 MirrorZAcc.bind("<ButtonRelease-1>", set_max_acc_mirror_z); MirrorZAcc.set(a_start[2])
 MirrorZCurrent = Scale(MirrorTButtonFrame,from_=50, to=300, resolution=1, variable=I_current[2], orient=HORIZONTAL, length=140, label="Max I"); MirrorZCurrent.grid(row=6, column=0, padx=10, pady=3)
@@ -491,10 +523,10 @@ MirrorZSetButton = Button(MirrorTLowerFrame, text="Set", width=2, command=set_mi
 B2 = Button(MirrorTLowerFrame, text="Ref", width=2, command=refsearch_mirror_z); B2.grid(row=0, column=4)
 
 MirrorTBottomFrame = Frame(MirrorTFrame, width=200, height=60); MirrorTBottomFrame.grid(row=3, column=0)
-MirrorZ_LSTOP = Canvas(MirrorTBottomFrame, bg=LEDColors[a[2].axis.get(10)], width=10, height=20); MirrorZ_LSTOP.grid(row=0, column=2)
-MirrorZ = Scale(MirrorTBottomFrame, variable=mirror_z_pos, from_=0, to=-200, resolution=0.1, orient=HORIZONTAL, length=250); MirrorZ.grid(row=0, column=1, padx=10, pady=3)
+MirrorZ_LSTOP = Canvas(MirrorTBottomFrame, bg=ENDSwitchColors[a[2].axis.get(10)], width=10, height=20); MirrorZ_LSTOP.grid(row=0, column=0)
+MirrorZ = Scale(MirrorTBottomFrame, variable=mirror_z_pos, from_=0, to=120, resolution=0.1, orient=HORIZONTAL, length=250); MirrorZ.grid(row=0, column=1, padx=10, pady=3)
 MirrorZ.bind("<ButtonRelease-1>", moveto_mirror_z); MirrorZ.set(lastpositions[2])
-MirrorZ_RSTOP = Canvas(MirrorTBottomFrame, bg=LEDColors[a[2].axis.get(11)], width=10, height=20); MirrorZ_RSTOP.grid(row=0, column=0)
+MirrorZ_RSTOP = Canvas(MirrorTBottomFrame, bg=ENDSwitchColors[a[2].axis.get(11)], width=10, height=20); MirrorZ_RSTOP.grid(row=0, column=2)
 
 
 #MirrorR-Content
@@ -506,19 +538,19 @@ MirrorPsiSetButton = Button(MirrorRHeadFrame, text="Set", width=2, command=set_m
 B4 = Button(MirrorRHeadFrame, text="Ref", width=2, command=refsearch_mirror_psi); B4.grid(row=0, column=4) 
 
 MirrorRUpperFrame = Frame(MirrorRFrame, width=200, height=300); MirrorRUpperFrame.grid(row=1, column=0)
-MirrorPsi_OSTOP = Canvas(MirrorRUpperFrame, bg=LEDColors[a[4].axis.get(10)], width=20, height=10); MirrorPsi_OSTOP.grid(row=0, column=0)
+MirrorPsi_OSTOP = Canvas(MirrorRUpperFrame, bg=ENDSwitchColors[a[4].axis.get(10)], width=20, height=10); MirrorPsi_OSTOP.grid(row=0, column=0)
 MirrorPsi = Scale(MirrorRUpperFrame, variable=mirror_psi_pos,from_=4.5, to=-4.5, resolution=0.01, orient=VERTICAL, length=300); MirrorPsi.grid(row=1, column=0, padx=10, pady=3)
 MirrorPsi.bind("<ButtonRelease-1>", moveto_mirror_psi); MirrorPsi.set(lastpositions[4])
-MirrorPsi_USTOP = Canvas(MirrorRUpperFrame, bg=LEDColors[a[4].axis.get(10)], width=20, height=10); MirrorPsi_USTOP.grid(row=2, column=0)
+MirrorPsi_USTOP = Canvas(MirrorRUpperFrame, bg=ENDSwitchColors[a[4].axis.get(10)], width=20, height=10); MirrorPsi_USTOP.grid(row=2, column=0)
 MirrorRButtonFrame = Frame(MirrorRUpperFrame, width=100, height=150); MirrorRButtonFrame.grid(row=1, column=1)
-MirrorPsiSpeed = Scale(MirrorRButtonFrame,from_=1, to=300, resolution=1, variable=v_current[4], orient=HORIZONTAL, length=140, label="Speed"); MirrorPsiSpeed.grid(row=0, column=0, padx=10, pady=3)
+MirrorPsiSpeed = Scale(MirrorRButtonFrame,from_=0, to=10000, resolution=500, variable=v_current[4], orient=HORIZONTAL, length=140, label="Speed"); MirrorPsiSpeed.grid(row=0, column=0, padx=10, pady=3)
 MirrorPsiSpeed.bind("<ButtonRelease-1>", set_max_speed_mirror_psi); MirrorPsiSpeed.set(v_start[4])
-MirrorPsiCurrent = Scale(MirrorRButtonFrame,from_=10, to=100, resolution=1, variable=I_current[4], orient=HORIZONTAL, length=140, label="Max I"); MirrorPsiCurrent.grid(row=1, column=0, padx=10, pady=3)
+MirrorPsiCurrent = Scale(MirrorRButtonFrame,from_=0.06, to=0.66, resolution=0.06, variable=I_current[4], orient=HORIZONTAL, length=140, label="Max I"); MirrorPsiCurrent.grid(row=1, column=0, padx=10, pady=3)
 MirrorPsiCurrent.bind("<ButtonRelease-1>", set_max_current_mirror_psi); MirrorPsiCurrent.set(I_start[4])
 B6 = Button(MirrorRButtonFrame, text="Center Mirror Angle", bg="#C0C0C0", width=16, command=center_mirror_angle); B6.grid(row=2, column=0, padx=10, pady=3)
-MirrorPhiSpeed = Scale(MirrorRButtonFrame,from_=1, to=300, resolution=1, variable=v_current[5], orient=HORIZONTAL, length=140, label="Speed"); MirrorPhiSpeed.grid(row=3, column=0, padx=10, pady=3)
+MirrorPhiSpeed = Scale(MirrorRButtonFrame,from_=0, to=10000, resolution=500, variable=v_current[5], orient=HORIZONTAL, length=140, label="Speed"); MirrorPhiSpeed.grid(row=3, column=0, padx=10, pady=3)
 MirrorPhiSpeed.bind("<ButtonRelease-1>", set_max_speed_mirror_phi); MirrorPhiSpeed.set(v_start[5])
-MirrorPhiCurrent = Scale(MirrorRButtonFrame,from_=10, to=100, resolution=1, variable=I_current[5], orient=HORIZONTAL, length=140, label="Max I"); MirrorPhiCurrent.grid(row=4, column=0, padx=10, pady=3)
+MirrorPhiCurrent = Scale(MirrorRButtonFrame,from_=0.06, to=0.66, resolution=0.06, variable=I_current[5], orient=HORIZONTAL, length=140, label="Max I"); MirrorPhiCurrent.grid(row=4, column=0, padx=10, pady=3)
 MirrorPhiCurrent.bind("<ButtonRelease-1>", set_max_current_mirror_phi); MirrorPhiCurrent.set(I_start[5])
 
 MirrorRLowerFrame = Frame(MirrorRFrame, width=200, height=20); MirrorRLowerFrame.grid(row=2, column=0)
@@ -529,10 +561,10 @@ MirrorPhiSetButton = Button(MirrorRLowerFrame, text="Set", width=2, command=set_
 B5 = Button(MirrorRLowerFrame, text="Ref", width=2, command=refsearch_mirror_phi); B5.grid(row=0, column=4)
 
 MirrorRBottomFrame = Frame(MirrorRFrame, width=200, height=60); MirrorRBottomFrame.grid(row=3, column=0)
-MirrorPhi_LSTOP = Canvas(MirrorRBottomFrame, bg=LEDColors[a[5].axis.get(10)], width=10, height=20); MirrorPhi_LSTOP.grid(row=0, column=0)
+MirrorPhi_LSTOP = Canvas(MirrorRBottomFrame, bg=ENDSwitchColors[a[5].axis.get(10)], width=10, height=20); MirrorPhi_LSTOP.grid(row=0, column=0)
 MirrorPhi = Scale(MirrorRBottomFrame, variable=mirror_phi_pos,from_=-4.5, to=4.5, resolution=0.01, orient=HORIZONTAL, length=300); MirrorPhi.grid(row=0, column=1, padx=10, pady=3)
 MirrorPhi.bind("<ButtonRelease-1>", moveto_mirror_phi); MirrorPhi.set(lastpositions[5])
-MirrorPhi_RSTOP = Canvas(MirrorRBottomFrame, bg=LEDColors[a[5].axis.get(10)], width=10, height=20); MirrorPhi_RSTOP.grid(row=0, column=2)
+MirrorPhi_RSTOP = Canvas(MirrorRBottomFrame, bg=ENDSwitchColors[a[5].axis.get(10)], width=10, height=20); MirrorPhi_RSTOP.grid(row=0, column=2)
 
 
 #Camera-Content
@@ -544,20 +576,22 @@ CameraXSetButton = Button(CameraHeadFrame, text="Set", width=2, command=set_came
 B7 = Button(CameraHeadFrame, text="Ref", width=2, command=refsearch_camera_x); B7.grid(row=0, column=4)
 
 CameraUpperFrame = Frame(CameraFrame, width=200, height=300); CameraUpperFrame.grid(row=1, column=0)
-CameraX_OSTOP = Canvas(CameraUpperFrame, bg=LEDColors[a[1].axis.get(10)], width=20, height=10); CameraX_OSTOP.grid(row=0, column=0)
-CameraX = Scale(CameraUpperFrame, variable=camera_x_pos,from_=300, to=0, resolution=0.1, orient=VERTICAL, length=400); CameraX.grid(row=1, column=0, padx=10, pady=3)
+CameraX_OSTOP = Canvas(CameraUpperFrame, bg=ENDSwitchColors[a[1].axis.get(10)], width=20, height=10); CameraX_OSTOP.grid(row=0, column=0)
+CameraX = Scale(CameraUpperFrame, variable=camera_x_pos,from_=130, to=0, resolution=0.1, orient=VERTICAL, length=300); CameraX.grid(row=1, column=0, padx=10, pady=3)
 CameraX.bind("<ButtonRelease-1>", moveto_camera_x); CameraX.set(lastpositions[1])
-CameraX_USTOP = Canvas(CameraUpperFrame, bg=LEDColors[a[1].axis.get(11)], width=20, height=10); CameraX_USTOP.grid(row=2, column=0)
+CameraX_USTOP = Canvas(CameraUpperFrame, bg=ENDSwitchColors[a[1].axis.get(11)], width=20, height=10); CameraX_USTOP.grid(row=2, column=0)
 CameraButtonFrame = Frame(CameraUpperFrame, width=100, height=150); CameraButtonFrame.grid(row=1, column=1)
-CameraXSpeed = Scale(CameraButtonFrame,from_=1, to=2047, resolution=1, variable=v_current[1], orient=HORIZONTAL, length=140, label="Speed"); CameraXSpeed.grid(row=0, column=0, padx=10, pady=3)
+CameraXSpeed = Scale(CameraButtonFrame,from_=0, to=5000, resolution=50, variable=v_current[1], orient=HORIZONTAL, length=140, label="Speed"); CameraXSpeed.grid(row=0, column=0, padx=10, pady=3)
 CameraXSpeed.bind("<ButtonRelease-1>", set_max_speed_camera_x); CameraXSpeed.set(v_start[1])
+CameraXCurrent = Scale(CameraButtonFrame,from_=0.06, to=1.44, resolution=0.06, variable=I_current[1], orient=HORIZONTAL, length=140, label="Max I"); CameraXCurrent.grid(row=1, column=0, padx=10, pady=3)
 CameraXAcc = Scale(CameraButtonFrame,from_=1, to=2047, resolution=1, variable=a_current[1], orient=HORIZONTAL, length=140, label="Acceleration"); CameraXAcc.grid(row=1, column=0, padx=10, pady=3)
 CameraXAcc.bind("<ButtonRelease-1>", set_max_acc_camera_x); CameraXAcc.set(a_start[1])
 CameraXCurrent = Scale(CameraButtonFrame,from_=10, to=255, resolution=1, variable=I_current[1], orient=HORIZONTAL, length=140, label="Max I"); CameraXCurrent.grid(row=2, column=0, padx=10, pady=3)
 CameraXCurrent.bind("<ButtonRelease-1>", set_max_current_camera_x); CameraXCurrent.set(I_start[1])
-B9 = Button(CameraButtonFrame, text="Center Camera", bg="#C0C0C0", width=16, command=center_camera); B9.grid(row=3, column=0, padx=10, pady=3)
-CameraZSpeed = Scale(CameraButtonFrame,from_=1, to=2047, resolution=1, variable=v_current[0], orient=HORIZONTAL, length=140, label="Speed"); CameraZSpeed.grid(row=4, column=0, padx=10, pady=3)
+B9 = Button(CameraButtonFrame, text="Center Camera", bg="#C0C0C0", width=16, command=center_camera); B9.grid(row=2, column=0, padx=10, pady=3)
+CameraZSpeed = Scale(CameraButtonFrame,from_=0, to=5000, resolution=50, variable=v_current[0], orient=HORIZONTAL, length=140, label="Speed"); CameraZSpeed.grid(row=3, column=0, padx=10, pady=3)
 CameraZSpeed.bind("<ButtonRelease-1>", set_max_speed_camera_z); CameraZSpeed.set(v_start[0])
+CameraZCurrent = Scale(CameraButtonFrame,from_=0.06, to=1.44, resolution=0.06, variable=I_current[0], orient=HORIZONTAL, length=140, label="Max I"); CameraZCurrent.grid(row=4, column=0, padx=10, pady=3)
 CameraZAcc = Scale(CameraButtonFrame,from_=1, to=2047, resolution=1, variable=a_current[0], orient=HORIZONTAL, length=140, label="Acceleration"); CameraZAcc.grid(row=5, column=0, padx=10, pady=3)
 CameraZAcc.bind("<ButtonRelease-1>", set_max_acc_camera_z); CameraZAcc.set(a_start[0])
 CameraZCurrent = Scale(CameraButtonFrame,from_=10, to=255, resolution=1, variable=I_current[0], orient=HORIZONTAL, length=140, label="Max I"); CameraZCurrent.grid(row=6, column=0, padx=10, pady=3)
@@ -574,11 +608,10 @@ CameraZSetButton = Button(CameraLowerFrame, text="Set", width=2, command=set_cam
 B8 = Button(CameraLowerFrame, text="Ref", width=2, command=refsearch_camera_z); B8.grid(row=0, column=4)
 
 CameraBottomFrame = Frame(CameraFrame, width=200, height=60); CameraBottomFrame.grid(row=3, column=0)
-CameraZ_LSTOP = Canvas(CameraBottomFrame, bg=LEDColors[a[0].axis.get(10)], width=10, height=20); CameraZ_LSTOP.grid(row=0, column=2)
-CameraZ = Scale(CameraBottomFrame,variable=camera_z_pos, from_= -300, to=0, resolution=0.1, orient=HORIZONTAL, length=250); CameraZ.grid(row=0, column=1, padx=10, pady=3)
+CameraZ_LSTOP = Canvas(CameraBottomFrame, bg=ENDSwitchColors[a[0].axis.get(10)], width=10, height=20); CameraZ_LSTOP.grid(row=0, column=0)
+CameraZ = Scale(CameraBottomFrame,variable=camera_z_pos, from_= 150, to=0, resolution=0.1, orient=HORIZONTAL, length=250); CameraZ.grid(row=0, column=1, padx=10, pady=3)
 CameraZ.bind("<ButtonRelease-1>", moveto_camera_z); CameraZ.set(lastpositions[0])
-CameraZ_RSTOP = Canvas(CameraBottomFrame, bg=LEDColors[a[0].axis.get(11)], width=10, height=20); CameraZ_RSTOP.grid(row=0, column=0)
-
+CameraZ_RSTOP = Canvas(CameraBottomFrame, bg=ENDSwitchColors[a[0].axis.get(11)], width=10, height=20); CameraZ_RSTOP.grid(row=0, column=2)
 
 #Servo Content
 ServoHeadFrame = Frame(ServoFrame, width=200, height=20);
@@ -603,8 +636,8 @@ Shutter.bind("<ButtonRelease-1>", shutter_scale);
 lbl_up.grid(row=0, column=0, sticky="e")
 Shutter.grid(row=0, column=1, columnspan=2)
 lbl_down.grid(row=0, column=3, sticky="w")
-#ServoPositionLabel = Label(ServoHeadFrame, fg=LEDColors[1], bg="black", font=("Helvetica 15 bold"), text=str(servo_angle));
-#ServoPositionLabel.grid(row=0, column=2, padx=10, pady=3)
+ServoPositionLabel = Label(ServoHeadFrame, fg=LEDColors[1], bg="black", font=("Helvetica 15 bold"), text=str(servo_angle));
+ServoPositionLabel.grid(row=0, column=2, padx=10, pady=3)
 
 #Rate-Content
 desc_Label_rate = Label(RateFrame, text="Photon rate [MHz]"); desc_Label_rate.grid(row=4, column=0, padx=5)
@@ -622,7 +655,7 @@ scanButton = Button(OptFrame, text="plot Mirrors", bg="#cdcfd1", command=showRat
 # Displays with LEDs
 MirrorHeightLED = MirrorHeightDisplay.create_oval(1,1,19,19, fill=LEDColors[0], width=0)
 MirrorZLED = MirrorZDisplay.create_oval(1,1,19,19, fill=LEDColors[0], width=0)
-	
+    
 MirrorPhiLED = MirrorPhiDisplay.create_oval(1,1,19,19, fill=LEDColors[0], width=0)
 MirrorPsiLED = MirrorPsiDisplay.create_oval(1,1,19,19, fill=LEDColors[0], width=0)
 
@@ -636,75 +669,104 @@ CameraZLED = CameraZDisplay.create_oval(1,1,19,19, fill=LEDColors[0], width=0)
 #---- Permanently update screen ----#
 #-----------------------------------#
 def update_items():
-	#print (WarningStatus)
-	#for i in range (0,6):
-	#    print (str(sd.ismoving(a[i])) + "\t" + str(WarningStatus[i]) + "\t" + str(sd.ismoving(a[i])+WarningStatus[i]))
-	#print (" ")
-		
-	MirrorHeightDisplay.itemconfig(MirrorHeightLED, fill=LEDColors[sd.ismoving(a[3])+WarningStatus[3]])
-	MirrorHeightPositionLabel.config(text=str(round(steps_to_hmm(sd.position(a[3])),1)))
-	MirrorHeight_OSTOP.config(bg=LEDColors[a[3].axis.get(10)])
-	MirrorHeight_USTOP.config(bg=LEDColors[a[3].axis.get(11)])   
-		
-	MirrorZDisplay.itemconfig(MirrorZLED, fill=LEDColors[sd.ismoving(a[2])+WarningStatus[2]])
-	MirrorZPositionLabel.config(text=str(round(steps_to_mm(sd.position(a[2])),1)))
-	MirrorZ_LSTOP.config(bg=LEDColors[a[2].axis.get(11)])
-	MirrorZ_RSTOP.config(bg=LEDColors[a[2].axis.get(10)])
-		
-	MirrorPsiPositionLabel.config(text=str(round(steps_to_degree(sd.position(a[4])),2)))
-	MirrorPsiDisplay.itemconfig(MirrorPsiLED, fill=LEDColors[sd.ismoving(a[4])+WarningStatus[4]])
-	MirrorPsi_OSTOP.config(bg=LEDColors[a[4].axis.get(10)])
-	MirrorPsi_USTOP.config(bg=LEDColors[a[4].axis.get(11)])
-
-	MirrorPhiPositionLabel.config(text=str(round(steps_to_degree(sd.position(a[5])),2)))
-	MirrorPhiDisplay.itemconfig(MirrorPhiLED, fill=LEDColors[sd.ismoving(a[5])+WarningStatus[5]])
-	MirrorPhi_LSTOP.config(bg=LEDColors[a[5].axis.get(11)])
-	MirrorPhi_RSTOP.config(bg=LEDColors[a[5].axis.get(10)])
-	
-	CameraXPositionLabel.config(text=str(round(steps_to_mm(sd.position(a[1])),1)))
-	CameraXDisplay.itemconfig(CameraXLED, fill=LEDColors[sd.ismoving(a[1])+WarningStatus[1]])
-	CameraX_OSTOP.config(bg=LEDColors[a[1].axis.get(10)])
-	CameraX_USTOP.config(bg=LEDColors[a[1].axis.get(11)])        
-		
-	CameraZPositionLabel.config(text=str(round(steps_to_mm(sd.position(a[0])),1)))
-	CameraZDisplay.itemconfig(CameraZLED, fill=LEDColors[sd.ismoving(a[0])+WarningStatus[0]])
-	CameraZ_LSTOP.config(bg=LEDColors[a[0].axis.get(10)])
-	CameraZ_RSTOP.config(bg=LEDColors[a[0].axis.get(11)])
-	
-	if client != None:
-		try:
-			CHa_Label_rate.config(text="{:.1f}".format(client.getRateA()), fg="#00ff00")
-			CHb_Label_rate.config(text="{:.1f}".format(client.getRateB()), fg="#00ff00")
-		except RuntimeError:
-			startStopClient()
-			
-	root.update_idletasks()
-	
+    #print (WarningStatus)
+    #for i in range (0,6):
+    #    print (str(sd.ismoving(a[i])) + "\t" + str(WarningStatus[i]) + "\t" + str(sd.ismoving(a[i])+WarningStatus[i]))
+    #print (" ")
+    MHD = sd.ismoving(a[3])+WarningStatus[3]
+    print("MHD",MHD)
+    if MHD>2:
+        MHD=2
+    MirrorHeightDisplay.itemconfig(MirrorHeightLED, fill=LEDColors[MHD])
+    MHP=sd.position(a[3])
+    print("MHP",MHP)
+    MirrorHeightPositionLabel.config(text=str(round(steps_to_hmm(MHP),1)))
+    #time.sleep(.05)
+    MirrorHeight_OSTOP.config(bg=ENDSwitchColors[a[3].axis.get(10)])
+    #time.sleep(.05)
+    MirrorHeight_USTOP.config(bg=ENDSwitchColors[a[3].axis.get(11)])   
+    #time.sleep(.05)   
+    MirrorZDisplay.itemconfig(MirrorZLED, fill=LEDColors[sd.ismoving(a[2])+WarningStatus[2]])
+    #time.sleep(.05)
+    MirrorZPositionLabel.config(text=str(round(steps_to_mm(sd.position(a[2])),1)))
+    #time.sleep(.05)
+    MirrorZ_LSTOP.config(bg=ENDSwitchColors[a[2].axis.get(11)])
+    #time.sleep(.05)
+    MirrorZ_RSTOP.config(bg=ENDSwitchColors[a[2].axis.get(10)])
+    #time.sleep(.05)
+    MPsiP=sd.position(a[4])
+    print("MPsiP",MPsiP)
+    MirrorPsiPositionLabel.config(text=str(round(steps_to_degree(MPsiP),2)))
+    #time.sleep(.05)
+    MPsiD=sd.ismoving(a[4])+WarningStatus[4]
+    print("MPsiD",MPsiD)
+    if MPsiD>2:
+        MPsiD=2
+    MirrorPsiDisplay.itemconfig(MirrorPsiLED, fill=LEDColors[MPsiD])
+    #time.sleep(.05)
+    MPsiO=a[4].axis.get(10)
+    print("MPsiO",MPsiO)
+    if MPsiO>2:
+        MPsiO=2
+    MirrorPsi_OSTOP.config(bg=ENDSwitchColors[MPsiO])
+    #time.sleep(.05)
+    MPsiU=a[4].axis.get(11)
+    print("MPsiU",MPsiU)
+    if MPsiU>2:
+        MPsiU=2
+    MirrorPsi_USTOP.config(bg=ENDSwitchColors[MPsiU])
+    #time.sleep(.05)
+    MirrorPhiPositionLabel.config(text=str(round(steps_to_degree(sd.position(a[5])),2)))
+    #time.sleep(.05)
+    MirrorPhiDisplay.itemconfig(MirrorPhiLED, fill=LEDColors[sd.ismoving(a[5])+WarningStatus[5]])
+    #time.sleep(.05)
+    MirrorPhi_LSTOP.config(bg=ENDSwitchColors[a[5].axis.get(11)])
+    #time.sleep(.05)
+    MirrorPhi_RSTOP.config(bg=ENDSwitchColors[a[5].axis.get(10)])
+    CameraXPositionLabel.config(text=str(round(steps_to_mm(sd.position(a[1])),1)))
+    CameraXDisplay.itemconfig(CameraXLED, fill=LEDColors[sd.ismoving(a[1])+WarningStatus[1]])
+    CameraX_OSTOP.config(bg=ENDSwitchColors[a[1].axis.get(10)])
+    CameraX_USTOP.config(bg=ENDSwitchColors[a[1].axis.get(11)]) 
+    CameraZPositionLabel.config(text=str(round(steps_to_mm(sd.position(a[0])),1)))
+    CameraZDisplay.itemconfig(CameraZLED, fill=LEDColors[sd.ismoving(a[0])+WarningStatus[0]])
+    CameraZ_LSTOP.config(bg=ENDSwitchColors[a[0].axis.get(10)])
+    time.sleep(.05)
+    CameraZ_RSTOP.config(bg=ENDSwitchColors[a[0].axis.get(11)])
+    time.sleep(.05)
+    if client != None:
+        try:
+            CHa_Label_rate.config(text="{:.1f}".format(client.getRateA()), fg="#00ff00")
+            CHb_Label_rate.config(text="{:.1f}".format(client.getRateB()), fg="#00ff00")
+        except RuntimeError:
+            startStopClient()
+            
+    root.update_idletasks()
+    
 stop_thread = False
 def update_motor_status():
-	global stop_thread
-	stop_thread = False
-	while True:
-		if stop_thread:
-			update_screen()
-			break
-		try:
-			update_items()
-		except:
-			print ("\tInformation: screen thread died, create new one")
-			stop_thread = True
-		sleep(0.1)
+    global stop_thread
+    stop_thread = False
+    while True:
+        if stop_thread:
+            update_screen()
+            break
+        try:
+            update_items()
+        except:
+            print ("\tInformation: screen thread died, create new one")
+            stop_thread = True
+        sleep(0.1)
 
 screenthreads = []
 screenthreads.append(Thread(target=update_motor_status, args=()))
 screenthreads[-1].start()
 
 def update_screen():
-	global stop_thread
-	stop_thread= True
-	screenthreads.append(Thread(target=update_motor_status, args=()))
-	screenthreads[-1].start()
-	
+    global stop_thread
+    stop_thread= True
+    screenthreads.append(Thread(target=update_motor_status, args=()))
+    screenthreads[-1].start()
+    
 
 
 
@@ -804,89 +866,89 @@ Shutter.config(bg=ServoColor)
 
 #optimizes all motor-values bluntly
 def optimizeAllBluntly():
-	global client
-	if client == None:
-		print("No rate Server connected. The rate can not be optimzied witout knowing the rate!")
-		return
+    global client
+    if client == None:
+        print("No rate Server connected. The rate can not be optimzied witout knowing the rate!")
+        return
 
-	#stop all current movements of the motors
-	stop_all()
-	
-	#set all motors to center position
-	center_camera()
-	center_mirror_pos()
-	center_mirror_angle()
-	
-	#run an optimizer on the setup
-	res=opt.minimize(testState, [gui.mirror_height_pos, gui.mirror_z_pos, gui.mirror_phi_pos, gui.mirror_psi_pos, gui.camera_x_pos, gui.camera_z_pos])
-	print("Optimal Position was found to be: {0}".format(res))
+    #stop all current movements of the motors
+    stop_all()
+    
+    #set all motors to center position
+    center_camera()
+    center_mirror_pos()
+    center_mirror_angle()
+    
+    #run an optimizer on the setup
+    res=opt.minimize(testState, [gui.mirror_height_pos, gui.mirror_z_pos, gui.mirror_phi_pos, gui.mirror_psi_pos, gui.camera_x_pos, gui.camera_z_pos])
+    print("Optimal Position was found to be: {0}".format(res))
 
 def optimizeBluntlyNoHeight():
-	global client
-	print("Bluntly")
-	
-	if client == None:
-			print("No rate Server connected. The rate can not be optimzied witout knowing the rate!")
-			return
+    global client
+    print("Bluntly")
+    
+    if client == None:
+            print("No rate Server connected. The rate can not be optimzied witout knowing the rate!")
+            return
 
-	#stop all current movements of the motors
-	stop_all()
-	
-	#set all motors to center position
-	center_camera()
-	#gui.center_mirror_pos()
-	center_mirror_angle()
-	
-	#run an optimizer on the setup
-	res=opt.minimize(testStateNoHeight, [gui.mirror_z_pos, gui.mirror_phi_pos, gui.mirror_psi_pos, gui.camera_x_pos, gui.camera_z_pos])
-	print("Optimal Position was found to be: {0}".format(res))
+    #stop all current movements of the motors
+    stop_all()
+    
+    #set all motors to center position
+    center_camera()
+    #gui.center_mirror_pos()
+    center_mirror_angle()
+    
+    #run an optimizer on the setup
+    res=opt.minimize(testStateNoHeight, [gui.mirror_z_pos, gui.mirror_phi_pos, gui.mirror_psi_pos, gui.camera_x_pos, gui.camera_z_pos])
+    print("Optimal Position was found to be: {0}".format(res))
 
 def optimizeMirrorBluntly():
-	global client
-	global mirror_phi_pos
-	global mirror_psi_pos
-	print("Mirror Bluntly...")
-	
-	if client == None:
-			print("No rate Server connected. The rate can not be optimzied witout knowing the rate!")
-			return
+    global client
+    global mirror_phi_pos
+    global mirror_psi_pos
+    print("Mirror Bluntly...")
+    
+    if client == None:
+            print("No rate Server connected. The rate can not be optimzied witout knowing the rate!")
+            return
 
-	#stop all current movements of the motors
-	stop_all()
+    #stop all current movements of the motors
+    stop_all()
 
-	bnds = ((-4.5, 4.5), (-4.5, 4.5))
+    bnds = ((-4.5, 4.5), (-4.5, 4.5))
 
-	#run an optimizer on the setup
-	res=opt.minimize(testStateMirror, [mirror_phi_pos.get(), mirror_psi_pos.get()], method='nelder-mead', options={'disp': True, })
-	print("Optimal Position was found to be: {0}".format(res))
+    #run an optimizer on the setup
+    res=opt.minimize(testStateMirror, [mirror_phi_pos.get(), mirror_psi_pos.get()], method='nelder-mead', options={'disp': True, })
+    print("Optimal Position was found to be: {0}".format(res))
 
 def testStateMirror(state):
-	mirror_phi = state[0]
-	mirror_psi = state[1]
-	global client
-	MirrorPhi.set(mirror_phi)
-	MirrorPsi.set(mirror_psi)
-	moveto_mirror_phi(0)
-	moveto_mirror_psi(0)
-	while sd.ismoving(a[4]):
-		sleep(0.05)
-	while sd.ismoving(a[5]):
-		sleep(0.05)
-	#print("PSI: {0}  PHI:  {1}   RATE:  {2}".format(mirror_psi, mirror_phi, client.getRateA()))
-	if (client.getRateA()+client.getRateA())!=0:
-		return 1./(client.getRateA()+client.getRateA())
-	else:
-		return float("inf")
+    mirror_phi = state[0]
+    mirror_psi = state[1]
+    global client
+    MirrorPhi.set(mirror_phi)
+    MirrorPsi.set(mirror_psi)
+    moveto_mirror_phi(0)
+    moveto_mirror_psi(0)
+    while sd.ismoving(a[4]):
+        sleep(0.05)
+    while sd.ismoving(a[5]):
+        sleep(0.05)
+    #print("PSI: {0}  PHI:  {1}   RATE:  {2}".format(mirror_psi, mirror_phi, client.getRateA()))
+    if (client.getRateA()+client.getRateA())!=0:
+        return 1./(client.getRateA()+client.getRateA())
+    else:
+        return float("inf")
 
 def mirrorMockup(state):
-	min=4.5
-	max=4.5
-	muu=0.
-	sigma=1.
-	mirror_phi = state[0]
-	mirror_psi = state[1]
-	print("psi={0}  ;   phi={1}".format(mirror_psi, mirror_phi))
-	return 1 / (np.exp(-( (mirror_psi-muu)**2 / ( 2.0 * sigma**2 ) ) ) * np.exp(-( (mirror_phi-muu)**2 / ( 2.0 * sigma**2 ) ) ))
+    min=4.5
+    max=4.5
+    muu=0.
+    sigma=1.
+    mirror_phi = state[0]
+    mirror_psi = state[1]
+    print("psi={0}  ;   phi={1}".format(mirror_psi, mirror_phi))
+    return 1 / (np.exp(-( (mirror_psi-muu)**2 / ( 2.0 * sigma**2 ) ) ) * np.exp(-( (mirror_phi-muu)**2 / ( 2.0 * sigma**2 ) ) ))
 
 
 root.mainloop()
