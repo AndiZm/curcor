@@ -3,6 +3,7 @@ from tkinter import messagebox
 from numpy import random
 from time import sleep
 import scipy.optimize as opt
+import threading
 
 import stepper_drive as sd
 import motor_switch as ms
@@ -16,6 +17,8 @@ import _thread
 from threading import Thread
 from PIL import Image
 import os
+from serial.serialutil import SerialException
+
 
 # Get motors
 a=sd.init()  #stepper_drive
@@ -33,11 +36,16 @@ LEDColors.append("#ff0000") #Warning
 ENDSwitchColors = []
 ENDSwitchColors.append("#ff6600")
 ENDSwitchColors.append("#737373")
-ENDSwitchColors.append("#ff0000") 
+ENDSwitchColors.append("#ff0000")
+
 
 WarningStatus=[]
 for i in range (0,6):
     WarningStatus.append(0)
+
+change_mirror_phi=False
+change_mirror_psi=False
+change_mirror_z=False
 
 lastpositions=[]
 readpos = open("stepper_items/current_positions.txt","r")
@@ -272,17 +280,13 @@ def moveto_mirror_height(val):
     WarningStatus[3]=0
     a[3].move_absolute(hmm_to_steps(mirror_height_pos.get()))   
 def moveto_mirror_z(val):
-    print("Move mirror z to",mirror_z_pos.get(),"in steps",mm_to_steps(mirror_z_pos.get()))
-    WarningStatus[2]=0
-    a[2].move_absolute(mm_to_steps(mirror_z_pos.get()))    
+    change_mirror_z=True
 def moveto_mirror_phi(val):
-    print("Move mirror phi to",mirror_phi_pos.get(),"in steps",degree_to_steps(mirror_phi_pos.get()))
-    WarningStatus[5]=0
-    a[5].move_absolute(degree_to_steps(mirror_phi_pos.get()))    
+    global change_mirror_phi
+    change_mirror_phi=True
 def moveto_mirror_psi(val):
-    print("Move mirror psi to",mirror_psi_pos.get(),"in steps",degree_to_steps(mirror_psi_pos.get()))
-    WarningStatus[4]=0
-    a[4].move_absolute(degree_to_steps(mirror_psi_pos.get()))    
+    global change_mirror_psi
+    change_mirror_psi=True
 def moveto_camera_x(val):    
     print("Move camera x to",camera_x_pos.get(), "von" , CameraX.get(),"in steps",mm_to_steps(camera_x_pos.get()))
     WarningStatus[1]=0
@@ -669,59 +673,63 @@ CameraZLED = CameraZDisplay.create_oval(1,1,19,19, fill=LEDColors[0], width=0)
 #---- Permanently update screen ----#
 #-----------------------------------#
 def update_items():
+    #move all motors due to changes since last time
+    global change_mirror_phi
+    global change_mirror_psi
+    global change_mirror_z
+    global change
+    global change
+    global change
+    if change_mirror_phi:
+        print("Move mirror phi to",mirror_phi_pos.get(),"in steps",degree_to_steps(mirror_phi_pos.get()))
+        WarningStatus[5]=0
+        a[5].move_absolute(degree_to_steps(mirror_phi_pos.get()))
+        change_mirror_phi=False
+    if change_mirror_psi:
+        print("Move mirror psi to",mirror_psi_pos.get(),"in steps",degree_to_steps(mirror_psi_pos.get()))
+        WarningStatus[4]=0
+        a[4].move_absolute(degree_to_steps(mirror_psi_pos.get()))
+        change_mirror_psi=False
+    if change_mirror_z:
+        print("Move mirror z to",mirror_z_pos.get(),"in steps",mm_to_steps(mirror_z_pos.get()))
+        WarningStatus[2]=0
+        a[2].move_absolute(mm_to_steps(mirror_z_pos.get()))
+        change_mirror_z=False
+        
     #print (WarningStatus)
     #for i in range (0,6):
     #    print (str(sd.ismoving(a[i])) + "\t" + str(WarningStatus[i]) + "\t" + str(sd.ismoving(a[i])+WarningStatus[i]))
     #print (" ")
     MHD = sd.ismoving(a[3])+WarningStatus[3]
-    print("MHD",MHD)
+    #print("MHD",MHD)
     if MHD>2:
         MHD=2
     MirrorHeightDisplay.itemconfig(MirrorHeightLED, fill=LEDColors[MHD])
     MHP=sd.position(a[3])
-    print("MHP",MHP)
     MirrorHeightPositionLabel.config(text=str(round(steps_to_hmm(MHP),1)))
-    #time.sleep(.05)
     MirrorHeight_OSTOP.config(bg=ENDSwitchColors[a[3].axis.get(10)])
-    #time.sleep(.05)
     MirrorHeight_USTOP.config(bg=ENDSwitchColors[a[3].axis.get(11)])   
-    #time.sleep(.05)   
     MirrorZDisplay.itemconfig(MirrorZLED, fill=LEDColors[sd.ismoving(a[2])+WarningStatus[2]])
-    #time.sleep(.05)
     MirrorZPositionLabel.config(text=str(round(steps_to_mm(sd.position(a[2])),1)))
-    #time.sleep(.05)
     MirrorZ_LSTOP.config(bg=ENDSwitchColors[a[2].axis.get(11)])
-    #time.sleep(.05)
     MirrorZ_RSTOP.config(bg=ENDSwitchColors[a[2].axis.get(10)])
-    #time.sleep(.05)
     MPsiP=sd.position(a[4])
-    print("MPsiP",MPsiP)
-    MirrorPsiPositionLabel.config(text=str(round(steps_to_degree(MPsiP),2)))
-    #time.sleep(.05)
+    MirrorPsiPositionLabel.config(text="{0:4.2f}".format(steps_to_degree(MPsiP)))
     MPsiD=sd.ismoving(a[4])+WarningStatus[4]
-    print("MPsiD",MPsiD)
     if MPsiD>2:
         MPsiD=2
     MirrorPsiDisplay.itemconfig(MirrorPsiLED, fill=LEDColors[MPsiD])
-    #time.sleep(.05)
     MPsiO=a[4].axis.get(10)
-    print("MPsiO",MPsiO)
     if MPsiO>2:
         MPsiO=2
     MirrorPsi_OSTOP.config(bg=ENDSwitchColors[MPsiO])
-    #time.sleep(.05)
     MPsiU=a[4].axis.get(11)
-    print("MPsiU",MPsiU)
     if MPsiU>2:
         MPsiU=2
     MirrorPsi_USTOP.config(bg=ENDSwitchColors[MPsiU])
-    #time.sleep(.05)
-    MirrorPhiPositionLabel.config(text=str(round(steps_to_degree(sd.position(a[5])),2)))
-    #time.sleep(.05)
+    MirrorPhiPositionLabel.config(text="{0:4.2f}".format(steps_to_degree(sd.position(a[5]))))
     MirrorPhiDisplay.itemconfig(MirrorPhiLED, fill=LEDColors[sd.ismoving(a[5])+WarningStatus[5]])
-    #time.sleep(.05)
     MirrorPhi_LSTOP.config(bg=ENDSwitchColors[a[5].axis.get(11)])
-    #time.sleep(.05)
     MirrorPhi_RSTOP.config(bg=ENDSwitchColors[a[5].axis.get(10)])
     CameraXPositionLabel.config(text=str(round(steps_to_mm(sd.position(a[1])),1)))
     CameraXDisplay.itemconfig(CameraXLED, fill=LEDColors[sd.ismoving(a[1])+WarningStatus[1]])
@@ -741,8 +749,9 @@ def update_items():
             startStopClient()
             
     root.update_idletasks()
-    
+   
 stop_thread = False
+
 def update_motor_status():
     global stop_thread
     stop_thread = False
@@ -752,6 +761,8 @@ def update_motor_status():
             break
         try:
             update_items()
+        except SerialException:
+            print("Serial Exception. This only causes the GUI to miss one update!")
         except:
             print ("\tInformation: screen thread died, create new one")
             stop_thread = True
