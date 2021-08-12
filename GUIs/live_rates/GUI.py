@@ -47,7 +47,17 @@ def to_bin(file):
 
 
 root = Tk(); root.wm_title("Almost live measures"); root.geometry("+1600+20")
-rootMainFrame = Frame(root); rootMainFrame.grid(row=0,column=0)
+
+# Rate frame
+r_width  = 20
+r_height = 850
+rateFrame = Frame(root); rateFrame.grid(row=0,column=0)
+rateACanvas = Canvas(rateFrame, width=r_width, height=r_height, bg="gray"); rateACanvas.grid(row=0,column=0)
+rateBCanvas = Canvas(rateFrame, width=r_width, height=r_height, bg="gray"); rateBCanvas.grid(row=0,column=1)
+
+
+
+rootMainFrame = Frame(root); rootMainFrame.grid(row=0,column=1)
 
 ##################
 ## COMMON FRAME ##
