@@ -6,10 +6,11 @@ lastfiletime = 1e9*time.time()
 stop_wait_for_file_thread = False
 
 # General options
-o_samples  = 134217728	# Number of samples per file
-o_binning  = 1.6e-9		# Time binning in seconds
-o_voltages = 200		# Voltage range in mV
-o_nchn     = 2 			# Activated channels
+o_samples 		= 134217728	# Number of samples per file
+o_samples_quick	= 262144	# Number of samples for quick rate analysis
+o_binning  		= 1.6e-9	# Time binning in seconds
+o_voltages 		= 200		# Voltage range in mV
+o_nchn     		= 2 		# Activated channels
 
 # Paths
 basicpath = "E:/"

@@ -18,7 +18,7 @@ import live_waveform_reader as wv
 import live_wait_for_file as wff
 import globals as gl
 import rate_server as svr
-
+import card_commands as cc
 
 from threading import Thread
 
@@ -474,6 +474,54 @@ plotFig = []; rate_a_plot = []; rate_b_plot = []
 wav_a = []; wav_b = []
 
 
+def quick_analysis():
+	global stop_thread
+	cc.init()
+	while stop_thread == False:
+		vRange   = gl.o_voltages
+		binRange = gl.o_binning
+		mean_a_ADC, mean_b_ADC = cc.take_data()
+		#-- Channel A calculations --#
+		# Waveform mean
+		mean_a_ADC = mean_a_ADC - gl.off_a
+		# Rates
+		r_a = 1e-6 * mean_a_ADC/(gl.avg_charge_a*binRange)
+		CHa_Label_rate.config(text="{:.1f}".format(r_a))
+		placeRateLineA(r_a)
+		# mV
+		mean_a_mV = ADC_to_mV(adc=mean_a_ADC, range=vRange)
+		CHa_Label_mean.config(text="{:.2f}".format(mean_a_mV))
+		# PMT current
+		curr_a_microamp = 1e3 * mean_a_mV/float(ampAEntry.get())/50
+		if curr_a_microamp > -100:      
+			CHa_Label_curr.config(text="{:.1f}".format(curr_a_microamp), bg="black", fg="orange")
+		else:
+			CHa_Label_curr.config(text="{:.1f}".format(curr_a_microamp), bg="#edd266", fg="red")
+	
+		#-- Channel B calculations --#
+		if gl.o_nchn == 2:
+			# Waveform mean	
+			mean_b_ADC = mean_b_ADC - gl.off_b
+			# Rates	
+			r_b = 1e-6 * mean_b_ADC/(gl.avg_charge_b*binRange)	
+			CHb_Label_rate.config(text="{:.1f}".format(r_b))
+			placeRateLineB(r_b)
+			# mV	
+			mean_b_mV = ADC_to_mV(adc=mean_b_ADC, range=vRange)	
+			CHb_Label_mean.config(text="{:.2f}".format(mean_b_mV))
+			# PMT current	
+			curr_b_microamp = 1e3 * mean_b_mV/float(ampBEntry.get())/50
+			if curr_b_microamp > -100:
+				CHb_Label_curr.config(text="{:.1f}".format(curr_b_microamp), bg="black", fg="orange")
+			else:
+				CHb_Label_curr.config(text="{:.1f}".format(curr_b_microamp), bg="#edd266", fg="red")
+	
+		if server != None:
+			server.sendRate(r_a, r_b)	
+		root.update()
+		
+	cc.close()
+
 def analyze_file(newest_file):
 	global stop_thread, plotting, rates_a, rates_b, wav_a, wav_b
 	
@@ -594,6 +642,25 @@ def startstop():
 		startstopButton.config(text="Start!", bg="#e8fcae")
 		idle()
 
+running_quick = False
+def startstop_quick():
+	global running_quick, stop_thread
+	if running_quick == False:
+		running_quick = True
+
+		quickRatesButton.config(text="Stop quick", bg="#fa857a")
+		stop_thread = False
+		gl.statusLabel.config(text="Quick Rate Mode" , bg="#edda45"); root.update()
+		the_thread = Thread(target=quick_analysis, args=())
+		the_thread.start()		
+	else:
+		running_quick = False
+		stop_thread = True
+		quickRatesButton.config(text="Start quick", bg="#e8fcae")
+		idle()
+
+
+
 def switchplot():
 	global plotting, plotFig, plotFigAxis, plotWfAxis
 	if plotting == False:
@@ -660,9 +727,20 @@ def startStopServer():
 clearPlotButon = Button(startFrame, text="Clear", bg="#ccf2ff", command=clearPlot, width=12); clearPlotButon.grid(row=0,column=0)
 plotButton = Button(startFrame, text="Plotting off", bg="#cdcfd1", command=switchplot, width=12); plotButton.grid(row=0,column=1)
 
-startstopButton = Button(startFrame, text="Start!", bg="#e8fcae", command=startstop, width=12); startstopButton.grid(row=2,column=0)
-singleFileButton = Button(startFrame, text="Single", bg = "#e8fcae", command=singleFileRate, width=12); singleFileButton.grid(row=2, column=1)
+startstopButton = Button(startFrame, text="Start!", bg="#e8fcae", command=startstop, width=12); startstopButton.grid(row=1,column=0)
+singleFileButton = Button(startFrame, text="Single", bg = "#e8fcae", command=singleFileRate, width=12); singleFileButton.grid(row=1, column=1)
 
+quickRatesButton = Button(startFrame, text="Start quick", bg="#e8fcae", width=12, command=startstop_quick); quickRatesButton.grid(row=2, column=0)
+# Samples for quick measurement
+samples_quick = StringVar(root); samples_quick.set("256 kS")
+sample_quick_options = {
+	"4 kS": 4096, "8 kS": 8192, "16 kS": 16384, "32 kS": 32768, "64 kS": 65536,
+	"128 kS": 131072, "256 kS": 262144, "512 kS": 524288, "1 MS": 1048576
+}
+def new_samples_quick(val):
+	gl.o_samples_quick = int((sample_quick_options[samples_quick.get()]))
+samples_quick_Dropdown = OptionMenu(startFrame, samples_quick, *sample_quick_options, command=new_samples_quick)
+samples_quick_Dropdown.grid(row=2, column=1)
 ##################
 ## Server Stuff ##
 ##################
