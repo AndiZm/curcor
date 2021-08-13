@@ -36,70 +36,59 @@ def execute(packet_length, npackets, range_a, range_b):
     file = gl.calibFile
     packets = np.arange(0, npackets)
     peak_height_a = []; peak_height_b = []
-    with open(file, 'rb') as f:
-        for allpkt in tqdm(packets):
-            buf = (f.read(2*packet_length))
-            packet = np.frombuffer(buf, dtype=np.int8)
-            packet = packet.reshape(packet_length, 2)
-            a_np = np.array(packet[:,0]).flatten(); b_np = np.array(packet[:,1]).flatten()
-            dings_a, _ = ss.find_peaks(-a_np); dings_b, _ = ss.find_peaks(-b_np)
-            for i in dings_a:
-                peak_height_a.append(a_np[i])
-            for i in dings_b:
-                peak_height_b.append(b_np[i])
-            del(a_np); del(b_np)
-            if gl.stop_calib_thread == True:
-                break
-        
-    binsx = np.arange(-128,128,1)
-    data_a = np.histogram(peak_height_a, binsx); data_b = np.histogram(peak_height_b, binsx)
-    gl.histo_x = data_a[1][:-1]; gl.histo_a = data_a[0]; b_x = data_b[1][:-1]; gl.histo_b = data_b[0]
 
-    #Fits
+    if gl.o_nchn == 2:
+        with open(file, 'rb') as f:
+            for allpkt in tqdm(packets):
+                buf = (f.read(2*packet_length))
+                packet = np.frombuffer(buf, dtype=np.int8)
+                packet = packet.reshape(packet_length, 2)
+                a_np = np.array(packet[:,0]).flatten(); b_np = np.array(packet[:,1]).flatten()
+                dings_a, _ = ss.find_peaks(-a_np); dings_b, _ = ss.find_peaks(-b_np)
+                for i in dings_a:
+                    peak_height_a.append(a_np[i])
+                for i in dings_b:
+                    peak_height_b.append(b_np[i])
+                del(a_np); del(b_np)
+                if gl.stop_calib_thread == True:
+                    break
+    else:
+        with open(file, 'rb') as f:
+            for allpkt in tqdm(packets):
+                buf = (f.read(packet_length))
+                packet = np.frombuffer(buf, dtype=np.int8)
+                a_np = np.array(packet).flatten()
+                dings_a, _ = ss.find_peaks(-a_np)
+                for i in dings_a:
+                    peak_height_a.append(a_np[i])
+                del(a_np)
+                if gl.stop_calib_thread == True:
+                    break
+    
+    # Do the histogram and fit
+    binsx = np.arange(-128,128,1)
+    data_a = np.histogram(peak_height_a, binsx)
+    gl.histo_x = data_a[1][:-1]; gl.histo_a = data_a[0]
     xfit_a = gl.histo_x[(gl.histo_x>range_a[0]) & (gl.histo_x<range_a[1])]; ayfit = gl.histo_a[(gl.histo_x>range_a[0]) & (gl.histo_x<range_a[1])]
-    xfit_b = gl.histo_x[(gl.histo_x>range_b[0]) & (gl.histo_x<range_b[1])]; byfit = gl.histo_b[(gl.histo_x>range_b[0]) & (gl.histo_x<range_b[1])]
-    gl.xplot = np.arange(-128,0,0.1)
     gl.pa,ca = curve_fit(gauss, xfit_a, ayfit, p0=[ayfit[int(len(xfit_a)/2)],-15,5])
-    gl.pb,cb = curve_fit(gauss, xfit_b, byfit, p0=[byfit[int(len(xfit_b)/2)],-15,5])
-   
+    gl.ph_a = phd(gl.pa[1],gl.pa[2]) # Average height
+
+    if gl.o_nchn == 2:
+        data_b = np.histogram(peak_height_b, binsx)
+        b_x = data_b[1][:-1]; gl.histo_b = data_b[0]
+        xfit_b = gl.histo_x[(gl.histo_x>range_b[0]) & (gl.histo_x<range_b[1])]; byfit = gl.histo_b[(gl.histo_x>range_b[0]) & (gl.histo_x<range_b[1])]
+        gl.pb,cb = curve_fit(gauss, xfit_b, byfit, p0=[byfit[int(len(xfit_b)/2)],-15,5])
+        gl.ph_b = phd(gl.pb[1],gl.pb[2]) # Average height
+    gl.xplot = np.arange(-128,0,0.1)
+
+# Only apply new fit range to data
 def onlyFit(range_a,range_b):
     #Fits
     xfit_a = gl.histo_x[(gl.histo_x>range_a[0]) & (gl.histo_x<range_a[1])]; ayfit = gl.histo_a[(gl.histo_x>range_a[0]) & (gl.histo_x<range_a[1])]
-    xfit_b = gl.histo_x[(gl.histo_x>range_b[0]) & (gl.histo_x<range_b[1])]; byfit = gl.histo_b[(gl.histo_x>range_b[0]) & (gl.histo_x<range_b[1])]
-    gl.xplot = np.arange(-128,0,0.1)
     gl.pa,ca = curve_fit(gauss, xfit_a, ayfit, p0=[ayfit[int(len(xfit_a)/2)],-15,5])
-    gl.pb,cb = curve_fit(gauss, xfit_b, byfit, p0=[byfit[int(len(xfit_b)/2)],-15,5])
-
-def execute_single(file, packet_length, npackets, range_a):
-
-    packets = np.arange(0, npackets)
-    peak_height_a = []
-    with open(file, 'rb') as f:
-        for allpkt in tqdm(packets):
-            buf = (f.read(packet_length))
-            packet = np.frombuffer(buf, dtype=np.int8)
-            a_np = np.array(packet).flatten()
-            dings_a, _ = ss.find_peaks(-a_np)
-            for i in dings_a:
-                peak_height_a.append(a_np[i])
-            del(a_np)
-            if gl.stop_calib_thread == True:
-                break
-        
-    binsx = np.arange(-128,128,1)
-    data_a = np.histogram(peak_height_a, binsx)
-    a_x = data_a[1][:-1]; a_y = data_a[0]
-
-    #Fits
-    xfit_a = a_x[(a_x>range_a[0]) & (a_x<range_a[1])]; ayfit = a_y[(a_x>range_a[0]) & (a_x<range_a[1])]
-    xplot = np.arange(-128,0,0.1)
-    pa,ca = curve_fit(gauss, xfit_a, ayfit, p0=[ayfit[int(len(xfit_a)/2)],-15,5])
-   
-    return a_x, a_y, pa, xplot
-def onlyFit_single(a_x,a_y,range_a):
-    #Fits
-    xfit_a = a_x[(a_x>range_a[0]) & (a_x<range_a[1])]; ayfit = a_y[(a_x>range_a[0]) & (a_x<range_a[1])]
-    xplot = np.arange(-128,0,0.1)
-    pa,ca = curve_fit(gauss, xfit_a, ayfit, p0=[ayfit[int(len(xfit_a)/2)],-15,5])
-   
-    return a_x, a_y, pa,xplot
+    gl.ph_a = phd(gl.pa[1],gl.pa[2]) # Average height
+    if gl.o_nchn == 2:
+        xfit_b = gl.histo_x[(gl.histo_x>range_b[0]) & (gl.histo_x<range_b[1])]; byfit = gl.histo_b[(gl.histo_x>range_b[0]) & (gl.histo_x<range_b[1])]
+        gl.pb,cb = curve_fit(gauss, xfit_b, byfit, p0=[byfit[int(len(xfit_b)/2)],-15,5])
+        gl.ph_b = phd(gl.pb[1],gl.pb[2]) # Average height
+    gl.xplot = np.arange(-128,0,0.1)

@@ -4,14 +4,12 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.backends.backend_tkagg as tkagg
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
-import subprocess
 import os
 import time
 from os import listdir
 from os.path import isfile, join
 from tkinter import *
 from tkinter import filedialog
-import scipy.signal as ss
 
 import live_offset_meas as off
 import live_fit_phd as fphd
@@ -24,70 +22,13 @@ import rate_server as svr
 
 from threading import Thread
 
+############################
+## SOME GENERAL FUNCTIONS ##
+############################
 def ADC_to_mV(adc, range):
 	return adc*range/127
 def mV_to_ADC(mV, range):
 	return mV*127/range
-
-root = Tk(); root.wm_title("Almost live measures"); root.geometry("+1600+20")
-rootMainFrame = Frame(root); rootMainFrame.grid(row=0,column=0)
-
-## Common Frame ##
-commonFrame = Frame(rootMainFrame); commonFrame.grid(row=0,column=0)
-
-# Samples
-samples = StringVar(root); samples.set("128 MS")
-sampleoptions = {
-	"64 S": 64, "128 S": 128, "256 S": 256, "512 S": 512,
-	"1 kS": 1024, "2 kS": 2048, "4 kS": 4096, "8 kS": 8192, "16 kS": 16384, "32 kS": 32768, "64 kS": 65536,
-	"128 kS": 131072, "256 kS": 262144, "512 kS": 524288,
-	"1 MS": 1048576, "2 MS": 2097152, "4 MS": 4194304, "8 MS": 8388608, "16 MS": 16777216, "32 MS": 33554432, "64 MS": 67108864,
-	"128 MS": 134217728, "256 MS": 268435456, "512 MS": 536870912,
-	"1 GS": 1073741824, "2 GS": 2147483648, "4 GS": 4294967296
-}
-def new_samples(val):
-	gl.o_samples = int((sampleoptions[samples.get()]))
-samplesDropdownLabel = Label(commonFrame, text="File Sample Size"); samplesDropdownLabel.grid(row=0,column=0)
-samplesDropdown = OptionMenu(commonFrame, samples, *sampleoptions, command=new_samples)
-samplesDropdown.grid(row=0, column=1)
-# Binning
-binning = StringVar(root); binning.set("1.6 ns")
-binningoptions = {"0.8 ns": 0.8e-9, "1.6 ns": 1.6e-9, "3.2 ns": 3.2e-9, "6.4 ns": 6.4e-9}
-def new_binning(val):
-	gl.o_binning = int((binningoptions[binning.get()]))
-binningDropdownLabel = Label(commonFrame, text="Time sampling"); binningDropdownLabel.grid(row=1,column=0)
-binningDropdown = OptionMenu(commonFrame, binning, *binningoptions, command=new_binning)
-binningDropdown.grid(row=1, column=1)
-# Voltages
-voltages = StringVar(root); voltages.set("200 mV")
-voltageoptions = {"40 mV": 40, "100 mV": 100, "200 mV": 200, "500 mV": 500}
-def new_voltages(val):
-	gl.o_voltages = int((voltageoptions[voltages.get()]))
-voltageDropdownLabel = Label(commonFrame, text="Voltage range"); voltageDropdownLabel.grid(row=2,column=0)
-voltageDropdown = OptionMenu(commonFrame, voltages, *voltageoptions, command=new_voltages)
-voltageDropdown.grid(row=2, column=1)
-# Channels
-channels = StringVar(root); channels.set("2")
-channeloptions = {"1": 1, "2": 2}
-def new_nchn(val):
-	gl.o_nchn = int((channeloptions[channels.get()]))
-channelDropdownLabel = Label(commonFrame, text="Channels"); channelDropdownLabel.grid(row=3,column=0)
-channelDropdown = OptionMenu(commonFrame, channels, *channeloptions, command=new_nchn)
-channelDropdown.grid(row=3, column=1)
-
-
-# path
-basicpath = "E:/"; calibpath = basicpath+"/calibs"
-def selectDirectory():
-	global basicpath, calibpath
-	root.directoryname = filedialog.askdirectory(initialdir = basicpath, title = "Select any data directory")
-	basicpath = root.directoryname; calibpath = basicpath+"/calibs"
-	pathLabel.config(text=basicpath.split("/")[1])
-	if not os.path.exists(calibpath):
-		os.mkdir(calibpath)
-pathButton = Button(commonFrame, text="Files directory", command=selectDirectory); pathButton.grid(row=4, column=0)
-pathLabel = Label(commonFrame, text=basicpath.split("/")[1]); pathLabel.grid(row=4,column=1)
-
 # Two functions to create specific filenames out of existing files
 def to_calib(file, ending):
 	fileparts = file.split("/"); fileparts.insert(-1,"calibs")
@@ -105,6 +46,76 @@ def to_bin(file):
 	return filebuild
 
 
+root = Tk(); root.wm_title("Almost live measures"); root.geometry("+1600+20")
+
+# Rate frame
+r_width  = 20
+r_height = 850
+rateFrame = Frame(root); rateFrame.grid(row=0,column=0)
+rateACanvas = Canvas(rateFrame, width=r_width, height=r_height, bg="gray"); rateACanvas.grid(row=0,column=0)
+rateBCanvas = Canvas(rateFrame, width=r_width, height=r_height, bg="gray"); rateBCanvas.grid(row=0,column=1)
+
+
+
+rootMainFrame = Frame(root); rootMainFrame.grid(row=0,column=1)
+
+##################
+## COMMON FRAME ##
+##################
+# The common frame contains the dropdown menu of measurement options
+commonFrame = Frame(rootMainFrame); commonFrame.grid(row=0,column=0)
+
+# Samples for each measurement
+samples = StringVar(root); samples.set("128 MS")
+sampleoptions = {
+	"64 S": 64, "128 S": 128, "256 S": 256, "512 S": 512,
+	"1 kS": 1024, "2 kS": 2048, "4 kS": 4096, "8 kS": 8192, "16 kS": 16384, "32 kS": 32768, "64 kS": 65536,
+	"128 kS": 131072, "256 kS": 262144, "512 kS": 524288,
+	"1 MS": 1048576, "2 MS": 2097152, "4 MS": 4194304, "8 MS": 8388608, "16 MS": 16777216, "32 MS": 33554432, "64 MS": 67108864,
+	"128 MS": 134217728, "256 MS": 268435456, "512 MS": 536870912,
+	"1 GS": 1073741824, "2 GS": 2147483648, "4 GS": 4294967296
+}
+def new_samples(val):
+	gl.o_samples = int((sampleoptions[samples.get()]))
+samplesDropdownLabel = Label(commonFrame, text="File Sample Size"); samplesDropdownLabel.grid(row=0,column=0)
+samplesDropdown = OptionMenu(commonFrame, samples, *sampleoptions, command=new_samples)
+samplesDropdown.grid(row=0, column=1)
+# Time binning
+binning = StringVar(root); binning.set("1.6 ns")
+binningoptions = {"0.8 ns": 0.8e-9, "1.6 ns": 1.6e-9, "3.2 ns": 3.2e-9, "6.4 ns": 6.4e-9}
+def new_binning(val):
+	gl.o_binning = float((binningoptions[binning.get()]))
+binningDropdownLabel = Label(commonFrame, text="Time sampling"); binningDropdownLabel.grid(row=1,column=0)
+binningDropdown = OptionMenu(commonFrame, binning, *binningoptions, command=new_binning)
+binningDropdown.grid(row=1, column=1)
+# Voltage range
+voltages = StringVar(root); voltages.set("200 mV")
+voltageoptions = {"40 mV": 40, "100 mV": 100, "200 mV": 200, "500 mV": 500}
+def new_voltages(val):
+	gl.o_voltages = int((voltageoptions[voltages.get()]))
+voltageDropdownLabel = Label(commonFrame, text="Voltage range"); voltageDropdownLabel.grid(row=2,column=0)
+voltageDropdown = OptionMenu(commonFrame, voltages, *voltageoptions, command=new_voltages)
+voltageDropdown.grid(row=2, column=1)
+# Number of channels used for measurement
+channels = StringVar(root); channels.set("2")
+channeloptions = {"1": 1, "2": 2}
+def new_nchn(val):
+	gl.o_nchn = int((channeloptions[channels.get()]))
+channelDropdownLabel = Label(commonFrame, text="Channels"); channelDropdownLabel.grid(row=3,column=0)
+channelDropdown = OptionMenu(commonFrame, channels, *channeloptions, command=new_nchn)
+channelDropdown.grid(row=3, column=1)
+
+# Directory
+def selectDirectory():
+	root.directoryname = filedialog.askdirectory(initialdir = gl.basicpath, title = "Select any data directory")
+	gl.basicpath = root.directoryname; gl.calibpath = gl.basicpath+"/calibs"
+	pathLabel.config(text=gl.basicpath.split("/")[1])
+	if not os.path.exists(gl.calibpath):
+		os.mkdir(gl.calibpath)
+pathButton = Button(commonFrame, text="Files directory", command=selectDirectory); pathButton.grid(row=4, column=0)
+pathLabel = Label(commonFrame, text=gl.basicpath.split("/")[1]); pathLabel.grid(row=4,column=1)
+
+
 ##################
 ## OFFSET FRAME ##
 ##################
@@ -117,42 +128,63 @@ offsetPLabel = Label(offsetHeader, text="p", background="#e8fcae"); offsetPLabel
 offsetPEntry = Entry(offsetHeader, width=5); offsetPEntry.grid(row=0,column=4); offsetPEntry.insert(0,"2000")
 
 offsetBasicFrame = Frame(offsetFrame, background="#e8fcae"); offsetBasicFrame.grid(row=1,column=0)
+# Select offset binary file for offset investigations
 def selectOffsetFile():
-	root.filename = filedialog.askopenfilename(initialdir = basicpath, title = "Select offset file", filetypes = (("binary files","*.bin"),("all files","*.*")))
+	root.filename = filedialog.askopenfilename(initialdir = gl.basicpath, title = "Select offset file", filetypes = (("binary files","*.bin"),("all files","*.*")))
 	gl.offsetFile = root.filename; offsetFileLabel.config(text=gl.offsetFile.split("/")[-1])
 selectOffsetFileButton = Button(offsetBasicFrame, text="Select Offset Binary", background="#e8fcae", command=selectOffsetFile); selectOffsetFileButton.grid(row=1,column=0)
 offsetFileLabel = Label(offsetBasicFrame, text="no file selected", background="#e8fcae"); offsetFileLabel.grid(row=1,column=1)
+# Load already existing .off or .off1 file
 def loadOffset():
-	root.filename = filedialog.askopenfilename(initialdir = calibpath, title = "Load offset calculation", filetypes = (("calib files","*.off"),("all files","*.*")))
-	gl.offsetLoad = root.filename; loadOffsetLabel.config(text=gl.offsetLoad.split("/")[-1])	
-	gl.off_a = np.loadtxt(gl.offsetLoad)[0]; gl.off_b = np.loadtxt(gl.offsetLoad)[1]	
-	parOffsetLabelA.config(text="{:.2f}".format(gl.off_a)); parOffsetLabelB.config(text="{:.2f}".format(gl.off_b))
+	if gl.o_nchn == 2:
+		root.filename = filedialog.askopenfilename(initialdir = gl.calibpath, title = "Load offset calculation", filetypes = (("calib files","*.off"),("all files","*.*")))
+		gl.offsetLoad = root.filename; loadOffsetLabel.config(text=gl.offsetLoad.split("/")[-1])	
+		gl.off_a = np.loadtxt(gl.offsetLoad)[0]; parOffsetLabelA.config(text="{:.2f}".format(gl.off_a))
+		gl.off_b = np.loadtxt(gl.offsetLoad)[1]; parOffsetLabelB.config(text="{:.2f}".format(gl.off_b))
+	if gl.o_nchn == 1:
+		root.filename = filedialog.askopenfilename(initialdir = gl.calibpath, title = "Load offset calculation", filetypes = (("calib files","*.off1"),("all files","*.*")))
+		gl.offsetLoad = root.filename; loadOffsetLabel.config(text=gl.offsetLoad.split("/")[-1])	
+		gl.off_a = np.loadtxt(gl.offsetLoad); parOffsetLabelA.config(text="{:.2f}".format(gl.off_a))
+		parOffsetLabelB.config(text="--")
 	gl.offsetFile = to_bin(gl.offsetLoad); offsetFileLabel.config(text=gl.offsetFile.split("/")[-1])
 loadOffsetButton = Button(offsetBasicFrame, text="Load Offset", background="#e8fcae", command=loadOffset); loadOffsetButton.grid(row=2,column=0)
 loadOffsetLabel = Label(offsetBasicFrame, text="no file selected", background="#e8fcae"); loadOffsetLabel.grid(row=2,column=1)
-
+# Display part of the waveform and horizontal offset lines
 def displayOffset():
 	wv_off_a, wv_off_b = wv.execute(file=gl.offsetFile, length=int(int(offsetLEntry.get())/10))
 	plt.figure("Offset calculations", figsize=(10,6))
-	plt.plot(wv_off_a, label="Channel A", color="blue", alpha=0.4); plt.plot(wv_off_b, label="Channel B", color="red", alpha=0.4)
-	plt.axhline(y=gl.off_a, color="blue"); plt.axhline(y=gl.off_b, color="red")
+	plt.plot(wv_off_a, label="Channel A", color="blue", alpha=0.4); plt.axhline(y=gl.off_a, color="blue")
+	if gl.o_nchn == 2:
+		plt.plot(wv_off_b, label="Channel B", color="red" , alpha=0.4); plt.axhline(y=gl.off_b, color="red")
 	plt.xlabel("Time bins"); plt.ylabel("ADC"); plt.legend(); plt.title(gl.offsetFile); plt.show()
 displayOffsetButton = Button(offsetBasicFrame, text="Display Offset", background="#e8fcae", command=displayOffset); displayOffsetButton.grid(row=3, column=0)
+# Simply display part of the waveform
 def displayWaveformOffset():
-	wv_off_a, wv_off_b = wv.execute(file=gl.offsetFile, length=int(int(offsetLEntry.get())/10))
+	if gl.o_nchn == 2:
+		wv_off_a, wv_off_b = wv.execute(file=gl.offsetFile, length=int(int(offsetLEntry.get())/10))
+	else:
+		wv_off_a = wv.execute(file=gl.offsetFile, length=int(int(offsetLEntry.get())/10))
 	plt.figure("Offset file waveforms", figsize=(10,6))
-	plt.plot(wv_off_a, label="Channel A", color="blue"); plt.plot(wv_off_b, label="Channel B", color="red")
+	plt.plot(wv_off_a, label="Channel A", color="blue")
+	if gl.o_nchn == 2:
+		plt.plot(wv_off_b, label="Channel B", color="red")
 	plt.xlabel("Time bins"); plt.ylabel("ADC"); plt.legend(); plt.title(gl.offsetFile); plt.show()
 displayWaveformOffsetButton = Button(offsetBasicFrame, text="Display Waveform", background="#e8fcae", command=displayWaveformOffset); displayWaveformOffsetButton.grid(row=3,column=1)
 
 # Do the offset measurement
 def off_measurement():
-	statusLabel.config(text="Calculate Offset", bg="#edda45"); root.update()
+	gl.statusLabel.config(text="Calculate Offset", bg="#edda45"); root.update()
 	gl.off_a, gl.off_b = off.execute(file=gl.offsetFile, packet_length=int(offsetLEntry.get()), npackets=int(offsetPEntry.get()))
 	if gl.stop_offset_thread==False:
-		parOffsetLabelA.config(text="{:.2f}".format(gl.off_a)); parOffsetLabelB.config(text="{:.2f}".format(gl.off_b))
-		outfileOff = to_calib(gl.offsetFile,".off")
-		np.savetxt(outfileOff, [gl.off_a, gl.off_b])
+		parOffsetLabelA.config(text="{:.2f}".format(gl.off_a))
+		if gl.o_nchn == 2:
+			parOffsetLabelB.config(text="{:.2f}".format(gl.off_b))
+			outfileOff = to_calib(gl.offsetFile,".off")
+			np.savetxt(outfileOff, [gl.off_a, gl.off_b])
+		else:
+			parOffsetLabelB.config(text="--")
+			outfileOff = to_calib(gl.offsetFile,".off1")
+			np.savetxt(outfileOff, [gl.off_a])
 		gl.offsetLoad = outfileOff; loadOffsetLabel.config(text=gl.offsetLoad.split("/")[-1])
 	idle()
 def start_offset_thread():
@@ -163,8 +195,8 @@ def stop_offset_thread():
 	gl.stop_offset_thread = True
 	gl.stop_wait_for_file_thread = True
 def quickOffset():
-	statusLabel.config(text="Offset - wait for file", bg="#edda45")
-	gl.offsetFile = wff.execute(basicpath=basicpath, samples=int(sampleoptions[samples.get()]))
+	gl.statusLabel.config(text="Offset - wait for file", bg="#edda45")
+	gl.offsetFile = wff.execute()
 	offsetFileLabel.config(text=gl.offsetFile.split("/")[-1])
 	idle()
 	if gl.stop_wait_for_file_thread == False:
@@ -191,7 +223,7 @@ parOffsetLabelB = Label(offsetParamFrame, text="{:.2f}".format(gl.off_b), backgr
 offsetDoFrame = Frame(offsetFrame, background="#e8fcae"); offsetDoFrame.grid(row=3,column=0)
 offsetButton = Button(offsetDoFrame, text="Calc Offset", background="#e8fcae", command=start_offset_thread); offsetButton.grid(row=0,column=0)
 stopOffsetButton = Button(offsetDoFrame, text="Abort", background="#fa857a", command=stop_offset_thread); stopOffsetButton.grid(row=0,column=1)
-quickOffsetButton = Button(offsetDoFrame, text="Wait for file", background="#e8fcae", command=start_quick_offset_thread); quickOffsetButton.grid(row=0,column=2)
+quickOffsetButton = Button(offsetDoFrame, text="Wait for file", background="#e8fcae", command=start_quick_offset_thread, state="disabled"); quickOffsetButton.grid(row=0,column=2)
 
 #######################
 ## CALIBRATION FRAME ##
@@ -206,65 +238,73 @@ calibPEntry = Entry(calibHeader, width=5); calibPEntry.grid(row=0,column=4); cal
 
 def gauss(x,a,m,s):
 	return a * np.exp(-(x-m)**2/2/s/s)
+# Display pulse height distribution(s) including fit(s) and pulse shape(s)
 def displayCalibration():
 	plt.figure("Calibration display", figsize=[10,6])
 	plt.subplot(211)
-	plt.plot(gl.histo_x,gl.histo_a, color="blue", label="Channel A: Avg height = {:.2f}".format(gl.ph_a), alpha=0.5); plt.plot(gl.histo_x,gl.histo_b, color="red", label="Channel B: Avg height = {:.2f}".format(gl.ph_b), alpha=0.5)
-	plt.plot(gl.xplot, gauss(gl.xplot, *gl.pa), color="blue"); plt.plot(gl.xplot, gauss(gl.xplot, *gl.pb), color="red")
-	plt.axvline(x=gl.ph_a, color="blue", linestyle="--"); plt.axvline(x=gl.ph_b, color="red", linestyle="--")
-	plt.ylim(0,1.5*max(gl.pa[0],gl.pb[0])); plt.xlim(-128,10); plt.legend(); plt.title(gl.calibFile)
+	plt.plot(gl.histo_x,gl.histo_a, color="blue", label="Channel A: Avg height = {:.2f}".format(gl.ph_a), alpha=0.5)
+	plt.plot(gl.xplot, gauss(gl.xplot, *gl.pa), color="blue")
+	plt.axvline(x=gl.ph_a, color="blue", linestyle="--")
+	if gl.o_nchn == 2:
+		plt.plot(gl.histo_x,gl.histo_b, color="red", label="Channel B: Avg height = {:.2f}".format(gl.ph_b), alpha=0.5)
+		plt.plot(gl.xplot, gauss(gl.xplot, *gl.pb), color="red")
+		plt.axvline(x=gl.ph_b, color="red", linestyle="--")
+		plt.ylim(0,1.5*max(gl.pa[0],gl.pb[0]))
+	else:
+		plt.ylim(0,1.5*gl.pa[0])
+	plt.xlim(-128,10); plt.legend(); plt.title(gl.calibFile)
 	plt.subplot(212)
-	plt.plot(gl.ps_x,gl.ps_a, color="blue", label="Channel A: Sum = {:.2f}".format(gl.nsum_a)); plt.plot(gl.ps_x,gl.ps_b, color="red", label="Channel B: Sum = {:.2f}".format(gl.nsum_b))
+	plt.plot(gl.ps_x,gl.ps_a, color="blue", label="Channel A: Sum = {:.2f}".format(gl.nsum_a))
+	if gl.o_nchn == 2:
+		plt.plot(gl.ps_x,gl.ps_b, color="red", label="Channel B: Sum = {:.2f}".format(gl.nsum_b))
 	plt.legend(); plt.show()
+# Do the whole calibration
 def calibrate():
 	# Create and fit pulse height distribution
-	statusLabel.config(text="Calibrating: Pulse heights ...", bg="#edda45"); root.update()
+	gl.statusLabel.config(text="Calibrating: Pulse heights ...", bg="#edda45"); root.update()
 	fphd.execute(packet_length = int(calibLEntry.get()), npackets=int(calibPEntry.get()), range_a=[float(fitRangelowEntryA.get()),float(fitRangehighEntryA.get())], range_b=[float(fitRangelowEntryB.get()),float(fitRangehighEntryB.get())])
-	gl.ph_a = fphd.phd(gl.pa[1],gl.pa[2]); gl.ph_b = fphd.phd(gl.pb[1],gl.pb[2])
 	# Create average pulse shape
-	statusLabel.config(text="Calibrating: Pulse shape ...", bg="#edda45"); root.update()
-	ps.execute(min_pulses = [int(minPulsesEntryA.get()),int(minPulsesEntryB.get())], offset=[gl.off_a,gl.off_b], height=[-1*int(minHeightEntryA.get()),-1*int(minHeightEntryB.get())], cleanheight=[-1*int(cleanHeightEntryA.get()),-1*int(cleanHeightEntryB.get())])
-	# Combine pulse height distribution and pulse shape to calculate avg charge
-	gl.avg_charge_a = gl.nsum_a * gl.ph_a; gl.avg_charge_b = gl.nsum_b * gl.ph_b
-	avgChargeLabelA.config(text="{:.2f}".format(gl.avg_charge_a)); avgChargeLabelB.config(text="{:.2f}".format(gl.avg_charge_b))
-	# Create calibration files
-	outfileCalib = to_calib(gl.calibFile, ".calib")
-	outfilePHD   = to_calib(gl.calibFile, ".phd")
-	outfilePS    = to_calib(gl.calibFile, ".shape")
-	outfileXPLOT = to_calib(gl.calibFile, ".xplot")
-	np.savetxt(outfilePHD, np.c_[gl.histo_x,gl.histo_a,gl.histo_b])
-	np.savetxt(outfilePS, np.c_[gl.ps_x, gl.ps_a, gl.ps_b])
-	np.savetxt(outfileXPLOT, gl.xplot)
-	with open(outfileCalib, 'w') as f:
-		f.write(str(gl.pa[0]) + "\n" + str(gl.pa[1]) + "\n" + str(gl.pa[2]) + "\n")
-		f.write(str(gl.pb[0]) + "\n" + str(gl.pb[1]) + "\n" + str(gl.pb[2]) + "\n")
-		f.write(str(gl.nsum_a) + "\n" + str(gl.nsum_b) + "\n")
-		f.write(str(gl.ph_a) + "\n" + str(gl.ph_b) + "\n")
-		f.write(str(gl.avg_charge_a) + "\n" + str(gl.avg_charge_b) + "\n")
-	gl.calibLoad = to_calib(gl.calibFile, ".calib"); loadCalibLabel.config(text=gl.calibLoad.split("/")[-1])
+	if gl.stop_calib_thread == False:
+		gl.statusLabel.config(text="Calibrating: Pulse shape ...", bg="#edda45"); root.update()
+		ps.execute(min_pulses = [int(minPulsesEntryA.get()),int(minPulsesEntryB.get())], height=[-1*int(minHeightEntryA.get()),-1*int(minHeightEntryB.get())], cleanheight=[-1*int(cleanHeightEntryA.get()),-1*int(cleanHeightEntryB.get())])
+	if gl.stop_calib_thread == False:
+		finish_calibration()
 	idle()
-def calibrate_newFit():
-	fphd.onlyFit(range_a=[float(fitRangelowEntryA.get()),float(fitRangehighEntryA.get())], range_b=[float(fitRangelowEntryB.get()),float(fitRangehighEntryB.get())])
-	gl.ph_a = fphd.phd(gl.pa[1],gl.pa[2]); gl.ph_b = fphd.phd(gl.pb[1],gl.pb[2])
+def finish_calibration(): # Execute after pulse height distribution and pulse shape calculation are finished
 	# Combine pulse height distribution and pulse shape to calculate avg charge
-	gl.avg_charge_a = gl.nsum_a * gl.ph_a; gl.avg_charge_b = gl.nsum_b * gl.ph_b
-	avgChargeLabelA.config(text="{:.2f}".format(gl.avg_charge_a)); avgChargeLabelB.config(text="{:.2f}".format(gl.avg_charge_b))
+	gl.avg_charge_a = gl.nsum_a * gl.ph_a; avgChargeLabelA.config(text="{:.2f}".format(gl.avg_charge_a))
+	if gl.o_nchn == 2:
+		gl.avg_charge_b = gl.nsum_b * gl.ph_b; avgChargeLabelB.config(text="{:.2f}".format(gl.avg_charge_b))
+	else:
+		avgChargeLabelB.config(text="--")
 	# Create calibration files
-	outfileCalib = to_calib(gl.calibFile, ".calib")
-	outfilePHD   = to_calib(gl.calibFile, ".phd")
-	outfilePS    = to_calib(gl.calibFile, ".shape")
-	outfileXPLOT = to_calib(gl.calibFile, ".xplot")
-	np.savetxt(outfilePHD, np.c_[gl.histo_x,gl.histo_a,gl.histo_b])
-	np.savetxt(outfilePS, np.c_[gl.ps_x, gl.ps_a, gl.ps_b])
-	np.savetxt(outfileXPLOT, gl.xplot)
-	with open(outfileCalib, 'w') as f:
-		f.write(str(gl.pa[0]) + "\n" + str(gl.pa[1]) + "\n" + str(gl.pa[2]) + "\n")
-		f.write(str(gl.pb[0]) + "\n" + str(gl.pb[1]) + "\n" + str(gl.pb[2]) + "\n")
-		f.write(str(gl.nsum_a) + "\n" + str(gl.nsum_b) + "\n")
-		f.write(str(gl.ph_a) + "\n" + str(gl.ph_b) + "\n")
-		f.write(str(gl.avg_charge_a) + "\n" + str(gl.avg_charge_b) + "\n")
-	gl.calibLoad = to_calib(gl.calibFile, ".calib"); loadCalibLabel.config(text=gl.calibLoad.split("/")[-1])
-	print ("New fit range applied")
+	if gl.o_nchn == 2:
+		np.savetxt(to_calib(gl.calibFile, ".phd"),   np.c_[gl.histo_x,gl.histo_a,gl.histo_b])
+		np.savetxt(to_calib(gl.calibFile, ".shape"), np.c_[gl.ps_x, gl.ps_a, gl.ps_b])
+		np.savetxt(to_calib(gl.calibFile, ".xplot"), gl.xplot)
+		with open(to_calib(gl.calibFile, ".calib"), 'w') as f:
+			f.write(str(gl.pa[0]) + "\n" + str(gl.pa[1]) + "\n" + str(gl.pa[2]) + "\n")
+			f.write(str(gl.pb[0]) + "\n" + str(gl.pb[1]) + "\n" + str(gl.pb[2]) + "\n")
+			f.write(str(gl.nsum_a) + "\n" + str(gl.nsum_b) + "\n")
+			f.write(str(gl.ph_a) + "\n" + str(gl.ph_b) + "\n")
+			f.write(str(gl.avg_charge_a) + "\n" + str(gl.avg_charge_b) + "\n")
+		gl.calibLoad = to_calib(gl.calibFile, ".calib")
+	else:
+		np.savetxt(to_calib(gl.calibFile, ".phd1"),   np.c_[gl.histo_x,gl.histo_a])
+		np.savetxt(to_calib(gl.calibFile, ".shape1"), np.c_[gl.ps_x, gl.ps_a])
+		np.savetxt(to_calib(gl.calibFile, ".xplot1"), gl.xplot)
+		with open(to_calib(gl.calibFile, ".calib1"), 'w') as f:
+			f.write(str(gl.pa[0]) + "\n" + str(gl.pa[1]) + "\n" + str(gl.pa[2]) + "\n")
+			f.write(str(gl.nsum_a) + "\n")
+			f.write(str(gl.ph_a) + "\n")
+			f.write(str(gl.avg_charge_a) + "\n")
+		gl.calibLoad = to_calib(gl.calibFile, ".calib1")
+	loadCalibLabel.config(text=gl.calibLoad.split("/")[-1])
+# Only apply new fit range to calibration data
+def calibrate_newFit():
+	gl.statusLabel.config(text="New fit range ...", bg="#edda45"); root.update()
+	fphd.onlyFit(range_a=[float(fitRangelowEntryA.get()),float(fitRangehighEntryA.get())], range_b=[float(fitRangelowEntryB.get()),float(fitRangehighEntryB.get())])
+	finish_calibration()
 	idle()
 calib_thread = []
 def start_calib_thread():
@@ -275,20 +315,33 @@ def stop_calib_thread():
 	gl.stop_calib_thread = True
 	gl.stop_wait_for_file_thread = True
 def selectCalibFile():
-	root.filename = filedialog.askopenfilename(initialdir = basicpath, title = "Select calibration file", filetypes = (("binary files","*.bin"),("all files","*.*")))
+	root.filename = filedialog.askopenfilename(initialdir = gl.basicpath, title = "Select calibration file", filetypes = (("binary files","*.bin"),("all files","*.*")))
 	gl.calibFile = root.filename; calibFileLabel.config(text=gl.calibFile.split("/")[-1])
 def loadCalibration():
-	root.filename = filedialog.askopenfilename(initialdir = calibpath, title = "Load calibration", filetypes = (("calib files","*.calib"),("all files","*.*")))
-	gl.calibLoad = root.filename; loadCalibLabel.config(text=gl.calibLoad.split("/")[-1])
-	gl.histo_x = np.loadtxt(gl.calibLoad[0:gl.calibLoad.find(".")]+".phd")[:,0]; gl.histo_a = np.loadtxt(gl.calibLoad[0:gl.calibLoad.find(".")]+".phd")[:,1]; gl.histo_b = np.loadtxt(gl.calibLoad[0:gl.calibLoad.find(".")]+".phd")[:,2]
-	gl.ps_x = np.loadtxt(gl.calibLoad[0:gl.calibLoad.find(".")]+".shape")[:,0]; gl.ps_a = np.loadtxt(gl.calibLoad[0:gl.calibLoad.find(".")]+".shape")[:,1]; gl.ps_b = np.loadtxt(gl.calibLoad[0:gl.calibLoad.find(".")]+".shape")[:,2]
-	gl.xplot = np.loadtxt(gl.calibLoad[0:gl.calibLoad.find(".")]+".xplot")
-	gl.pa[0] = np.loadtxt(gl.calibLoad)[0]; gl.pa[1] = np.loadtxt(gl.calibLoad)[1]; gl.pa[2] = np.loadtxt(gl.calibLoad)[2]
-	gl.pb[0] = np.loadtxt(gl.calibLoad)[3]; gl.pb[1] = np.loadtxt(gl.calibLoad)[4];	gl.pb[2] = np.loadtxt(gl.calibLoad)[5]
-	gl.nsum_a = np.loadtxt(gl.calibLoad)[6]; gl.nsum_b = np.loadtxt(gl.calibLoad)[7]
-	gl.ph_a = np.loadtxt(gl.calibLoad)[8]; gl.ph_b = np.loadtxt(gl.calibLoad)[9]
-	gl.avg_charge_a = np.loadtxt(gl.calibLoad)[10]; gl.avg_charge_b = np.loadtxt(gl.calibLoad)[11]
-	avgChargeLabelA.config(text="{:.2f}".format(gl.avg_charge_a)); avgChargeLabelB.config(text="{:.2f}".format(gl.avg_charge_b))
+	if gl.o_nchn == 2:
+		root.filename = filedialog.askopenfilename(initialdir = gl.calibpath, title = "Load calibration", filetypes = (("calib files","*.calib"),("all files","*.*")))
+		gl.calibLoad = root.filename; loadCalibLabel.config(text=gl.calibLoad.split("/")[-1])
+		gl.histo_x = np.loadtxt(gl.calibLoad[0:gl.calibLoad.find(".")]+".phd")[:,0]; gl.histo_a = np.loadtxt(gl.calibLoad[0:gl.calibLoad.find(".")]+".phd")[:,1]; gl.histo_b = np.loadtxt(gl.calibLoad[0:gl.calibLoad.find(".")]+".phd")[:,2]
+		gl.ps_x = np.loadtxt(gl.calibLoad[0:gl.calibLoad.find(".")]+".shape")[:,0]; gl.ps_a = np.loadtxt(gl.calibLoad[0:gl.calibLoad.find(".")]+".shape")[:,1]; gl.ps_b = np.loadtxt(gl.calibLoad[0:gl.calibLoad.find(".")]+".shape")[:,2]
+		gl.xplot = np.loadtxt(gl.calibLoad[0:gl.calibLoad.find(".")]+".xplot")
+		gl.pa[0] = np.loadtxt(gl.calibLoad)[0]; gl.pa[1] = np.loadtxt(gl.calibLoad)[1]; gl.pa[2] = np.loadtxt(gl.calibLoad)[2]
+		gl.pb[0] = np.loadtxt(gl.calibLoad)[3]; gl.pb[1] = np.loadtxt(gl.calibLoad)[4];	gl.pb[2] = np.loadtxt(gl.calibLoad)[5]
+		gl.nsum_a = np.loadtxt(gl.calibLoad)[6]; gl.nsum_b = np.loadtxt(gl.calibLoad)[7]
+		gl.ph_a = np.loadtxt(gl.calibLoad)[8]; gl.ph_b = np.loadtxt(gl.calibLoad)[9]
+		gl.avg_charge_a = np.loadtxt(gl.calibLoad)[10]; gl.avg_charge_b = np.loadtxt(gl.calibLoad)[11]
+		avgChargeLabelA.config(text="{:.2f}".format(gl.avg_charge_a)); avgChargeLabelB.config(text="{:.2f}".format(gl.avg_charge_b))
+	else:
+		root.filename = filedialog.askopenfilename(initialdir = gl.calibpath, title = "Load calibration", filetypes = (("one channel calib files","*.calib1"),("all files","*.*")))
+		gl.calibLoad = root.filename; loadCalibLabel.config(text=gl.calibLoad.split("/")[-1])
+		gl.histo_x = np.loadtxt(gl.calibLoad[0:gl.calibLoad.find(".")]+".phd1")[:,0]; gl.histo_a = np.loadtxt(gl.calibLoad[0:gl.calibLoad.find(".")]+".phd1")[:,1]
+		gl.ps_x = np.loadtxt(gl.calibLoad[0:gl.calibLoad.find(".")]+".shape1")[:,0]; gl.ps_a = np.loadtxt(gl.calibLoad[0:gl.calibLoad.find(".")]+".shape1")[:,1]
+		gl.xplot = np.loadtxt(gl.calibLoad[0:gl.calibLoad.find(".")]+".xplot1")
+		gl.pa[0] = np.loadtxt(gl.calibLoad)[0]; gl.pa[1] = np.loadtxt(gl.calibLoad)[1]; gl.pa[2] = np.loadtxt(gl.calibLoad)[2]
+		gl.nsum_a = np.loadtxt(gl.calibLoad)[3]
+		gl.ph_a = np.loadtxt(gl.calibLoad)[4]
+		gl.avg_charge_a = np.loadtxt(gl.calibLoad)[5]
+		avgChargeLabelA.config(text="{:.2f}".format(gl.avg_charge_a))
+		avgChargeLabelB.config(text="--")
 	gl.calibFile = to_bin(gl.calibLoad); calibFileLabel.config(text=gl.calibFile.split("/")[-1])
 
 calibGeneralFrame = Frame(calibFrame, background="#ccf2ff"); calibGeneralFrame.grid(row=1,column=0)
@@ -301,7 +354,9 @@ loadCalibLabel = Label(calibGeneralFrame, text="no file selected", background="#
 def displayWaveform():
 	wv_a, wv_b = wv.execute(file=gl.calibFile, length=int(int(calibLEntry.get())/10))
 	plt.figure("Calibration file waveforms", figsize=(10,6))
-	plt.plot(wv_a, label="Channel A", color="blue"); plt.plot(wv_b, label="Channel B", color="red")
+	plt.plot(wv_a, label="Channel A", color="blue")
+	if gl.o_nchn == 2:
+		plt.plot(wv_b, label="Channel B", color="red")
 	plt.xlabel("Time bins"); plt.ylabel("ADC"); plt.legend(); plt.title(gl.calibFile); plt.show()
 displayCalibrationButton = Button(calibGeneralFrame, text="Display calib", background="#ccf2ff", command=displayCalibration); displayCalibrationButton.grid(row=2,column=0)
 displayWaveformButton = Button(calibGeneralFrame, text="Display waveform", background="#ccf2ff", command=displayWaveform); displayWaveformButton.grid(row=2, column=1)
@@ -393,62 +448,102 @@ wav_a = []; wav_b = []
 def analyze_file(newest_file):
 	global stop_thread, plotting, rates_a, rates_b, wav_a, wav_b
 	
-	statusLabel.config(text="New file found" ); root.update()
+	gl.statusLabel.config(text="New file found" ); root.update()
 	with open(newest_file, 'rb') as f:
 		means_a = []; means_b = []
-		for allpkt in range(0, int(startstopPEntry.get())):
-			buf = (f.read(2*int(startstopLEntry.get())))
-			packet = np.frombuffer(buf, dtype=np.int8)
-			packet = packet.reshape(int(startstopLEntry.get()), 2)
-			a_np = np.array(packet[:,0]).flatten(); b_np = np.array(packet[:,1]).flatten()
-			means_a.append(np.mean(a_np)); means_b.append(np.mean(b_np))
-			del(a_np); del(b_np)
-	vRange = int(voltageoptions[voltages.get()])
-	binRange = float(binningoptions[binning.get()])
+		if gl.o_nchn == 2:
+			for allpkt in range(0, int(startstopPEntry.get())):
+				buf = (f.read(2*int(startstopLEntry.get())))
+				packet = np.frombuffer(buf, dtype=np.int8)
+				packet = packet.reshape(int(startstopLEntry.get()), 2)
+				a_np = np.array(packet[:,0]); b_np = np.array(packet[:,1])
+				means_a.append(np.mean(a_np)); means_b.append(np.mean(b_np))
+				del(a_np); del(b_np)
+		else:
+			for allpkt in range(0, int(startstopPEntry.get())):
+				buf = (f.read(1*int(startstopLEntry.get())))
+				packet = np.frombuffer(buf, dtype=np.int8)
+				a_np = np.array(packet)
+				means_a.append(np.mean(a_np))
+				del(a_np)
+
+	vRange   = gl.o_voltages
+	binRange = gl.o_binning
 	
-	mean_a_ADC = np.mean(means_a); mean_b_ADC = np.mean(means_b)
-	mean_a_ADC = mean_a_ADC - gl.off_a; mean_b_ADC = mean_b_ADC - gl.off_b
-	# Rates 
-	r_a = 1e-6 * mean_a_ADC/(gl.avg_charge_a*binRange); r_b = 1e-6 * mean_b_ADC/(gl.avg_charge_b*binRange)
-	CHa_Label_rate.config(text="{:.1f}".format(r_a)); CHb_Label_rate.config(text="{:.1f}".format(r_b))				
-	if server != None:
-		server.sendRate(r_a, r_b)
+	#-- Channel A calculations --#
+	# Waveform mean
+	mean_a_ADC = np.mean(means_a)
+	mean_a_ADC = mean_a_ADC - gl.off_a
+	# Rates
+	r_a = 1e-6 * mean_a_ADC/(gl.avg_charge_a*binRange)
+	CHa_Label_rate.config(text="{:.1f}".format(r_a))
 	# mV
-	mean_a_mV = ADC_to_mV(adc=mean_a_ADC, range=vRange); mean_b_mV = ADC_to_mV(adc=mean_b_ADC, range=vRange)
-	CHa_Label_mean.config(text="{:.2f}".format(mean_a_mV)); CHb_Label_mean.config(text="{:.2f}".format(mean_b_mV))
+	mean_a_mV = ADC_to_mV(adc=mean_a_ADC, range=vRange)
+	CHa_Label_mean.config(text="{:.2f}".format(mean_a_mV))
 	# PMT current
-	curr_a_microamp = 1e3 * mean_a_mV/float(ampAEntry.get())/50; curr_b_microamp = 1e3 * mean_b_mV/float(ampBEntry.get())/50
+	curr_a_microamp = 1e3 * mean_a_mV/float(ampAEntry.get())/50
 	if curr_a_microamp > -100:      
 		CHa_Label_curr.config(text="{:.1f}".format(curr_a_microamp), bg="black", fg="orange")
 	else:
 		CHa_Label_curr.config(text="{:.1f}".format(curr_a_microamp), bg="#edd266", fg="red")
-	if curr_b_microamp > -100:
-		CHb_Label_curr.config(text="{:.1f}".format(curr_b_microamp), bg="black", fg="orange")
-	else:
-		CHb_Label_curr.config(text="{:.1f}".format(curr_b_microamp), bg="#edd266", fg="red")
+
+	#-- Channel B calculations --#
+	if gl.o_nchn == 2:
+		# Waveform mean
+		mean_b_ADC = np.mean(means_b)	
+		mean_b_ADC = mean_b_ADC - gl.off_b
+		# Rates	
+		r_b = 1e-6 * mean_b_ADC/(gl.avg_charge_b*binRange)	
+		CHb_Label_rate.config(text="{:.1f}".format(r_b))
+		# mV	
+		mean_b_mV = ADC_to_mV(adc=mean_b_ADC, range=vRange)	
+		CHb_Label_mean.config(text="{:.2f}".format(mean_b_mV))
+		# PMT current	
+		curr_b_microamp = 1e3 * mean_b_mV/float(ampBEntry.get())/50
+		if curr_b_microamp > -100:
+			CHb_Label_curr.config(text="{:.1f}".format(curr_b_microamp), bg="black", fg="orange")
+		else:
+			CHb_Label_curr.config(text="{:.1f}".format(curr_b_microamp), bg="#edd266", fg="red")
+
+	if server != None:
+		server.sendRate(r_a, r_b)
+	
+	
 	root.update()
+	# Plot rates and waveform slices
 	if plotting == True:
-		rates_a.append(r_a); rates_b.append(r_b)
-		wav_a, wav_b = wv.execute(file=newest_file, length=1000)
-		global rate_a_plot, rate_b_plot, wav_a_plot, wav_b_plot
+		global rate_a_plot, rate_b_plot, wav_a_plot, wav_b_plot		
+		wav_a, wav_b = wv.execute(file=newest_file, length=1000)		
 		plotFigAxis.cla(); plotFigAxis.set_xlabel("File index"); plotFigAxis.set_ylabel("Rates [MHz]")
-		rate_a_plot = plotFigAxis.plot(rates_a, "o--", color="blue"); rate_b_plot = plotFigAxis.plot(rates_b, "o--", color="red")
-		if len(rates_a) > 200:
-			plotFigAxis.set_xlim(len(rates_a)-200,)
 		plotWfAxis.cla(); plotWfAxis.set_xlabel("Time bin"); plotWfAxis.set_ylabel("ADC")
-		wav_a_plot = plotWfAxis.plot(wav_a, color="blue"); wav_b_plot = plotWfAxis.plot(wav_b, color="red")
+
+		rates_a.append(r_a)
+		rate_a_plot = plotFigAxis.plot(rates_a, "o--", color="blue")
+		wav_a_plot = plotWfAxis.plot(wav_a, color="blue")
+		if gl.o_nchn == 2:
+			rates_b.append(r_b)
+			rate_b_plot = plotFigAxis.plot(rates_b, "o--", color="red")
+			wav_b_plot = plotWfAxis.plot(wav_b, color="red")
+
+		if len(rates_a) > 200:
+			plotFigAxis.set_xlim(len(rates_a)-200,)		
+		
 		plt.draw()
 	root.update()
 
 def analyze_files():
 	global stop_thread, plotting, rates_a, rates_b, wav_a, wav_b
+	if gl.o_nchn == 1:
+		CHb_Label_rate.config(text="-.-")
+		CHb_Label_mean.config(text="-.-")
+		CHb_Label_curr.config(text="-.-")
 
 	while(stop_thread == False):
-		statusLabel.config(text="Scanning files for Rates..." ); root.update()
-		newest_file = wff.execute(basicpath=basicpath, samples=int(sampleoptions[samples.get()]))
+		gl.statusLabel.config(text="Scanning files for Rates..." ); root.update()
+		newest_file = wff.execute()
 		if gl.stop_wait_for_file_thread == False:
 			analyze_file(newest_file)
-			statusLabel.config(text="Scanning files for Rates..." ); root.update()	
+			gl.statusLabel.config(text="Scanning files for Rates..." ); root.update()	
 			#time.sleep(0.2)
 
 def startstop():
@@ -458,7 +553,7 @@ def startstop():
 
 		startstopButton.config(text="Stop!", bg="#fa857a")
 		stop_thread = False; gl.stop_wait_for_file_thread = False
-		statusLabel.config(text="Scanning files for Rates..." , bg="#edda45"); root.update()
+		gl.statusLabel.config(text="Scanning files for Rates..." , bg="#edda45"); root.update()
 		the_thread = Thread(target=analyze_files, args=())
 		the_thread.start()		
 	else:
@@ -491,13 +586,17 @@ def clearPlot():
 	switchplot(); switchplot()
 def singleFileRate():
 	global stop_thread, running
+	if gl.o_nchn == 1:
+		CHb_Label_rate.config(text="-.-")
+		CHb_Label_mean.config(text="-.-")
+		CHb_Label_curr.config(text="-.-")
 	if running == True:
 		running = False
 		stop_thread = True
 		gl.stop_wait_for_file_thread = True
 		startstopButton.config(text="Start!", bg="#e8fcae")
 	idle()
-	root.filename = filedialog.askopenfilename(initialdir = basicpath, title = "Select file for rate", filetypes = (("binary files","*.bin"),("all files","*.*")))
+	root.filename = filedialog.askopenfilename(initialdir = gl.basicpath, title = "Select file for rate", filetypes = (("binary files","*.bin"),("all files","*.*")))
 	analyze_file(root.filename)
 	idle()
 
@@ -544,9 +643,9 @@ startStopServerButton = Button(socketFrame, text="Start Server", bg="#cdcfd1", c
 ## STATUS FRAME AND BUTTON ##
 #############################
 statusFrame = Frame (rootMainFrame); statusFrame.grid(row=7, column=0)
-statusLabel = Label(statusFrame, text="Starting ...", font=("Helvetica 12 bold"), bg="#ffffff"); statusLabel.grid(row=0, column=0)
+gl.statusLabel = Label(statusFrame, text="Starting ...", font=("Helvetica 12 bold"), bg="#ffffff"); gl.statusLabel.grid(row=0, column=0)
 def idle():
-	statusLabel.config(text="Idle", bg="#ffffff"); root.update()
+	gl.statusLabel.config(text="Idle", bg="#ffffff"); root.update()
 
 selectDirectory()
 idle()
