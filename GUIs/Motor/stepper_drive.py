@@ -90,7 +90,7 @@ def init():
 def ismoving(themotor):
     var=themotor.get_position_reached()
     if var<=1:
-        return var
+        return 1-var
     else:
         return ismoving(themotor)
 def position(themotor):
