@@ -48,13 +48,33 @@ def to_bin(file):
 
 root = Tk(); root.wm_title("Almost live measures"); root.geometry("+1600+20")
 
-# Rate frame
+#------------#
+# Rate frame #
+#------------#
 r_width  = 20
 r_height = 850
 rateFrame = Frame(root); rateFrame.grid(row=0,column=0)
 rateACanvas = Canvas(rateFrame, width=r_width, height=r_height, bg="gray"); rateACanvas.grid(row=0,column=0)
 rateBCanvas = Canvas(rateFrame, width=r_width, height=r_height, bg="gray"); rateBCanvas.grid(row=0,column=1)
+# Forbidden rate area is 20% of rate bar
+rateAforb = rateACanvas.create_rectangle(0,0,r_width,0.2*r_height, fill="orange", stipple="gray50")
+rateBforb = rateBCanvas.create_rectangle(0,0,r_width,0.2*r_height, fill="orange", stipple="gray50")
+# Rate displaying lines
+rateALine = rateACanvas.create_line(0,r_height,r_width,r_height, fill="red", width=5)
+rateBLine = rateBCanvas.create_line(0,r_height,r_width,r_height, fill="red", width=5)
+# Calculate maximum rate
+def maxRate(avg_charge):
+	return -0.000635 * float(ampAEntry.get()) / avg_charge / gl.o_binning / gl.o_voltages
+# Calculate positions of rate lines and place them there
+def placeRateLineA(rate):
+	lineposition = r_height - (rate/gl.rmax_a * 0.8 * r_height)
+	rateACanvas.coords(rateALine, 0, lineposition, r_width, lineposition)
+def placeRateLineB(rate):
+	lineposition = r_height - (rate/gl.rmax_b * 0.8 * r_height)
+	rateBCanvas.coords(rateBLine, 0, lineposition, r_width, lineposition)
 
+rmaxaText = rateACanvas.create_text(r_width/2,0.2*r_height, fill="white", text="--")
+rmaxbText = rateBCanvas.create_text(r_width/2,0.2*r_height, fill="white", text="--")
 
 
 rootMainFrame = Frame(root); rootMainFrame.grid(row=0,column=1)
@@ -273,10 +293,15 @@ def calibrate():
 def finish_calibration(): # Execute after pulse height distribution and pulse shape calculation are finished
 	# Combine pulse height distribution and pulse shape to calculate avg charge
 	gl.avg_charge_a = gl.nsum_a * gl.ph_a; avgChargeLabelA.config(text="{:.2f}".format(gl.avg_charge_a))
+	gl.rmax_a = maxRate(gl.avg_charge_a) # Maximum rate
+	rateACanvas.itemconfig(rmaxaText, text="{:.0f}".format(gl.rmax_a)) # Show on rate bar
 	if gl.o_nchn == 2:
 		gl.avg_charge_b = gl.nsum_b * gl.ph_b; avgChargeLabelB.config(text="{:.2f}".format(gl.avg_charge_b))
+		gl.rmax_b = maxRate(gl.avg_charge_b) # Maximum rate
+		rateBCanvas.itemconfig(rmaxbText, text="{:.0f}".format(gl.rmax_b)) # Show in rate bar
 	else:
 		avgChargeLabelB.config(text="--")
+
 	# Create calibration files
 	if gl.o_nchn == 2:
 		np.savetxt(to_calib(gl.calibFile, ".phd"),   np.c_[gl.histo_x,gl.histo_a,gl.histo_b])
@@ -330,6 +355,8 @@ def loadCalibration():
 		gl.ph_a = np.loadtxt(gl.calibLoad)[8]; gl.ph_b = np.loadtxt(gl.calibLoad)[9]
 		gl.avg_charge_a = np.loadtxt(gl.calibLoad)[10]; gl.avg_charge_b = np.loadtxt(gl.calibLoad)[11]
 		avgChargeLabelA.config(text="{:.2f}".format(gl.avg_charge_a)); avgChargeLabelB.config(text="{:.2f}".format(gl.avg_charge_b))
+		gl.rmax_b = maxRate(gl.avg_charge_b) # Maximum rate
+		rateBCanvas.itemconfig(rmaxbText, text="{:.0f}".format(gl.rmax_b)) # Show in rate bar
 	else:
 		root.filename = filedialog.askopenfilename(initialdir = gl.calibpath, title = "Load calibration", filetypes = (("one channel calib files","*.calib1"),("all files","*.*")))
 		gl.calibLoad = root.filename; loadCalibLabel.config(text=gl.calibLoad.split("/")[-1])
@@ -342,6 +369,8 @@ def loadCalibration():
 		gl.avg_charge_a = np.loadtxt(gl.calibLoad)[5]
 		avgChargeLabelA.config(text="{:.2f}".format(gl.avg_charge_a))
 		avgChargeLabelB.config(text="--")
+	gl.rmax_a = maxRate(gl.avg_charge_a) # Maximum rates
+	rateACanvas.itemconfig(rmaxaText, text="{:.0f}".format(gl.rmax_a)) # Show in rate bar
 	gl.calibFile = to_bin(gl.calibLoad); calibFileLabel.config(text=gl.calibFile.split("/")[-1])
 
 calibGeneralFrame = Frame(calibFrame, background="#ccf2ff"); calibGeneralFrame.grid(row=1,column=0)
@@ -477,6 +506,7 @@ def analyze_file(newest_file):
 	# Rates
 	r_a = 1e-6 * mean_a_ADC/(gl.avg_charge_a*binRange)
 	CHa_Label_rate.config(text="{:.1f}".format(r_a))
+	placeRateLineA(r_a)
 	# mV
 	mean_a_mV = ADC_to_mV(adc=mean_a_ADC, range=vRange)
 	CHa_Label_mean.config(text="{:.2f}".format(mean_a_mV))
@@ -495,6 +525,7 @@ def analyze_file(newest_file):
 		# Rates	
 		r_b = 1e-6 * mean_b_ADC/(gl.avg_charge_b*binRange)	
 		CHb_Label_rate.config(text="{:.1f}".format(r_b))
+		placeRateLineB(r_b)
 		# mV	
 		mean_b_mV = ADC_to_mV(adc=mean_b_ADC, range=vRange)	
 		CHb_Label_mean.config(text="{:.2f}".format(mean_b_mV))

@@ -32,6 +32,8 @@ ps_x = []; ps_a = []; ps_b = []				# x values (in time steps), y_a, y_b
 nsum_a = []; nsum_b = []					# normalizes peak sums
 # Combined
 avg_charge_a = []; avg_charge_b = []		# Average charge, will be nsum * ph
+# Maximum rates
+rmax_a = []; rmax_b = []
 
 ### GUI ELEMENTS ###
 statusLabel = []
