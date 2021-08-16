@@ -46,7 +46,7 @@ def to_bin(file):
 	return filebuild
 
 
-root = Tk(); root.wm_title("Almost live measures"); root.geometry("+1600+10")
+root = Tk(); root.wm_title("Almost live measures"); root.geometry("+200+10")
 
 #------------#
 # Rate frame #
