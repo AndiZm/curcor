@@ -112,8 +112,8 @@ class server_controller:
 	listen_thread = None
 	still_listening = True;
 	
-	#list of client sockets to send to
-	clientsockets = []
+	#client socket to send to. We only will have one (the controller)
+	clientsocket = None
 	
 
 	def __init__(self):
@@ -151,20 +151,38 @@ class server_controller:
 		else:
 			print("Server already started")
 			return
+
+	def sendText(text):
+		text=text.encode('utf8')
+		if self.clientsocket != None:
+			try:
+				sent = self.clientsocket.send(text)
+				if sent == 0:
+					print("The socket connection on one of the sockets is broken. Socket will be eliminated")
+					i.close()
+					self.clientsocket = None
+			except ConnectionAbortedError:
+				print("The socket connection on one of the sockets is broken. Socket will be eliminated")
+				i.close()
+				self.clientsocket = None
+			except ConnectionResetError:
+				print("The socket connection on one of the sockets is broken. Socket will be eliminated")
+				i.close()
+				self.clientsocket = None
     
     #stops the server by closing the listening and all client sockets and destroying them
 	def stop(self):
+		sendText("serverstop")
 		#stop the thread that listens
 		server_cache=self.serversocket
 		self.serversocket=None
 		self.still_listening=False
-	#	server_cache.shutdown(soc.SHUT_RDWR)
 		server_cache.close()
-		for i in self.clientsockets:
-			i.shutdown(soc.SHUT_RDWR)
-			i.close()
-			self.clientsockets.remove(i)
-		print("Shutdown the server and closed all sockets!")
+		if self.clientsocket != None:
+			self.clientsocket.shutdown(soc.SHUT_RDWR)
+			self.clientsocket.close()
+			self.clientsocket = None
+		print("Shutdown the server and closed the socket!")
 
 				
 def listen(self,button):
