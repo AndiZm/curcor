@@ -4,6 +4,7 @@ from numpy import random
 from time import sleep
 import scipy.optimize as opt
 import threading
+import warnings
 
 import stepper_drive as sd
 import motor_switch as ms
@@ -228,7 +229,7 @@ def optimize():
     optimizeMirrorBluntly()
 
 
-def showRateDistribution(spacing_phi=10, spacing_psi=10, min_phi=-4.0, max_phi=4.0, min_psi=-4.0, max_psi=4.0):
+'''def showRateDistribution(spacing_phi=10, spacing_psi=10, min_phi=-4.0, max_phi=4.0, min_psi=-4.0, max_psi=4.0):
     global client
     global change_mirror_psi
     global change_mirror_phi
@@ -258,13 +259,16 @@ def showRateDistribution(spacing_phi=10, spacing_psi=10, min_phi=-4.0, max_phi=4
             while sd.ismoving(a[4]):
                 sleep(0.05)
                 #print("wait_4_psi")
-            rates[j][i]=client.getRateA()+client.getRateB()
+            if i%2==0:
+                rates[j][spacing_phi-1-i]=client.getRateA()+client.getRateB()
+            else:
+                rates[j][i]=client.getRateA()+client.getRateB()
     plt.figure("Heatmap of the mirror Postions", figsize=(6,6))
     plt.imshow(rates, cmap='cool', extent=(min_psi-(max_psi-min_psi)/(spacing_psi)/2, max_psi+(max_psi-min_psi)/(spacing_psi)/2, min_phi-(max_phi-min_phi)/(spacing_phi)/2, max_phi+(max_phi-min_phi)/(spacing_phi)/2))
     plt.xlabel("$\psi$ [°]")
     plt.ylabel("$\phi$ [°]")
     plt.show()
-    print(rates)
+    print(rates)'''
     
 def startStopClient():
     global client
@@ -287,17 +291,17 @@ def startStopClient():
 def dummy_button():
     return
 
-'''def showRateDistribution(spacing_phi=10, spacing_psi=11, min_phi=-3.0, max_phi=3.0, min_psi=-4.0, max_psi=4.0):
+def showRateDistribution(spacing_phi=7, spacing_psi=8, min_phi=-4.3, max_phi=4.5, min_psi=-4.0, max_psi=3.8, contrast_factor=4):
     #print("You entered the DUMMY-state")
-
+    print("Starting to measure the rate distribution. MinPhi={0:4.2f} ; MaxPhi={1:4.2f} ; MinPsi={2:4.2f} ; MaxPsi={3:4.2f} ; SpacingPhi={4} ; SpacingPsi={5} ; ContrastFactor={6:4.2f}".format(min_phi, max_phi, min_psi, max_psi, spacing_phi, spacing_psi, contrast_factor))
     global client
     global change_mirror_psi
     global change_mirror_phi
     if client==None:
         print("No client connected! Cannot plot Mirrors")
         return
-    coordinates_psi=np.linspace(min_psi, max_psi, num=spacing_psi)
     coordinates_phi=np.linspace(min_phi, max_phi, num=spacing_phi)
+    coordinates_psi=np.linspace(min_psi, max_psi, num=spacing_psi)
     x, y=np.meshgrid(coordinates_phi, coordinates_psi)
     rates=np.empty(shape=(spacing_phi, spacing_psi))
     for i in range(0, spacing_phi, 1):
@@ -320,7 +324,24 @@ def dummy_button():
             while sd.ismoving(a[4]):
                 sleep(0.05)
                 #print("wait_4_psi")
-            rates[i][j]=client.getRateA()+client.getRateB()
+            if i%2==0:
+                rates[i][spacing_psi-1-j]=client.getRateA()+client.getRateB()
+            else:
+                rates[i][j]=client.getRateA()+client.getRateB()
+    rates=np.transpose(rates)
+    '''
+    rates=np.array([[ 69.6,  70.3,  70.3,  71.4,  69.,   63.,   68.1,  68.2,  69.6,  62.8],
+ [ 71.6,  75.2,  75.3,  74.,   75.,   74.1,  72.8,  73.9,  73.8,  73.8],
+ [ 80.2,  77.6,  79.,   79.4,  79.2,  79.2,  77.4,  78.,   77.4,  77.8],
+ [ 83.,   85.3,  83.9,  84.7,  81.6,  82.7,  83.,   81.,   82.6,  84. ],
+ [ 87.1,  90.1,  86.1,  88.7,  86.,   80.7,  87.7,  83.5,  86.8,  86.9],
+ [ 84.9,  92.9,  91.4,  91.9,  91.5,  89.3,  92.,   90.3,  89.8,  90.7],
+ [ 90.7,  91.4,  93.8,  93.4,  94.,   93.2,  87.3,  91.9,  89.6,  91.8],
+ [ 95.5,  98.8,  96.7,  96.6,  95.,   96.,   94.,  100.5,  96.,   86. ],
+ [ 97.2, 100.3,  99.,   98.5, 152.4, 345.9, 473.8, 471.4, 308.7, 123.3],
+ [102.3,  99.1, 100.9,  99.5, 107.2, 131.4, 169.5, 186.8, 138.9, 101.6],
+ [101.6, 103.2,  98.3, 102.6, 104.2, 101.,  101.7, 103.8, 100.1, 100. ]])'''
+
     print(rates)
     
 #    #generate random rates
@@ -336,19 +357,55 @@ def dummy_button():
     fig=plt.Figure(figsize=(6,6))
     sub_plot = fig.add_subplot(111)
     sub_plot.set_title("Heatmap of the mirror Positions")
-    sub_plot.imshow(rates, cmap='cool', extent=(min_psi-(max_psi-min_psi)/(spacing_psi)/2, max_psi+(max_psi-min_psi)/(spacing_psi)/2, min_phi-(max_phi-min_phi)/(spacing_phi)/2, max_phi+(max_phi-min_phi)/(spacing_phi)/2))
+    sub_plot.imshow(rates, cmap='cool', extent=( min_phi-(max_phi-min_phi)/(spacing_phi)/2, max_phi+(max_phi-min_phi)/(spacing_phi)/2, min_psi-(max_psi-min_psi)/(spacing_psi)/2, max_psi+(max_psi-min_psi)/(spacing_psi)/2))
     sub_plot.set_xlabel("$\phi$ [°]")
     sub_plot.set_ylabel("$\psi$ [°]")
     
-    #fit a gaussian
-    popt, pcov = opt.curve_fit(gauss2d, (x,y), rates.ravel(), p0 = (10,(max_psi-min_psi)/2, 0.5,(max_phi-min_phi)/2,0.5, 40))
-    print(popt)
-    
-    #plot the gaussian
-    data_fitted = gauss2d((x, y), *popt)
-    sub_plot.axes.contour(x, y, data_fitted.reshape(spacing_psi, spacing_phi), 8, colors='b')
-    
-    rect = patches.Rectangle((popt[1]-2*np.abs(popt[2]), popt[3]-2*np.abs(popt[4])), 4*np.abs(popt[2]), 4*np.abs(popt[4]), linewidth=2, edgecolor='r', facecolor='none', label='two $\sigma$ sqare')
+    #fit a gaussian or find Maximum area through other process
+    with warnings.catch_warnings(record=True) as w:
+        try:
+            popt, pcov = opt.curve_fit(gauss2d, (x,y), rates.ravel(), p0 = (10,(max_psi-min_psi)/2, 0.5,(max_phi-min_phi)/2,0.5, 40))
+        except:
+            w=1
+        gaussian=False
+        if w==None:
+            print(popt)
+            #plot the gaussian
+            data_fitted = gauss2d((x, y), *popt)
+            sub_plot.axes.contour(x, y, data_fitted.reshape(spacing_psi, spacing_phi), 8, colors='b')
+            rect_start_phi=popt[1]-2*np.abs(popt[2])
+            rect_start_psi=popt[3]-2*np.abs(popt[4])
+            rect_width_phi=4*np.abs(popt[2])
+            rect_width_psi=4*np.abs(popt[4])
+            gaussian=True
+        else:
+            print("No Gaussian could be fitted. Try other approach.")
+            #do some crude narrowing of the spot
+            max_rate=np.max(rates)
+            mask=rates>max_rate/contrast_factor
+            min_x=len(rates)
+            max_x=-1
+            min_y=len(mask[0])
+            max_y=-1
+            for i in range(0, len(mask)):
+                if np.sum(mask[i])>0 and min_y>i:
+                    min_y=i
+                if np.sum(mask[i])>0 and max_y<i:
+                    max_y=i
+            for i in range(0, len(mask[0])):
+                if np.sum(mask[:,i])>0 and min_x>i:
+                    min_x=i
+                if np.sum(mask[:,i])>0 and max_x<i:
+                    max_x=i
+            print("min_x={0}; max_x={1}; min_y={2}; max_y={3}".format(min_x, max_x, min_y, max_y))
+            print("min_phi={0}; max_phi={1}; min_psi={2}; max_psi={3}".format(coordinates_phi[min_x], coordinates_phi[max_x], coordinates_psi[len(coordinates_psi)-1-min_y], coordinates_psi[len(coordinates_psi)-1-max_y]))
+            padding_psi=(coordinates_psi[1]-coordinates_psi[0])/2
+            padding_phi=(coordinates_phi[1]-coordinates_phi[0])/2
+            rect_start_phi=coordinates_phi[min_x]-padding_phi
+            rect_start_psi=coordinates_psi[len(coordinates_psi)-1-min_y]+padding_psi
+            rect_width_phi=coordinates_phi[max_x]-coordinates_phi[min_x]+2*padding_phi
+            rect_width_psi=coordinates_psi[len(coordinates_psi)-1-max_y]-coordinates_psi[len(coordinates_psi)-1-min_y]-2*padding_psi
+    rect = patches.Rectangle((rect_start_phi, rect_start_psi), rect_width_phi, rect_width_psi, edgecolor='r', facecolor='none', label='recomended fit area')
     sub_plot.axes.add_patch(rect)
     sub_plot.legend()
     
@@ -358,10 +415,30 @@ def dummy_button():
     canvas.get_tk_widget().grid(row=0, column=0)
     canvas.draw()
     
+    
+    
     #add button for next closer fit
-    nextIterationButton = Button(plotWindow, text="next Iteration in 2 sigma area", width=40, pady=3, padx=3)
-    nextIterationButton["command"]= lambda argSpacingPhi=spacing_phi, argSpacingPsi=spacing_psi, argMinPhi=popt[3]-2*np.abs(popt[4]), argMaxPhi=popt[3]+2*np.abs(popt[4]), argMinPsi=popt[1]-2*np.abs(popt[2]), argMaxPsi=popt[1]+2*np.abs(popt[2]) : showRateDistribution(spacing_phi = argSpacingPhi, spacing_psi = argSpacingPsi, min_phi = argMinPhi, max_phi = argMinPhi, min_psi = argMinPsi, max_psi= argMaxPsi)
-    nextIterationButton.grid(row=1,column=0)'''
+    min_phi=rect_start_phi
+    max_phi=rect_start_phi+rect_width_phi
+    min_psi=rect_start_psi+rect_width_psi
+    max_psi=rect_start_psi
+    
+    #remove padding if it is lager than the range of the mirrors
+    if min_phi>4.5: min_phi=4.5
+    if min_phi<-4.5: min_phi=4.5
+    if max_phi>4.5: max_phi=4.5
+    if max_phi<-4.5: max_phi=4.5
+    if min_psi>4.5: min_psi=4.5
+    if min_psi<-4.5: min_psi=4.5
+    if max_psi>4.5: max_psi=4.5
+    if max_psi<-4.5: max_psi=4.5
+    
+    contrast_factor=contrast_factor/1.5
+    spacing_phi=spacing_phi+2
+    spacing_psi=spacing_psi+2
+    nextIterationButton = Button(plotWindow, text="next Iteration in marked area", width=40, pady=3, padx=3)
+    nextIterationButton["command"]= lambda argSpacingPhi=spacing_phi, argSpacingPsi=spacing_psi, argMinPhi=min_phi, argMaxPhi=max_phi, argMinPsi=min_psi, argMaxPsi=max_psi, argContrastFactor=contrast_factor : showRateDistribution(spacing_phi = argSpacingPhi, spacing_psi = argSpacingPsi, min_phi = argMinPhi, max_phi = argMaxPhi, min_psi = argMinPsi, max_psi= argMaxPsi, contrast_factor= argContrastFactor)
+    nextIterationButton.grid(row=1,column=0)
 
     
         
