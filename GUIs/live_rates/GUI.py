@@ -46,7 +46,7 @@ def to_bin(file):
 	return filebuild
 
 
-root = Tk(); root.wm_title("Almost live measures"); root.geometry("+1600+20")
+root = Tk(); root.wm_title("Almost live measures"); root.geometry("+1600+10")
 
 #------------#
 # Rate frame #
@@ -467,7 +467,7 @@ CHb_Label_rate = Label(abFrame, text="0.0", fg="orange", bg="black", font=("Helv
 ## START FRAME ##
 #################
 startFrame = Frame (rootMainFrame); startFrame.grid(row=5, column=0)
-running = False; stop_thread = False; plotting = False; server=None
+running = False; stop_thread = False; plotting = False; server=None; server_controller=None
 # For plotting
 rates_a = []; rates_b = []
 plotFig = []; rate_a_plot = []; rate_b_plot = []
@@ -699,7 +699,7 @@ def singleFileRate():
 	idle()
 
 #starts/stops the server which sends the rate to the RASPI
-def startStopServer():
+def startStopServerMotor():
 	global server
 	#check if server is running
 	if server == None :	
@@ -708,20 +708,39 @@ def startStopServer():
 		try:
 			server.start()
 			#change button label
-			startStopServerButton.config(text="Stop Server")
+			gl.motorServerButton.config(text="Stop Server (Motor)", bg="#ffc47d")
 		except OSError as err:
 			print("The OS did not allow start the server on {0}:{1} . Are address and port correct? Maybe an old instance is still blocking this resource?".format(server.address, server.port))
 			print(err)
 			server = None
-
-
 	else:
 		#shutdown server
 		server.stop()
 		#change button label
-		startStopServerButton.config(text="Start Server")
+		gl.motorServerButton.config(text="Start Server (Motor)", bg="#cdcfd1")
 
 		server = None
+
+def startStopServerController():
+	global server_controller
+	#check if server is running
+	if server_controller == None :	
+		#start server
+		server_controller=svr.server_controller()
+		try:
+			server_controller.start()
+			#change button label
+			gl.controllerServerButton.config(text="Stop Server (Controller)", bg="#ffc47d")
+		except OSError as err:
+			print("The OS did not allow start the server on {0}:{1} . Are address and port correct? Maybe an old instance is still blocking this resource?".format(server.address, server.port))
+			print(err)
+			server_controller = None
+	else:
+		#shutdown server
+		server_controller.stop()
+		#change button label
+		gl.controllerServerButton.config(text="Start Server (Controller)", bg="#cdcfd1")
+		server_controller = None
 
 
 clearPlotButon = Button(startFrame, text="Clear", bg="#ccf2ff", command=clearPlot, width=12); clearPlotButon.grid(row=0,column=0)
@@ -745,8 +764,9 @@ samples_quick_Dropdown.grid(row=2, column=1)
 ## Server Stuff ##
 ##################
 socketFrame = Frame(rootMainFrame, bg="#f7df72"); socketFrame.grid(row=6,column=0)
-socketHeaderLabel = Label(socketFrame, text="Server", font=("Helvetica 12 bold"), bg="#f7df72"); socketHeaderLabel.grid(row=0,column=0)
-startStopServerButton = Button(socketFrame, text="Start Server", bg="#cdcfd1", command=startStopServer, width=12); startStopServerButton.grid(row=1,column=0)
+socketHeaderLabel = Label(socketFrame, text="Network", font=("Helvetica 12 bold"), bg="#f7df72"); socketHeaderLabel.grid(row=0,column=0)
+gl.motorServerButton  = Button(socketFrame, text="Start Server (Motor)",      bg="#cdcfd1", command=startStopServerMotor,      width=20); gl.motorServerButton.grid(row=1,column=0)
+gl.controllerServerButton = Button(socketFrame, text="Start Server (Controller)", bg="#cdcfd1", command=startStopServerController, width=20); gl.controllerServerButton.grid(row=2,column=0)
 
 #############################
 ## STATUS FRAME AND BUTTON ##
@@ -755,6 +775,8 @@ statusFrame = Frame (rootMainFrame); statusFrame.grid(row=7, column=0)
 gl.statusLabel = Label(statusFrame, text="Starting ...", font=("Helvetica 12 bold"), bg="#ffffff"); gl.statusLabel.grid(row=0, column=0)
 def idle():
 	gl.statusLabel.config(text="Idle", bg="#ffffff"); root.update()
+
+
 
 selectDirectory()
 idle()

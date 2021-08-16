@@ -38,3 +38,7 @@ rmax_a = []; rmax_b = []
 
 ### GUI ELEMENTS ###
 statusLabel = []
+
+# Server
+motorServerButton = []
+controllerServerButton = []
