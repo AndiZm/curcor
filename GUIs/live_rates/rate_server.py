@@ -110,7 +110,8 @@ class server_controller:
 	#socket used for the serversocket
 	serversocket = None
 	listen_thread = None
-	still_listening = True;
+	listening_accept = False
+	listening_msg = False
 	
 	#client socket to send to. We only will have one (the controller)
 	clientsocket = None
@@ -143,16 +144,17 @@ class server_controller:
 			print("Server started!")	
 			
 			#routine to start a client thread as soon as a connection is requested (in own thread)
-			self.listen_thread = threading.Thread(target=listen, args=[self,gl.controllerServerButton])
-			self.still_listening=True
+			self.listen_thread = threading.Thread(target=listen_accept, args=[self,gl.controllerServerButton])
+			self.listening_accept = True
 			self.listen_thread.start()
 			if self.listen_thread != None:
 				print("Server listens on Port {0} for Controller!".format(self.port))
+
 		else:
 			print("Server already started")
 			return
 
-	def sendText(text):
+	def sendText(self, text):
 		text=text.encode('utf8')
 		if self.clientsocket != None:
 			try:
@@ -172,11 +174,13 @@ class server_controller:
     
     #stops the server by closing the listening and all client sockets and destroying them
 	def stop(self):
+		self.listening_accept = False
+		self.listening_msg = False
 		self.sendText("serverstop")
+		time.sleep(0.5)
 		#stop the thread that listens
-		server_cache=self.serversocket
-		self.serversocket=None
-		self.still_listening=False
+		server_cache = self.serversocket
+		self.serversocket = None
 		server_cache.close()
 		if self.clientsocket != None:
 			self.clientsocket.shutdown(soc.SHUT_RDWR)
@@ -184,9 +188,9 @@ class server_controller:
 			self.clientsocket = None
 		print("Shutdown the server and closed the socket!")
 
-				
-def listen(self,button):
-	while self.still_listening:
+# Wait for incoming client requests and accept
+def listen_accept(self,button):
+	while self.listening_accept:
 		# accept connections from outside. The OSError exception ist thrown, when the server is shutdown, becaus the accept routine can't handle well that the socket is closed by another thread.
 		try:
 			#get new clientsocket from the listening server socket
@@ -194,13 +198,33 @@ def listen(self,button):
 			
 			# create a new thread for each client and put it in the list of clientsockets
 			ct = clientsocket
-			self.clientsockets.append(ct)
+			self.clientsocket = ct
 			print("Created new client socket for new client which connected to the rate server!")
 			button.config(bg="#bfff91")
+
+			#listen to messages from this client
+			self.listen_msg_thread = threading.Thread(target=listen_msg, args=[self, button])
+			self.listening_msg = True
+			self.listen_msg_thread.start()
+
 		except OSError:
-			if self.still_listening :
+			if self.listening_accept :
 				print("There was an error in the accept() statement of the server while listening for incoming connections. How could that be?")
 			else:
 				print("Successfully ended the server-listening thread!")
+
+def listen_msg(self, button):
+	while self.listening_msg:
+		data = str(self.clientsocket.recv(1024).decode())
+		print (data)
+		# If client requests stop, then do so
+		if data == "clientstop":
+			self.sendText("serverstop")
+			if self.clientsocket != None:
+				self.clientsocket.shutdown(soc.SHUT_RDWR)
+				self.clientsocket.close()
+				self.clientsocket = None
+			self.listening_msg = False
+			button.config(bg="#ffc47d")
 				
 		
