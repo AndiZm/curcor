@@ -73,7 +73,7 @@ class controller_client:
 def listen(self):
 	while self.listening:
 		data = str(self.socket.recv(1024).decode())
-		print (data)
+		#print (data)
 		if data == "serverstop":
 			print ("\tClosing Client and exit ...")
 			#self.socket.send(b"OK, I will exit. Bye!")
@@ -84,6 +84,65 @@ def listen(self):
 			if self.pc_ID == 2:
 				gl.client_PC2 = None
 				gl.pc2Button.config(text="Start Client PC 2", bg="#cdcfd1")
+		# Rate
+		if "rates" in data:
+			update_rates(self, data)			
+		if "rate " in data:
+			update_rate(self, data)
+		# Max rate
+		if "maxrs" in data:
+			update_max_rates(self, data)
+		if "maxr " in data:
+			update_max_rate(self, data)
+# Rate
+def update_rates(self,data):
+	data = data.split("#")
+	r_a = float(data[1])
+	r_b = float(data[2])
+	if self.pc_ID == 1:
+		gl.rateA1Label.config(text="{:.1f}".format(r_a))
+		gl.rateB1Label.config(text="{:.1f}".format(r_b))
+		gl.placeRateLineA1(r_a)
+		gl.placeRateLineB1(r_b)
+	if self.pc_ID == 2:
+		gl.rateA2Label.config(text="{:.1f}".format(r_a))
+		gl.rateB2Label.config(text="{:.1f}".format(r_b))
+		gl.placeRateLineA2(r_a)
+		gl.placeRateLineB2(r_b)
+def update_rate(self,data):
+	data = data.split("#")
+	r_a = float(data[1])
+	if self.pc_ID == 1:
+		gl.rateA1Label.config(text="{:.1f}".format(r_a))
+		gl.rateB1Label.config(text="-.-")
+		gl.placeRateLineA1(r_a)
+	if self.pc_ID == 2:
+		gl.rateA2Label.config(text="{:.1f}".format(r_a))
+		gl.rateB2Label.config(text="-.-")
+		gl.placeRateLineA2(r_a)
+# Max rate
+def update_max_rates(self, data):
+	data = data.split("#")
+	if self.pc_ID == 1:
+		gl.rmaxA1 = float(data[1])
+		gl.rmaxB1 = float(data[2])
+		gl.rateA1Canvas.itemconfig(gl.rmaxA1Text, text="{:.0f}".format(gl.rmaxA1))
+		gl.rateB1Canvas.itemconfig(gl.rmaxB1Text, text="{:.0f}".format(gl.rmaxB1))
+	if self.pc_ID == 2:
+		gl.rmaxA2 = float(data[1])
+		gl.rmaxB2 = float(data[2])
+		gl.rateA2Canvas.itemconfig(gl.rmaxA2Text, text="{:.0f}".format(gl.rmaxA2))
+		gl.rateB2Canvas.itemconfig(gl.rmaxB2Text, text="{:.0f}".format(gl.rmaxB2))
+def update_max_rate(self, data):
+	data = data.split("#")
+	if self.pc_ID == 1:
+		gl.rmaxA1 = float(data[1])
+		gl.rateA1Canvas.itemconfig(gl.rmaxA1Text, text="{:.0f}".format(gl.rmaxA1))
+	if self.pc_ID == 2:
+		gl.rmaxA2 = float(data[1])
+		gl.rateA2Canvas.itemconfig(gl.rmaxA2Text, text="{:.0f}".format(gl.rmaxA2))
+
+
 
 def sendText(self, text):
 	text = text.encode("utf8")
