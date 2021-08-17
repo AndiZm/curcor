@@ -32,4 +32,4 @@ def placeRateLineA2(rate):
 	rateA2Canvas.coords(rateA2Line, 0, lineposition, r_width, lineposition)
 def placeRateLineB2(rate):
 	lineposition = r_height - (rate/rmaxB2 * 0.8 * r_height)
-	rateB2Canvas.coords(rateBLine, 0, lineposition, r_width, lineposition)
+	rateB2Canvas.coords(rateB2Line, 0, lineposition, r_width, lineposition)
