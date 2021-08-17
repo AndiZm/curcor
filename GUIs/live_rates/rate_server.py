@@ -152,7 +152,7 @@ class server_controller:
 			print("Server already started")
 			return
 
-	def sendText(self, text):
+	def sendText(text):
 		text=text.encode('utf8')
 		if self.clientsocket != None:
 			try:
@@ -172,7 +172,7 @@ class server_controller:
     
     #stops the server by closing the listening and all client sockets and destroying them
 	def stop(self):
-		#self.sendText(self, "serverstop")
+		self.sendText("serverstop")
 		#stop the thread that listens
 		server_cache=self.serversocket
 		self.serversocket=None
