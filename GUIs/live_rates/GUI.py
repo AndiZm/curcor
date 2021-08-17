@@ -477,6 +477,11 @@ wav_a = []; wav_b = []
 def quick_analysis():
 	global stop_thread
 	cc.init()
+	if server_controller != None:
+		if gl.o_nchn == 1:
+			server_controller.sendMaxRate(gl.rmax_a)
+		else:
+			server_controller.sendMaxRates(gl.rmax_a, gl.rmax_b)
 	while stop_thread == False:
 		vRange   = gl.o_voltages
 		binRange = gl.o_binning
@@ -517,7 +522,12 @@ def quick_analysis():
 				CHb_Label_curr.config(text="{:.1f}".format(curr_b_microamp), bg="#edd266", fg="red")
 	
 		if server != None:
-			server.sendRate(r_a, r_b)	
+			server.sendRate(r_a, r_b)
+		if server_controller != None:
+			if gl.o_nchn == 1:
+				server_controller.sendRate(r_a)
+			else:
+				server_controller.sendRates(r_a,r_b)
 		root.update()
 		
 	cc.close()
@@ -616,6 +626,11 @@ def analyze_files():
 		CHb_Label_rate.config(text="-.-")
 		CHb_Label_mean.config(text="-.-")
 		CHb_Label_curr.config(text="-.-")
+	if server_controller != None:
+		if gl.o_nchn == 1:
+			server_controller.sendMaxRate(gl.rmax_a)
+		else:
+			server_controller.sendMaxRates(gl.rmax_a, gl.rmax_b)
 
 	while(stop_thread == False):
 		gl.statusLabel.config(text="Scanning files for Rates..." ); root.update()
