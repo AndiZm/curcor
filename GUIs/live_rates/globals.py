@@ -34,7 +34,7 @@ nsum_a = []; nsum_b = []					# normalizes peak sums
 # Combined
 avg_charge_a = []; avg_charge_b = []		# Average charge, will be nsum * ph
 # Maximum rates
-rmax_a = []; rmax_b = []
+rmax_a = None; rmax_b = None
 
 ### GUI ELEMENTS ###
 statusLabel = []

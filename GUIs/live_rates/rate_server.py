@@ -202,6 +202,14 @@ def listen_accept(self,button):
 			print("Created new client socket for new client which connected to the rate server!")
 			button.config(bg="#bfff91")
 
+			# Send rate limit info to controller
+			if gl.rmax_a != None:
+				print ("send")
+				if gl.o_nchn == 1:
+					self.sendMaxRate(gl.rmax_a)
+				if gl.o_nchn == 2:
+					self.sendMaxRates(gl.rmax_a, gl.rmax_b)
+
 			#listen to messages from this client
 			self.listen_msg_thread = threading.Thread(target=listen_msg, args=[self, button])
 			self.listening_msg = True

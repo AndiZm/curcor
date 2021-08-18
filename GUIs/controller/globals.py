@@ -11,11 +11,10 @@ rateA2Canvas = []; rateA2Line = []; rmaxA2Text = []; rateA2Label = []
 rateB2Canvas = []; rateB2Line = []; rmaxB2Text = []; rateB2Label = []
 
 
-
-rmaxA1 = 0
-rmaxB1 = 0
-rmaxA2 = 0
-rmaxB2 = 0
+rmaxA1 = 1
+rmaxB1 = 1
+rmaxA2 = 1
+rmaxB2 = 1
 
 # For rate bar
 r_width  = 20
