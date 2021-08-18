@@ -95,34 +95,39 @@ def listen(self):
 				gl.client_PC2 = None
 				gl.pc2Button.config(text="Start Client PC 2", bg="#cdcfd1")
 		# Rate
-		if "rates" in data:
+		if "rates" in data.split("#")[0]:
 			update_rates(self, data)			
-		if "rate " in data:
+		if "rate " in data.split("#")[0]:
 			update_rate(self, data)
 		# Max rate
-		if "maxrs" in data:
+		if "maxrs" in data.split("#")[0]:
 			update_max_rates(self, data)
-		if "maxr " in data:
+		if "maxr " in data.split("#")[0]:
 			update_max_rate(self, data)
 		# Information update
-		if "actions" in data:
+		if "actions" in data.split("#")[0]:
 			update_information(self, data)
 
 # Rate
 def update_rates(self,data):
-	data = data.split("#")
-	r_a = float(data[1])
-	r_b = float(data[2])
-	if self.pc_ID == 1:
-		gl.rateA1Label.config(text="{:.1f}".format(r_a))
-		gl.rateB1Label.config(text="{:.1f}".format(r_b))
-		gl.placeRateLineA1(r_a)
-		gl.placeRateLineB1(r_b)
-	if self.pc_ID == 2:
-		gl.rateA2Label.config(text="{:.1f}".format(r_a))
-		gl.rateB2Label.config(text="{:.1f}".format(r_b))
-		gl.placeRateLineA2(r_a)
-		gl.placeRateLineB2(r_b)
+	try:
+		data = data.split("#")
+		r_a = float(data[1])
+		r_b = float(data[2])
+		if self.pc_ID == 1:
+			gl.rateA1Label.config(text="{:.1f}".format(r_a))
+			gl.rateB1Label.config(text="{:.1f}".format(r_b))
+			gl.placeRateLineA1(r_a)
+			gl.placeRateLineB1(r_b)
+		if self.pc_ID == 2:
+			gl.rateA2Label.config(text="{:.1f}".format(r_a))
+			gl.rateB2Label.config(text="{:.1f}".format(r_b))
+			gl.placeRateLineA2(r_a)
+			gl.placeRateLineB2(r_b)
+	except:
+		print ("Ohoh:")
+		print (data)
+		time.sleep(5)
 def update_rate(self,data):
 	data = data.split("#")
 	r_a = float(data[1])
