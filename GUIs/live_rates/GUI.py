@@ -121,6 +121,9 @@ channels = StringVar(root); channels.set("2")
 channeloptions = {"1": 1, "2": 2}
 def new_nchn(val):
 	gl.o_nchn = int((channeloptions[channels.get()]))
+	gl.quickRatesButton.config(state="disabled")
+	startstopButton.config(state="disabled")
+	singleFileButton.config(state="disabled")
 channelDropdownLabel = Label(commonFrame, text="Channels"); channelDropdownLabel.grid(row=3,column=0)
 channelDropdown = OptionMenu(commonFrame, channels, *channeloptions, command=new_nchn)
 channelDropdown.grid(row=3, column=1)
@@ -289,6 +292,11 @@ def calibrate():
 		ps.execute(min_pulses = [int(minPulsesEntryA.get()),int(minPulsesEntryB.get())], height=[-1*int(minHeightEntryA.get()),-1*int(minHeightEntryB.get())], cleanheight=[-1*int(cleanHeightEntryA.get()),-1*int(cleanHeightEntryB.get())])
 	if gl.stop_calib_thread == False:
 		finish_calibration()
+	# Activate Rate Buttons
+	gl.quickRatesButton.config(state="normal")
+	startstopButton.config(state="normal")
+	singleFileButton.config(state="normal")
+
 	idle()
 def finish_calibration(): # Execute after pulse height distribution and pulse shape calculation are finished
 	# Combine pulse height distribution and pulse shape to calculate avg charge
@@ -372,6 +380,11 @@ def loadCalibration():
 	gl.rmax_a = maxRate(gl.avg_charge_a) # Maximum rates
 	rateACanvas.itemconfig(rmaxaText, text="{:.0f}".format(gl.rmax_a)) # Show in rate bar
 	gl.calibFile = to_bin(gl.calibLoad); calibFileLabel.config(text=gl.calibFile.split("/")[-1])
+	# Activate Rate Buttons
+	gl.quickRatesButton.config(state="normal")
+	startstopButton.config(state="normal")
+	singleFileButton.config(state="normal")
+
 
 calibGeneralFrame = Frame(calibFrame, background="#ccf2ff"); calibGeneralFrame.grid(row=1,column=0)
 selectCalibFileButton = Button(calibGeneralFrame, text="Select Calib Binary", command=selectCalibFile, background="#ccf2ff"); selectCalibFileButton.grid(row=0, column=0)
@@ -767,10 +780,10 @@ def startStopServerController():
 clearPlotButon = Button(startFrame, text="Clear", bg="#ccf2ff", command=clearPlot, width=12); clearPlotButon.grid(row=0,column=0)
 plotButton = Button(startFrame, text="Plotting off", bg="#cdcfd1", command=switchplot, width=12); plotButton.grid(row=0,column=1)
 
-startstopButton = Button(startFrame, text="Start!", bg="#e8fcae", command=startstop, width=12); startstopButton.grid(row=1,column=0)
-singleFileButton = Button(startFrame, text="Single", bg = "#e8fcae", command=singleFileRate, width=12); singleFileButton.grid(row=1, column=1)
+startstopButton = Button(startFrame, text="Start!", bg="#e8fcae", command=startstop, width=12, state="disabled"); startstopButton.grid(row=1,column=0)
+singleFileButton = Button(startFrame, text="Single", bg = "#e8fcae", command=singleFileRate, width=12, state="disabled"); singleFileButton.grid(row=1, column=1)
 
-gl.quickRatesButton = Button(startFrame, text="Start quick", bg="#e8fcae", width=12, command=startstop_quick); gl.quickRatesButton.grid(row=2, column=0)
+gl.quickRatesButton = Button(startFrame, text="Start quick", bg="#e8fcae", width=12, command=startstop_quick, state="disabled"); gl.quickRatesButton.grid(row=2, column=0)
 # Samples for quick measurement
 samples_quick = StringVar(root); samples_quick.set("256 kS")
 sample_quick_options = {
