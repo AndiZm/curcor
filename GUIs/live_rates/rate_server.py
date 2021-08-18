@@ -170,6 +170,9 @@ class server_controller:
 	def sendMaxRates(self,rate_a, rate_b):
 		text="maxrs # {} # {} #".format(rate_a, rate_b)
 		self.sendText(text)
+	def sendActionInformation(self):
+		text="actions # {} #".format(gl.act_start_quick)
+		self.sendText(text)
 
     
     #stops the server by closing the listening and all client sockets and destroying them
@@ -203,12 +206,7 @@ def listen_accept(self,button):
 			button.config(bg="#bfff91")
 
 			# Send rate limit info to controller
-			if gl.rmax_a != None:
-				print ("send")
-				if gl.o_nchn == 1:
-					self.sendMaxRate(gl.rmax_a)
-				if gl.o_nchn == 2:
-					self.sendMaxRates(gl.rmax_a, gl.rmax_b)
+			send_start_information(self)
 
 			#listen to messages from this client
 			self.listen_msg_thread = threading.Thread(target=listen_msg, args=[self, button])
@@ -220,6 +218,14 @@ def listen_accept(self,button):
 				print("There was an error in the accept() statement of the server while listening for incoming connections. How could that be?")
 			else:
 				print("Successfully ended the server-listening thread!")
+def send_start_information(self):
+	if gl.rmax_a != None:
+		if gl.o_nchn == 1:
+			self.sendMaxRate(gl.rmax_a)
+		if gl.o_nchn == 2:
+			self.sendMaxRates(gl.rmax_a, gl.rmax_b)
+	time.sleep(0.1)
+	self.sendActionInformation()
 
 def listen_msg(self, button):
 	while self.listening_msg:
@@ -234,7 +240,10 @@ def listen_msg(self, button):
 				self.clientsocket = None
 			self.listening_msg = False
 			button.config(bg="#ffc47d")
-				
+		if "command" in data.split("#")[0]:
+			if "quickrates" in data.split("#")[1]:
+				gl.quickRatesButton.invoke()
+
 		
 def listen(self):
 	while self.still_listening:

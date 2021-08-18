@@ -54,8 +54,10 @@ class controller_client:
 				print("Client connected to {1} on Port {0} and is listening!".format(self.port, self.address))	
 			if self.pc_ID == 1:
 				gl.pc1Button.config(text="Stop Client PC 1", bg="#bfff91")
+				gl.quickRates1Button.config(state="normal", command=self.quickrates)
 			if self.pc_ID == 2:
 				gl.pc2Button.config(text="Stop Client PC 2", bg="#bfff91")
+				gl.quickRates2Button.config(state="normal", command=self.quickrates)			
 		else:
 			print("Error in the connect method of the rate client! There shouldn't be a socket but in fact there is! Did you connect once too often?")
 
@@ -66,8 +68,16 @@ class controller_client:
 		self.socket.close()
 		print("Shutdown the client and closed the socket!")
 		self.socket = None
+		if self.pc_ID == 1:
+			gl.quickRates1Button.config(state="disabled")
+		if self.pc_ID == 2:
+			gl.quickRates2Button.config(state="disabled")
 	def stop_self(self):
 		sendText(self, "clientstop")
+	# Commands to the server
+	def quickrates(self):
+		sendText(self, "command # quickrates #")
+
 	
 #makes the client listen to incoming messages
 def listen(self):
@@ -94,6 +104,10 @@ def listen(self):
 			update_max_rates(self, data)
 		if "maxr " in data:
 			update_max_rate(self, data)
+		# Information update
+		if "actions" in data:
+			update_information(self, data)
+
 # Rate
 def update_rates(self,data):
 	data = data.split("#")
@@ -141,6 +155,18 @@ def update_max_rate(self, data):
 	if self.pc_ID == 2:
 		gl.rmaxA2 = float(data[1])
 		gl.rateA2Canvas.itemconfig(gl.rmaxA2Text, text="{:.0f}".format(gl.rmaxA2))
+def update_information(self, data):
+	# quick Rates active
+	if "True" in data.split("#")[1]:
+		if self.pc_ID == 1:
+			gl.quickRates1_on()
+		if self.pc_ID == 2:
+			gl.quickRates2_on()
+	if "False" in data.split("#")[1]:
+		if self.pc_ID == 1:
+			gl.quickRates1_off()
+		if self.pc_ID == 2:
+			gl.quickRates2_off()
 
 
 

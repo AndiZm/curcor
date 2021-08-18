@@ -662,16 +662,22 @@ def startstop_quick():
 	global running_quick, stop_thread
 	if running_quick == False:
 		running_quick = True
+		gl.act_start_quick = True
+		if server_controller != None:
+			server_controller.sendActionInformation()
 
-		quickRatesButton.config(text="Stop quick", bg="#fa857a")
+		gl.quickRatesButton.config(text="Stop quick", bg="#fa857a")
 		stop_thread = False
 		gl.statusLabel.config(text="Quick Rate Mode" , bg="#edda45"); root.update()
 		the_thread = Thread(target=quick_analysis, args=())
 		the_thread.start()		
 	else:
 		running_quick = False
+		gl.act_start_quick = False
+		if server_controller != None:
+			server_controller.sendActionInformation()
 		stop_thread = True
-		quickRatesButton.config(text="Start quick", bg="#e8fcae")
+		gl.quickRatesButton.config(text="Start quick", bg="#e8fcae")
 		idle()
 
 
@@ -764,7 +770,7 @@ plotButton = Button(startFrame, text="Plotting off", bg="#cdcfd1", command=switc
 startstopButton = Button(startFrame, text="Start!", bg="#e8fcae", command=startstop, width=12); startstopButton.grid(row=1,column=0)
 singleFileButton = Button(startFrame, text="Single", bg = "#e8fcae", command=singleFileRate, width=12); singleFileButton.grid(row=1, column=1)
 
-quickRatesButton = Button(startFrame, text="Start quick", bg="#e8fcae", width=12, command=startstop_quick); quickRatesButton.grid(row=2, column=0)
+gl.quickRatesButton = Button(startFrame, text="Start quick", bg="#e8fcae", width=12, command=startstop_quick); gl.quickRatesButton.grid(row=2, column=0)
 # Samples for quick measurement
 samples_quick = StringVar(root); samples_quick.set("256 kS")
 sample_quick_options = {

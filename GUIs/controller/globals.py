@@ -1,6 +1,7 @@
 pc1Button = []
 pc2Button = []
 
+
 client_PC1 = None
 client_PC2 = None
 
@@ -9,6 +10,18 @@ rateB1Canvas = []; rateB1Line = []; rmaxB1Text = []; rateB1Label = []
 
 rateA2Canvas = []; rateA2Line = []; rmaxA2Text = []; rateA2Label = []
 rateB2Canvas = []; rateB2Line = []; rmaxB2Text = []; rateB2Label = []
+
+# Quick Rates
+quickRates1Button = []
+def quickRates1_on():
+	quickRates1Button.config(text="Stop quick", bg="#fa857a")
+def quickRates1_off():
+	quickRates1Button.config(text="Start quick", bg="#e8fcae")
+quickRates2Button = []
+def quickRates2_on():
+	quickRates2Button.config(text="Stop quick", bg="#fa857a")
+def quickRates2_off():
+	quickRates2Button.config(text="Start quick", bg="#e8fcae")
 
 
 rmaxA1 = 1

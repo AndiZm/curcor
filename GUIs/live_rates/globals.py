@@ -38,7 +38,11 @@ rmax_a = None; rmax_b = None
 
 ### GUI ELEMENTS ###
 statusLabel = []
+guickRatesButton = []
 
 # Server
 motorServerButton = []
 controllerServerButton = []
+
+# Running actions for communication with controller
+act_start_quick =  False
