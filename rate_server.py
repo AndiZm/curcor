@@ -157,20 +157,20 @@ class server_controller:
 	def sendText(self, text):
 		text=text.encode('utf8')
 		if self.clientsocket != None:
-			sent = self.clientsocket.send(text)
-	def sendRate(self, rate_a):
-		text = "rate # {}".format(rate_a)
-		self.sendText(text)
-	def sendRates(self, rate_a, rate_b):
-		text = "rates # {} # {} #".format(rate_a, rate_b)
-		self.sendText(text)
-	def sendMaxRate(self,rate_a):
-		text="maxr # {} #".format(rate_a)
-		self.sendText(text)
-	def sendMaxRates(self,rate_a, rate_b):
-		text="maxrs # {} # {} #".format(rate_a, rate_b)
-		self.sendText(text)
-
+			try:
+				sent = self.clientsocket.send(text)
+				if sent == 0:
+					print("The socket connection on one of the sockets is broken. Socket will be eliminated")
+					i.close()
+					self.clientsocket = None
+			except ConnectionAbortedError:
+				print("The socket connection on one of the sockets is broken. Socket will be eliminated")
+				i.close()
+				self.clientsocket = None
+			except ConnectionResetError:
+				print("The socket connection on one of the sockets is broken. Socket will be eliminated")
+				i.close()
+				self.clientsocket = None
     
     #stops the server by closing the listening and all client sockets and destroying them
 	def stop(self):
