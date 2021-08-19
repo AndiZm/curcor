@@ -55,9 +55,11 @@ class controller_client:
 			if self.pc_ID == 1:
 				gl.pc1Button.config(text="Stop Client PC 1", bg="#bfff91")
 				gl.quickRates1Button.config(state="normal", command=self.quickrates)
+				gl.fileRates1Button.config(state="normal", command=self.filerates)
 			if self.pc_ID == 2:
 				gl.pc2Button.config(text="Stop Client PC 2", bg="#bfff91")
-				gl.quickRates2Button.config(state="normal", command=self.quickrates)			
+				gl.quickRates2Button.config(state="normal", command=self.quickrates)
+				gl.fileRates2Button.config(state="normal", command=self.filerates)		
 		else:
 			print("Error in the connect method of the rate client! There shouldn't be a socket but in fact there is! Did you connect once too often?")
 
@@ -70,13 +72,17 @@ class controller_client:
 		self.socket = None
 		if self.pc_ID == 1:
 			gl.quickRates1Button.config(state="disabled")
+			gl.fileRates1Button.config(state="disabled")
 		if self.pc_ID == 2:
 			gl.quickRates2Button.config(state="disabled")
+			gl.fileRates2Button.config(state="disabled")
 	def stop_self(self):
 		sendText(self, "clientstop")
 	# Commands to the server
 	def quickrates(self):
 		sendText(self, "command # quickrates #")
+	def filerates(self):
+		sendText(self, "command # filerates #")
 
 	
 #makes the client listen to incoming messages
@@ -172,6 +178,17 @@ def update_information(self, data):
 			gl.quickRates1_off()
 		if self.pc_ID == 2:
 			gl.quickRates2_off()
+	# file Rates active
+	if "True" in data.split("#")[2]:
+		if self.pc_ID == 1:
+			gl.fileRates1_on()
+		if self.pc_ID == 2:
+			gl.fileRates2_on()
+	if "False" in data.split("#")[2]:
+		if self.pc_ID == 1:
+			gl.fileRates1_off()
+		if self.pc_ID == 2:
+			gl.fileRates2_off()
 
 
 

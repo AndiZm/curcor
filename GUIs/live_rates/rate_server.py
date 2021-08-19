@@ -171,7 +171,7 @@ class server_controller:
 		text="maxrs # {} # {} #".format(rate_a, rate_b)
 		self.sendText(text)
 	def sendActionInformation(self):
-		text="actions # {} #".format(gl.act_start_quick)
+		text="actions # {} # {} #".format(gl.act_start_quick, gl.act_start_file)
 		self.sendText(text)
 
     
@@ -243,6 +243,8 @@ def listen_msg(self, button):
 		if "command" in data.split("#")[0]:
 			if "quickrates" in data.split("#")[1]:
 				gl.quickRatesButton.invoke()
+			if "filerates" in data.split("#")[1]:
+				gl.startstopButton.invoke()
 
 		
 def listen(self):
