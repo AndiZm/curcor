@@ -110,11 +110,12 @@ gl.rmaxB2Text = gl.rateB2Canvas.create_text(gl.r_width/2,0.2*gl.r_height, fill="
 #-- Control Buttons --#
 #---------------------#
 Button1Frame = Frame(pc1Frame); Button1Frame.grid(row=2, column=0)
-gl.quickRates1Button = Button(Button1Frame, text="Start quick", bg="#e8fcae", width=12, state="disabled"); gl.quickRates1Button.grid(row=0,column=0)
-gl.fileRates1Button = Button(Button1Frame, text="Start File", bg="#e8fcae", width=12, state="disabled"); gl.fileRates1Button.grid(row=1,column=0)
+gl.fileRates1Button = Button(Button1Frame, text="Start File", bg="#e8fcae", width=12, state="disabled"); gl.fileRates1Button.grid(row=0,column=0)
+gl.quickRates1Button = Button(Button1Frame, text="Start quick", bg="#e8fcae", width=12, state="disabled"); gl.quickRates1Button.grid(row=1,column=0)
+
 
 Button2Frame = Frame(pc2Frame); Button2Frame.grid(row=2, column=0)
-gl.quickRates2Button = Button(Button2Frame, text="Start quick", bg="#e8fcae", width=12, state="disabled"); gl.quickRates2Button.grid(row=0,column=0)
-gl.fileRates2Button = Button(Button2Frame, text="Start File", bg="#e8fcae", width=12, state="disabled"); gl.fileRates2Button.grid(row=1,column=0)
+gl.fileRates2Button = Button(Button2Frame, text="Start File", bg="#e8fcae", width=12, state="disabled"); gl.fileRates2Button.grid(row=0,column=0)
+gl.quickRates2Button = Button(Button2Frame, text="Start quick", bg="#e8fcae", width=12, state="disabled"); gl.quickRates2Button.grid(row=1,column=0)
 
 root.mainloop()
