@@ -388,14 +388,14 @@ def showRateDistribution(spacing_phi=25, spacing_psi=26, min_phi=-2., max_phi=2,
         if np.size(rates)/4>np.sum(mask):
             rates_fit=rates[mask]
             x_fit=x[mask]
-            y_fit=y[mask]
+            y_fit=np.flip(y)[mask]
             print("Only using values within the red square for fit!")
         else:
             rates_fit=rates
             x_fit=x
-            y_fit=y
+            y_fit=np.flip(y)
         try:
-            popt, pcov = opt.curve_fit(gauss2d, (x_fit,np.flip(y_fit)), rates_fit.ravel(), p0 = p0)
+            popt, pcov = opt.curve_fit(gauss2d, (x_fit,y_fit), rates_fit.ravel(), p0 = p0)
         except RuntimeError as e:
             w.append(e)
     if len(w)==0:
@@ -425,7 +425,7 @@ def showRateDistribution(spacing_phi=25, spacing_psi=26, min_phi=-2., max_phi=2,
         rect_start_psi=coordinates_psi[len(coordinates_psi)-1-min_y]+padding_psi
         rect_width_phi=coordinates_phi[max_x]-coordinates_phi[min_x]+2*padding_phi
         rect_width_psi=coordinates_psi[len(coordinates_psi)-1-max_y]-coordinates_psi[len(coordinates_psi)-1-min_y]-2*padding_psi
-    rect = patches.Rectangle((rect_start_phi, rect_start_psi), rect_width_phi, rect_width_psi, edgecolor='r', facecolor='none', label='recomended search area')
+    rect = patches.Rectangle((rect_start_phi, rect_start_psi), rect_width_phi, rect_width_psi, edgecolor='r', facecolor='none', label='recommended search area')
     with warnings.catch_warnings(record=True) as w:
         sub_plot.axes.add_patch(rect)
     sub_plot.legend()
