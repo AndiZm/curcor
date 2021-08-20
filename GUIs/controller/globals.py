@@ -26,7 +26,7 @@ def quickRates2_off():
 fileRates1Button = []
 def fileRates1_on():
 	fileRates1Button.config(text="Stop File", bg="#fa857a")
-def fileRates2_off():
+def fileRates1_off():
 	fileRates2Button.config(text="Start File", bg="#e8fcae")
 fileRates2Button = []
 def fileRates2_on():
