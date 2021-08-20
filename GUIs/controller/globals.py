@@ -22,6 +22,17 @@ def quickRates2_on():
 	quickRates2Button.config(text="Stop quick", bg="#fa857a")
 def quickRates2_off():
 	quickRates2Button.config(text="Start quick", bg="#e8fcae")
+# File Rates
+fileRates1Button = []
+def fileRates1_on():
+	fileRates1Button.config(text="Stop File", bg="#fa857a")
+def fileRates2_off():
+	fileRates2Button.config(text="Start File", bg="#e8fcae")
+fileRates2Button = []
+def fileRates2_on():
+	fileRates2Button.config(text="Stop File", bg="#fa857a")
+def fileRates2_off():
+	fileRates2Button.config(text="Start File", bg="#e8fcae")
 
 
 rmaxA1 = 1
@@ -45,3 +56,8 @@ def placeRateLineA2(rate):
 def placeRateLineB2(rate):
 	lineposition = r_height - (rate/rmaxB2 * 0.8 * r_height)
 	rateB2Canvas.coords(rateB2Line, 0, lineposition, r_width, lineposition)
+
+
+responsesLabel = []
+responsetimesLabel = []
+ndevices = 0

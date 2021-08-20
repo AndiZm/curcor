@@ -291,7 +291,7 @@ def startStopClient():
 def dummy_button():
     return
 
-def showRateDistribution(spacing_phi=7, spacing_psi=8, min_phi=-4.3, max_phi=4.5, min_psi=-4.0, max_psi=3.8, contrast_factor=4):
+def showRateDistribution(spacing_phi=25, spacing_psi=26, min_phi=-2., max_phi=2, min_psi=-3.80, max_psi=-0.5, contrast_factor=3):
     #print("You entered the DUMMY-state")
     print("Starting to measure the rate distribution. MinPhi={0:4.2f} ; MaxPhi={1:4.2f} ; MinPsi={2:4.2f} ; MaxPsi={3:4.2f} ; SpacingPhi={4} ; SpacingPsi={5} ; ContrastFactor={6:4.2f}".format(min_phi, max_phi, min_psi, max_psi, spacing_phi, spacing_psi, contrast_factor))
     global client
@@ -308,7 +308,7 @@ def showRateDistribution(spacing_phi=7, spacing_psi=8, min_phi=-4.3, max_phi=4.5
         pos_phi=min_phi+(max_phi-min_phi)/(spacing_phi-1)*i
         MirrorPhi.set(pos_phi)
         moveto_mirror_phi(0)
-        update_items()
+        update_items(verbose=True)
         while sd.ismoving(a[5]):
             sleep(0.05)
             #print("wait_5_phi")
@@ -317,10 +317,10 @@ def showRateDistribution(spacing_phi=7, spacing_psi=8, min_phi=-4.3, max_phi=4.5
                 pos_psi=min_psi+(max_psi-min_psi)/(spacing_psi-1)*j
             else:
                 pos_psi=max_psi-(max_psi-min_psi)/(spacing_psi-1)*j
-            print("PSI: {0} PHI: {1}".format(pos_psi, pos_phi))
+            #print("PSI: {0} PHI: {1}".format(pos_psi, pos_phi))
             MirrorPsi.set(pos_psi)
             moveto_mirror_psi(0)
-            update_items()
+            update_items(verbose=True)
             while sd.ismoving(a[4]):
                 sleep(0.05)
                 #print("wait_4_psi")
@@ -329,19 +329,6 @@ def showRateDistribution(spacing_phi=7, spacing_psi=8, min_phi=-4.3, max_phi=4.5
             else:
                 rates[i][j]=client.getRateA()+client.getRateB()
     rates=np.transpose(rates)
-    '''
-    rates=np.array([[ 69.6,  70.3,  70.3,  71.4,  69.,   63.,   68.1,  68.2,  69.6,  62.8],
- [ 71.6,  75.2,  75.3,  74.,   75.,   74.1,  72.8,  73.9,  73.8,  73.8],
- [ 80.2,  77.6,  79.,   79.4,  79.2,  79.2,  77.4,  78.,   77.4,  77.8],
- [ 83.,   85.3,  83.9,  84.7,  81.6,  82.7,  83.,   81.,   82.6,  84. ],
- [ 87.1,  90.1,  86.1,  88.7,  86.,   80.7,  87.7,  83.5,  86.8,  86.9],
- [ 84.9,  92.9,  91.4,  91.9,  91.5,  89.3,  92.,   90.3,  89.8,  90.7],
- [ 90.7,  91.4,  93.8,  93.4,  94.,   93.2,  87.3,  91.9,  89.6,  91.8],
- [ 95.5,  98.8,  96.7,  96.6,  95.,   96.,   94.,  100.5,  96.,   86. ],
- [ 97.2, 100.3,  99.,   98.5, 152.4, 345.9, 473.8, 471.4, 308.7, 123.3],
- [102.3,  99.1, 100.9,  99.5, 107.2, 131.4, 169.5, 186.8, 138.9, 101.6],
- [101.6, 103.2,  98.3, 102.6, 104.2, 101.,  101.7, 103.8, 100.1, 100. ]])'''
-
     print(rates)
     
 #    #generate random rates
@@ -361,7 +348,89 @@ def showRateDistribution(spacing_phi=7, spacing_psi=8, min_phi=-4.3, max_phi=4.5
     sub_plot.set_xlabel("$\phi$ [°]")
     sub_plot.set_ylabel("$\psi$ [°]")
     
-    #fit a gaussian or find Maximum area through other process
+    # coordinates_phi=np.linspace(min_phi, max_phi, num=spacing_phi)
+    #coordinates_psi=np.linspace(min_psi, max_psi, num=spacing_psi)
+    #x, y=np.meshgrid(coordinates_phi, coordinates_psi)
+
+    #do some crude narrowing of the spot
+    max_rate=np.max(rates)
+    mask=rates>max_rate/contrast_factor
+    print(mask)
+    min_x=len(rates)
+    max_x=-1
+    min_y=len(mask[0])
+    max_y=-1
+    for i in range(0, len(mask)):
+        if np.sum(mask[i])>0 and min_y>i:
+            min_y=i
+        if np.sum(mask[i])>0 and max_y<i:
+            max_y=i
+    for i in range(0, len(mask[0])):
+        if np.sum(mask[:,i])>0 and min_x>i:
+            min_x=i
+        if np.sum(mask[:,i])>0 and max_x<i:
+            max_x=i
+    print("min_x={0}; max_x={1}; min_y={2}; max_y={3}".format(min_x, max_x, min_y, max_y))
+    print("BOX: min_phi={0}; max_phi={1}; min_psi={2}; max_psi={3}".format(coordinates_phi[min_x], coordinates_phi[max_x], coordinates_psi[len(coordinates_psi)-1-min_y], coordinates_psi[len(coordinates_psi)-1-max_y]))
+    print("no1: min_phi={0}; max_phi={1}; min_psi={2}; max_psi={3}".format(coordinates_phi[min_x], coordinates_phi[max_x], coordinates_psi[min_y], coordinates_psi[max_y]))
+
+    #calculate starting values for the gaussian
+    center_phi=(coordinates_phi[min_x]+coordinates_phi[max_x])/2
+    center_psi=(coordinates_psi[len(coordinates_psi)-1-min_y]+coordinates_psi[len(coordinates_psi)-1-max_y])/2
+    sigma_phi=np.abs(coordinates_phi[max_x]-coordinates_phi[min_x])/2
+    sigma_psi=np.abs(coordinates_psi[len(coordinates_psi)-1-max_y]-coordinates_psi[len(coordinates_psi)-1-min_y])/2
+    offset=0
+    prefactor=np.max(rates)
+
+    p0=(prefactor, center_phi, sigma_phi, center_psi, sigma_psi, offset)
+    print("Starting gaussian fit: p0:   center_phi = {0:5f} ; center_psi = {1:5f} ; sigma_phi = {2:5f} ; sigma_psi = {3:5f} ; offset = {4:5f} ; prefactor = {5:5f}".format(p0[1],p0[3], p0[2], p0[4], p0[5], p0[0]))
+    with warnings.catch_warnings(record=True) as w:
+        if np.size(rates)/4>np.sum(mask):
+            rates_fit=rates[mask]
+            x_fit=x[mask]
+            y_fit=y[mask]
+            print("Only using values within the red square for fit!")
+        else:
+            rates_fit=rates
+            x_fit=x
+            y_fit=y
+        try:
+            popt, pcov = opt.curve_fit(gauss2d, (x_fit,np.flip(y_fit)), rates_fit.ravel(), p0 = p0)
+        except RuntimeError as e:
+            w.append(e)
+    if len(w)==0:
+        data_fitted = gauss2d((x, y), *popt)
+        with warnings.catch_warnings(record=True) as w:
+            sub_plot.axes.contour(x, y, data_fitted.reshape(spacing_psi, spacing_phi), 8, colors='b')
+        padding_psi=(coordinates_psi[1]-coordinates_psi[0])/2
+        padding_phi=(coordinates_phi[1]-coordinates_phi[0])/2
+        rect_start_phi=coordinates_phi[min_x]-padding_phi
+        rect_start_psi=coordinates_psi[len(coordinates_psi)-1-min_y]+padding_psi
+        rect_width_phi=coordinates_phi[max_x]-coordinates_phi[min_x]+2*padding_phi
+        rect_width_psi=coordinates_psi[len(coordinates_psi)-1-max_y]-coordinates_psi[len(coordinates_psi)-1-min_y]-2*padding_psi
+        '''rect_start_phi=popt[1]-np.abs(popt[2])
+        rect_start_psi=popt[3]-np.abs(popt[4])
+        rect_width_phi=2*np.abs(popt[2])
+        rect_width_psi=2*np.abs(popt[4])'''
+        print("Gaussian was fitted and plotted!")
+        print("CENTER: phi={0} , psi={1} , SIGMA: phi={2} , psi={3} , CONSTS: prefactor={4} , offset={5}".format(popt[1], popt[3], popt[2], popt[4], popt[0], popt[5]))
+        #print("recommended next fit borders: rect_start_phi={0} ; rect_start_psi={1} ; rect_width_phi={2} ; rect_width_psi={3}".format(rect_start_phi, rect_start_psi, rect_width_phi, rect_width_psi))
+    else:
+        print("No Gaussian could be fitted. Draw estimated rectangle instead.")
+        for warn in w:
+            print(warn)
+        padding_psi=(coordinates_psi[1]-coordinates_psi[0])/2
+        padding_phi=(coordinates_phi[1]-coordinates_phi[0])/2
+        rect_start_phi=coordinates_phi[min_x]-padding_phi
+        rect_start_psi=coordinates_psi[len(coordinates_psi)-1-min_y]+padding_psi
+        rect_width_phi=coordinates_phi[max_x]-coordinates_phi[min_x]+2*padding_phi
+        rect_width_psi=coordinates_psi[len(coordinates_psi)-1-max_y]-coordinates_psi[len(coordinates_psi)-1-min_y]-2*padding_psi
+    rect = patches.Rectangle((rect_start_phi, rect_start_psi), rect_width_phi, rect_width_psi, edgecolor='r', facecolor='none', label='recomended search area')
+    with warnings.catch_warnings(record=True) as w:
+        sub_plot.axes.add_patch(rect)
+    sub_plot.legend()
+    
+    '''#fit a gaussian or find Maximum area through other process
     with warnings.catch_warnings(record=True) as w:
         try:
             popt, pcov = opt.curve_fit(gauss2d, (x,y), rates.ravel(), p0 = (10,(max_psi-min_psi)/2, 0.5,(max_phi-min_phi)/2,0.5, 40))
@@ -405,9 +474,9 @@ def showRateDistribution(spacing_phi=7, spacing_psi=8, min_phi=-4.3, max_phi=4.5
             rect_start_psi=coordinates_psi[len(coordinates_psi)-1-min_y]+padding_psi
             rect_width_phi=coordinates_phi[max_x]-coordinates_phi[min_x]+2*padding_phi
             rect_width_psi=coordinates_psi[len(coordinates_psi)-1-max_y]-coordinates_psi[len(coordinates_psi)-1-min_y]-2*padding_psi
-    rect = patches.Rectangle((rect_start_phi, rect_start_psi), rect_width_phi, rect_width_psi, edgecolor='r', facecolor='none', label='recomended fit area')
+    rect = patches.Rectangle((rect_start_phi, rect_start_psi), rect_width_phi, rect_width_psi, edgecolor='r', facecolor='none', label='recommended fit area')
     sub_plot.axes.add_patch(rect)
-    sub_plot.legend()
+    sub_plot.legend()'''
     
     #create new window
     plotWindow = Toplevel(root)
@@ -838,7 +907,7 @@ CameraZLED = CameraZDisplay.create_oval(1,1,19,19, fill=LEDColors[0], width=0)
 #-----------------------------------#
 #---- Permanently update screen ----#
 #-----------------------------------#
-def update_items():
+def update_items(verbose=False):
     #move all motors due to changes since last time
     global change_mirror_phi
     global change_mirror_psi
@@ -847,32 +916,32 @@ def update_items():
     global change_camera_x
     global change_camera_z
     if change_mirror_phi:
-        print("Move mirror phi to",mirror_phi_pos.get(),"in steps",degree_to_steps(mirror_phi_pos.get()))
+        if verbose==False: print("Move mirror phi to",mirror_phi_pos.get(),"in steps",degree_to_steps(mirror_phi_pos.get()))
         WarningStatus[5]=0
         a[5].move_absolute(degree_to_steps(mirror_phi_pos.get()))
         change_mirror_phi=False
     if change_mirror_psi:
-        print("Move mirror psi to",mirror_psi_pos.get(),"in steps",degree_to_steps(mirror_psi_pos.get()))
+        if verbose==False: print("Move mirror psi to",mirror_psi_pos.get(),"in steps",degree_to_steps(mirror_psi_pos.get()))
         WarningStatus[4]=0
         a[4].move_absolute(degree_to_steps(mirror_psi_pos.get()))
         change_mirror_psi=False
     if change_mirror_z:
-        print("Move mirror z to",mirror_z_pos.get(),"in steps",mm_to_steps(mirror_z_pos.get()))
+        if verbose==False: print("Move mirror z to",mirror_z_pos.get(),"in steps",mm_to_steps(mirror_z_pos.get()))
         WarningStatus[2]=0
         a[2].move_absolute(mm_to_steps(mirror_z_pos.get()))
         change_mirror_z=False
     if change_mirror_height:
-        print("Move mirror height to",mirror_height_pos.get(),"in steps",mm_to_steps(mirror_height_pos.get()))
+        if verbose==False: print("Move mirror height to",mirror_height_pos.get(),"in steps",mm_to_steps(mirror_height_pos.get()))
         WarningStatus[3]=0
         a[3].move_absolute(hmm_to_steps(mirror_height_pos.get()))   
         change_mirror_height=False
     if change_camera_z:
-        print("Move camera z to",camera_z_pos.get(),"in steps",mm_to_steps(camera_z_pos.get()))
+        if verbose==False: print("Move camera z to",camera_z_pos.get(),"in steps",mm_to_steps(camera_z_pos.get()))
         WarningStatus[0]=0
         a[0].move_absolute(mm_to_steps(camera_z_pos.get()))
         change_camera_z=False   
     if change_camera_x:
-        print("Move camera x to",camera_x_pos.get(), "von" , CameraX.get(),"in steps",mm_to_steps(camera_x_pos.get()))
+        if verbose==False: print("Move camera x to",camera_x_pos.get(), "von" , CameraX.get(),"in steps",mm_to_steps(camera_x_pos.get()))
         WarningStatus[1]=0
         a[1].move_absolute(mm_to_steps(camera_x_pos.get()))    
         change_camera_x=False    

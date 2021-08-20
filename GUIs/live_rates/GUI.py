@@ -122,7 +122,7 @@ channeloptions = {"1": 1, "2": 2}
 def new_nchn(val):
 	gl.o_nchn = int((channeloptions[channels.get()]))
 	gl.quickRatesButton.config(state="disabled")
-	startstopButton.config(state="disabled")
+	gl.startstopButton.config(state="disabled")
 	singleFileButton.config(state="disabled")
 channelDropdownLabel = Label(commonFrame, text="Channels"); channelDropdownLabel.grid(row=3,column=0)
 channelDropdown = OptionMenu(commonFrame, channels, *channeloptions, command=new_nchn)
@@ -294,7 +294,7 @@ def calibrate():
 		finish_calibration()
 	# Activate Rate Buttons
 	gl.quickRatesButton.config(state="normal")
-	startstopButton.config(state="normal")
+	gl.startstopButton.config(state="normal")
 	singleFileButton.config(state="normal")
 
 	idle()
@@ -382,7 +382,7 @@ def loadCalibration():
 	gl.calibFile = to_bin(gl.calibLoad); calibFileLabel.config(text=gl.calibFile.split("/")[-1])
 	# Activate Rate Buttons
 	gl.quickRatesButton.config(state="normal")
-	startstopButton.config(state="normal")
+	gl.startstopButton.config(state="normal")
 	singleFileButton.config(state="normal")
 
 
@@ -466,14 +466,14 @@ desc_Label_mean = Label(abFrame, text="Voltage [mV]"); desc_Label_mean.grid(row=
 desc_Label_curr = Label(abFrame, text="PMT current [µA]"); desc_Label_curr.grid(row=3, column=0)
 desc_Label_rate = Label(abFrame, text="Photon rate [MHz]");	desc_Label_rate.grid(row=4, column=0)
 
-CHa_Label_mean = Label(abFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 10 bold")); CHa_Label_mean.grid(row=2, column=1)
-CHb_Label_mean = Label(abFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 10 bold")); CHb_Label_mean.grid(row=2, column=2)
+CHa_Label_mean = Label(abFrame, text="0.0", fg="orange", bg="black", width=5, font=("Helvetica 10 bold")); CHa_Label_mean.grid(row=2, column=1)
+CHb_Label_mean = Label(abFrame, text="0.0", fg="orange", bg="black", width=5, font=("Helvetica 10 bold")); CHb_Label_mean.grid(row=2, column=2)
 
-CHa_Label_curr = Label(abFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 10 bold")); CHa_Label_curr.grid(row=3, column=1, pady=2)
-CHb_Label_curr = Label(abFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 10 bold")); CHb_Label_curr.grid(row=3, column=2, pady=2)
+CHa_Label_curr = Label(abFrame, text="0.0", fg="orange", bg="black", width=5, font=("Helvetica 10 bold")); CHa_Label_curr.grid(row=3, column=1, pady=2)
+CHb_Label_curr = Label(abFrame, text="0.0", fg="orange", bg="black", width=5, font=("Helvetica 10 bold")); CHb_Label_curr.grid(row=3, column=2, pady=2)
 
-CHa_Label_rate = Label(abFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 12 bold"));	CHa_Label_rate.grid(row=4, column=1, padx=3)
-CHb_Label_rate = Label(abFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 12 bold"));	CHb_Label_rate.grid(row=4, column=2)
+CHa_Label_rate = Label(abFrame, text="0.0", fg="orange", bg="black", width=5, font=("Helvetica 12 bold"));	CHa_Label_rate.grid(row=4, column=1, padx=3)
+CHb_Label_rate = Label(abFrame, text="0.0", fg="orange", bg="black", width=5, font=("Helvetica 12 bold"));	CHb_Label_rate.grid(row=4, column=2)
 
 
 #################
@@ -609,6 +609,11 @@ def analyze_file(newest_file):
 
 	if server != None:
 		server.sendRate(r_a, r_b)
+	if server_controller != None:
+			if gl.o_nchn == 1:
+				server_controller.sendRate(r_a)
+			else:
+				server_controller.sendRates(r_a,r_b)
 	
 	
 	root.update()
@@ -657,17 +662,24 @@ def startstop():
 	global running, stop_thread
 	if running == False:
 		running = True
+		gl.act_start_file = True
+		if server_controller != None:
+			server_controller.sendActionInformation()
 
-		startstopButton.config(text="Stop!", bg="#fa857a")
+		gl.startstopButton.config(text="Stop!", bg="#fa857a")
 		stop_thread = False; gl.stop_wait_for_file_thread = False
 		gl.statusLabel.config(text="Scanning files for Rates..." , bg="#edda45"); root.update()
 		the_thread = Thread(target=analyze_files, args=())
 		the_thread.start()		
 	else:
 		running = False
+		gl.act_start_file = False
+		if server_controller != None:
+			server_controller.sendActionInformation()
+
 		stop_thread = True
 		gl.stop_wait_for_file_thread = True
-		startstopButton.config(text="Start!", bg="#e8fcae")
+		gl.startstopButton.config(text="Start!", bg="#e8fcae")
 		idle()
 
 running_quick = False
@@ -726,7 +738,7 @@ def singleFileRate():
 		running = False
 		stop_thread = True
 		gl.stop_wait_for_file_thread = True
-		startstopButton.config(text="Start!", bg="#e8fcae")
+		gl.startstopButton.config(text="Start!", bg="#e8fcae")
 	idle()
 	root.filename = filedialog.askopenfilename(initialdir = gl.basicpath, title = "Select file for rate", filetypes = (("binary files","*.bin"),("all files","*.*")))
 	analyze_file(root.filename)
@@ -780,7 +792,7 @@ def startStopServerController():
 clearPlotButon = Button(startFrame, text="Clear", bg="#ccf2ff", command=clearPlot, width=12); clearPlotButon.grid(row=0,column=0)
 plotButton = Button(startFrame, text="Plotting off", bg="#cdcfd1", command=switchplot, width=12); plotButton.grid(row=0,column=1)
 
-startstopButton = Button(startFrame, text="Start!", bg="#e8fcae", command=startstop, width=12, state="disabled"); startstopButton.grid(row=1,column=0)
+gl.startstopButton = Button(startFrame, text="Start!", bg="#e8fcae", command=startstop, width=12, state="disabled"); gl.startstopButton.grid(row=1,column=0)
 singleFileButton = Button(startFrame, text="Single", bg = "#e8fcae", command=singleFileRate, width=12, state="disabled"); singleFileButton.grid(row=1, column=1)
 
 gl.quickRatesButton = Button(startFrame, text="Start quick", bg="#e8fcae", width=12, command=startstop_quick, state="disabled"); gl.quickRatesButton.grid(row=2, column=0)
