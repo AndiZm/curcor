@@ -5,13 +5,13 @@ import matplotlib.backends.backend_tkagg as tkagg
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 import os
-import time
+import time as t
 from os import listdir
 from os.path import isfile, join
 from tkinter import *
 from tkinter import filedialog
 
-from threading import Thread
+import threading
 
 import rate_client as rc
 import globals as gl
@@ -23,8 +23,8 @@ root = Tk(); root.wm_title("II Measurement Control")#; root.geometry("+1600+10")
 ## Network ##
 #############
 networkFrame = Frame(root); networkFrame.grid(row=0,column=0)
-pc1Frame = Frame(networkFrame); pc1Frame.grid(row=0,column=0,padx=5)
-pc2Frame = Frame(networkFrame); pc2Frame.grid(row=0,column=1,padx=5)
+pc1Frame = Frame(networkFrame); pc1Frame.grid(row=0,column=0,padx=2)
+pc2Frame = Frame(networkFrame); pc2Frame.grid(row=0,column=1,padx=2)
 
 #------------------------#
 #-- Connection Buttons --#
@@ -115,12 +115,18 @@ gl.quickRates1Button = Button(Button1Frame, text="Start quick", bg="#e8fcae", wi
 
 
 Button2Frame = Frame(pc2Frame); Button2Frame.grid(row=2, column=0)
-gl.fileRates2Button = Button(Button2Frame, text="Start File", bg="#e8fcae", width=12, state="disabled"); gl.fileRates2Button.grid(row=0,column=0)
-gl.quickRates2Button = Button(Button2Frame, text="Start quick", bg="#e8fcae", width=12, state="disabled"); gl.quickRates2Button.grid(row=1,column=0)
+gl.fileRates2Button = Button(Button2Frame, text="Start File", bg="#e8fcae", width=12, state="disabled"); gl.fileRates2Button.grid(row=0,column=1)
+gl.quickRates2Button = Button(Button2Frame, text="Start quick", bg="#e8fcae", width=12, state="disabled"); gl.quickRates2Button.grid(row=1,column=1)
 
 #####################
 ## Synchronization ##
 #####################
+gl.wait1Canvas = Canvas(Button1Frame, width=20,height=20); gl.wait1Canvas.grid(row=0,column=1)
+gl.wait1LED = gl.wait1Canvas.create_rectangle(1,1,20,20, fill="black", width=0)
+gl.wait2Canvas = Canvas(Button2Frame, width=20,height=20); gl.wait2Canvas.grid(row=0,column=0)
+gl.wait2LED = gl.wait2Canvas.create_rectangle(1,1,20,20, fill="black", width=0)
+
+
 syncFrame = Frame(root); syncFrame.grid(row=0,column=1)
 
 
@@ -134,47 +140,45 @@ def toggle_measure():
 			gl.client_PC1.filerates()
 		if gl.client_PC2 != None and gl.fr1state == False:
 			gl.client_PC2.filerates()
-
-		singles
+		singles()
 
 		startStopMeasButton.config(text="Stop Measurement", bg="#f2b4a0")
 		mssLabel.config(text="Waiting for {} responses".format(gl.ndevices))
 	elif measurement == True: # Stop measurement
 		measurement = False
-		#server.stop()
 		# Deactivate file rates if not already off
 		if gl.client_PC1 != None and gl.fr1state == True:
 			gl.client_PC1.filerates()
 		if gl.client_PC2 != None and gl.fr1state == True:
 			gl.client_PC2.filerates()
 		startStopMeasButton.config(text="Start Measurement", bg="#92f0eb")
+		gl.wait1Canvas.itemconfig(gl.wait1LED, fill="black")
+		gl.wait2Canvas.itemconfig(gl.wait2LED, fill="black")
 		mssLabel.config(text="Measurement stopped")
-startStopMeasButton = Button(syncFrame, text="Start Measurement", bg="#92f0eb", command=toggle_measure)
+startStopMeasButton = Button(syncFrame, text="Start Measurement", bg="#92f0eb", width=20, height=5, command=toggle_measure)
 startStopMeasButton.grid(row=0,column=0)
 
 # Measurement procedure
 def singles():
+	theThread = threading.Thread(target=singlesT, args=[])
+	theThread.start()
+def singlesT():
+	global measurement
 	if gl.client_PC1 != None and gl.client_PC2 != None:
-		gl.client_PC1.meas_single()
-		gl.client_PC2.meas_single()
-		waitfor = 2
-		while waitfor > 0:
-			if gl.clientPC1.awaitR == False:
-				waitfor -= 1
-			if gl.clientPC2.awaitR == False:
-				waitfor -= 1
-		print ("finished")
+		while measurement == True:
+			gl.wait1Canvas.itemconfig(gl.wait1LED, fill="orange")
+			gl.wait2Canvas.itemconfig(gl.wait2LED, fill="orange")
+	
+			gl.client_PC1.meas_single()
+			gl.client_PC2.meas_single()
+			waitfor = 2
+			while gl.client_PC1.awaitR == True or gl.client_PC2.awaitR == True:
+				pass
+			tdiff = gl.client_PC2.timeR - gl.client_PC1.timeR
+			print ("finished. Diff: {:.2f}".format(tdiff))
+			t.sleep(0.2)
 	else:
 		print ("Not both PCs connected!")
-
-
-
-measStatusLabel = Label(syncFrame, text="Measurement Status"); measStatusLabel.grid(row=1,column=0)
-measStatusFrame = Frame(syncFrame); measStatusFrame.grid(row=2,column=0)
-mssLabel = Label(measStatusFrame, text="Measurement stopped", bg="#f4f7b7", width=20); mssLabel.grid(row=0,column=0)
-gl.responsesLabel = Label(measStatusFrame, text="", bg="black", fg="red", width=2); gl.responsesLabel.grid(row=0,column=1)
-gl.responsetimesLabel = Label(measStatusFrame, text="", width=4, bg="grey", fg="orange"); gl.responsetimesLabel.grid(row=0,column=2)
-
 
 
 root.mainloop()

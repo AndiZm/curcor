@@ -92,7 +92,7 @@ class controller_client:
 		sendText(self, "command # filerates #")
 	def meas_single(self):
 		sendText(self, "command # meas_single #")
-		awaitR = True
+		self.awaitR = True
 
 	
 #makes the client listen to incoming messages
@@ -112,10 +112,10 @@ def listen(self):
 				gl.pc2Button.config(text="Start Client PC 2", bg="#cdcfd1")
 		# Rate
 		if "rates" in data.split("#")[0]:
-			self.awaitR = False; timeR = t.time()
+			self.awaitR = False; self.timeR = t.time()
 			update_rates(self, data)			
 		if "rate " in data.split("#")[0]:
-			self.awaitR = False; timeR = t.time()
+			self.awaitR = False; self.timeR = t.time()
 			update_rate(self, data)
 		# Max rate
 		if "maxrs" in data.split("#")[0]:
@@ -137,11 +137,13 @@ def update_rates(self,data):
 			gl.rateB1Label.config(text="{:.1f}".format(r_b))
 			gl.placeRateLineA1(r_a)
 			gl.placeRateLineB1(r_b)
+			gl.wait1Canvas.itemconfig(gl.wait1LED, fill="green")
 		if self.pc_ID == 2:
 			gl.rateA2Label.config(text="{:.1f}".format(r_a))
 			gl.rateB2Label.config(text="{:.1f}".format(r_b))
 			gl.placeRateLineA2(r_a)
 			gl.placeRateLineB2(r_b)
+			gl.wait2Canvas.itemconfig(gl.wait2LED, fill="green")
 	except:
 		print ("Ohoh:")
 		print (data)

@@ -74,6 +74,6 @@ responsesLabel = []
 responsetimesLabel = []
 ndevices = 0
 
-pc1_await = False
-pc2_await = False
+wait1Canvas = None; wait2Canvas = None
+wait1LED = None; wait2LED = None
 # Response timestamps
