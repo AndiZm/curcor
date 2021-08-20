@@ -3,6 +3,7 @@ import time
 import threading
 import configparser
 import globals as gl
+import time as t
 
 class controller_client:
 
@@ -19,6 +20,10 @@ class controller_client:
 	listen_thread = None
 	# PC ID
 	pc_ID = None
+	# Await response
+	awaitR = False
+	# Response time stamp
+	timeR = None
 	
 	def __init__(self, connection_string):
 		#check if config file exists and load it, otherwise standard parameters are kept
@@ -85,6 +90,9 @@ class controller_client:
 		sendText(self, "command # quickrates #")
 	def filerates(self):
 		sendText(self, "command # filerates #")
+	def meas_single(self):
+		sendText(self, "command # meas_single #")
+		awaitR = True
 
 	
 #makes the client listen to incoming messages
@@ -104,8 +112,10 @@ def listen(self):
 				gl.pc2Button.config(text="Start Client PC 2", bg="#cdcfd1")
 		# Rate
 		if "rates" in data.split("#")[0]:
+			self.awaitR = False; timeR = t.time()
 			update_rates(self, data)			
 		if "rate " in data.split("#")[0]:
+			self.awaitR = False; timeR = t.time()
 			update_rate(self, data)
 		# Max rate
 		if "maxrs" in data.split("#")[0]:

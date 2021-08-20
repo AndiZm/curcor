@@ -12,26 +12,36 @@ rateA2Canvas = []; rateA2Line = []; rmaxA2Text = []; rateA2Label = []
 rateB2Canvas = []; rateB2Line = []; rmaxB2Text = []; rateB2Label = []
 
 # Quick Rates
+qr1state = False; qr2state = False
 quickRates1Button = []
 def quickRates1_on():
-	quickRates1Button.config(text="Stop quick", bg="#fa857a")
+	global qr1state; qr1state = True
+	quickRates1Button.config(text="Stop quick", bg="#fa857a")	
 def quickRates1_off():
+	global qr1state; qr1state = False
 	quickRates1Button.config(text="Start quick", bg="#e8fcae")
 quickRates2Button = []
 def quickRates2_on():
+	global qr2state; qr2state = True
 	quickRates2Button.config(text="Stop quick", bg="#fa857a")
 def quickRates2_off():
+	global qr2state; qr2state = False
 	quickRates2Button.config(text="Start quick", bg="#e8fcae")
 # File Rates
+fr1state = False; fr2state = False
 fileRates1Button = []
 def fileRates1_on():
+	global fr1state; fr1state = True
 	fileRates1Button.config(text="Stop File", bg="#fa857a")
 def fileRates1_off():
+	global fr1state; fr1state = False
 	fileRates1Button.config(text="Start File", bg="#e8fcae")
 fileRates2Button = []
 def fileRates2_on():
+	global fr2state; fr2state = True
 	fileRates2Button.config(text="Stop File", bg="#fa857a")
 def fileRates2_off():
+	global fr2state; fr2state = False
 	fileRates2Button.config(text="Start File", bg="#e8fcae")
 
 
@@ -57,7 +67,13 @@ def placeRateLineB2(rate):
 	lineposition = r_height - (rate/rmaxB2 * 0.8 * r_height)
 	rateB2Canvas.coords(rateB2Line, 0, lineposition, r_width, lineposition)
 
-
+#--------------------------------#
+# Computer measurement responses #
+#--------------------------------#
 responsesLabel = []
 responsetimesLabel = []
 ndevices = 0
+
+pc1_await = False
+pc2_await = False
+# Response timestamps

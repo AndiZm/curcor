@@ -123,22 +123,51 @@ gl.quickRates2Button = Button(Button2Frame, text="Start quick", bg="#e8fcae", wi
 #####################
 syncFrame = Frame(root); syncFrame.grid(row=0,column=1)
 
-startStopMeasButton = Button(syncFrame, text="Start Measurement", bg="#92f0eb")
-startStopMeasButton.grid(row=0,column=0)
+
 measurement = False
 def toggle_measure():
 	global measurement
 	if measurement == False: # Start measurement
 		measurement = True
-		#server.measure()
+		# Activate file rates if not already on
+		if gl.client_PC1 != None and gl.fr1state == False:
+			gl.client_PC1.filerates()
+		if gl.client_PC2 != None and gl.fr1state == False:
+			gl.client_PC2.filerates()
+
+		singles
+
 		startStopMeasButton.config(text="Stop Measurement", bg="#f2b4a0")
 		mssLabel.config(text="Waiting for {} responses".format(gl.ndevices))
 	elif measurement == True: # Stop measurement
 		measurement = False
 		#server.stop()
+		# Deactivate file rates if not already off
+		if gl.client_PC1 != None and gl.fr1state == True:
+			gl.client_PC1.filerates()
+		if gl.client_PC2 != None and gl.fr1state == True:
+			gl.client_PC2.filerates()
 		startStopMeasButton.config(text="Start Measurement", bg="#92f0eb")
 		mssLabel.config(text="Measurement stopped")
-startStopMeasButton.config(command=toggle_measure)
+startStopMeasButton = Button(syncFrame, text="Start Measurement", bg="#92f0eb", command=toggle_measure)
+startStopMeasButton.grid(row=0,column=0)
+
+# Measurement procedure
+def singles():
+	if gl.client_PC1 != None and gl.client_PC2 != None:
+		gl.client_PC1.meas_single()
+		gl.client_PC2.meas_single()
+		waitfor = 2
+		while waitfor > 0:
+			if gl.clientPC1.awaitR == False:
+				waitfor -= 1
+			if gl.clientPC2.awaitR == False:
+				waitfor -= 1
+		print ("finished")
+	else:
+		print ("Not both PCs connected!")
+
+
 
 measStatusLabel = Label(syncFrame, text="Measurement Status"); measStatusLabel.grid(row=1,column=0)
 measStatusFrame = Frame(syncFrame); measStatusFrame.grid(row=2,column=0)
