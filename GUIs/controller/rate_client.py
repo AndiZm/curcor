@@ -65,7 +65,6 @@ class controller_client:
 				gl.pc2Button.config(text="Stop Client PC 2", bg="#bfff91")
 				gl.quickRates2Button.config(state="normal", command=self.quickrates)
 				gl.fileRates2Button.config(state="normal", command=self.filerates)	
-			gl.ndevices += 1
 		else:
 			print("Error in the connect method of the rate client! There shouldn't be a socket but in fact there is! Did you connect once too often?")
 
@@ -82,7 +81,6 @@ class controller_client:
 		if self.pc_ID == 2:
 			gl.quickRates2Button.config(state="disabled")
 			gl.fileRates2Button.config(state="disabled")
-		gl.ndevices -= 1
 	def stop_self(self):
 		sendText(self, "clientstop")
 	# Commands to the server
@@ -128,34 +126,33 @@ def listen(self):
 
 # Rate
 def update_rates(self,data):
-	try:
-		data = data.split("#")
-		r_a = float(data[1])
-		r_b = float(data[2])
-		if self.pc_ID == 1:
-			gl.rateA1Label.config(text="{:.1f}".format(r_a))
-			gl.rateB1Label.config(text="{:.1f}".format(r_b))
-			gl.placeRateLineA1(r_a)
-			gl.placeRateLineB1(r_b)
-			gl.wait1Canvas.itemconfig(gl.wait1LED, fill="green")
-		if self.pc_ID == 2:
-			gl.rateA2Label.config(text="{:.1f}".format(r_a))
-			gl.rateB2Label.config(text="{:.1f}".format(r_b))
-			gl.placeRateLineA2(r_a)
-			gl.placeRateLineB2(r_b)
-			gl.wait2Canvas.itemconfig(gl.wait2LED, fill="green")
-	except:
-		print ("Ohoh:")
-		print (data)
-		time.sleep(5)
+	data = data.split("#")
+	r_a = float(data[1])
+	r_b = float(data[2])
+	if self.pc_ID == 1:
+		gl.lastA1.append(r_a); gl.lastB1.append(r_b)
+		gl.rateA1Label.config(text="{:.1f}".format(r_a))
+		gl.rateB1Label.config(text="{:.1f}".format(r_b))
+		gl.placeRateLineA1(r_a)
+		gl.placeRateLineB1(r_b)
+		gl.wait1Canvas.itemconfig(gl.wait1LED, fill="green")
+	if self.pc_ID == 2:
+		gl.lastA2.append(r_a); gl.lastB2.append(r_b)
+		gl.rateA2Label.config(text="{:.1f}".format(r_a))
+		gl.rateB2Label.config(text="{:.1f}".format(r_b))
+		gl.placeRateLineA2(r_a)
+		gl.placeRateLineB2(r_b)
+		gl.wait2Canvas.itemconfig(gl.wait2LED, fill="green")
 def update_rate(self,data):
 	data = data.split("#")
 	r_a = float(data[1])
 	if self.pc_ID == 1:
+		gl.lastA1.append(r_a)
 		gl.rateA1Label.config(text="{:.1f}".format(r_a))
 		gl.rateB1Label.config(text="-.-")
 		gl.placeRateLineA1(r_a)
 	if self.pc_ID == 2:
+		gl.lastA2.append(r_a)
 		gl.rateA2Label.config(text="{:.1f}".format(r_a))
 		gl.rateB2Label.config(text="-.-")
 		gl.placeRateLineA2(r_a)

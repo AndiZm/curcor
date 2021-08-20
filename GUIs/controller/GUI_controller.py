@@ -132,7 +132,7 @@ syncFrame = Frame(root); syncFrame.grid(row=0,column=1)
 
 measurement = False
 def toggle_measure():
-	global measurement
+	global measurement, tdiffs, timestamps_between, t_stamps
 	if measurement == False: # Start measurement
 		measurement = True
 		# Activate file rates if not already on
@@ -141,44 +141,87 @@ def toggle_measure():
 		if gl.client_PC2 != None and gl.fr1state == False:
 			gl.client_PC2.filerates()
 		singles()
-
 		startStopMeasButton.config(text="Stop Measurement", bg="#f2b4a0")
-		mssLabel.config(text="Waiting for {} responses".format(gl.ndevices))
 	elif measurement == True: # Stop measurement
 		measurement = False
 		# Deactivate file rates if not already off
 		if gl.client_PC1 != None and gl.fr1state == True:
+			gl.client_PC1.awaitR = False
 			gl.client_PC1.filerates()
 		if gl.client_PC2 != None and gl.fr1state == True:
+			gl.client_PC2.awaitR = False
 			gl.client_PC2.filerates()
 		startStopMeasButton.config(text="Start Measurement", bg="#92f0eb")
 		gl.wait1Canvas.itemconfig(gl.wait1LED, fill="black")
 		gl.wait2Canvas.itemconfig(gl.wait2LED, fill="black")
-		mssLabel.config(text="Measurement stopped")
+		tdiffs = []; timestamps_between = []; t_stamps = []
+		gl.lastA1 = []; gl.lastB1 = []; gl.lastA2 = []; gl.lastB2 = []
 startStopMeasButton = Button(syncFrame, text="Start Measurement", bg="#92f0eb", width=20, height=5, command=toggle_measure)
 startStopMeasButton.grid(row=0,column=0)
 
 # Measurement procedure
+tdiffs = []; timestamps_between = []; t_stamps = []
 def singles():
 	theThread = threading.Thread(target=singlesT, args=[])
 	theThread.start()
 def singlesT():
-	global measurement
+	global measurement, tdiffs, timestamps_between, t_stamps
 	if gl.client_PC1 != None and gl.client_PC2 != None:
 		while measurement == True:
+			# Status LEDs to orange
 			gl.wait1Canvas.itemconfig(gl.wait1LED, fill="orange")
 			gl.wait2Canvas.itemconfig(gl.wait2LED, fill="orange")
-	
+			# Send measurement command
 			gl.client_PC1.meas_single()
 			gl.client_PC2.meas_single()
-			waitfor = 2
+			# Wait until both PCs respond
 			while gl.client_PC1.awaitR == True or gl.client_PC2.awaitR == True:
 				pass
+			# Time investigations
+			timestamps_between.append(t.time())
+			t.sleep(0.1)
+			if len(timestamps_between) > 1:
+				t_stamps.append(timestamps_between[-1]-timestamps_between[-2])
+			else:
+				t_stamps.append(4)
 			tdiff = gl.client_PC2.timeR - gl.client_PC1.timeR
-			print ("finished. Diff: {:.2f}".format(tdiff))
-			t.sleep(0.2)
+			tdiffs.append(tdiff)
+			# Plot
+			plot_times.cla(); plot_times.set_xticks([])
+			plot_times.plot(tdiffs, color="blue")
+			plot_times2.cla(); plot_times2.set_xticks([])
+			plot_times2.plot(t_stamps, color="red")
+			plot_rates.cla()
+			plot_rates.plot(gl.lastA1, color="black")
+			plot_rates.plot(gl.lastB1, color="black", alpha=0.3)
+			plot_rates.plot(gl.lastA2, color="red")
+			plot_rates.plot(gl.lastB2, color="red", alpha=0.3)
+			if len(tdiffs) > 100:
+				plot_times.set_xlim(len(tdiffs)-99,len(tdiffs))
+				plot_times2.set_xlim(len(tdiffs)-99,len(tdiffs))
+				plot_rates.set_xlim(len(tdiffs)-99,len(tdiffs))
+			plotCanvas.draw()
+			
 	else:
 		print ("Not both PCs connected!")
+
+
+# Plot window
+class NavigationToolbar(tkagg.NavigationToolbar2Tk):
+	toolitems = [t for t in tkagg.NavigationToolbar2Tk.toolitems if t[0] in ('Home','Pan','Zoom','Save')]
+
+
+fig = Figure(figsize=(4,4))
+plot_times = fig.add_subplot(411); plot_times.set_xticks([])
+plot_times2 = fig.add_subplot(412); plot_times2.set_xticks([])
+plot_rates = fig.add_subplot(212)
+
+plotCanvas = FigureCanvasTkAgg(fig, master=syncFrame)
+plotCanvas.get_tk_widget().grid(row=1,column=0)
+plotCanvas.draw()
+
+naviFrame = Frame(syncFrame); naviFrame.grid(row=2,column=0)
+navi = NavigationToolbar(plotCanvas, naviFrame)
 
 
 root.mainloop()

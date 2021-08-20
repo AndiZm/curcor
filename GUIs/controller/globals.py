@@ -50,6 +50,10 @@ rmaxB1 = 1
 rmaxA2 = 1
 rmaxB2 = 1
 
+# Last rates
+lastA1 = []; lastB1 = []
+lastA2 = []; lastB2 = []
+
 # For rate bar
 r_width  = 20
 r_height = 500
@@ -70,10 +74,5 @@ def placeRateLineB2(rate):
 #--------------------------------#
 # Computer measurement responses #
 #--------------------------------#
-responsesLabel = []
-responsetimesLabel = []
-ndevices = 0
-
 wait1Canvas = None; wait2Canvas = None
 wait1LED = None; wait2LED = None
-# Response timestamps
