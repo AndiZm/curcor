@@ -118,4 +118,34 @@ Button2Frame = Frame(pc2Frame); Button2Frame.grid(row=2, column=0)
 gl.fileRates2Button = Button(Button2Frame, text="Start File", bg="#e8fcae", width=12, state="disabled"); gl.fileRates2Button.grid(row=0,column=0)
 gl.quickRates2Button = Button(Button2Frame, text="Start quick", bg="#e8fcae", width=12, state="disabled"); gl.quickRates2Button.grid(row=1,column=0)
 
+#####################
+## Synchronization ##
+#####################
+syncFrame = Frame(root); syncFrame.grid(row=0,column=1)
+
+startStopMeasButton = Button(syncFrame, text="Start Measurement", bg="#92f0eb")
+startStopMeasButton.grid(row=0,column=0)
+measurement = False
+def toggle_measure():
+	global measurement
+	if measurement == False: # Start measurement
+		measurement = True
+		#server.measure()
+		startStopMeasButton.config(text="Stop Measurement", bg="#f2b4a0")
+		mssLabel.config(text="Waiting for {} responses".format(gl.ndevices))
+	elif measurement == True: # Stop measurement
+		measurement = False
+		#server.stop()
+		startStopMeasButton.config(text="Start Measurement", bg="#92f0eb")
+		mssLabel.config(text="Measurement stopped")
+startStopMeasButton.config(command=toggle_measure)
+
+measStatusLabel = Label(syncFrame, text="Measurement Status"); measStatusLabel.grid(row=1,column=0)
+measStatusFrame = Frame(syncFrame); measStatusFrame.grid(row=2,column=0)
+mssLabel = Label(measStatusFrame, text="Measurement stopped", bg="#f4f7b7", width=20); mssLabel.grid(row=0,column=0)
+gl.responsesLabel = Label(measStatusFrame, text="", bg="black", fg="red", width=2); gl.responsesLabel.grid(row=0,column=1)
+gl.responsetimesLabel = Label(measStatusFrame, text="", width=4, bg="grey", fg="orange"); gl.responsetimesLabel.grid(row=0,column=2)
+
+
+
 root.mainloop()

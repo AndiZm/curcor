@@ -59,7 +59,8 @@ class controller_client:
 			if self.pc_ID == 2:
 				gl.pc2Button.config(text="Stop Client PC 2", bg="#bfff91")
 				gl.quickRates2Button.config(state="normal", command=self.quickrates)
-				gl.fileRates2Button.config(state="normal", command=self.filerates)		
+				gl.fileRates2Button.config(state="normal", command=self.filerates)	
+			gl.ndevices += 1
 		else:
 			print("Error in the connect method of the rate client! There shouldn't be a socket but in fact there is! Did you connect once too often?")
 
@@ -76,6 +77,7 @@ class controller_client:
 		if self.pc_ID == 2:
 			gl.quickRates2Button.config(state="disabled")
 			gl.fileRates2Button.config(state="disabled")
+		gl.ndevices -= 1
 	def stop_self(self):
 		sendText(self, "clientstop")
 	# Commands to the server

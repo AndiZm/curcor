@@ -56,3 +56,8 @@ def placeRateLineA2(rate):
 def placeRateLineB2(rate):
 	lineposition = r_height - (rate/rmaxB2 * 0.8 * r_height)
 	rateB2Canvas.coords(rateB2Line, 0, lineposition, r_width, lineposition)
+
+
+responsesLabel = []
+responsetimesLabel = []
+ndevices = 0
