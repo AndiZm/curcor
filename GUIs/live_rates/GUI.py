@@ -466,14 +466,14 @@ desc_Label_mean = Label(abFrame, text="Voltage [mV]"); desc_Label_mean.grid(row=
 desc_Label_curr = Label(abFrame, text="PMT current [µA]"); desc_Label_curr.grid(row=3, column=0)
 desc_Label_rate = Label(abFrame, text="Photon rate [MHz]");	desc_Label_rate.grid(row=4, column=0)
 
-CHa_Label_mean = Label(abFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 10 bold")); CHa_Label_mean.grid(row=2, column=1)
-CHb_Label_mean = Label(abFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 10 bold")); CHb_Label_mean.grid(row=2, column=2)
+CHa_Label_mean = Label(abFrame, text="0.0", fg="orange", bg="black", width=5, font=("Helvetica 10 bold")); CHa_Label_mean.grid(row=2, column=1)
+CHb_Label_mean = Label(abFrame, text="0.0", fg="orange", bg="black", width=5, font=("Helvetica 10 bold")); CHb_Label_mean.grid(row=2, column=2)
 
-CHa_Label_curr = Label(abFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 10 bold")); CHa_Label_curr.grid(row=3, column=1, pady=2)
-CHb_Label_curr = Label(abFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 10 bold")); CHb_Label_curr.grid(row=3, column=2, pady=2)
+CHa_Label_curr = Label(abFrame, text="0.0", fg="orange", bg="black", width=5, font=("Helvetica 10 bold")); CHa_Label_curr.grid(row=3, column=1, pady=2)
+CHb_Label_curr = Label(abFrame, text="0.0", fg="orange", bg="black", width=5, font=("Helvetica 10 bold")); CHb_Label_curr.grid(row=3, column=2, pady=2)
 
-CHa_Label_rate = Label(abFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 12 bold"));	CHa_Label_rate.grid(row=4, column=1, padx=3)
-CHb_Label_rate = Label(abFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 12 bold"));	CHb_Label_rate.grid(row=4, column=2)
+CHa_Label_rate = Label(abFrame, text="0.0", fg="orange", bg="black", width=5, font=("Helvetica 12 bold"));	CHa_Label_rate.grid(row=4, column=1, padx=3)
+CHb_Label_rate = Label(abFrame, text="0.0", fg="orange", bg="black", width=5, font=("Helvetica 12 bold"));	CHb_Label_rate.grid(row=4, column=2)
 
 
 #################
@@ -609,6 +609,11 @@ def analyze_file(newest_file):
 
 	if server != None:
 		server.sendRate(r_a, r_b)
+	if server_controller != None:
+			if gl.o_nchn == 1:
+				server_controller.sendRate(r_a)
+			else:
+				server_controller.sendRates(r_a,r_b)
 	
 	
 	root.update()
