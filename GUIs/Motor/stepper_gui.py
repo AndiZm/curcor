@@ -1,10 +1,13 @@
 from tkinter import *
 from tkinter import messagebox
+from tkinter import simpledialog
 from numpy import random
 from time import sleep
 import scipy.optimize as opt
 import threading
 import warnings
+
+from datetime import datetime
 
 import stepper_drive as sd
 import motor_switch as ms
@@ -229,46 +232,6 @@ def optimize():
     optimizeMirrorBluntly()
 
 
-'''def showRateDistribution(spacing_phi=10, spacing_psi=10, min_phi=-4.0, max_phi=4.0, min_psi=-4.0, max_psi=4.0):
-    global client
-    global change_mirror_psi
-    global change_mirror_phi
-    if client==None:
-        print("No client connected! Cannot plot Mirrors")
-        return
-    #coordinates_psi=np.linspace(min_psi, max_psi, num=spacing_psi) I guess there is no use for these two lines.
-    #coordinates_phi=np.linspace(min_psi, max_psi, num=spacing_psi)
-    rates=np.empty(shape=(spacing_psi, spacing_phi))
-    for i in range(0, spacing_phi, 1):
-        pos_phi=min_phi+(max_phi-min_phi)/(spacing_phi-1)*i
-        MirrorPhi.set(pos_phi)
-        moveto_mirror_phi(0)
-        update_items()
-        while sd.ismoving(a[5]):
-            sleep(0.05)
-            #print("wait_5_phi")
-        for j in range(0, spacing_psi, 1):
-            if i%2==0:
-                pos_psi=min_psi+(max_psi-min_psi)/(spacing_psi-1)*j
-            else:
-                pos_psi=max_psi-(max_psi-min_psi)/(spacing_psi-1)*j
-            print("PSI: {0} PHI: {1}".format(pos_psi, pos_phi))
-            MirrorPsi.set(pos_psi)
-            moveto_mirror_psi(0)
-            update_items()
-            while sd.ismoving(a[4]):
-                sleep(0.05)
-                #print("wait_4_psi")
-            if i%2==0:
-                rates[j][spacing_phi-1-i]=client.getRateA()+client.getRateB()
-            else:
-                rates[j][i]=client.getRateA()+client.getRateB()
-    plt.figure("Heatmap of the mirror Postions", figsize=(6,6))
-    plt.imshow(rates, cmap='cool', extent=(min_psi-(max_psi-min_psi)/(spacing_psi)/2, max_psi+(max_psi-min_psi)/(spacing_psi)/2, min_phi-(max_phi-min_phi)/(spacing_phi)/2, max_phi+(max_phi-min_phi)/(spacing_phi)/2))
-    plt.xlabel("$\psi$ [°]")
-    plt.ylabel("$\phi$ [°]")
-    plt.show()
-    print(rates)'''
     
 def startStopClient():
     global client
@@ -288,71 +251,18 @@ def startStopClient():
         rateClientButton.config(text="Connect")
         client = None
         
+def openNewDialogue():
+    global root
+    dialog=DialogFenster(root)
+    
 def dummy_button():
-    return
-
-def showRateDistribution(spacing_phi=25, spacing_psi=26, min_phi=-2., max_phi=2, min_psi=-3.80, max_psi=-0.5, contrast_factor=3):
-    #print("You entered the DUMMY-state")
-    print("Starting to measure the rate distribution. MinPhi={0:4.2f} ; MaxPhi={1:4.2f} ; MinPsi={2:4.2f} ; MaxPsi={3:4.2f} ; SpacingPhi={4} ; SpacingPsi={5} ; ContrastFactor={6:4.2f}".format(min_phi, max_phi, min_psi, max_psi, spacing_phi, spacing_psi, contrast_factor))
-    global client
-    global change_mirror_psi
-    global change_mirror_phi
-    if client==None:
-        print("No client connected! Cannot plot Mirrors")
-        return
+    openNewDialogue()
+    
+def findRectangle(rates, sub_plot , spacing_phi, spacing_psi, min_phi, max_phi, min_psi, max_psi, contrast_factor):
+    rates=np.transpose(rates)
     coordinates_phi=np.linspace(min_phi, max_phi, num=spacing_phi)
     coordinates_psi=np.linspace(min_psi, max_psi, num=spacing_psi)
     x, y=np.meshgrid(coordinates_phi, coordinates_psi)
-    rates=np.empty(shape=(spacing_phi, spacing_psi))
-    for i in range(0, spacing_phi, 1):
-        pos_phi=min_phi+(max_phi-min_phi)/(spacing_phi-1)*i
-        MirrorPhi.set(pos_phi)
-        moveto_mirror_phi(0)
-        update_items(verbose=True)
-        while sd.ismoving(a[5]):
-            sleep(0.05)
-            #print("wait_5_phi")
-        for j in range(0, spacing_psi, 1):
-            if i%2==0:
-                pos_psi=min_psi+(max_psi-min_psi)/(spacing_psi-1)*j
-            else:
-                pos_psi=max_psi-(max_psi-min_psi)/(spacing_psi-1)*j
-            #print("PSI: {0} PHI: {1}".format(pos_psi, pos_phi))
-            MirrorPsi.set(pos_psi)
-            moveto_mirror_psi(0)
-            update_items(verbose=True)
-            while sd.ismoving(a[4]):
-                sleep(0.05)
-                #print("wait_4_psi")
-            if i%2==0:
-                rates[i][spacing_psi-1-j]=client.getRateA()+client.getRateB()
-            else:
-                rates[i][j]=client.getRateA()+client.getRateB()
-    rates=np.transpose(rates)
-    print(rates)
-    
-#    #generate random rates
-#    noise=np.random.rand(spacing_psi, spacing_phi)
-#    
-#    #generate a gaussian to place within noise
-#    coordinates_psi=np.linspace(min_psi, max_psi, num=spacing_psi)
-#    coordinates_phi=np.linspace(min_psi, max_psi, num=spacing_psi)
-#    x, y=np.meshgrid(coordinates_psi, coordinates_phi)
-#    rates=noise+10*gauss2d((x, y)).reshape(spacing_psi, spacing_phi)
-#    
-    #make a nice plot
-    fig=plt.Figure(figsize=(6,6))
-    sub_plot = fig.add_subplot(111)
-    sub_plot.set_title("Heatmap of the mirror Positions")
-    sub_plot.imshow(rates, cmap='cool', extent=( min_phi-(max_phi-min_phi)/(spacing_phi)/2, max_phi+(max_phi-min_phi)/(spacing_phi)/2, min_psi-(max_psi-min_psi)/(spacing_psi)/2, max_psi+(max_psi-min_psi)/(spacing_psi)/2))
-    sub_plot.set_xlabel("$\phi$ [°]")
-    sub_plot.set_ylabel("$\psi$ [°]")
-    
-    # coordinates_phi=np.linspace(min_phi, max_phi, num=spacing_phi)
-    #coordinates_psi=np.linspace(min_psi, max_psi, num=spacing_psi)
-    #x, y=np.meshgrid(coordinates_phi, coordinates_psi)
-
-    #do some crude narrowing of the spot
     max_rate=np.max(rates)
     mask=rates>max_rate/contrast_factor
     print(mask)
@@ -372,8 +282,134 @@ def showRateDistribution(spacing_phi=25, spacing_psi=26, min_phi=-2., max_phi=2,
             max_x=i
     print("min_x={0}; max_x={1}; min_y={2}; max_y={3}".format(min_x, max_x, min_y, max_y))
     print("BOX: min_phi={0}; max_phi={1}; min_psi={2}; max_psi={3}".format(coordinates_phi[min_x], coordinates_phi[max_x], coordinates_psi[len(coordinates_psi)-1-min_y], coordinates_psi[len(coordinates_psi)-1-max_y]))
-    print("no1: min_phi={0}; max_phi={1}; min_psi={2}; max_psi={3}".format(coordinates_phi[min_x], coordinates_phi[max_x], coordinates_psi[min_y], coordinates_psi[max_y]))
+    padding_psi=(coordinates_psi[1]-coordinates_psi[0])/2
+    padding_phi=(coordinates_phi[1]-coordinates_phi[0])/2
+    rect_start_phi=coordinates_phi[min_x]-padding_phi
+    rect_start_psi=coordinates_psi[len(coordinates_psi)-1-min_y]+padding_psi
+    rect_width_phi=coordinates_phi[max_x]-coordinates_phi[min_x]+2*padding_phi
+    rect_width_psi=coordinates_psi[len(coordinates_psi)-1-max_y]-coordinates_psi[len(coordinates_psi)-1-min_y]-2*padding_psi
+    rect = patches.Rectangle((rect_start_phi, rect_start_psi), rect_width_phi, rect_width_psi, edgecolor='r', facecolor='none', label='recommended search area')
+    with warnings.catch_warnings(record=True) as w:
+        sub_plot.axes.add_patch(rect)
+    sub_plot.legend()
+    print("added rectangle")
 
+def showRateDistribution(spacing_phi=25, spacing_psi=26, min_phi=-2., max_phi=2, min_psi=-3.80, max_psi=-0.5, contrast_factor=3, live=True):
+
+    
+    print("Starting to measure the rate distribution. MinPhi={0:4.2f} ; MaxPhi={1:4.2f} ; MinPsi={2:4.2f} ; MaxPsi={3:4.2f} ; SpacingPhi={4} ; SpacingPsi={5} ; ContrastFactor={6:4.2f}".format(min_phi, max_phi, min_psi, max_psi, spacing_phi, spacing_psi, contrast_factor))
+
+    global client
+    global change_mirror_psi
+    global change_mirror_phi
+    if client==None:
+        print("No client connected! Cannot plot Mirrors")
+        return
+    coordinates_phi=np.linspace(min_phi, max_phi, num=spacing_phi)
+    coordinates_psi=np.linspace(min_psi, max_psi, num=spacing_psi)
+    x, y=np.meshgrid(coordinates_phi, coordinates_psi)
+    rates=np.zeros(shape=(spacing_phi, spacing_psi))
+    
+    #make a nice plot
+    fig=plt.Figure(figsize=(6,6))
+    sub_plot = fig.add_subplot(111)
+    sub_plot.set_title("Heatmap of the mirror Positions")
+    sub_plot.imshow(np.transpose(rates), cmap='cool', extent=( min_phi-(max_phi-min_phi)/(spacing_phi)/2, max_phi+(max_phi-min_phi)/(spacing_phi)/2, min_psi-(max_psi-min_psi)/(spacing_psi)/2, max_psi+(max_psi-min_psi)/(spacing_psi)/2))
+    sub_plot.set_xlabel("$\phi$ [°]")
+    sub_plot.set_ylabel("$\psi$ [°]")
+
+    #create new window
+    plotWindow = Toplevel(root)
+    canvas = FigureCanvasTkAgg(fig, master=plotWindow)
+    canvas.get_tk_widget().grid(row=0, column=0)
+    findRectangleButton = Button(plotWindow, text="Find high intensity Area", width=40, pady=3, padx=3)
+    findRectangleButton["command"]= lambda argRates=rates, argPlot=sub_plot, argSpacingPhi=spacing_phi, argSpacingPsi=spacing_psi, argMinPhi=min_phi, argMaxPhi=max_phi, argMinPsi=min_psi, argMaxPsi=max_psi, argContrastFactor=contrast_factor : findRectangle(rates=argRates , sub_plot=argPlot , spacing_phi = argSpacingPhi, spacing_psi = argSpacingPsi, min_phi = argMinPhi, max_phi = argMaxPhi, min_psi = argMinPsi, max_psi= argMaxPsi, contrast_factor= argContrastFactor)
+    findRectangleButton.grid(row=1,column=0)
+    findGaussianButton = Button(plotWindow, text="Find Gaussian", width=40, pady=3, padx=3)
+    findGaussianButton["command"]= lambda argRates=rates, argPlot=sub_plot, argSpacingPhi=spacing_phi, argSpacingPsi=spacing_psi, argMinPhi=min_phi, argMaxPhi=max_phi, argMinPsi=min_psi, argMaxPsi=max_psi, argContrastFactor=contrast_factor : findGaussian(rates=argRates , sub_plot=argPlot , spacing_phi = argSpacingPhi, spacing_psi = argSpacingPsi, min_phi = argMinPhi, max_phi = argMaxPhi, min_psi = argMinPsi, max_psi= argMaxPsi, contrast_factor= argContrastFactor)
+    findGaussianButton.grid(row=2,column=0)
+    canvas.draw()
+    
+    for i in range(0, spacing_phi, 1):
+        pos_phi=min_phi+(max_phi-min_phi)/(spacing_phi-1)*i
+        MirrorPhi.set(pos_phi)
+        moveto_mirror_phi(0)
+        update_items(verbose=True)
+        if live:
+            sub_plot.imshow(np.transpose(rates), cmap='cool', extent=( min_phi-(max_phi-min_phi)/(spacing_phi)/2, max_phi+(max_phi-min_phi)/(spacing_phi)/2, min_psi-(max_psi-min_psi)/(spacing_psi)/2, max_psi+(max_psi-min_psi)/(spacing_psi)/2))
+            canvas.draw()
+        while sd.ismoving(a[5]):
+            sleep(0.05)
+            #print("wait_5_phi")
+        for j in range(0, spacing_psi, 1):
+            if i%2==0:
+                pos_psi=min_psi+(max_psi-min_psi)/(spacing_psi-1)*j
+            else:
+                pos_psi=max_psi-(max_psi-min_psi)/(spacing_psi-1)*j
+            #print("PSI: {0} PHI: {1}".format(pos_psi, pos_phi))
+            MirrorPsi.set(pos_psi)
+            moveto_mirror_psi(0)
+            update_items(verbose=True)
+            while sd.ismoving(a[4]):
+                sleep(0.05)
+                #print("wait_4_psi")
+            if i%2==0:
+                rates[i][spacing_psi-1-j]=client.getRateA()+client.getRateB()
+            else:
+                rates[i][j]=client.getRateA()+client.getRateB()
+            #print("Finished phi {0}, psi = {1}".format(i,j))
+            '''now = datetime.now()
+            current_time = now.strftime("%H:%M:%S")
+            print("Before Imshow =", current_time)
+            sub_plot.imshow(np.transpose(rates), cmap='cool', extent=( min_phi-(max_phi-min_phi)/(spacing_phi)/2, max_phi+(max_phi-min_phi)/(spacing_phi)/2, min_psi-(max_psi-min_psi)/(spacing_psi)/2, max_psi+(max_psi-min_psi)/(spacing_psi)/2))
+            now = datetime.now()
+            current_time = now.strftime("%H:%M:%S")
+            print("After Imshow =", current_time)
+            canvas.draw()
+            now = datetime.now()
+            current_time = now.strftime("%H:%M:%S")
+            print("After Draw =", current_time)'''
+    sub_plot.imshow(np.transpose(rates), cmap='cool', extent=( min_phi-(max_phi-min_phi)/(spacing_phi)/2, max_phi+(max_phi-min_phi)/(spacing_phi)/2, min_psi-(max_psi-min_psi)/(spacing_psi)/2, max_psi+(max_psi-min_psi)/(spacing_psi)/2))
+    canvas.draw()
+    rates=np.transpose(rates)
+    print(rates)
+    
+#    #generate random rates
+#    noise=np.random.rand(spacing_psi, spacing_phi)
+#    
+#    #generate a gaussian to place within noise
+#    coordinates_psi=np.linspace(min_psi, max_psi, num=spacing_psi)
+#    coordinates_phi=np.linspace(min_psi, max_psi, num=spacing_psi)
+#    x, y=np.meshgrid(coordinates_psi, coordinates_phi)
+#    rates=noise+10*gauss2d((x, y)).reshape(spacing_psi, spacing_phi)
+#    
+    
+    # coordinates_phi=np.linspace(min_phi, max_phi, num=spacing_phi)
+    #coordinates_psi=np.linspace(min_psi, max_psi, num=spacing_psi)
+    #x, y=np.meshgrid(coordinates_phi, coordinates_psi)
+
+    #do some crude narrowing of the spot
+    '''max_rate=np.max(rates)
+    mask=rates>max_rate/contrast_factor
+    print(mask)
+    min_x=len(rates)
+    max_x=-1
+    min_y=len(mask[0])
+    max_y=-1
+    for i in range(0, len(mask)):
+        if np.sum(mask[i])>0 and min_y>i:
+            min_y=i
+        if np.sum(mask[i])>0 and max_y<i:
+            max_y=i
+    for i in range(0, len(mask[0])):
+        if np.sum(mask[:,i])>0 and min_x>i:
+            min_x=i
+        if np.sum(mask[:,i])>0 and max_x<i:
+            max_x=i
+    print("min_x={0}; max_x={1}; min_y={2}; max_y={3}".format(min_x, max_x, min_y, max_y))
+    print("BOX: min_phi={0}; max_phi={1}; min_psi={2}; max_psi={3}".format(coordinates_phi[min_x], coordinates_phi[max_x], coordinates_psi[len(coordinates_psi)-1-min_y], coordinates_psi[len(coordinates_psi)-1-max_y]))
+    print("no1: min_phi={0}; max_phi={1}; min_psi={2}; max_psi={3}".format(coordinates_phi[min_x], coordinates_phi[max_x], coordinates_psi[min_y], coordinates_psi[max_y]))
+    '''
     #calculate starting values for the gaussian
     center_phi=(coordinates_phi[min_x]+coordinates_phi[max_x])/2
     center_psi=(coordinates_psi[len(coordinates_psi)-1-min_y]+coordinates_psi[len(coordinates_psi)-1-max_y])/2
@@ -429,55 +465,7 @@ def showRateDistribution(spacing_phi=25, spacing_psi=26, min_phi=-2., max_phi=2,
     with warnings.catch_warnings(record=True) as w:
         sub_plot.axes.add_patch(rect)
     sub_plot.legend()
-    
-    '''#fit a gaussian or find Maximum area through other process
-    with warnings.catch_warnings(record=True) as w:
-        try:
-            popt, pcov = opt.curve_fit(gauss2d, (x,y), rates.ravel(), p0 = (10,(max_psi-min_psi)/2, 0.5,(max_phi-min_phi)/2,0.5, 40))
-        except:
-            w=1
-        gaussian=False
-        if w==None:
-            print(popt)
-            #plot the gaussian
-            data_fitted = gauss2d((x, y), *popt)
-            sub_plot.axes.contour(x, y, data_fitted.reshape(spacing_psi, spacing_phi), 8, colors='b')
-            rect_start_phi=popt[1]-2*np.abs(popt[2])
-            rect_start_psi=popt[3]-2*np.abs(popt[4])
-            rect_width_phi=4*np.abs(popt[2])
-            rect_width_psi=4*np.abs(popt[4])
-            gaussian=True
-        else:
-            print("No Gaussian could be fitted. Try other approach.")
-            #do some crude narrowing of the spot
-            max_rate=np.max(rates)
-            mask=rates>max_rate/contrast_factor
-            min_x=len(rates)
-            max_x=-1
-            min_y=len(mask[0])
-            max_y=-1
-            for i in range(0, len(mask)):
-                if np.sum(mask[i])>0 and min_y>i:
-                    min_y=i
-                if np.sum(mask[i])>0 and max_y<i:
-                    max_y=i
-            for i in range(0, len(mask[0])):
-                if np.sum(mask[:,i])>0 and min_x>i:
-                    min_x=i
-                if np.sum(mask[:,i])>0 and max_x<i:
-                    max_x=i
-            print("min_x={0}; max_x={1}; min_y={2}; max_y={3}".format(min_x, max_x, min_y, max_y))
-            print("min_phi={0}; max_phi={1}; min_psi={2}; max_psi={3}".format(coordinates_phi[min_x], coordinates_phi[max_x], coordinates_psi[len(coordinates_psi)-1-min_y], coordinates_psi[len(coordinates_psi)-1-max_y]))
-            padding_psi=(coordinates_psi[1]-coordinates_psi[0])/2
-            padding_phi=(coordinates_phi[1]-coordinates_phi[0])/2
-            rect_start_phi=coordinates_phi[min_x]-padding_phi
-            rect_start_psi=coordinates_psi[len(coordinates_psi)-1-min_y]+padding_psi
-            rect_width_phi=coordinates_phi[max_x]-coordinates_phi[min_x]+2*padding_phi
-            rect_width_psi=coordinates_psi[len(coordinates_psi)-1-max_y]-coordinates_psi[len(coordinates_psi)-1-min_y]-2*padding_psi
-    rect = patches.Rectangle((rect_start_phi, rect_start_psi), rect_width_phi, rect_width_psi, edgecolor='r', facecolor='none', label='recommended fit area')
-    sub_plot.axes.add_patch(rect)
-    sub_plot.legend()'''
-    
+  
     #create new window
     plotWindow = Toplevel(root)
     canvas = FigureCanvasTkAgg(fig, master=plotWindow)
@@ -509,7 +497,10 @@ def showRateDistribution(spacing_phi=25, spacing_psi=26, min_phi=-2., max_phi=2,
     nextIterationButton["command"]= lambda argSpacingPhi=spacing_phi, argSpacingPsi=spacing_psi, argMinPhi=min_phi, argMaxPhi=max_phi, argMinPsi=min_psi, argMaxPsi=max_psi, argContrastFactor=contrast_factor : showRateDistribution(spacing_phi = argSpacingPhi, spacing_psi = argSpacingPsi, min_phi = argMinPhi, max_phi = argMaxPhi, min_psi = argMinPsi, max_psi= argMaxPsi, contrast_factor= argContrastFactor)
     nextIterationButton.grid(row=1,column=0)
 
-    
+def updatePlot(plot, canavas, rates, running):
+    while running:
+        plot.imshow(np.transpose(rates), cmap='cool', extent=( min_phi-(max_phi-min_phi)/(spacing_phi)/2, max_phi+(max_phi-min_phi)/(spacing_phi)/2, min_psi-(max_psi-min_psi)/(spacing_psi)/2, max_psi+(max_psi-min_psi)/(spacing_psi)/2))
+
         
 #-----------------#
 #---- Movetos ----#
@@ -1222,6 +1213,72 @@ def gauss2d(datapoints, prefactor=1, x_0=0, x_sigma=1, y_0=0, y_sigma=1, offset=
     return offset+prefactor*np.exp(-(np.power(datapoints[0]-x_0, 2)/(2*np.power(x_sigma,2)))-(np.power(datapoints[1]-y_0,2)/(2*np.power(y_sigma,2)))).ravel()
 
 
+
+class DialogFenster(simpledialog.Dialog):
+    ## so leitet man in Python aus einer Klasse ab!
+    ## Aufruf: NamenDialog = DialogFenster(root)
+    def body(self, master):  ## wird überschrieben
+        min_phi=-4.5
+        max_phi=4.5
+        min_psi=-4.5
+        max_psi=4.5
+        spacing_phi=10
+        spacing_psi=11
+        
+        self.title('Start optimization')
+
+        #create labels
+        self.label_min_psi = Label(master, text='Min PSI:  ')
+        self.label_max_psi = Label(master, text='Max PSI:  ')
+        self.label_min_phi = Label(master, text='Min PHI:  ')
+        self.label_max_phi = Label(master, text='Max PHI:  ')
+        self.label_spacing_phi = Label(master, text='Spacing PHI:  ')
+        self.label_spacing_psi = Label(master, text='Spacing PSI:  ')
+        
+        #place labels in grid
+        self.label_min_phi.grid(row=0, column=0, padx=10, pady=3)
+        self.label_max_phi.grid(row=1, column=0, padx=10, pady=3)
+        self.label_min_psi.grid(row=2, column=0, padx=10, pady=3)
+        self.label_max_psi.grid(row=3, column=0, padx=10, pady=3)
+        self.label_spacing_phi.grid(row=4, column=0, padx=10, pady=3)
+        self.label_spacing_psi.grid(row=5, column=0, padx=10, pady=3)
+        
+        #create and place checkbutton
+        self.checked=True
+        self.checkbutton_live = Checkbutton(master, text="draw live", onvalue = True, offvalue = False, variable=self.checked)
+        self.checkbutton_live.select()
+        self.checkbutton_live.grid(row=6, column=0, padx=10, pady=3)
+
+        #create sliders
+        self.box_min_phi = Scale(master, from_=-4.5, to=4.5, orient=HORIZONTAL, length=150, resolution=0.1)
+        self.box_max_phi = Scale(master, from_=-4.5, to=4.5, orient=HORIZONTAL, length=150, resolution=0.1)
+        self.box_min_psi = Scale(master, from_=-4.5, to=4.5, orient=HORIZONTAL, length=150, resolution=0.1)
+        self.box_max_psi = Scale(master, from_=-4.5, to=4.5, orient=HORIZONTAL, length=150, resolution=0.1)
+        self.box_spacing_phi = Scale(master, from_=5, to=50, orient=HORIZONTAL, length=150)
+        self.box_spacing_psi = Scale(master, from_=5, to=50, orient=HORIZONTAL, length=150)
+        
+        #place sliders in grid
+        self.box_min_phi.grid(row=0, column=1, padx=10, pady=3)
+        self.box_max_phi.grid(row=1, column=1, padx=10, pady=3)
+        self.box_min_psi.grid(row=2, column=1, padx=10, pady=3)
+        self.box_max_psi.grid(row=3, column=1, padx=10, pady=3)
+        self.box_spacing_phi.grid(row=4, column=1, padx=10, pady=3)
+        self.box_spacing_psi.grid(row=5, column=1, padx=10, pady=3)
+        
+        #set initial values
+        self.box_min_phi.set(min_phi)
+        self.box_max_phi.set(max_phi)
+        self.box_min_psi.set(min_psi)
+        self.box_max_psi.set(max_psi)
+        self.box_spacing_phi.set(spacing_phi)
+        self.box_spacing_psi.set(spacing_psi)
+
+
+    def apply(self):  ## wird ueberschrieben
+        #global showRateDistribtion
+        showRateDistribution(min_phi=self.box_min_phi.get(), max_phi=self.box_max_phi.get(), min_psi=self.box_min_psi.get(), max_psi=self.box_max_psi.get(), spacing_phi=self.box_spacing_phi.get(), spacing_psi=self.box_spacing_psi.get(), live=self.checked)
+        self.result = 1 ## alles ok!
+        
+        
 root.mainloop()
 os._exit(0)
-
