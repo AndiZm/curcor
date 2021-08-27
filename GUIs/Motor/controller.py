@@ -7,7 +7,7 @@ import servo_test as servo
 class CONTROLLER():
 
     def __init__(self):
-        self.a=sd.init()  #stepper_drive
+        self.a, self.serial_port=sd.init()  #stepper_drive
         ms.init()
         ms.motor_on()
         self.motoron = True
@@ -64,20 +64,27 @@ class CONTROLLER():
 
     def steps_to_mm(self, steps):
         return steps/(200.*self.microsteps_nano) #1mm / 200steps*microsteps_nano
-
+        
     def mm_to_steps(self, mm):
         return int(mm*200*self.microsteps_nano) #200steps*microsteps_nano / 1mm
 
     #Für Höhenmotor
     def steps_to_hmm(self, steps):
-        return steps/(200.*self.microsteps_nano) #CHANGE
-
+        #return steps/(200.*self.microsteps_nano) #CHANGE
+        return steps/(200.*4.66*self.microsteps_nano) #4.66 for gear_motor
+        #return steps/(200./4.66**self.microsteps_nano) #4.66 for gear_motor
+    
     def hmm_to_steps(self, mm):
-        return int(mm*200*self.microsteps_nano) #CHANGE
+        #return int(mm*200*self.microsteps_nano) #CHANGE
+        return int(mm*200*4.66*self.microsteps_nano) #4.66 for gear motor
+        #return int(mm*200*4.66**self.microsteps_nano) #4.66 for gear motor
 
     def set_driving_speed(self, motor,speed):
         motor.axis.max_positioning_speed=int(speed)
         motor.set_axis_parameter(194, 300)
+    
+    def get_serial_port(self):
+        return self.serial_port
     
     #red stop button
     def stop_all(self):
@@ -268,16 +275,16 @@ class CONTROLLER():
     
     def set_position_camera_z(self, position, verbose=False):
         if verbose==False: print("Move camera z to",position)
-        self.a[0].move_absolute(self.degree_to_steps(position))
+        self.a[0].move_absolute(self.mm_to_steps(position))
     def set_position_camera_x(self, position, verbose=False):
         if verbose==False: print("Move camera x to",position)
-        self.a[1].move_absolute(self.degree_to_steps(position))  
+        self.a[1].move_absolute(self.mm_to_steps(position))  
     def set_position_mirror_z(self, position, verbose=False):
         if verbose==False: print("Move mirror z to",position)
-        self.a[2].move_absolute(self.degree_to_steps(position))  
+        self.a[2].move_absolute(self.mm_to_steps(position))  
     def set_position_mirror_height(self, position, verbose=False):
         if verbose==False: print("Move mirror height to",position)
-        self.a[3].move_absolute(self.degree_to_steps(position))  
+        self.a[3].move_absolute(self.hmm_to_steps(position))  
     def set_position_mirror_psi(self, position, verbose=False):
         if verbose==False: print("Move mirror psi to",position)
         self.a[4].move_absolute(self.degree_to_steps(position))
@@ -286,17 +293,17 @@ class CONTROLLER():
         self.a[5].move_absolute(self.degree_to_steps(position))
         
     def get_position_camera_z(self):
-        return round(self.steps_to_mm(sd.position(self.a[0])),2)
+        return self.steps_to_mm(sd.position(self.a[0]))
     def get_position_camera_x(self):
-        return round(self.steps_to_mm(sd.position(self.a[1])),2)
+        return self.steps_to_mm(sd.position(self.a[1]))
     def get_position_mirror_z(self):
-        return round(self.steps_to_mm(sd.position(self.a[2])),2)
+        return self.steps_to_mm(sd.position(self.a[2]))
     def get_position_mirror_height(self):
-        return round(self.steps_to_hmm(sd.position(self.a[3])),2)
+        return self.steps_to_hmm(sd.position(self.a[3]))
     def get_position_mirror_psi(self):
-        return round(self.steps_to_degree(sd.position(self.a[4])),2)
+        return self.steps_to_degree(sd.position(self.a[4]))
     def get_position_mirror_phi(self):
-        return round(self.steps_to_degree(sd.position(self.a[5])),2)
+        return self.steps_to_degree(sd.position(self.a[5]))
     
     #dummy till now
     def get_position_servo(self):

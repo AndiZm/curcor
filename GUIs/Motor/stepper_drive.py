@@ -16,7 +16,7 @@ def init():
         if i>=4:
             a[i].set_axis_parameter(5,1000)  # acceleration einstellen
         else:
-            a[i].set_axis_parameter(5,200)  # acceleration einstellen
+            a[i].set_axis_parameter(5,500)  # acceleration einstellen
         
     a[3].set_pullups(3) #disable pullups for Mirror motors
     
@@ -52,6 +52,10 @@ def init():
     a[5].set_axis_parameter(6,63)
     a[4].set_axis_parameter(14,1) #1: swap limit switches
     a[5].set_axis_parameter(14,1)
+    a[0].set_axis_parameter(14,1)
+    a[1].set_axis_parameter(14,1)
+    a[2].set_axis_parameter(14,1)
+    a[3].set_axis_parameter(14,1)
     
     # Reference search direction settings
     a[0].set_axis_parameter(193,1) #1: Left Ref Search 65: Right Ref Search
@@ -63,17 +67,21 @@ def init():
     #why no mirrors here? I assume 1 is default so also set there
     
     #max speed
-    a[0].axis.max_positioning_speed=500
-    a[0].set_axis_parameter(194, 500)
+    a[0].axis.max_positioning_speed=15000
+    a[0].set_axis_parameter(194, 15000)
+    a[0].set_axis_parameter(195, 5000)
 
-    a[1].axis.max_positioning_speed=500
-    a[1].set_axis_parameter(194, 500)
+    a[1].axis.max_positioning_speed=15000
+    a[1].set_axis_parameter(194, 15000)
+    a[1].set_axis_parameter(195, 5000)
     
-    a[2].axis.max_positioning_speed=500
-    a[2].set_axis_parameter(194, 500)
+    a[2].axis.max_positioning_speed=15000
+    a[2].set_axis_parameter(194, 15000)
+    a[2].set_axis_parameter(195, 5000)
     
-    a[3].axis.max_positioning_speed=500 #Not too fast, otherwise torque drops
-    a[3].set_axis_parameter(194, 500) #Refsearch Speed of Mirror Height
+    a[3].axis.max_positioning_speed=45000 #Not too fast, otherwise torque drops
+    a[3].set_axis_parameter(194, 45000) #Refsearch Speed of Mirror Height
+    a[3].set_axis_parameter(195, 5000)
     
     a[4].set_axis_parameter(194, 5000) #search speed
     a[4].set_axis_parameter(195, 1000) # switch speed
@@ -84,7 +92,7 @@ def init():
     a[4].axis.max_positioning_speed=5000
     a[5].axis.max_positioning_speed=5000
     
-    return a
+    return a, serial
     
 
 def ismoving(themotor):
