@@ -9,11 +9,6 @@ from gui import *
 from controller import *
 
    
-
-    
-
-
-
 controller=CONTROLLER()
 root = Tk()
 my_gui=GUI(root,controller)

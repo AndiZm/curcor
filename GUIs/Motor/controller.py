@@ -71,8 +71,9 @@ class CONTROLLER():
     #Für Höhenmotor
     def steps_to_hmm(self, steps):
         #return steps/(200.*self.microsteps_nano) #CHANGE
-        return steps/(200.*4.66*self.microsteps_nano) #4.66 for gear_motor
+        #return steps/(200.*4.66*self.microsteps_nano) #4.66 for gear_motor, 200 schritte pro umdrehung
         #return steps/(200./4.66**self.microsteps_nano) #4.66 for gear_motor
+        return steps/(0.03125*(200.*4.66*self.microsteps_nano)*25.4) # formel fuer labjack, 25.4 fuer inch in mm
     
     def hmm_to_steps(self, mm):
         #return int(mm*200*self.microsteps_nano) #CHANGE
