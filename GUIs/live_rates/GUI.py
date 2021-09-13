@@ -797,10 +797,11 @@ singleFileButton = Button(startFrame, text="Single", bg = "#e8fcae", command=sin
 
 gl.quickRatesButton = Button(startFrame, text="Start quick", bg="#e8fcae", width=12, command=startstop_quick, state="disabled"); gl.quickRatesButton.grid(row=2, column=0)
 # Samples for quick measurement
-samples_quick = StringVar(root); samples_quick.set("256 kS")
+samples_quick = StringVar(root); samples_quick.set("16 MS")
 sample_quick_options = {
-	"4 kS": 4096, "8 kS": 8192, "16 kS": 16384, "32 kS": 32768, "64 kS": 65536,
-	"128 kS": 131072, "256 kS": 262144, "512 kS": 524288, "1 MS": 1048576
+	"1 MS": 1048576, "2 MS": 2097152, "4 MS": 4194304, "8 MS": 8388608,
+	"16 MS": 16777216, "32 MS": 33554432, "64 MS": 67108864,
+	"128 MS": 134217728, "256 MS": 268435456, "512 MS": 536870912
 }
 def new_samples_quick(val):
 	gl.o_samples_quick = int((sample_quick_options[samples_quick.get()]))

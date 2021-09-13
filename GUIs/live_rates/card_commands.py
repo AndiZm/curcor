@@ -122,9 +122,10 @@ def take_data():
         else:   
             # this is the point to do anything with the data
             pbyData = cast (pvBuffer, ptr8) # cast to pointer to 8bit integer
-            data = []
-            for i in range (0, dataSize):
-                data.append(int(pbyData[i]))
+            #data = []
+            #for i in range (0, dataSize):
+            #    data.append(int(pbyData[i]))
+            data = np.ctypeslib.as_array(pbyData, shape=(dataSize, 1)) 
 
             if gl.o_nchn == 2:
                 data = np.array(data)

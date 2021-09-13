@@ -1,5 +1,5 @@
-import simple_rec_fifo_new2 as acquisition
-import execute_command as transfer
+import fifo_acquisition as acquisition
+import transfer_files as transfer
 import numpy as np
 import threading
 
