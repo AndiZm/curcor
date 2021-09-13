@@ -133,6 +133,8 @@ def take_data():
                 a_np = np.array(data[:,0]); b_np = np.array(data[:,1])
                 mean_a = np.mean(a_np)
                 mean_b = np.mean(b_np)
+
+                gl.update_waveform(a_np[0:1000],b_np[0:1000])
             else:
                 mean_a = np.mean(data)
                 mean_b = 0            

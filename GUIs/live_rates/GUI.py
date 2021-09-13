@@ -53,7 +53,7 @@ root = Tk(); root.wm_title("Almost live measures"); root.geometry("+200+10")
 #------------#
 r_width  = 20
 r_height = 850
-rateFrame = Frame(root); rateFrame.grid(row=0,column=0)
+rateFrame = Frame(root); rateFrame.grid(row=0,column=1)
 rateACanvas = Canvas(rateFrame, width=r_width, height=r_height, bg="gray"); rateACanvas.grid(row=0,column=0)
 rateBCanvas = Canvas(rateFrame, width=r_width, height=r_height, bg="gray"); rateBCanvas.grid(row=0,column=1)
 # Forbidden rate area is 20% of rate bar
@@ -77,7 +77,25 @@ rmaxaText = rateACanvas.create_text(r_width/2,0.2*r_height, fill="white", text="
 rmaxbText = rateBCanvas.create_text(r_width/2,0.2*r_height, fill="white", text="--")
 
 
-rootMainFrame = Frame(root); rootMainFrame.grid(row=0,column=1)
+rootMainFrame = Frame(root); rootMainFrame.grid(row=0,column=2)
+
+###################
+## DISPLAY FRAME ##
+###################
+displayFrame = Frame(root); displayFrame.grid(row=0,column=0)
+wf_fig = Figure(figsize=(5,5))
+wf_a = []
+wf_b = []
+wf_sub = wf_fig.add_subplot(111)
+wf_sub.grid()
+gl.wf_a_line, = wf_sub.plot(wf_a)
+gl.wf_b_line, = wf_sub.plot(wf_b)
+wf_sub.set_xlim(0,1000)
+wf_sub.set_ylim(-127,10)
+gl.wf_canvas = FigureCanvasTkAgg(wf_fig, master=displayFrame)
+gl.wf_canvas.get_tk_widget().grid(row=0,column=0)
+gl.wf_canvas.draw()
+
 
 ##################
 ## COMMON FRAME ##

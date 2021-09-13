@@ -48,3 +48,15 @@ controllerServerButton = []
 # Running actions for communication with controller
 act_start_quick =  False
 act_start_file = False
+
+# Wafevorm plot data
+wf_canvas = None
+wf_a_line = None
+wf_b_line = None
+import numpy as np
+def update_waveform(a,b):
+	wf_a_line.set_xdata(np.arange(0,len(a)))
+	wf_b_line.set_xdata(np.arange(0,len(b)))
+	wf_a_line.set_ydata(a)
+	wf_b_line.set_ydata(b)	
+	wf_canvas.draw()
