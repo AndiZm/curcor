@@ -38,7 +38,7 @@ rmax_a = None; rmax_b = None
 
 ### GUI ELEMENTS ###
 statusLabel = []
-guickRatesButton = []
+quickRatesButton = []; singleRatesButton = []; calc_rate = False
 startstopButton = []
 
 # Server
@@ -56,7 +56,7 @@ wf_b_line = None
 import numpy as np
 def update_waveform(a,b):
 	wf_a_line.set_xdata(np.arange(0,len(a)))
-	wf_b_line.set_xdata(np.arange(0,len(b)))
 	wf_a_line.set_ydata(a)
-	wf_b_line.set_ydata(b)	
+	wf_b_line.set_xdata(np.arange(0,len(b)))
+	wf_b_line.set_ydata(b)
 	wf_canvas.draw()

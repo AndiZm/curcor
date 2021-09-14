@@ -14,7 +14,7 @@ def numberstring(x):
 package_size = int(10)
 
 current_numbers = []
-storage_places = ["D:\\writetest\\test_", "E:\\writetest\\test_"]
+storage_places = ["D:\\writetest\\halogen_", "E:\\writetest\\halogen_"]
 
 writeid = 0
 def change_id():
@@ -34,7 +34,7 @@ for i in range (start,end+1):
     acquisition.measurement(filename)
 
     if (i+1) % package_size == 0 or i == end:
-        copythread = threading.Thread(target=transfer.transfer_files, args=(storage_places[writeid],"Z:\\writetest",current_numbers))
+        copythread = threading.Thread(target=transfer.transfer_files, args=(storage_places[writeid],"Z:\\20210914_halogen_campc1_internal_clock",current_numbers))
         copythread.start()
 
         change_id()

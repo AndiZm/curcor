@@ -37,7 +37,7 @@ qwContBufLen = uint64 (0)
 def init():
     global hCard, pvBuffer, qwContBufLen, lNotifySize, qwBufferSize, dataSize
 
-    dataSize = gl.o_samples_quick    
+    dataSize = gl.o_samples_quick 
     qwBufferSize = uint64 (dataSize * 2 * 1); # in bytes. Enough memory for 16384 samples with 2 bytes each, only one channel active
 
     # open card
@@ -59,10 +59,7 @@ def init():
         sys.stdout.write("Found: {0} sn {1:05d}\n".format(sCardName,lSerialNumber.value))
     else:
         sys.stdout.write("This is an example for A/D cards.\nCard: {0} sn {1:05d} not supported by example\n".format(sCardName,lSerialNumber.value))
-        exit () 
-    
-    
-    # do a simple standard setup
+        exit ()
 
     # Number of enabled channels:
     if gl.o_nchn == 1:
@@ -86,8 +83,7 @@ def init():
     
     # we try to set the samplerate to 625 MHz on internal PLL, no clock output
     spcm_dwSetParam_i64 (hCard, SPC_SAMPLERATE, MEGA(625))
-    spcm_dwSetParam_i32 (hCard, SPC_CLOCKOUT, 0)     # no clock output
-    
+    spcm_dwSetParam_i32 (hCard, SPC_CLOCKOUT, 0)     # no clock output    
     
     
     spcm_dwGetContBuf_i64 (hCard, SPCM_BUF_DATA, byref(pvBuffer), byref(qwContBufLen))
@@ -98,8 +94,29 @@ def init():
         pvBuffer = pvAllocMemPageAligned (qwBufferSize.value)
         print ("Using buffer allocated by user program\n")
 
+def set_voltage_range(x):
+    spcm_dwSetParam_i32 (hCard, SPC_AMP0, x)
+    spcm_dwSetParam_i32 (hCard, SPC_AMP1, x)
+def set_channels(x):
+    if x == 1:
+        spcm_dwSetParam_i32 (hCard, SPC_CHENABLE, 1)
+    elif x == 2:
+        spcm_dwSetParam_i32 (hCard, SPC_CHENABLE, 3)
+def set_sample_size(x):
+    global hCard, lNotifySize, pvBuffer, qwContBufLen, qwBufferSize, dataSize
+    dataSize = x   
+    qwBufferSize = uint64 (dataSize * 2 * 1); # in bytes. Enough memory for 16384 samples with 2 bytes each, only one channel active
+    spcm_dwSetParam_i32 (hCard, SPC_MEMSIZE, dataSize)
+    spcm_dwGetContBuf_i64 (hCard, SPCM_BUF_DATA, byref(pvBuffer), byref(qwContBufLen))
+    print ("ContBuf length: {0:d}\n".format(qwContBufLen.value))
+    if qwContBufLen.value >= qwBufferSize.value:
+        print ("Using continuous buffer\n")
+    else:
+        pvBuffer = pvAllocMemPageAligned (qwBufferSize.value)
+        print ("Using buffer allocated by user program\n")
+
 def take_data():
-    global hCard, lNotifySize, pvBuffer, qwContBufLen, qwBufferSize
+    global hCard, lNotifySize, pvBuffer, qwContBufLen, qwBufferSize, dataSize
     spcm_dwDefTransfer_i64 (hCard, SPCM_BUF_DATA, SPCM_DIR_CARDTOPC, lNotifySize, pvBuffer, uint64 (0), qwBufferSize)
     dwError = spcm_dwSetParam_i32 (hCard, SPC_M2CMD, M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER | M2CMD_DATA_STARTDMA )
     
@@ -134,11 +151,17 @@ def take_data():
                 mean_a = np.mean(a_np)
                 mean_b = np.mean(b_np)
 
+                #plt.plot(a_np[0:5000], alpha=0.3)
+                #plt.plot(a_np[-5000:])
+                #plt.axhline(y=mean_a, color="red")
+                #plt.axhline(y=np.mean(a_np[0:5000]), color="black")
+                #plt.show()
+
                 gl.update_waveform(a_np[0:1000],b_np[0:1000])
             else:
                 mean_a = np.mean(data)
-                mean_b = 0            
-            #plt.plot(data); plt.show()
+                mean_b = 0 
+                gl.update_waveform(data[0:1000],[])
             return mean_a, mean_b
     
 
@@ -146,4 +169,3 @@ def take_data():
 def close():
     global hCard
     spcm_vClose (hCard)
-    exit()
