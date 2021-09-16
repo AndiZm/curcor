@@ -19,6 +19,7 @@ import live_wait_for_file as wff
 import globals as gl
 import rate_server as svr
 import card_commands as cc
+import transfer_files as tf
 
 from threading import Thread
 
@@ -206,7 +207,29 @@ def takeMeasurement():
 	calculate_data(ma, mb)
 	cc.init_display()
 singleMeasurementButton = Button(measurementFrame, text="Single Measurement", command=takeMeasurement); singleMeasurementButton.grid(row=0,column=0)
-loopMeasurementButton = Button(measurementFrame, text="Start Loop"); loopMeasurementButton.grid(row=0,column=1)
+measloop = False
+def loopMeasurement():
+	global measloop
+	if measloop == False:
+		measloop = True
+		loopMeasurementButton.config(text="Stop loop", bg="#fa857a")
+		loopThread = Thread(target=doLoopMeasurement)
+		loopThread.start()
+	elif measloop == True:
+		measloop = False
+		loopMeasurementButton.config(text="Start loop", bg="#e8fcae")
+def doLoopMeasurement():
+	global measloop
+	cc.init_storage()
+	fileindex = 0
+	while measloop == True:
+		filename = gl.basicpath + "/" + measFileNameEntry.get() + "_" + tf.numberstring(fileindex) + ".bin"
+		ma, mb = cc.measurement(filename)
+		calculate_data(ma, mb)
+		fileindex += 1
+	cc.init_display()
+
+loopMeasurementButton = Button(measurementFrame, text="Start Loop", width=10, bg="#e8fcae", command=loopMeasurement); loopMeasurementButton.grid(row=0,column=1)
 measFileNameEntry = Entry(measurementFrame, width=15); measFileNameEntry.grid(row=0,column=2,padx=5); measFileNameEntry.insert(0,"data")
 
 
