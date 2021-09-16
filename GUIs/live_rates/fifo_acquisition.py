@@ -26,8 +26,8 @@ print ("Measure for {:.2f} seconds".format(t_pass))
 
 
 # settings for the FIFO mode buffer handling
-qwBufferSize = uint64 (MEGA_B(512));
-lNotifySize = int32 (KILO_B(256));
+qwBufferSize = uint64 (MEGA_B(512))
+lNotifySize = int32 (KILO_B(256))
 
 
 # open card
@@ -152,8 +152,7 @@ def measurement(filename):
     t2 = time.time()
     finish_times.append(t2)
     newFile.close()
-    #
-    print (np.mean(np_data))
+
     print ("Finished in {:.2f} seconds\n".format(t2-t1))
 
 # clean up

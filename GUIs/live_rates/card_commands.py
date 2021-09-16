@@ -56,7 +56,7 @@ else:
 def init():
     global hCard, pvBuffer, qwContBufLen, lNotifySize, qwBufferSize, dataSize
 
-    dataSize = gl.o_samples_quick 
+    dataSize = gl.o_samples 
     qwBufferSize = uint64 (dataSize * 2 * 1); # in bytes. Enough memory for 16384 samples with 2 bytes each, only one channel active    
 
     # Number of enabled channels:
@@ -145,7 +145,7 @@ def set_triggermode():
 def init_display():
     global qwBufferSize, lNotifySize, pvBuffer, qwContBufLen, hCard, lBitsPerSample, lNumSamples
     # settings for the FIFO mode buffer handling
-    dataSize = gl.o_samples_quick 
+    dataSize = gl.o_samples 
     qwBufferSize = uint64 (dataSize * 2 * 1); # in bytes. Enough memory for 16384 samples with 2 bytes each, only one channel active
     # Number of enabled channels:
     if gl.o_nchn == 1:
@@ -281,9 +281,19 @@ def measurement(filename):
     
     t2 = time.time()
     newFile.close()
-    #
-    print (np.mean(np_data))
     print ("Finished in {:.2f} seconds\n".format(t2-t1))
+
+    # The last part of the data will be used for plotting and rate calculations
+    if gl.o_nchn == 2:
+        data = np.array(np_data)
+        data = data.reshape(int((lNotifySize.value)/2), 2)
+        a_np = np.array(data[:,0]); b_np = np.array(data[:,1])
+        mean_a = np.mean(a_np); mean_b = np.mean(b_np)
+        gl.update_waveform(a_np[0:1000],b_np[0:1000])
+    else:
+        mean_a = np.mean(data); mean_b = 0 
+        gl.update_waveform(data[0:1000],[])
+    return mean_a, mean_b
 
 # clean up
 def close():

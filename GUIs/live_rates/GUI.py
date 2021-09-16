@@ -84,8 +84,9 @@ rootMainFrame = Frame(root); rootMainFrame.grid(row=0,column=2)
 ################
 leftFrame = Frame(root); leftFrame.grid(row=0,column=0)
 
+optionLabel = Label(leftFrame, text="Settings", font=("Helvetica 12 bold")); optionLabel.grid(row=0,column=0)
 # Card option Frame #
-coptionFrame = Frame(leftFrame); coptionFrame.grid(row=1,column=0)
+coptionFrame = Frame(leftFrame); coptionFrame.grid(row=2,column=0)
 
 # Samples for each measurement
 sampleFrame = Frame(coptionFrame); sampleFrame.grid(row=1,column=0)
@@ -113,7 +114,6 @@ binning08Button = Radiobutton(binningFrame, width=6, text="0.8 ns", indicatoron=
 binning16Button = Radiobutton(binningFrame, width=6, text="1.6 ns", indicatoron=False, variable=binning, value=1.6e-9, command=new_binning); binning16Button.grid(row=0,column=2)
 binning32Button = Radiobutton(binningFrame, width=6, text="3.2 ns", indicatoron=False, variable=binning, value=3.2e-9, command=new_binning); binning32Button.grid(row=0,column=3)
 binning64Button = Radiobutton(binningFrame, width=6, text="6.4 ns", indicatoron=False, variable=binning, value=6.4e-9, command=new_binning); binning64Button.grid(row=0,column=4)
-
 
 # Voltage range
 voltageFrame = Frame(coptionFrame); voltageFrame.grid(row=2,column=1)
@@ -164,7 +164,7 @@ def toggle_trigger():
 triggerButton = Button(triggerFrame, text="Off", width=5, command=toggle_trigger); triggerButton.grid(row=0,column=1)
 
 # Quick settings
-qsettingsFrame = Frame(leftFrame, bg="#f5dbff"); qsettingsFrame.grid(row=0,column=0)
+qsettingsFrame = Frame(leftFrame); qsettingsFrame.grid(row=1,column=0)
 def qsettings_checkWaveform():
 	samples.set("8 MS"); new_samples(0)
 	binning16Button.invoke()
@@ -191,16 +191,27 @@ def qsettings_calibrations():
 	if gl.trigger == True:
 		toggle_trigger()
 	cc.init_storage()
-quickSettingsLabel = Label(qsettingsFrame, text="Quick Settings", bg="#f5dbff"); quickSettingsLabel.grid(row=0,column=0)
-checkWaveformsButton = Button(qsettingsFrame, bg="#f5dbff", width=18, text="Standard Observe",   command=qsettings_checkWaveform); checkWaveformsButton.grid(row=0,column=1)
-calibrationsButton   = Button(qsettingsFrame, bg="#f5dbff", width=12, text="Calibrations",       command=qsettings_calibrations); calibrationsButton.grid(row=0,column=2)
-syncedMeasButton     = Button(qsettingsFrame, bg="#f5dbff", width=20, text="Synced Measurement", command=qsettings_syncedMeasurement); syncedMeasButton.grid(row=0,column=3)
+quickSettingsLabel = Label(qsettingsFrame, text="Quick Settings", bg="#f5dbff"); quickSettingsLabel.grid(row=1,column=0)
+checkWaveformsButton = Button(qsettingsFrame, bg="#f5dbff", width=18, text="Standard Observe",   command=qsettings_checkWaveform); checkWaveformsButton.grid(row=1,column=1)
+calibrationsButton   = Button(qsettingsFrame, bg="#f5dbff", width=12, text="Calibrations",       command=qsettings_calibrations); calibrationsButton.grid(row=1,column=2)
+syncedMeasButton     = Button(qsettingsFrame, bg="#f5dbff", width=20, text="Synced Measurement", command=qsettings_syncedMeasurement); syncedMeasButton.grid(row=1,column=3)
 
-
+# Measurement Frame
+measurementLabel = Label(leftFrame, text="Measurement Control", font=("Helvetica 12 bold")); measurementLabel.grid(row=3,column=0)
+measurementFrame = Frame(leftFrame); measurementFrame.grid(row=4,column=0)
+def takeMeasurement():
+	cc.init_storage()
+	filename = gl.basicpath + "/" + measFileNameEntry.get() + ".bin"
+	ma, mb = cc.measurement(filename)
+	calculate_data(ma, mb)
+	cc.init_display()
+singleMeasurementButton = Button(measurementFrame, text="Single Measurement", command=takeMeasurement); singleMeasurementButton.grid(row=0,column=0)
+loopMeasurementButton = Button(measurementFrame, text="Start Loop"); loopMeasurementButton.grid(row=0,column=1)
+measFileNameEntry = Entry(measurementFrame, width=15); measFileNameEntry.grid(row=0,column=2,padx=5); measFileNameEntry.insert(0,"data")
 
 
 # Display Frame #
-displayFrame = Frame(leftFrame); displayFrame.grid(row=2,column=0)
+displayFrame = Frame(leftFrame); displayFrame.grid(row=5,column=0)
 wf_fig = Figure(figsize=(5,5))
 wf_a = []
 wf_b = []
@@ -248,7 +259,8 @@ offsetBasicFrame = Frame(offsetFrame, background="#e8fcae"); offsetBasicFrame.gr
 def takeOffsetMeasurement():
 	qsettings_calibrations()
 	filename = gl.basicpath + "/" + offsetNameEntry.get()
-	cc.measurement(filename)
+	ma, mb = cc.measurement(filename)
+	calculate_data(ma, mb)
 	qsettings_checkWaveform()
 	gl.offsetFile = filename; offsetFileLabel.config(text=gl.offsetFile.split("/")[-1])
 takeOffsetButton = Button(offsetBasicFrame, text="Measure", background="#e8fcae", width=15, command=takeOffsetMeasurement); takeOffsetButton.grid(row=0,column=0)
@@ -491,11 +503,12 @@ def loadCalibration():
 
 
 calibGeneralFrame = Frame(calibFrame, background="#ccf2ff"); calibGeneralFrame.grid(row=1,column=0)
-# Take offset measurement
+# Take calib measurement
 def takeCalibMeasurement():
 	qsettings_calibrations()
 	filename = gl.basicpath + "/" + calibNameEntry.get()
-	cc.measurement(filename)
+	ma, mb = cc.measurement(filename)
+	calculate_data(ma, mb)
 	qsettings_checkWaveform()
 	gl.calibFile = filename; calibFileLabel.config(text=gl.calibFile.split("/")[-1])
 measureCalibButton = Button(calibGeneralFrame, text="Measure", width=15, bg="#ccf2ff", command=takeCalibMeasurement); measureCalibButton.grid(row=0,column=0)
@@ -598,6 +611,56 @@ running = False; stop_thread = False; plotting = False; server=None; server_cont
 rates_a = []; rates_b = []
 plotFig = []; rate_a_plot = []; rate_b_plot = []
 wav_a = []; wav_b = []
+
+def calculate_data(mean_a, mean_b):
+	vRange   = gl.o_voltages
+	binRange = gl.o_binning
+	#-- Channel A calculations --#
+	# Waveform mean
+	mean_a = mean_a - gl.off_a
+	# Rates
+	if gl.calc_rate == True:
+		r_a = 1e-6 * mean_a/(gl.avg_charge_a*binRange)
+		CHa_Label_rate.config(text="{:.1f}".format(r_a))
+		placeRateLineA(r_a)
+	# mV
+	mean_a_mV = ADC_to_mV(adc=mean_a, range=vRange)
+	CHa_Label_mean.config(text="{:.2f}".format(mean_a_mV))
+	# PMT current
+	curr_a_microamp = 1e3 * mean_a_mV/float(ampAEntry.get())/50
+	if curr_a_microamp > -100:      
+		CHa_Label_curr.config(text="{:.1f}".format(curr_a_microamp), bg="black", fg="orange")
+	else:
+		CHa_Label_curr.config(text="{:.1f}".format(curr_a_microamp), bg="#edd266", fg="red")
+
+	#-- Channel B calculations --#
+	if gl.o_nchn == 2:
+		# Waveform mean	
+		mean_b = mean_b - gl.off_b
+		# Rates
+		if gl.calc_rate == True:
+			r_b = 1e-6 * mean_b/(gl.avg_charge_b*binRange)	
+			CHb_Label_rate.config(text="{:.1f}".format(r_b))
+			placeRateLineB(r_b)
+		# mV	
+		mean_b_mV = ADC_to_mV(adc=mean_b, range=vRange)	
+		CHb_Label_mean.config(text="{:.2f}".format(mean_b_mV))
+		# PMT current	
+		curr_b_microamp = 1e3 * mean_b_mV/float(ampBEntry.get())/50
+		if curr_b_microamp > -100:
+			CHb_Label_curr.config(text="{:.1f}".format(curr_b_microamp), bg="black", fg="orange")
+		else:
+			CHb_Label_curr.config(text="{:.1f}".format(curr_b_microamp), bg="#edd266", fg="red")
+
+	if server != None:
+		server.sendRate(r_a, r_b)
+	if server_controller != None:
+		if gl.o_nchn == 1:
+			server_controller.sendRate(r_a)
+		else:
+			server_controller.sendRates(r_a,r_b)
+	root.update()
+
 
 def analysis():
 	vRange   = gl.o_voltages
@@ -963,18 +1026,6 @@ def single():
 	else:
 		single_analysis_no_rate()
 gl.singleRatesButton = Button(quickFrame, text="Single", width=5, command=single); gl.singleRatesButton.grid(row=0,column=1)
-# Samples for quick measurement
-#samples_quick = StringVar(root); samples_quick.set("8 MS")
-#sample_quick_options = {
-#	"1 MS": 1048576, "2 MS": 2097152, "4 MS": 4194304, "8 MS": 8388608,
-#	"16 MS": 16777216, "32 MS": 33554432, "64 MS": 67108864,
-#	"128 MS": 134217728, "256 MS": 268435456, "512 MS": 536870912
-#}
-#def new_samples_quick(val):
-#	gl.o_samples_quick = int((sample_quick_options[samples_quick.get()]))
-#	cc.set_sample_size(gl.o_samples_quick)
-#samples_quick_Dropdown = OptionMenu(quickFrame, samples_quick, *sample_quick_options, command=new_samples_quick)
-#samples_quick_Dropdown.grid(row=0, column=2)
 ##################
 ## Server Stuff ##
 ##################
