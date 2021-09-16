@@ -85,51 +85,74 @@ rootMainFrame = Frame(root); rootMainFrame.grid(row=0,column=2)
 leftFrame = Frame(root); leftFrame.grid(row=0,column=0)
 
 # Card option Frame #
-coptionFrame = Frame(leftFrame); coptionFrame.grid(row=0,column=0)
+coptionFrame = Frame(leftFrame); coptionFrame.grid(row=1,column=0)
+
+# Samples for each measurement
+sampleFrame = Frame(coptionFrame); sampleFrame.grid(row=1,column=0)
+samples = StringVar(root); samples.set("8 MS")
+sampleoptions = {
+	"1 MS": 1048576, "2 MS": 2097152, "4 MS": 4194304, "8 MS": 8388608, "16 MS": 16777216, "32 MS": 33554432, "64 MS": 67108864,
+	"128 MS": 134217728, "256 MS": 268435456, "512 MS": 536870912,
+	"1 GS": 1073741824, "2 GS": 2147483648
+}
+def new_samples(val):
+	gl.o_samples = int((sampleoptions[samples.get()]))
+	cc.set_sample_size(gl.o_samples)
+samplesDropdownLabel = Label(sampleFrame, text="File Sample Size"); samplesDropdownLabel.grid(row=0,column=0)
+samplesDropdown = OptionMenu(sampleFrame, samples, *sampleoptions, command=new_samples)
+samplesDropdown.grid(row=0, column=1)
 
 # Sampling
-binning = StringVar(root); binning.set("1.6 ns")
-binningoptions = {"0.8 ns": 0.8e-9, "1.6 ns": 1.6e-9, "3.2 ns": 3.2e-9, "6.4 ns": 6.4e-9}
-def new_binning(val):
-	gl.o_binning = float((binningoptions[binning.get()]))
+binningFrame = Frame(coptionFrame); binningFrame.grid(row=1,column=1)
+binningLabel = Label(binningFrame, text="Time sampling", width=12); binningLabel.grid(row=0,column=0)
+binning = DoubleVar(root); binning.set(1.6e-9)
+def new_binning():
+	gl.o_binning = binning.get()
 	cc.set_sampling(gl.o_binning)
-binningDropdownLabel = Label(commonFrame, text="Time sampling"); binningDropdownLabel.grid(row=1,column=0)
-binningDropdown = OptionMenu(commonFrame, binning, *binningoptions, command=new_binning)
-binningDropdown.grid(row=1, column=1)
+binning08Button = Radiobutton(binningFrame, width=6, text="0.8 ns", indicatoron=False, variable=binning, value=0.8e-9, command=new_binning); binning08Button.grid(row=0,column=1)
+binning16Button = Radiobutton(binningFrame, width=6, text="1.6 ns", indicatoron=False, variable=binning, value=1.6e-9, command=new_binning); binning16Button.grid(row=0,column=2)
+binning32Button = Radiobutton(binningFrame, width=6, text="3.2 ns", indicatoron=False, variable=binning, value=3.2e-9, command=new_binning); binning32Button.grid(row=0,column=3)
+binning64Button = Radiobutton(binningFrame, width=6, text="6.4 ns", indicatoron=False, variable=binning, value=6.4e-9, command=new_binning); binning64Button.grid(row=0,column=4)
 
 
 # Voltage range
-voltageFrame = Frame(coptionFrame); voltageFrame.grid(row=1,column=0)
-voltageLabel = Label(voltageFrame, text="Voltage range"); voltageLabel.grid(row=0,column=0)
+voltageFrame = Frame(coptionFrame); voltageFrame.grid(row=2,column=1)
+voltageLabel = Label(voltageFrame, text="Voltage range", width=12); voltageLabel.grid(row=0,column=0)
 voltages = IntVar(root); voltages.set(200)
 def new_voltages():
 	gl.o_voltages = voltages.get()
 	cc.set_voltage_range(gl.o_voltages)
-voltage040Button = Radiobutton(voltageFrame, width=5, text=" 40 mV", indicatoron=False, variable=voltages, value= 40, command=new_voltages); voltage040Button.grid(row=0,column=1)
-voltage100Button = Radiobutton(voltageFrame, width=5, text="100 mV", indicatoron=False, variable=voltages, value=100, command=new_voltages); voltage100Button.grid(row=0,column=2)
-voltage200Button = Radiobutton(voltageFrame, width=5, text="200 mV", indicatoron=False, variable=voltages, value=200, command=new_voltages); voltage200Button.grid(row=0,column=3)
-voltage500Button = Radiobutton(voltageFrame, width=5, text="500 mV", indicatoron=False, variable=voltages, value=500, command=new_voltages); voltage500Button.grid(row=0,column=4)
+voltage040Button = Radiobutton(voltageFrame, width=6, text=" 40 mV", indicatoron=False, variable=voltages, value= 40, command=new_voltages); voltage040Button.grid(row=0,column=1)
+voltage100Button = Radiobutton(voltageFrame, width=6, text="100 mV", indicatoron=False, variable=voltages, value=100, command=new_voltages); voltage100Button.grid(row=0,column=2)
+voltage200Button = Radiobutton(voltageFrame, width=6, text="200 mV", indicatoron=False, variable=voltages, value=200, command=new_voltages); voltage200Button.grid(row=0,column=3)
+voltage500Button = Radiobutton(voltageFrame, width=6, text="500 mV", indicatoron=False, variable=voltages, value=500, command=new_voltages); voltage500Button.grid(row=0,column=4)
 
 # Channels
 channelFrame = Frame(coptionFrame); channelFrame.grid(row=2,column=0)
 channelLabel = Label(channelFrame, text="Channels"); channelLabel.grid(row=0,column=0)
 channels = IntVar(root); channels.set(2)
 def new_nchn():
-	gl.o_nchn = channels.get()
-	gl.calc_rate = False
-	gl.startstopButton.config(state="disabled")
-	singleFileButton.config(state="disabled")
-	cc.set_channels(gl.o_nchn)
+	ch_old = gl.o_nchn
+	ch_new = channels.get()
+	if ch_new != ch_old:
+		gl.o_nchn = ch_new
+		gl.calc_rate = False
+		gl.startstopButton.config(state="disabled")
+		singleFileButton.config(state="disabled")
+		cc.set_channels(gl.o_nchn)
 channel1Button = Radiobutton(channelFrame, width=5, text="1", indicatoron=False, variable=channels, value=1, command=new_nchn); channel1Button.grid(row=0,column=1)
 channel2Button = Radiobutton(channelFrame, width=5, text="2", indicatoron=False, variable=channels, value=2, command=new_nchn); channel2Button.grid(row=0,column=2)
 
-# Clock and Trigger
+# Clock
 clockFrame = Frame(coptionFrame); clockFrame.grid(row=3,column=0)
 clockmodeLabel = Label(clockFrame, text="Clock"); clockmodeLabel.grid(row=0,column=0)
 gl.clockmode = IntVar(); gl.clockmode.set(2)
 clockInternButton = Radiobutton(clockFrame, width=8, text="Internal", indicatoron=False, variable=gl.clockmode, value=1, command=cc.set_clockmode); clockInternButton.grid(row=0,column=1)
 clockExternButton = Radiobutton(clockFrame, width=8, text="External", indicatoron=False, variable=gl.clockmode, value=2, command=cc.set_clockmode); clockExternButton.grid(row=0,column=2)
-triggerLabel = Label(clockFrame, text="External Trigger"); triggerLabel.grid(row=0,column=3)
+
+# Trigger
+triggerFrame = Frame(coptionFrame); triggerFrame.grid(row=3,column=1)
+triggerLabel = Label(triggerFrame, text="External Trigger"); triggerLabel.grid(row=0,column=0)
 def toggle_trigger():
 	if gl.trigger == False:
 		gl.trigger = True
@@ -138,11 +161,46 @@ def toggle_trigger():
 		gl.trigger = False
 		triggerButton.config(text="Off")
 	cc.set_triggermode()
-triggerButton = Button(clockFrame, text="Off", width=5, command=toggle_trigger); triggerButton.grid(row=0,column=4)
+triggerButton = Button(triggerFrame, text="Off", width=5, command=toggle_trigger); triggerButton.grid(row=0,column=1)
+
+# Quick settings
+qsettingsFrame = Frame(leftFrame, bg="#f5dbff"); qsettingsFrame.grid(row=0,column=0)
+def qsettings_checkWaveform():
+	samples.set("8 MS"); new_samples(0)
+	binning16Button.invoke()
+	channel2Button.invoke()
+	voltage200Button.invoke()
+	if gl.trigger == True:
+		toggle_trigger()
+	cc.init_display()
+def qsettings_syncedMeasurement():
+	samples.set("2 GS"); new_samples(0)
+	binning16Button.invoke()
+	channel2Button.invoke()
+	voltage200Button.invoke()
+	clockExternButton.invoke()
+	if gl.trigger == False:
+		toggle_trigger()
+	cc.init_storage()
+def qsettings_calibrations():
+	samples.set("2 GS"); new_samples(0)
+	binning16Button.invoke()
+	channel2Button.invoke()
+	voltage200Button.invoke()
+	clockExternButton.invoke()
+	if gl.trigger == True:
+		toggle_trigger()
+	cc.init_storage()
+quickSettingsLabel = Label(qsettingsFrame, text="Quick Settings", bg="#f5dbff"); quickSettingsLabel.grid(row=0,column=0)
+checkWaveformsButton = Button(qsettingsFrame, bg="#f5dbff", width=18, text="Standard Observe",   command=qsettings_checkWaveform); checkWaveformsButton.grid(row=0,column=1)
+calibrationsButton   = Button(qsettingsFrame, bg="#f5dbff", width=12, text="Calibrations",       command=qsettings_calibrations); calibrationsButton.grid(row=0,column=2)
+syncedMeasButton     = Button(qsettingsFrame, bg="#f5dbff", width=20, text="Synced Measurement", command=qsettings_syncedMeasurement); syncedMeasButton.grid(row=0,column=3)
+
+
 
 
 # Display Frame #
-displayFrame = Frame(leftFrame); displayFrame.grid(row=1,column=0)
+displayFrame = Frame(leftFrame); displayFrame.grid(row=2,column=0)
 wf_fig = Figure(figsize=(5,5))
 wf_a = []
 wf_b = []
@@ -162,25 +220,6 @@ gl.wf_canvas.draw()
 ##################
 # The common frame contains the dropdown menu of measurement options
 commonFrame = Frame(rootMainFrame); commonFrame.grid(row=0,column=0)
-
-# Samples for each measurement
-samples = StringVar(root); samples.set("2 GS")
-sampleoptions = {
-	"64 S": 64, "128 S": 128, "256 S": 256, "512 S": 512,
-	"1 kS": 1024, "2 kS": 2048, "4 kS": 4096, "8 kS": 8192, "16 kS": 16384, "32 kS": 32768, "64 kS": 65536,
-	"128 kS": 131072, "256 kS": 262144, "512 kS": 524288,
-	"1 MS": 1048576, "2 MS": 2097152, "4 MS": 4194304, "8 MS": 8388608, "16 MS": 16777216, "32 MS": 33554432, "64 MS": 67108864,
-	"128 MS": 134217728, "256 MS": 268435456, "512 MS": 536870912,
-	"1 GS": 1073741824, "2 GS": 2147483648, "4 GS": 4294967296
-}
-def new_samples(val):
-	gl.o_samples = int((sampleoptions[samples.get()]))
-samplesDropdownLabel = Label(commonFrame, text="File Sample Size"); samplesDropdownLabel.grid(row=0,column=0)
-samplesDropdown = OptionMenu(commonFrame, samples, *sampleoptions, command=new_samples)
-samplesDropdown.grid(row=0, column=1)
-# Time binning
-
-
 
 # Directory
 def selectDirectory():
@@ -205,11 +244,21 @@ offsetPLabel = Label(offsetHeader, text="p", background="#e8fcae"); offsetPLabel
 offsetPEntry = Entry(offsetHeader, width=5); offsetPEntry.grid(row=0,column=4); offsetPEntry.insert(0,"2000")
 
 offsetBasicFrame = Frame(offsetFrame, background="#e8fcae"); offsetBasicFrame.grid(row=1,column=0)
+# Take offset measurement
+def takeOffsetMeasurement():
+	qsettings_calibrations()
+	filename = gl.basicpath + "/" + offsetNameEntry.get()
+	cc.measurement(filename)
+	qsettings_checkWaveform()
+	gl.offsetFile = filename; offsetFileLabel.config(text=gl.offsetFile.split("/")[-1])
+takeOffsetButton = Button(offsetBasicFrame, text="Measure", background="#e8fcae", width=15, command=takeOffsetMeasurement); takeOffsetButton.grid(row=0,column=0)
+offsetNameEntry = Entry(offsetBasicFrame, width=15); offsetNameEntry.grid(row=0,column=1); offsetNameEntry.insert(0,"off.bin")
+
 # Select offset binary file for offset investigations
 def selectOffsetFile():
 	root.filename = filedialog.askopenfilename(initialdir = gl.basicpath, title = "Select offset file", filetypes = (("binary files","*.bin"),("all files","*.*")))
 	gl.offsetFile = root.filename; offsetFileLabel.config(text=gl.offsetFile.split("/")[-1])
-selectOffsetFileButton = Button(offsetBasicFrame, text="Select Offset Binary", background="#e8fcae", command=selectOffsetFile); selectOffsetFileButton.grid(row=1,column=0)
+selectOffsetFileButton = Button(offsetBasicFrame, text="Select Offset Binary", width=15, background="#e8fcae", command=selectOffsetFile); selectOffsetFileButton.grid(row=1,column=0)
 offsetFileLabel = Label(offsetBasicFrame, text="no file selected", background="#e8fcae"); offsetFileLabel.grid(row=1,column=1)
 # Load already existing .off or .off1 file
 def loadOffset():
@@ -224,7 +273,7 @@ def loadOffset():
 		gl.off_a = np.loadtxt(gl.offsetLoad); parOffsetLabelA.config(text="{:.2f}".format(gl.off_a))
 		parOffsetLabelB.config(text="--")
 	gl.offsetFile = to_bin(gl.offsetLoad); offsetFileLabel.config(text=gl.offsetFile.split("/")[-1])
-loadOffsetButton = Button(offsetBasicFrame, text="Load Offset", background="#e8fcae", command=loadOffset); loadOffsetButton.grid(row=2,column=0)
+loadOffsetButton = Button(offsetBasicFrame, text="Load Offset", width=15, background="#e8fcae", command=loadOffset); loadOffsetButton.grid(row=2,column=0)
 loadOffsetLabel = Label(offsetBasicFrame, text="no file selected", background="#e8fcae"); loadOffsetLabel.grid(row=2,column=1)
 # Display part of the waveform and horizontal offset lines
 def displayOffset():
@@ -234,7 +283,7 @@ def displayOffset():
 	if gl.o_nchn == 2:
 		plt.plot(wv_off_b, label="Channel B", color="red" , alpha=0.4); plt.axhline(y=gl.off_b, color="red")
 	plt.xlabel("Time bins"); plt.ylabel("ADC"); plt.legend(); plt.title(gl.offsetFile); plt.show()
-displayOffsetButton = Button(offsetBasicFrame, text="Display Offset", background="#e8fcae", command=displayOffset); displayOffsetButton.grid(row=3, column=0)
+displayOffsetButton = Button(offsetBasicFrame, text="Display Offset", width=15, background="#e8fcae", command=displayOffset); displayOffsetButton.grid(row=3, column=0)
 # Simply display part of the waveform
 def displayWaveformOffset():
 	if gl.o_nchn == 2:
@@ -301,6 +350,7 @@ offsetDoFrame = Frame(offsetFrame, background="#e8fcae"); offsetDoFrame.grid(row
 offsetButton = Button(offsetDoFrame, text="Calc Offset", background="#e8fcae", command=start_offset_thread); offsetButton.grid(row=0,column=0)
 stopOffsetButton = Button(offsetDoFrame, text="Abort", background="#fa857a", command=stop_offset_thread); stopOffsetButton.grid(row=0,column=1)
 quickOffsetButton = Button(offsetDoFrame, text="Wait for file", background="#e8fcae", command=start_quick_offset_thread, state="disabled"); quickOffsetButton.grid(row=0,column=2)
+
 
 #######################
 ## CALIBRATION FRAME ##
@@ -441,10 +491,19 @@ def loadCalibration():
 
 
 calibGeneralFrame = Frame(calibFrame, background="#ccf2ff"); calibGeneralFrame.grid(row=1,column=0)
-selectCalibFileButton = Button(calibGeneralFrame, text="Select Calib Binary", command=selectCalibFile, background="#ccf2ff"); selectCalibFileButton.grid(row=0, column=0)
-calibFileLabel = Label(calibGeneralFrame, text="no file selected", background="#ccf2ff"); calibFileLabel.grid(row=0, column=1)
-loadCalibButton = Button(calibGeneralFrame, text="Load calibration", command=loadCalibration, background="#ccf2ff"); loadCalibButton.grid(row=1,column=0)
-loadCalibLabel = Label(calibGeneralFrame, text="no file selected", background="#ccf2ff"); loadCalibLabel.grid(row=1,column=1)
+# Take offset measurement
+def takeCalibMeasurement():
+	qsettings_calibrations()
+	filename = gl.basicpath + "/" + calibNameEntry.get()
+	cc.measurement(filename)
+	qsettings_checkWaveform()
+	gl.calibFile = filename; calibFileLabel.config(text=gl.calibFile.split("/")[-1])
+measureCalibButton = Button(calibGeneralFrame, text="Measure", width=15, bg="#ccf2ff", command=takeCalibMeasurement); measureCalibButton.grid(row=0,column=0)
+calibNameEntry = Entry(calibGeneralFrame, width=15); calibNameEntry.grid(row=0,column=1); calibNameEntry.insert(0,"calib.bin")
+selectCalibFileButton = Button(calibGeneralFrame, text="Select Calib Binary", width=15, command=selectCalibFile, background="#ccf2ff"); selectCalibFileButton.grid(row=1, column=0)
+calibFileLabel = Label(calibGeneralFrame, text="no file selected", background="#ccf2ff"); calibFileLabel.grid(row=1, column=1)
+loadCalibButton = Button(calibGeneralFrame, text="Load calibration", width=15, command=loadCalibration, background="#ccf2ff"); loadCalibButton.grid(row=2,column=0)
+loadCalibLabel = Label(calibGeneralFrame, text="no file selected", background="#ccf2ff"); loadCalibLabel.grid(row=2,column=1)
 
 # Other commands
 def displayWaveform():
@@ -454,8 +513,8 @@ def displayWaveform():
 	if gl.o_nchn == 2:
 		plt.plot(wv_b, label="Channel B", color="red")
 	plt.xlabel("Time bins"); plt.ylabel("ADC"); plt.legend(); plt.title(gl.calibFile); plt.show()
-displayCalibrationButton = Button(calibGeneralFrame, text="Display calib", background="#ccf2ff", command=displayCalibration); displayCalibrationButton.grid(row=2,column=0)
-displayWaveformButton = Button(calibGeneralFrame, text="Display waveform", background="#ccf2ff", command=displayWaveform); displayWaveformButton.grid(row=2, column=1)
+displayCalibrationButton = Button(calibGeneralFrame, text="Display calib", background="#ccf2ff", width=15, command=displayCalibration); displayCalibrationButton.grid(row=3,column=0)
+displayWaveformButton = Button(calibGeneralFrame, text="Display waveform", background="#ccf2ff", width=15, command=displayWaveform); displayWaveformButton.grid(row=3, column=1)
 
 # Calibration parameters
 calibParamFrame = Frame(calibFrame, background="#ccf2ff"); calibParamFrame.grid(row=2,column=0)
@@ -905,17 +964,17 @@ def single():
 		single_analysis_no_rate()
 gl.singleRatesButton = Button(quickFrame, text="Single", width=5, command=single); gl.singleRatesButton.grid(row=0,column=1)
 # Samples for quick measurement
-samples_quick = StringVar(root); samples_quick.set("16 MS")
-sample_quick_options = {
-	"1 MS": 1048576, "2 MS": 2097152, "4 MS": 4194304, "8 MS": 8388608,
-	"16 MS": 16777216, "32 MS": 33554432, "64 MS": 67108864,
-	"128 MS": 134217728, "256 MS": 268435456, "512 MS": 536870912
-}
-def new_samples_quick(val):
-	gl.o_samples_quick = int((sample_quick_options[samples_quick.get()]))
-	cc.set_sample_size(gl.o_samples_quick)
-samples_quick_Dropdown = OptionMenu(quickFrame, samples_quick, *sample_quick_options, command=new_samples_quick)
-samples_quick_Dropdown.grid(row=0, column=2)
+#samples_quick = StringVar(root); samples_quick.set("8 MS")
+#sample_quick_options = {
+#	"1 MS": 1048576, "2 MS": 2097152, "4 MS": 4194304, "8 MS": 8388608,
+#	"16 MS": 16777216, "32 MS": 33554432, "64 MS": 67108864,
+#	"128 MS": 134217728, "256 MS": 268435456, "512 MS": 536870912
+#}
+#def new_samples_quick(val):
+#	gl.o_samples_quick = int((sample_quick_options[samples_quick.get()]))
+#	cc.set_sample_size(gl.o_samples_quick)
+#samples_quick_Dropdown = OptionMenu(quickFrame, samples_quick, *sample_quick_options, command=new_samples_quick)
+#samples_quick_Dropdown.grid(row=0, column=2)
 ##################
 ## Server Stuff ##
 ##################

@@ -154,7 +154,7 @@ def measurement(filename):
     newFile.close()
     #
     print (np.mean(np_data))
-    print ("Finished in {:.2f} seconds\n".format(t2-t1));
+    print ("Finished in {:.2f} seconds\n".format(t2-t1))
 
 # clean up
 def close():
