@@ -79,10 +79,70 @@ rmaxbText = rateBCanvas.create_text(r_width/2,0.2*r_height, fill="white", text="
 
 rootMainFrame = Frame(root); rootMainFrame.grid(row=0,column=2)
 
-###################
-## DISPLAY FRAME ##
-###################
-displayFrame = Frame(root); displayFrame.grid(row=0,column=0)
+################
+## LEFT FRAME ##
+################
+leftFrame = Frame(root); leftFrame.grid(row=0,column=0)
+
+# Card option Frame #
+coptionFrame = Frame(leftFrame); coptionFrame.grid(row=0,column=0)
+
+# Sampling
+binning = StringVar(root); binning.set("1.6 ns")
+binningoptions = {"0.8 ns": 0.8e-9, "1.6 ns": 1.6e-9, "3.2 ns": 3.2e-9, "6.4 ns": 6.4e-9}
+def new_binning(val):
+	gl.o_binning = float((binningoptions[binning.get()]))
+	cc.set_sampling(gl.o_binning)
+binningDropdownLabel = Label(commonFrame, text="Time sampling"); binningDropdownLabel.grid(row=1,column=0)
+binningDropdown = OptionMenu(commonFrame, binning, *binningoptions, command=new_binning)
+binningDropdown.grid(row=1, column=1)
+
+
+# Voltage range
+voltageFrame = Frame(coptionFrame); voltageFrame.grid(row=1,column=0)
+voltageLabel = Label(voltageFrame, text="Voltage range"); voltageLabel.grid(row=0,column=0)
+voltages = IntVar(root); voltages.set(200)
+def new_voltages():
+	gl.o_voltages = voltages.get()
+	cc.set_voltage_range(gl.o_voltages)
+voltage040Button = Radiobutton(voltageFrame, width=5, text=" 40 mV", indicatoron=False, variable=voltages, value= 40, command=new_voltages); voltage040Button.grid(row=0,column=1)
+voltage100Button = Radiobutton(voltageFrame, width=5, text="100 mV", indicatoron=False, variable=voltages, value=100, command=new_voltages); voltage100Button.grid(row=0,column=2)
+voltage200Button = Radiobutton(voltageFrame, width=5, text="200 mV", indicatoron=False, variable=voltages, value=200, command=new_voltages); voltage200Button.grid(row=0,column=3)
+voltage500Button = Radiobutton(voltageFrame, width=5, text="500 mV", indicatoron=False, variable=voltages, value=500, command=new_voltages); voltage500Button.grid(row=0,column=4)
+
+# Channels
+channelFrame = Frame(coptionFrame); channelFrame.grid(row=2,column=0)
+channelLabel = Label(channelFrame, text="Channels"); channelLabel.grid(row=0,column=0)
+channels = IntVar(root); channels.set(2)
+def new_nchn():
+	gl.o_nchn = channels.get()
+	gl.calc_rate = False
+	gl.startstopButton.config(state="disabled")
+	singleFileButton.config(state="disabled")
+	cc.set_channels(gl.o_nchn)
+channel1Button = Radiobutton(channelFrame, width=5, text="1", indicatoron=False, variable=channels, value=1, command=new_nchn); channel1Button.grid(row=0,column=1)
+channel2Button = Radiobutton(channelFrame, width=5, text="2", indicatoron=False, variable=channels, value=2, command=new_nchn); channel2Button.grid(row=0,column=2)
+
+# Clock and Trigger
+clockFrame = Frame(coptionFrame); clockFrame.grid(row=3,column=0)
+clockmodeLabel = Label(clockFrame, text="Clock"); clockmodeLabel.grid(row=0,column=0)
+gl.clockmode = IntVar(); gl.clockmode.set(2)
+clockInternButton = Radiobutton(clockFrame, width=8, text="Internal", indicatoron=False, variable=gl.clockmode, value=1, command=cc.set_clockmode); clockInternButton.grid(row=0,column=1)
+clockExternButton = Radiobutton(clockFrame, width=8, text="External", indicatoron=False, variable=gl.clockmode, value=2, command=cc.set_clockmode); clockExternButton.grid(row=0,column=2)
+triggerLabel = Label(clockFrame, text="External Trigger"); triggerLabel.grid(row=0,column=3)
+def toggle_trigger():
+	if gl.trigger == False:
+		gl.trigger = True
+		triggerButton.config(text="On")
+	elif gl.trigger == True:
+		gl.trigger = False
+		triggerButton.config(text="Off")
+	cc.set_triggermode()
+triggerButton = Button(clockFrame, text="Off", width=5, command=toggle_trigger); triggerButton.grid(row=0,column=4)
+
+
+# Display Frame #
+displayFrame = Frame(leftFrame); displayFrame.grid(row=1,column=0)
 wf_fig = Figure(figsize=(5,5))
 wf_a = []
 wf_b = []
@@ -104,7 +164,7 @@ gl.wf_canvas.draw()
 commonFrame = Frame(rootMainFrame); commonFrame.grid(row=0,column=0)
 
 # Samples for each measurement
-samples = StringVar(root); samples.set("128 MS")
+samples = StringVar(root); samples.set("2 GS")
 sampleoptions = {
 	"64 S": 64, "128 S": 128, "256 S": 256, "512 S": 512,
 	"1 kS": 1024, "2 kS": 2048, "4 kS": 4096, "8 kS": 8192, "16 kS": 16384, "32 kS": 32768, "64 kS": 65536,
@@ -119,34 +179,8 @@ samplesDropdownLabel = Label(commonFrame, text="File Sample Size"); samplesDropd
 samplesDropdown = OptionMenu(commonFrame, samples, *sampleoptions, command=new_samples)
 samplesDropdown.grid(row=0, column=1)
 # Time binning
-binning = StringVar(root); binning.set("1.6 ns")
-binningoptions = {"0.8 ns": 0.8e-9, "1.6 ns": 1.6e-9, "3.2 ns": 3.2e-9, "6.4 ns": 6.4e-9}
-def new_binning(val):
-	gl.o_binning = float((binningoptions[binning.get()]))
-binningDropdownLabel = Label(commonFrame, text="Time sampling"); binningDropdownLabel.grid(row=1,column=0)
-binningDropdown = OptionMenu(commonFrame, binning, *binningoptions, command=new_binning)
-binningDropdown.grid(row=1, column=1)
-# Voltage range
-voltages = StringVar(root); voltages.set("200 mV")
-voltageoptions = {"40 mV": 40, "100 mV": 100, "200 mV": 200, "500 mV": 500}
-def new_voltages(val):
-	gl.o_voltages = int((voltageoptions[voltages.get()]))
-	cc.set_voltage_range(gl.o_voltages)
-voltageDropdownLabel = Label(commonFrame, text="Voltage range"); voltageDropdownLabel.grid(row=2,column=0)
-voltageDropdown = OptionMenu(commonFrame, voltages, *voltageoptions, command=new_voltages)
-voltageDropdown.grid(row=2, column=1)
-# Number of channels used for measurement
-channels = StringVar(root); channels.set("2")
-channeloptions = {"1": 1, "2": 2}
-def new_nchn(val):
-	gl.o_nchn = int((channeloptions[channels.get()]))
-	gl.calc_rate = False
-	gl.startstopButton.config(state="disabled")
-	singleFileButton.config(state="disabled")
-	cc.set_channels(gl.o_nchn)
-channelDropdownLabel = Label(commonFrame, text="Channels"); channelDropdownLabel.grid(row=3,column=0)
-channelDropdown = OptionMenu(commonFrame, channels, *channeloptions, command=new_nchn)
-channelDropdown.grid(row=3, column=1)
+
+
 
 # Directory
 def selectDirectory():

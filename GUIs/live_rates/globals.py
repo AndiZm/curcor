@@ -11,6 +11,8 @@ o_samples_quick	= 262144	# Number of samples for quick rate analysis
 o_binning  		= 1.6e-9	# Time binning in seconds
 o_voltages 		= 200		# Voltage range in mV
 o_nchn     		= 2 		# Activated channels
+clockmode = None
+trigger = False
 
 # Paths
 basicpath = "E:/"

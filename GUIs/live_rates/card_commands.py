@@ -73,7 +73,9 @@ def init():
     spcm_dwSetParam_i32 (hCard, SPC_TIMEOUT,        5000)                   # timeout 5 s
     spcm_dwSetParam_i32 (hCard, SPC_TRIG_ORMASK,    SPC_TMASK_SOFTWARE)     # trigger set to software
     spcm_dwSetParam_i32 (hCard, SPC_TRIG_ANDMASK,   0)                      # ...
-    spcm_dwSetParam_i32 (hCard, SPC_CLOCKMODE,      SPC_CM_INTPLL)          # clock mode internal PLL
+    spcm_dwSetParam_i32 (hCard, SPC_CLOCKMODE,      SPC_CM_EXTREFCLOCK)     # clock mode external
+    spcm_dwSetParam_i32 (hCard, SPC_REFERENCECLOCK, 10000000)               # external clock with 10 MHz
+
     
     spcm_dwSetParam_i32 (hCard, SPC_AMP0,           200)                    # Voltage range of channel 0 set to +/- 200 mV
     spcm_dwSetParam_i32 (hCard, SPC_AMP1,           200)                    # Voltage range of channel 1 set to +/- 200 mV
@@ -114,6 +116,33 @@ def set_sample_size(x):
     else:
         pvBuffer = pvAllocMemPageAligned (qwBufferSize.value)
         print ("Using buffer allocated by user program\n")
+def set_sampling(x):
+    if x == 0.8e-9:
+        spcm_dwSetParam_i64 (hCard, SPC_SAMPLERATE, MEGA(1250))
+    if x == 1.6e-9:
+        spcm_dwSetParam_i64 (hCard, SPC_SAMPLERATE, MEGA(625))
+    if x == 3.2e-9:
+        spcm_dwSetParam_i64 (hCard, SPC_SAMPLERATE, KILO(312500))
+    if x == 6.4e-9:
+        spcm_dwSetParam_i64 (hCard, SPC_SAMPLERATE, KILO(156250))
+def set_clockmode():
+    if gl.clockmode.get() == 1:
+        spcm_dwSetParam_i32 (hCard, SPC_CLOCKMODE, SPC_CM_INTPLL)
+    if gl.clockmode.get() == 2:
+        spcm_dwSetParam_i32 (hCard, SPC_CLOCKMODE, SPC_CM_EXTREFCLOCK)
+        spcm_dwSetParam_i32 (hCard, SPC_REFERENCECLOCK, 10000000)
+def set_triggermode():
+    if gl.trigger == True:
+        spcm_dwSetParam_i32 (hCard, SPC_TRIG_ORMASK,    SPC_TMASK_EXT0)         # trigger set to extern
+        spcm_dwSetParam_i32 (hCard, SPC_TRIG_TERM,      1)                      # 50 Ohm termination active
+        spcm_dwSetParam_i32 (hCard, SPC_TRIG_EXT0_ACDC, 0)                      # DC coupling
+        spcm_dwSetParam_i32 (hCard, SPC_TRIG_EXT0_LEVEL0, 700)                  # Trigger level 700 mV
+        spcm_dwSetParam_i32 (hCard, SPC_TRIG_EXT0_MODE, SPC_TM_POS)             # Trigger set on positive edge
+        spcm_dwSetParam_i32 (hCard, SPC_TRIG_ANDMASK,   0) 
+    if gl.trigger == False:
+        spcm_dwSetParam_i32 (hCard, SPC_TRIG_ORMASK,    SPC_TMASK_SOFTWARE)     # trigger set to software
+        spcm_dwSetParam_i32 (hCard, SPC_TRIG_ANDMASK,   0)                      # ...
+
 
 def take_data():
     global hCard, lNotifySize, pvBuffer, qwContBufLen, qwBufferSize, dataSize

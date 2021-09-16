@@ -65,9 +65,9 @@ spcm_dwSetParam_i32 (hCard, SPC_TRIG_EXT0_LEVEL0, 700)                  # Trigge
 spcm_dwSetParam_i32 (hCard, SPC_TRIG_EXT0_MODE, SPC_TM_POS)             # Trigger set on positive edge
 spcm_dwSetParam_i32 (hCard, SPC_TRIG_ANDMASK,   0)                      # ...
 # Clock
-#spcm_dwSetParam_i32 (hCard, SPC_CLOCKMODE,      SPC_CM_EXTREFCLOCK)     # clock mode external
-#spcm_dwSetParam_i32 (hCard, SPC_REFERENCECLOCK, 10000000)               # external clock with 10 MHz
-spcm_dwSetParam_i32 (hCard, SPC_CLOCKMODE,      SPC_CM_INTPLL)          # clock mode internal PLL
+spcm_dwSetParam_i32 (hCard, SPC_CLOCKMODE,      SPC_CM_EXTREFCLOCK)     # clock mode external
+spcm_dwSetParam_i32 (hCard, SPC_REFERENCECLOCK, 10000000)               # external clock with 10 MHz
+#spcm_dwSetParam_i32 (hCard, SPC_CLOCKMODE,      SPC_CM_INTPLL)          # clock mode internal PLL
 # Voltage range
 spcm_dwSetParam_i32 (hCard, SPC_AMP0,           200)                    # Voltage range of channel 0 set to +/- 200 mV
 spcm_dwSetParam_i32 (hCard, SPC_AMP1,           200)                    # Voltage range of channel 1 set to +/- 200 mV

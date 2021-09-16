@@ -179,7 +179,7 @@ def refresh_display(binning):
 			gl.g2_sig_fft_plot = gl.fftAx.plot(x_fft, np.abs(gl.g2_diff_fft), color="#003366", linewidth=2)
 
 	if gl.boolSig == True:
-		gl.ffts_sig_plot = gl.fftAx.imshow(gl.ffts_sig, aspect="auto", extent=[0,1e-9/binning,0,formax], cmap=cm.binary, vmin=np.min(gl.ffts_sig), vmax=np.max(gl.ffts_sig))
+		gl.ffts_sig_plot = gl.fftAx.imshow(gl.ffts_sig, aspect="auto", extent=[0,1e-9/binning,0,formax], cmap=cm.binary, vmin=np.min(gl.ffts_sig), vmax=np.max(gl.ffts_sig)/10)
 
 	gl.fftAx.set_xlim(0,0.5e-9/binning)
 	gl.fftAx.set_ylim(0,formax)
