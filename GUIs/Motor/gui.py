@@ -6,6 +6,7 @@ from threading import Thread
 import threading
 from serial.serialutil import SerialException
 import time
+from rate_analyzer import *
 
 
 import warnings
@@ -276,7 +277,7 @@ class GUI:
         self.rateClientButton = Button(self.RateFrame, text="Connect", bg="#cdcfd1", command=self.startStopClient, width=8); self.rateClientButton.grid(row=4,column=5, padx=3, pady=3)
 
         #optimziation content
-        self.optimizationButton = Button(self.OptFrame, text="optimize Mirrors", bg="#cdcfd1", command=self.optimize, width=16); self.optimizationButton.grid(row=4,column=5, padx=3, pady=3)
+        self.optimizationButton = Button(self.OptFrame, text="Start Rate Analyzer", bg="#cdcfd1", command=self.optimize, width=16); self.optimizationButton.grid(row=4,column=5, padx=3, pady=3)
         self.scanButton = Button(self.OptFrame, text="plot Mirrors", bg="#cdcfd1", command=self.showRateDistribution, width=16); self.scanButton.grid(row=4,column=6, padx=3, pady=3)
         self.dummyButton = Button(self.OptFrame, text="dummy Button", bg="#cdcfd1", command=self.dummy_button, width=16); self.dummyButton.grid(row=4,column=7, padx=3, pady=3)
 
@@ -594,13 +595,14 @@ class GUI:
         self.MirrorPhi.set(new_pos[5])
             
     def openNewDialogue(self):
-        self.dialog=DialogFenster(master)
+        self.dialog=DialogFenster(self.master)
         
     def dummy_button(self):
         self.openNewDialogue()
         
     def optimize(self):
-        return
+        rate_analyzer=RATE_ANALYZER(self.master, self.controller, self.client)
+        
     
     def showRateDistribution(self):
         return
