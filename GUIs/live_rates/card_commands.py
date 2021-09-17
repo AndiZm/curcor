@@ -281,16 +281,17 @@ def measurement(filename):
     
     t2 = time.time()
     newFile.close()
-    print ("Finished in {:.2f} seconds\n".format(t2-t1))
+    print ("Finished in {:.2f} seconds".format(t2-t1))
 
     # The last part of the data will be used for plotting and rate calculations
+    data = np.array(np_data)
     if gl.o_nchn == 2:
-        data = np.array(np_data)
         data = data.reshape(int((lNotifySize.value)/2), 2)
         a_np = np.array(data[:,0]); b_np = np.array(data[:,1])
         mean_a = np.mean(a_np); mean_b = np.mean(b_np)
         gl.update_waveform(a_np[0:1000],b_np[0:1000])
     else:
+        data = data.reshape(lNotifySize.value,1)
         mean_a = np.mean(data); mean_b = 0 
         gl.update_waveform(data[0:1000],[])
     return mean_a, mean_b

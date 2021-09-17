@@ -85,9 +85,48 @@ rootMainFrame = Frame(root); rootMainFrame.grid(row=0,column=2)
 ################
 leftFrame = Frame(root); leftFrame.grid(row=0,column=0)
 
-optionLabel = Label(leftFrame, text="Settings", font=("Helvetica 12 bold")); optionLabel.grid(row=0,column=0)
+projectLabel = Label(leftFrame, text="Project", font=("Helvetica 12 bold")); projectLabel.grid(row=0,column=0)
+pbuttonFrame = Frame(leftFrame); pbuttonFrame.grid(row=1,column=0)
+copypaths = []; projectName = None
+def create_project(name,window):
+	global copypaths, projectName
+	if not os.path.exists("D:/"+name):
+		os.mkdir("D:/"+name)
+	if not os.path.exists("E:/"+name):
+		os.mkdir("E:/"+name)
+	copypaths = ["D:/"+name,"E:/"+name]
+	projectName = name
+	try:
+		if not os.path.exists("Z:/"+name):
+			os.mkdir("Z:/"+name)
+	except:
+		print ("Workstation not accessible")
+	gl.basicpath = "D:/"+name
+	if not os.path.exists(gl.basicpath+"/calibs"):
+		os.mkdir(gl.basicpath+"/calibs")
+	gl.calibpath = gl.basicpath+"/calibs"
+	if window != None:
+		window.destroy()
+	projectShowLabel.config(text=name)
+def open_project():
+	root.directoryname = filedialog.askdirectory(initialdir = "D:/", title = "Select any project directory")
+	gl.basicpath = root.directoryname; gl.calibpath = gl.basicpath+"/calibs"
+	name = gl.basicpath.split("/")[-1]
+	projectShowLabel.config(text=name)
+	create_project(name,None)
+def newProject():
+	np_dialog = Tk()
+	projectNameEntry = Entry(np_dialog); projectNameEntry.grid(row=0,column=0); projectNameEntry.insert(0,"new_project")
+	createButton = Button(np_dialog, text="Create", command=lambda:create_project(name=projectNameEntry.get(),window=np_dialog)); createButton.grid(row=0,column=1)
+	cancelButton = Button(np_dialog, text="Cancel", command=np_dialog.destroy); cancelButton.grid(row=0,column=2)
+	np_dialog.mainloop()
+newProjectButton = Button(pbuttonFrame, text="New Project", command=newProject); newProjectButton.grid(row=0,column=0)
+openProjectButton = Button(pbuttonFrame, text="Open Project Folder", command=open_project); openProjectButton.grid(row=0,column=1)
+projectShowLabel = Label(pbuttonFrame, text="no project selected", bg="#f7df72", width=15); projectShowLabel.grid(row=0,column=2,padx=5)
+
+optionLabel = Label(leftFrame, text="Settings", font=("Helvetica 12 bold")); optionLabel.grid(row=2,column=0)
 # Card option Frame #
-coptionFrame = Frame(leftFrame); coptionFrame.grid(row=2,column=0)
+coptionFrame = Frame(leftFrame); coptionFrame.grid(row=4,column=0)
 
 # Samples for each measurement
 sampleFrame = Frame(coptionFrame); sampleFrame.grid(row=1,column=0)
@@ -165,7 +204,7 @@ def toggle_trigger():
 triggerButton = Button(triggerFrame, text="Off", width=5, command=toggle_trigger); triggerButton.grid(row=0,column=1)
 
 # Quick settings
-qsettingsFrame = Frame(leftFrame); qsettingsFrame.grid(row=1,column=0)
+qsettingsFrame = Frame(leftFrame); qsettingsFrame.grid(row=3,column=0)
 def qsettings_checkWaveform():
 	samples.set("8 MS"); new_samples(0)
 	binning16Button.invoke()
@@ -198,8 +237,8 @@ calibrationsButton   = Button(qsettingsFrame, bg="#f5dbff", width=12, text="Cali
 syncedMeasButton     = Button(qsettingsFrame, bg="#f5dbff", width=20, text="Synced Measurement", command=qsettings_syncedMeasurement); syncedMeasButton.grid(row=1,column=3)
 
 # Measurement Frame
-measurementLabel = Label(leftFrame, text="Measurement Control", font=("Helvetica 12 bold")); measurementLabel.grid(row=3,column=0)
-measurementFrame = Frame(leftFrame); measurementFrame.grid(row=4,column=0)
+measurementLabel = Label(leftFrame, text="Measurement Control", font=("Helvetica 12 bold")); measurementLabel.grid(row=5,column=0)
+measurementFrame = Frame(leftFrame); measurementFrame.grid(row=6,column=0)
 def takeMeasurement():
 	cc.init_storage()
 	filename = gl.basicpath + "/" + measFileNameEntry.get() + ".bin"
@@ -208,6 +247,13 @@ def takeMeasurement():
 	cc.init_display()
 singleMeasurementButton = Button(measurementFrame, text="Single Measurement", command=takeMeasurement); singleMeasurementButton.grid(row=0,column=0)
 measloop = False
+writeid = 0
+def change_id():
+    global writeid
+    if writeid == 0:
+        writeid = 1
+    elif writeid == 1:
+        writeid = 0
 def loopMeasurement():
 	global measloop
 	if measloop == False:
@@ -219,22 +265,43 @@ def loopMeasurement():
 		measloop = False
 		loopMeasurementButton.config(text="Start loop", bg="#e8fcae")
 def doLoopMeasurement():
-	global measloop
+	global measloop, writeid, projectName, copy_mode
 	cc.init_storage()
 	fileindex = 0
+	files_to_copy = []
+	packageSize = int(packEntry.get())
 	while measloop == True:
-		filename = gl.basicpath + "/" + measFileNameEntry.get() + "_" + tf.numberstring(fileindex) + ".bin"
+		filename = copypaths[writeid] + "/" + measFileNameEntry.get() + "_" + tf.numberstring(fileindex) + ".bin"
 		ma, mb = cc.measurement(filename)
 		calculate_data(ma, mb)
+		if copy_mode == True:
+			files_to_copy.append(filename)
+			if (fileindex+1) % packageSize == 0:
+				copythread = Thread(target=tf.transfer_files, args=(files_to_copy,"Z:\\"+projectName))
+				copythread.start()	
+				change_id()
+				files_to_copy = []
 		fileindex += 1
+	if copy_mode == True:
+		copythread = Thread(target=tf.transfer_files, args=(files_to_copy,"Z:\\"+projectName))
+		copythread.start()	
 	cc.init_display()
-
 loopMeasurementButton = Button(measurementFrame, text="Start Loop", width=10, bg="#e8fcae", command=loopMeasurement); loopMeasurementButton.grid(row=0,column=1)
 measFileNameEntry = Entry(measurementFrame, width=15); measFileNameEntry.grid(row=0,column=2,padx=5); measFileNameEntry.insert(0,"data")
-
+copy_mode = False
+def copyMode():
+	global copy_mode
+	if copy_mode == False:
+		copy_mode = True
+		packButton.config(text="Copy Mode  On")
+	elif copy_mode == True:
+		copy_mode = False
+		packButton.config(text="Copy Mode Off")
+packButton = Button(measurementFrame, text="Copy Mode Off", width=15, command=copyMode); packButton.grid(row=0,column=3)
+packEntry = Entry(measurementFrame, width=5); packEntry.grid(row=0,column=4,padx=5); packEntry.insert(0,"10")
 
 # Display Frame #
-displayFrame = Frame(leftFrame); displayFrame.grid(row=5,column=0)
+displayFrame = Frame(leftFrame); displayFrame.grid(row=7,column=0)
 wf_fig = Figure(figsize=(5,5))
 wf_a = []
 wf_b = []
@@ -247,24 +314,6 @@ wf_sub.set_ylim(-127,10)
 gl.wf_canvas = FigureCanvasTkAgg(wf_fig, master=displayFrame)
 gl.wf_canvas.get_tk_widget().grid(row=0,column=0)
 gl.wf_canvas.draw()
-
-
-##################
-## COMMON FRAME ##
-##################
-# The common frame contains the dropdown menu of measurement options
-commonFrame = Frame(rootMainFrame); commonFrame.grid(row=0,column=0)
-
-# Directory
-def selectDirectory():
-	root.directoryname = filedialog.askdirectory(initialdir = gl.basicpath, title = "Select any data directory")
-	gl.basicpath = root.directoryname; gl.calibpath = gl.basicpath+"/calibs"
-	pathLabel.config(text=gl.basicpath.split("/")[1])
-	if not os.path.exists(gl.calibpath):
-		os.mkdir(gl.calibpath)
-pathButton = Button(commonFrame, text="Files directory", command=selectDirectory); pathButton.grid(row=4, column=0)
-pathLabel = Label(commonFrame, text=gl.basicpath.split("/")[1]); pathLabel.grid(row=4,column=1)
-
 
 ##################
 ## OFFSET FRAME ##
@@ -1065,9 +1114,6 @@ gl.statusLabel = Label(statusFrame, text="Starting ...", font=("Helvetica 12 bol
 def idle():
 	gl.statusLabel.config(text="Idle", bg="#ffffff"); root.update()
 
-
-
-selectDirectory()
 cc.init()
 idle()
 

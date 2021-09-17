@@ -11,17 +11,17 @@ def numberstring(x):
 
 copystring = "C:\\Users\\ii\\FastCopy\\FastCopy.exe /no_ui "
 
-def transfer_files (sourcepath, destinationpath, numbers):
+def transfer_files (sourcefiles, destinationpath):
     print ("*** Transfer files: Start copying")
     execute_string = copystring
-    for i in numbers:
-        execute_string += sourcepath + numberstring(i) + ".bin "
+    for i in range(0,len(sourcefiles)):
+        execute_string += sourcefiles[i].replace("/","\\") + " "
     
     execute_string += "/to=" + destinationpath
     
     os.system(execute_string)
     print ("*** Transfer files: finished copying")
     
-    for i in numbers:
-        os.system("del " + sourcepath + numberstring(i) + ".bin")
+    for i in range(0,len(sourcefiles)):
+        os.system("del " + sourcefiles[i].replace("/","\\"))
     print ("*** Transfer files: finished clearing")
