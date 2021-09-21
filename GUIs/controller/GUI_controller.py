@@ -19,6 +19,14 @@ import globals as gl
 
 root = Tk(); root.wm_title("II Measurement Control")#; root.geometry("+1600+10")
 
+zeroadder = ["0000","0000","000","00","0",""]
+def numberstring(x):
+    if x == 0:
+        nod = 1
+    else:
+        nod = int(np.log10(x))+1
+    return zeroadder[nod] + str(x)
+
 #############
 ## Network ##
 #############
@@ -129,7 +137,6 @@ gl.wait2LED = gl.wait2Canvas.create_rectangle(1,1,20,20, fill="black", width=0)
 
 syncFrame = Frame(root); syncFrame.grid(row=0,column=1)
 
-
 measurement = False
 def toggle_measure():
 	global measurement, tdiffs, timestamps_between, t_stamps
@@ -156,8 +163,27 @@ def toggle_measure():
 		gl.wait2Canvas.itemconfig(gl.wait2LED, fill="black")
 		tdiffs = []; timestamps_between = []; t_stamps = []
 		gl.lastA1 = []; gl.lastB1 = []; gl.lastA2 = []; gl.lastB2 = []
-startStopMeasButton = Button(syncFrame, text="Start Measurement", bg="#92f0eb", width=20, height=5, command=toggle_measure)
+def init_measurement():
+	if gl.client_PC1 != None and gl.client_PC2 != None:
+		gl.client_PC1.init_meas(name=measNameEntry.get())
+		gl.client_PC2.init_meas(name=measNameEntry.get())
+	else:
+		print ("Not both PCs connected")
+
+measButtonFrame = Frame(syncFrame); measButtonFrame.grid(row=0,column=0)
+startStopMeasButton = Button(measButtonFrame, text="Start Measurement", bg="#92f0eb", width=20, height=5, command=toggle_measure)
 startStopMeasButton.grid(row=0,column=0)
+initMeasButton = Button(measButtonFrame, text="Init new \nmeasurement", height=5, command=init_measurement)
+initMeasButton.grid(row=0,column=1)
+
+measNameFrame = Frame(measButtonFrame); measNameFrame.grid(row=0,column=2)
+measNameEntry = Entry(measNameFrame, width=20); measNameEntry.grid(row=0,column=0, padx=5); measNameEntry.insert(0,"measurement")
+indexFrame = Frame(measNameFrame); indexFrame.grid(row=1,column=0)
+gl.indexEntry = Entry(indexFrame, width=7); gl.indexEntry.grid(row=0,column=0); gl.indexEntry.insert(0,"0")
+def reset_index():
+	gl.indexEntry.delete(0,"end")
+	gl.indexEntry.insert(0,"0")
+indexButton = Button(indexFrame, text="Reset", command=reset_index); indexButton.grid(row=0,column=1)
 
 # Measurement procedure
 tdiffs = []; timestamps_between = []; t_stamps = []
@@ -172,11 +198,15 @@ def singlesT():
 			gl.wait1Canvas.itemconfig(gl.wait1LED, fill="orange")
 			gl.wait2Canvas.itemconfig(gl.wait2LED, fill="orange")
 			# Send measurement command
-			gl.client_PC1.meas_single()
-			gl.client_PC2.meas_single()
+			measurement_name = measNameEntry.get() + "_" + numberstring(int(gl.indexEntry.get())) + ".bin"
+			gl.client_PC1.meas_single(name=measurement_name)
+			gl.client_PC2.meas_single(name=measurement_name)
 			# Wait until both PCs respond
 			while gl.client_PC1.awaitR == True or gl.client_PC2.awaitR == True:
-				pass
+				if measurement == False:
+					break
+			if measurement == False:
+				break
 			# Time investigations
 			timestamps_between.append(t.time())
 			t.sleep(0.1)
@@ -201,6 +231,7 @@ def singlesT():
 				plot_times2.set_xlim(len(tdiffs)-99,len(tdiffs))
 				plot_rates.set_xlim(len(tdiffs)-99,len(tdiffs))
 			plotCanvas.draw()
+			gl.index_up()
 			
 	else:
 		print ("Not both PCs connected!")

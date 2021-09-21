@@ -71,6 +71,14 @@ def placeRateLineB2(rate):
 	lineposition = r_height - (rate/rmaxB2 * 0.8 * r_height)
 	rateB2Canvas.coords(rateB2Line, 0, lineposition, r_width, lineposition)
 
+indexEntry = None
+def change_index(index):
+	indexEntry.delete(0,"end")
+	indexEntry.insert(0,"{}".format(index))
+def index_up():
+	old = int(indexEntry.get())
+	change_index(old+1)
+
 #--------------------------------#
 # Computer measurement responses #
 #--------------------------------#
