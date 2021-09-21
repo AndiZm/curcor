@@ -41,6 +41,7 @@ rmax_a = None; rmax_b = None
 statusLabel = []
 quickRatesButton = []; singleRatesButton = []; calc_rate = False
 startstopButton = []
+syncedMeasButton = []
 
 # Server
 motorServerButton = []

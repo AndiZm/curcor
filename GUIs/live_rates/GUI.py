@@ -20,6 +20,7 @@ import globals as gl
 import rate_server as svr
 import card_commands as cc
 import transfer_files as tf
+import live_header as header
 
 from threading import Thread
 
@@ -234,7 +235,7 @@ def qsettings_calibrations():
 quickSettingsLabel = Label(qsettingsFrame, text="Quick Settings", bg="#f5dbff"); quickSettingsLabel.grid(row=1,column=0)
 checkWaveformsButton = Button(qsettingsFrame, bg="#f5dbff", width=18, text="Standard Observe",   command=qsettings_checkWaveform); checkWaveformsButton.grid(row=1,column=1)
 calibrationsButton   = Button(qsettingsFrame, bg="#f5dbff", width=12, text="Calibrations",       command=qsettings_calibrations); calibrationsButton.grid(row=1,column=2)
-syncedMeasButton     = Button(qsettingsFrame, bg="#f5dbff", width=20, text="Synced Measurement", command=qsettings_syncedMeasurement); syncedMeasButton.grid(row=1,column=3)
+gl.syncedMeasButton     = Button(qsettingsFrame, bg="#f5dbff", width=20, text="Synced Measurement", command=qsettings_syncedMeasurement); gl.syncedMeasButton.grid(row=1,column=3)
 
 # Measurement Frame
 measurementLabel = Label(leftFrame, text="Measurement Control", font=("Helvetica 12 bold")); measurementLabel.grid(row=5,column=0)
@@ -267,13 +268,7 @@ def loopMeasurement():
 def doLoopMeasurement():
 	global measloop, writeid, projectName, copy_mode
 	cc.init_storage()
-	# Create header
-	f = open(copypaths[writeid] + "/" + measFileNameEntry.get()+".settings","w")
-	f.write("NumAChannels = {}\n".format(gl.o_nchn))
-	f.write("OrigMaxRange = {}\n".format(gl.o_voltages))
-	f.write("UserOffset = {}\n".format(0))
-	f.write("LenL = {}\n".format(gl.o_samples))
-	f.close()
+	header.write_header(name=measFileNameEntry.get())
 	fileindex = 0
 	files_to_copy = []
 	packageSize = int(packEntry.get())

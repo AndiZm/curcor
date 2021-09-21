@@ -2,6 +2,8 @@ import socket as soc
 import threading
 import time
 import configparser
+
+import live_header as header
 import globals as gl
 
 
@@ -248,6 +250,11 @@ def listen_msg(self, button):
 			if "meas_single" in data.split("#")[1]:
 				#m.single()
 				print ("Not supported yet")
+			if "init_meas" in data.split("#")[1]:
+				gl.syncedMeasButton.invoke()
+				header.write_header(name=data.split("#")[2])
+
+
 		
 def listen(self):
 	while self.still_listening:
