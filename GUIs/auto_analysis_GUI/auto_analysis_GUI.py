@@ -83,9 +83,13 @@ def select_file():
 	filemin_entry.delete(0, END); filemin_entry.insert(0,str(f_min))
 	filemax_entry.delete(0,END); filemax_entry.insert(10,str(f_max))
 	resultentry.delete(0,'end'); resultentry.insert(0,resultfilepath)
+	try:
+		nCHN, nvRange, nvOffset, nLen = header.execute(root.filename)
+	except:
+		nCHN, nvRange, nvOffset, nLen = header.execute_new(root.filename)
+		print ("New header type")
 	# Plot waveforms
-	nCHN,nLen,px,py0,py3 = waveforms.execute(root.filename)
-	nCHN, nvRange, nvOffset, nLen = header.execute(root.filename)
+	px,py0,py3 = waveforms.execute(root.filename, nCHN)
 	nvOffset = nvOffset * 0.001
 	a.cla(); a.set_title("Waveforms"); a.set_xlabel("Time [microseconds]"); a.set_ylabel("ADC counts")
 	a2 = a.secondary_yaxis('right', functions=(adc2mv, mv2adc)); a2.set_ylabel("Voltage [mV]")

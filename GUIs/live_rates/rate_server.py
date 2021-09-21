@@ -3,7 +3,6 @@ import threading
 import time
 import configparser
 import globals as gl
-import mouse as m
 
 
 class server:
@@ -247,8 +246,8 @@ def listen_msg(self, button):
 			if "filerates" in data.split("#")[1]:
 				gl.startstopButton.invoke()
 			if "meas_single" in data.split("#")[1]:
-				m.single()
-
+				#m.single()
+				print ("Not supported yet")
 		
 def listen(self):
 	while self.still_listening:

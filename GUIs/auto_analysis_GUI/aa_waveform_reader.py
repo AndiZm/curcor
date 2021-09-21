@@ -6,22 +6,7 @@ import scipy.signal as ss
 import numpy as np
 import matplotlib.pyplot as plt
 
-def execute(file):
-
-	numLen = 123456789
-	headerfile = file[:-4] + "_binheader.txt"
-	headerstring = [line.rstrip('\n') for line in open(headerfile)]
-	numChan = int (headerstring[2][-1:])
-	#print (numChan)
-	for i in range (0, len(headerstring)):
-		substr = headerstring[i].split("=")
-		if substr[0] == "LenL ":
-			#print (headerstring[i])
-			numLen = int(substr[1])
-	#numLen = int(substr[1])
-	if numLen == 0:
-		numLen = 4e9
-	#print (str(numLen))
+def execute(file, numChan):
 
 	a_np = np.array([])
 	b_np = np.array([])
@@ -45,4 +30,4 @@ def execute(file):
 			b_np = np.array(packet[:,1])
 
 	x = np.linspace(0,1e-3*0.8*len(a_np),len(a_np))
-	return numChan, numLen, x, a_np, b_np
+	return x, a_np, b_np

@@ -267,6 +267,13 @@ def loopMeasurement():
 def doLoopMeasurement():
 	global measloop, writeid, projectName, copy_mode
 	cc.init_storage()
+	# Create header
+	f = open(copypaths[writeid] + "/" + measFileNameEntry.get()+".settings","w")
+	f.write("NumAChannels = {}\n".format(gl.o_nchn))
+	f.write("OrigMaxRange = {}\n".format(gl.o_voltages))
+	f.write("UserOffset = {}\n".format(0))
+	f.write("LenL = {}\n".format(gl.o_samples))
+	f.close()
 	fileindex = 0
 	files_to_copy = []
 	packageSize = int(packEntry.get())
