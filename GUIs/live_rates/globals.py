@@ -42,6 +42,7 @@ statusLabel = []
 quickRatesButton = []; singleRatesButton = []; calc_rate = False
 startstopButton = []
 syncedMeasButton = []
+remoteMeasButton = []; remoteMeasName = None; remoteMeasIndex = None; remoteFiles = []
 
 # Server
 motorServerButton = []
@@ -62,3 +63,6 @@ def update_waveform(a,b):
 	wf_b_line.set_xdata(np.arange(0,len(b)))
 	wf_b_line.set_ydata(b)
 	wf_canvas.draw()
+
+copythread = None
+projectName = None

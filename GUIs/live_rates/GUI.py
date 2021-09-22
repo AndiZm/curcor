@@ -88,15 +88,15 @@ leftFrame = Frame(root); leftFrame.grid(row=0,column=0)
 
 projectLabel = Label(leftFrame, text="Project", font=("Helvetica 12 bold")); projectLabel.grid(row=0,column=0)
 pbuttonFrame = Frame(leftFrame); pbuttonFrame.grid(row=1,column=0)
-copypaths = []; projectName = None
+copypaths = []
 def create_project(name,window):
-	global copypaths, projectName
+	global copypaths
 	if not os.path.exists("D:/"+name):
 		os.mkdir("D:/"+name)
 	if not os.path.exists("E:/"+name):
 		os.mkdir("E:/"+name)
 	copypaths = ["D:/"+name,"E:/"+name]
-	projectName = name
+	gl.projectName = name
 	try:
 		if not os.path.exists("Z:/"+name):
 			os.mkdir("Z:/"+name)
@@ -215,6 +215,7 @@ def qsettings_checkWaveform():
 		toggle_trigger()
 	cc.init_display()
 def qsettings_syncedMeasurement():
+	global copy_mode
 	samples.set("2 GS"); new_samples(0)
 	binning16Button.invoke()
 	channel2Button.invoke()
@@ -222,6 +223,8 @@ def qsettings_syncedMeasurement():
 	clockExternButton.invoke()
 	if gl.trigger == False:
 		toggle_trigger()
+	copy_mode = True
+	packButton.config(text="Copy Mode  On")
 	cc.init_storage()
 def qsettings_calibrations():
 	samples.set("2 GS"); new_samples(0)
@@ -266,7 +269,7 @@ def loopMeasurement():
 		measloop = False
 		loopMeasurementButton.config(text="Start loop", bg="#e8fcae")
 def doLoopMeasurement():
-	global measloop, writeid, projectName, copy_mode
+	global measloop, writeid, copy_mode
 	cc.init_storage()
 	header.write_header(name=measFileNameEntry.get())
 	fileindex = 0
@@ -279,14 +282,14 @@ def doLoopMeasurement():
 		if copy_mode == True:
 			files_to_copy.append(filename)
 			if (fileindex+1) % packageSize == 0:
-				copythread = Thread(target=tf.transfer_files, args=(files_to_copy,"Z:\\"+projectName))
-				copythread.start()	
+				gl.copythread = Thread(target=tf.transfer_files, args=(files_to_copy,"Z:\\"+gl.projectName))
+				gl.copythread.start()	
 				change_id()
 				files_to_copy = []
 		fileindex += 1
 	if copy_mode == True:
-		copythread = Thread(target=tf.transfer_files, args=(files_to_copy,"Z:\\"+projectName))
-		copythread.start()	
+		gl.copythread = Thread(target=tf.transfer_files, args=(files_to_copy,"Z:\\"+gl.projectName))
+		gl.copythread.start()	
 	cc.init_display()
 loopMeasurementButton = Button(measurementFrame, text="Start Loop", width=10, bg="#e8fcae", command=loopMeasurement); loopMeasurementButton.grid(row=0,column=1)
 measFileNameEntry = Entry(measurementFrame, width=15); measFileNameEntry.grid(row=0,column=2,padx=5); measFileNameEntry.insert(0,"data")
@@ -301,6 +304,20 @@ def copyMode():
 		packButton.config(text="Copy Mode Off")
 packButton = Button(measurementFrame, text="Copy Mode Off", width=15, command=copyMode); packButton.grid(row=0,column=3)
 packEntry = Entry(measurementFrame, width=5); packEntry.grid(row=0,column=4,padx=5); packEntry.insert(0,"10")
+def remote_measurement():
+	global writeid
+	filename = copypaths[writeid] + "/" + gl.remoteMeasName + "_" + tf.numberstring(gl.remoteMeasIndex) + ".bin"
+	gl.remoteFiles.append(filename)
+	ma, mb = cc.measurement(filename)
+	calculate_data(ma, mb)
+	if len(gl.remoteFiles) % int(packEntry.get()) == 0:
+		gl.copythread = Thread(target=tf.transfer_files, args=(gl.remoteFiles,"Z:\\"+gl.projectName))
+		gl.copythread.start()
+		change_id()
+		gl.remoteFiles = []
+# Dummy button which needs to exist, because the client orders to click it
+gl.remoteMeasButton = Button(measurementFrame, text="R", state="disabled", command=remote_measurement)
+#gl.remoteMeasButton.grid(row=0,column=5)
 
 # Display Frame #
 displayFrame = Frame(leftFrame); displayFrame.grid(row=7,column=0)

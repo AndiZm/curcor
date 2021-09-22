@@ -2,9 +2,11 @@ import socket as soc
 import threading
 import time
 import configparser
+from threading import Thread
 
 import live_header as header
 import globals as gl
+import transfer_files as tf
 
 
 class server:
@@ -248,14 +250,22 @@ def listen_msg(self, button):
 			if "filerates" in data.split("#")[1]:
 				gl.startstopButton.invoke()
 			if "meas_single" in data.split("#")[1]:
-				#m.single()
-				print ("Not supported yet")
+				gl.remoteMeasName  = data.split("#")[2]
+				gl.remoteMeasIndex = int(data.split("#")[3])
+				gl.remoteMeasButton.invoke()
 			if "init_meas" in data.split("#")[1]:
 				gl.syncedMeasButton.invoke()
 				header.write_header(name=data.split("#")[2])
+			if "start_loop" in data.split("#")[1]:
+				gl.statusLabel.config(text="Remote Measurement", bg="#ff867d")
+				gl.remoteMeasButton.config(state="normal")
+			if "stop_loop" in data.split("#")[1]:
+				gl.statusLabel.config(text="Idle", bg="#ffffff")
+				gl.remoteMeasButton.config(state="disabled")
+				gl.copythread = Thread(target=tf.transfer_files, args=(gl.remoteFiles,"Z:\\"+gl.projectName))
+				gl.copythread.start()
+				gl.remoteFiles = []
 
-
-		
 def listen(self):
 	while self.still_listening:
 		# accept connections from outside. The OSError exception ist thrown, when the server is shutdown, becaus the accept routine can't handle well that the socket is closed by another thread.
