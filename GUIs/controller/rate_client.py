@@ -88,11 +88,15 @@ class controller_client:
 		sendText(self, "command # quickrates #")
 	def filerates(self):
 		sendText(self, "command # filerates #")
-	def meas_single(self, name):
-		sendText(self, "command # meas_single # {} #".format(name))
+	def meas_single(self, name, index):
+		sendText(self, "command # meas_single #{}# {} #".format(name, index))
 		self.awaitR = True
 	def init_meas(self, name):
 		sendText(self, "command # init_meas # {} #".format(name))
+	def send_start_loop(self):
+		sendText(self, "command # start_loop #")
+	def send_stop_loop(self):
+		sendText(self, "command # stop_loop #")
 
 	
 #makes the client listen to incoming messages

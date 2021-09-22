@@ -143,21 +143,21 @@ def toggle_measure():
 	if measurement == False: # Start measurement
 		measurement = True
 		# Activate file rates if not already on
-		if gl.client_PC1 != None and gl.fr1state == False:
-			gl.client_PC1.filerates()
-		if gl.client_PC2 != None and gl.fr1state == False:
-			gl.client_PC2.filerates()
+		#if gl.client_PC1 != None and gl.fr1state == False:
+		#	gl.client_PC1.filerates()
+		#if gl.client_PC2 != None and gl.fr1state == False:
+		#	gl.client_PC2.filerates()
 		singles()
 		startStopMeasButton.config(text="Stop Measurement", bg="#f2b4a0")
 	elif measurement == True: # Stop measurement
 		measurement = False
 		# Deactivate file rates if not already off
-		if gl.client_PC1 != None and gl.fr1state == True:
-			gl.client_PC1.awaitR = False
-			gl.client_PC1.filerates()
-		if gl.client_PC2 != None and gl.fr1state == True:
-			gl.client_PC2.awaitR = False
-			gl.client_PC2.filerates()
+		#if gl.client_PC1 != None and gl.fr1state == True:
+		#	gl.client_PC1.awaitR = False
+		#	gl.client_PC1.filerates()
+		#if gl.client_PC2 != None and gl.fr1state == True:
+		#	gl.client_PC2.awaitR = False
+		#	gl.client_PC2.filerates()
 		startStopMeasButton.config(text="Start Measurement", bg="#92f0eb")
 		gl.wait1Canvas.itemconfig(gl.wait1LED, fill="black")
 		gl.wait2Canvas.itemconfig(gl.wait2LED, fill="black")
@@ -175,15 +175,24 @@ startStopMeasButton = Button(measButtonFrame, text="Start Measurement", bg="#92f
 startStopMeasButton.grid(row=0,column=0)
 initMeasButton = Button(measButtonFrame, text="Init new \nmeasurement", height=5, command=init_measurement)
 initMeasButton.grid(row=0,column=1)
+def enable_buttons():
+	initMeasButton.config(state="normal")
+	measNameEntry.config(state="normal")
+	indexButton.config(state="normal")
+def disable_buttons():
+	initMeasButton.config(state="disabled")
+	measNameEntry.config(state="disabled")
+	indexButton.config(state="disabled")
 
 measNameFrame = Frame(measButtonFrame); measNameFrame.grid(row=0,column=2)
 measNameEntry = Entry(measNameFrame, width=20); measNameEntry.grid(row=0,column=0, padx=5); measNameEntry.insert(0,"measurement")
 indexFrame = Frame(measNameFrame); indexFrame.grid(row=1,column=0)
-gl.indexEntry = Entry(indexFrame, width=7); gl.indexEntry.grid(row=0,column=0); gl.indexEntry.insert(0,"0")
+gl.indexEntry = Entry(indexFrame, width=7); gl.indexEntry.grid(row=0,column=1); gl.indexEntry.insert(0,"0")
 def reset_index():
 	gl.indexEntry.delete(0,"end")
 	gl.indexEntry.insert(0,"0")
-indexButton = Button(indexFrame, text="Reset", command=reset_index); indexButton.grid(row=0,column=1)
+indexButton = Button(indexFrame, text="Reset", command=reset_index); indexButton.grid(row=0,column=0)
+
 
 # Measurement procedure
 tdiffs = []; timestamps_between = []; t_stamps = []
@@ -193,14 +202,17 @@ def singles():
 def singlesT():
 	global measurement, tdiffs, timestamps_between, t_stamps
 	if gl.client_PC1 != None and gl.client_PC2 != None:
+		gl.client_PC1.send_start_loop()
+		gl.client_PC2.send_start_loop()
+		disable_buttons()
+		t.sleep(0.1)
 		while measurement == True:
 			# Status LEDs to orange
 			gl.wait1Canvas.itemconfig(gl.wait1LED, fill="orange")
 			gl.wait2Canvas.itemconfig(gl.wait2LED, fill="orange")
 			# Send measurement command
-			measurement_name = measNameEntry.get() + "_" + numberstring(int(gl.indexEntry.get())) + ".bin"
-			gl.client_PC1.meas_single(name=measurement_name)
-			gl.client_PC2.meas_single(name=measurement_name)
+			gl.client_PC1.meas_single(name=measNameEntry.get(), index=gl.indexEntry.get())
+			gl.client_PC2.meas_single(name=measNameEntry.get(), index=gl.indexEntry.get())
 			# Wait until both PCs respond
 			while gl.client_PC1.awaitR == True or gl.client_PC2.awaitR == True:
 				if measurement == False:
@@ -214,25 +226,27 @@ def singlesT():
 				t_stamps.append(timestamps_between[-1]-timestamps_between[-2])
 			else:
 				t_stamps.append(4)
-			tdiff = gl.client_PC2.timeR - gl.client_PC1.timeR
-			tdiffs.append(tdiff)
-			# Plot
-			plot_times.cla(); plot_times.set_xticks([])
-			plot_times.plot(tdiffs, color="blue")
-			plot_times2.cla(); plot_times2.set_xticks([])
-			plot_times2.plot(t_stamps, color="red")
-			plot_rates.cla()
-			plot_rates.plot(gl.lastA1, color="black")
-			plot_rates.plot(gl.lastB1, color="black", alpha=0.3)
-			plot_rates.plot(gl.lastA2, color="red")
-			plot_rates.plot(gl.lastB2, color="red", alpha=0.3)
-			if len(tdiffs) > 100:
-				plot_times.set_xlim(len(tdiffs)-99,len(tdiffs))
-				plot_times2.set_xlim(len(tdiffs)-99,len(tdiffs))
-				plot_rates.set_xlim(len(tdiffs)-99,len(tdiffs))
-			plotCanvas.draw()
+			#tdiff = gl.client_PC2.timeR - gl.client_PC1.timeR
+			#tdiffs.append(tdiff)
+			## Plot
+			#plot_times.cla(); plot_times.set_xticks([])
+			#plot_times.plot(tdiffs, color="blue")
+			#plot_times2.cla(); plot_times2.set_xticks([])
+			#plot_times2.plot(t_stamps, color="red")
+			#plot_rates.cla()
+			#plot_rates.plot(gl.lastA1, color="black")
+			#plot_rates.plot(gl.lastB1, color="black", alpha=0.3)
+			#plot_rates.plot(gl.lastA2, color="red")
+			#plot_rates.plot(gl.lastB2, color="red", alpha=0.3)
+			#if len(tdiffs) > 100:
+			#	plot_times.set_xlim(len(tdiffs)-99,len(tdiffs))
+			#	plot_times2.set_xlim(len(tdiffs)-99,len(tdiffs))
+			#	plot_rates.set_xlim(len(tdiffs)-99,len(tdiffs))
+			#plotCanvas.draw()
 			gl.index_up()
-			
+		gl.client_PC1.send_stop_loop()
+		gl.client_PC2.send_stop_loop()
+		enable_buttons()
 	else:
 		print ("Not both PCs connected!")
 
