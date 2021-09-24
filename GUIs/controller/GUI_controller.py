@@ -142,22 +142,10 @@ def toggle_measure():
 	global measurement, tdiffs, timestamps_between, t_stamps
 	if measurement == False: # Start measurement
 		measurement = True
-		# Activate file rates if not already on
-		#if gl.client_PC1 != None and gl.fr1state == False:
-		#	gl.client_PC1.filerates()
-		#if gl.client_PC2 != None and gl.fr1state == False:
-		#	gl.client_PC2.filerates()
 		singles()
 		startStopMeasButton.config(text="Stop Measurement", bg="#f2b4a0")
 	elif measurement == True: # Stop measurement
 		measurement = False
-		# Deactivate file rates if not already off
-		#if gl.client_PC1 != None and gl.fr1state == True:
-		#	gl.client_PC1.awaitR = False
-		#	gl.client_PC1.filerates()
-		#if gl.client_PC2 != None and gl.fr1state == True:
-		#	gl.client_PC2.awaitR = False
-		#	gl.client_PC2.filerates()
 		startStopMeasButton.config(text="Start Measurement", bg="#92f0eb")
 		gl.wait1Canvas.itemconfig(gl.wait1LED, fill="black")
 		gl.wait2Canvas.itemconfig(gl.wait2LED, fill="black")
@@ -226,23 +214,23 @@ def singlesT():
 				t_stamps.append(timestamps_between[-1]-timestamps_between[-2])
 			else:
 				t_stamps.append(4)
-			#tdiff = gl.client_PC2.timeR - gl.client_PC1.timeR
-			#tdiffs.append(tdiff)
-			## Plot
-			#plot_times.cla(); plot_times.set_xticks([])
-			#plot_times.plot(tdiffs, color="blue")
-			#plot_times2.cla(); plot_times2.set_xticks([])
-			#plot_times2.plot(t_stamps, color="red")
-			#plot_rates.cla()
-			#plot_rates.plot(gl.lastA1, color="black")
-			#plot_rates.plot(gl.lastB1, color="black", alpha=0.3)
-			#plot_rates.plot(gl.lastA2, color="red")
-			#plot_rates.plot(gl.lastB2, color="red", alpha=0.3)
-			#if len(tdiffs) > 100:
-			#	plot_times.set_xlim(len(tdiffs)-99,len(tdiffs))
-			#	plot_times2.set_xlim(len(tdiffs)-99,len(tdiffs))
-			#	plot_rates.set_xlim(len(tdiffs)-99,len(tdiffs))
-			#plotCanvas.draw()
+			tdiff = gl.client_PC2.timeR - gl.client_PC1.timeR
+			tdiffs.append(tdiff)
+			# Plot
+			plot_times.cla(); plot_times.set_xticks([])
+			plot_times.plot(tdiffs, color="blue")
+			plot_times2.cla(); plot_times2.set_xticks([])
+			plot_times2.plot(t_stamps, color="red")
+			plot_rates.cla()
+			plot_rates.plot(gl.lastA1, color="black")
+			plot_rates.plot(gl.lastB1, color="black", alpha=0.3)
+			plot_rates.plot(gl.lastA2, color="red")
+			plot_rates.plot(gl.lastB2, color="red", alpha=0.3)
+			if len(tdiffs) > 100:
+				plot_times.set_xlim(len(tdiffs)-99,len(tdiffs))
+				plot_times2.set_xlim(len(tdiffs)-99,len(tdiffs))
+				plot_rates.set_xlim(len(tdiffs)-99,len(tdiffs))
+			plotCanvas.draw()
 			gl.index_up()
 		gl.client_PC1.send_stop_loop()
 		gl.client_PC2.send_stop_loop()
