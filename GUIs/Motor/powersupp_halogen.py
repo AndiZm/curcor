@@ -14,7 +14,7 @@ class powerSupply:
         pass
 
     def connect(self):
-        self.dev = serial.Serial('/dev/ttyACM2', timeout=0.2)
+        self.dev = serial.Serial('/dev/ttyACM1', timeout=0.2)
         self.get_state()
         
     def get_state(self):
