@@ -79,11 +79,17 @@ class GUI:
         #----------------#
         #---- Frames ----#
         #----------------#
+        self.overMainFrame = Frame(self.master, width=200, bg="#003366")
+        self.overMainFrame.grid(row=0, column=0)
+            
         self.mainFrame = Frame(self.master, width=200, height = 400)
-        self.mainFrame.grid(row=0, column=0, padx=10,pady=3)
+        self.mainFrame.grid(row=1, column=0, padx=10,pady=3)
         self.mainFrame.config(background = "#003366")
+        
+        self.belowMainFrame = Frame(self.master, width=200, bg="#003366")
+        self.belowMainFrame.grid(row=2, column=0)
 
-        self.switchFrame = Frame(self.mainFrame, width=200, height=20)
+        self.switchFrame = Frame(self.overMainFrame, width=200, height=20)
         self.switchFrame.grid(row=0,column=0, padx=10, pady=3)
 
         self.MirrorTFrame = Frame(self.mainFrame, width=200, height=400)
@@ -95,14 +101,17 @@ class GUI:
         self.CameraFrame = Frame(self.mainFrame, width=200, height=400)
         self.CameraFrame.grid(row=1, column=2, padx=10, pady=3)
 
-        self.RateFrame = Frame(self.mainFrame, width=200, height=40)
+        self.RateFrame = Frame(self.overMainFrame, width=200, height=40)
         self.RateFrame.grid(row=0, column=1, pady=3)
 
-        self.ServoFrame = Frame(self.mainFrame, width=200, height=40)
-        self.ServoFrame.grid(row=2, column=0, pady=3)
+        self.ServoFrame = Frame(self.belowMainFrame, width=200, height=40)
+        self.ServoFrame.grid(row=0, column=0, pady=3)
 
-        self.OptFrame = Frame(self.mainFrame, width=200, height=40)
-        self.OptFrame.grid(row=2, column=1, pady=3)
+        self.OptFrame = Frame(self.belowMainFrame, width=200, height=40)
+        self.OptFrame.grid(row=0, column=1, padx=10, pady=3)
+        
+        self.psuppFrame = Frame(self.belowMainFrame, width=200, height=40)
+        self.psuppFrame.grid(row=0, column=2, padx=10, pady=3)
 
         #SwitchFrame Content
         self.switchLabel = Label(self.switchFrame, text="Motor is ")
@@ -277,11 +286,20 @@ class GUI:
         self.rateClientButton = Button(self.RateFrame, text="Connect", bg="#cdcfd1", command=self.startStopClient, width=8); self.rateClientButton.grid(row=4,column=5, padx=3, pady=3)
 
         #optimziation content
-        self.optimizationButton = Button(self.OptFrame, text="Start Rate Analyzer", bg="#cdcfd1", command=self.optimize, width=16); self.optimizationButton.grid(row=4,column=5, padx=3, pady=3)
-        self.scanButton = Button(self.OptFrame, text="plot Mirrors", bg="#cdcfd1", command=self.showRateDistribution, width=16); self.scanButton.grid(row=4,column=6, padx=3, pady=3)
-        self.dummyButton = Button(self.OptFrame, text="dummy Button", bg="#cdcfd1", command=self.dummy_button, width=16); self.dummyButton.grid(row=4,column=7, padx=3, pady=3)
+        self.optimizationButton = Button(self.OptFrame, text="Start Rate\nAnalyzer", bg="#cdcfd1", command=self.optimize, width=10); self.optimizationButton.grid(row=4,column=5, padx=3, pady=3)
+        self.scanButton = Button(self.OptFrame, text="plot Mirrors", bg="#cdcfd1", command=self.showRateDistribution, width=10); self.scanButton.grid(row=4,column=6, padx=3, pady=3)
+        self.dummyButton = Button(self.OptFrame, text="dummy Button", bg="#cdcfd1", command=self.dummy_button, width=10); self.dummyButton.grid(row=4,column=7, padx=3, pady=3)
 
-
+        #Halogen Power supply content
+        self.psupp_connectButton = Button(self.psuppFrame, text="Connect\nHalogen", command=self.psupp_connect); self.psupp_connectButton.grid(row=0,column=0)
+        self.psupp_onoffButton = Button(self.psuppFrame, command=self.psupp_onoff, state="disabled", text="On/Off"); self.psupp_onoffButton.grid(row=0,column=1)
+        self.voltageScale = Scale(self.psuppFrame, from_ = 0.8, to=3.950, resolution=0.05, orient=HORIZONTAL, length=100, label="Voltage (V)", state="disabled")
+        self.voltageScale.bind("<ButtonRelease-1>", self.set_step_from_scale)
+        self.voltageScale.grid(row=0,column=2)
+        
+        
+        
+        
         # Displays with LEDs
         self.MirrorHeightLED = self.MirrorHeightDisplay.create_oval(1,1,19,19, fill=self.LEDColors[0], width=0)
         self.MirrorZLED = self.MirrorZDisplay.create_oval(1,1,19,19, fill=self.LEDColors[0], width=0)
@@ -295,7 +313,7 @@ class GUI:
         #ServoLED = ServoDisplay.create_oval(1,1,19,19, fill=LEDColors[0], width=0)
         
         #ButtonFrame
-        self.buttonFrame = Frame(self.master, width=30, height = 400, bg="#003366"); self.buttonFrame.grid(row=0, column=1, padx=10,pady=3)
+        self.buttonFrame = Frame(self.master, width=30, height = 400, bg="#003366"); self.buttonFrame.grid(row=1, column=1, padx=10,pady=3)
         self.img=PhotoImage(file="stepper_items/ecap_blue.png")
         self.ecap = Label(self.buttonFrame, image=self.img, bg="#003366"); self.ecap.grid(row=0,column=0)
         self.titlelabel= Label(self.buttonFrame, text="II Motor Control", font="Helvetica 18 bold", fg="white", bg="#003366"); self.titlelabel.grid(row=1, column=0)
@@ -438,6 +456,33 @@ class GUI:
         new_pos=Servo.get()
         self.controller.set_servo_angle(new_pos)
         self.servoPositionLabel.set(new_pos)
+        
+    # Halogen power supply commands
+    def psupp_connect(self):
+        try:
+            self.controller.halogen.connect()
+        except:
+            print ("Error: No power supply found")
+        else:
+            if self.controller.halogen.on == 1:
+                self.psupp_onoffButton.config(text="On")
+            else:
+                self.psupp_onoffButton.config(text="Off")
+            self.psupp_onoffButton.config(state="normal")
+            self.voltageScale.config(state="normal")
+            self.voltageScale.set(self.controller.halogen.volt)      
+            self.psupp_connectButton.config(state="disabled")        
+    
+    def psupp_onoff(self):
+        self.controller.psupp_onoff()
+        if self.controller.halogen.on == 1:
+            self.psupp_onoffButton.config(text="On")
+        else:
+            self.psupp_onoffButton.config(text="Off")
+            
+    def set_step_from_scale(self, val):
+        voltage_to_set = float(self.voltageScale.get())
+        self.controller.halogen.set_voltage(voltage_to_set)
                   
         
     #tells the update routine to move the motors to the new values of the position scale

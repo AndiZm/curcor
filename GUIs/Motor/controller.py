@@ -2,6 +2,7 @@ import os
 import stepper_drive as sd
 import motor_switch as ms
 import servo_test as servo
+import powersupp_halogen as psupp
 
 #this class contains everything that is needed to controll the motorboard
 class CONTROLLER():
@@ -29,6 +30,9 @@ class CONTROLLER():
         self.microsteps_nano = 32
         self.microsteps_standa = 16
         self.offset_standa = 512000
+        
+        self.halogen = psupp.powerSupply()
+        self.halogen.connect()
         
     #maximum current of the motors
     # Current regulation
@@ -347,4 +351,7 @@ class CONTROLLER():
         servo.shutter(value)
     def get_servo_angle(self):
         return self.servo_angle
+    
+    def psupp_onoff(self):
+        self.halogen.onoff()
  
