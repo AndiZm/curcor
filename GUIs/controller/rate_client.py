@@ -9,7 +9,7 @@ class controller_client:
 
 	#info about the server to connect to
 	port = 2611
-	address = "131.188.167.132"
+	address = 100 #"131.188.167.132"
 	
 	#client socket that is used to connect to the rate server
 	socket = None
@@ -28,15 +28,21 @@ class controller_client:
 	def __init__(self, connection_string):
 		#check if config file exists and load it, otherwise standard parameters are kept
 		config = configparser.ConfigParser()
-		config.read('rate_transmission.conf')
-		if connection_string in config:
-			self.port=int(config[connection_string]["port_controller"])
-			self.address=config[connection_string]["address"]
+		config.read('../global.conf')
+		if connection_string == "client_to_pc1":
+			self.port=int(config["cam_pc_1"]["port_controller"])
+			self.address=config["cam_pc_1"]["address"]
+		elif connection_string == "client_to_pc2":
+			self.port=int(config["cam_pc_2"]["port_controller"])
+			self.address=config["cam_pc_2"]["address"]
+		else:
+			print("Connection string '{0}' is invalid! Please specify a valid connection string when initalizing a rate_client instance!".format(connection_string))
+			exit()
 		if "pc1" in connection_string:
 			self.pc_ID = 1
 		elif "pc2" in connection_string:
 			self.pc_ID = 2
-		print("controller-client init completed. Configuation: addr {0} port {1}".format(self.address, self.port))
+		print("controller-client init completed. Configuration: addr {0} port {1}".format(self.address, self.port))
 
 		
 	#connects the rate client to the rate server
