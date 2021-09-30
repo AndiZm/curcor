@@ -3,7 +3,7 @@ import pyTMCL
 
 def init():
     #serial_port = serial.Serial("/dev/ttyUSB0",baudrate=9600,timeout=1)
-    serial_port = serial.Serial("/dev/ttyACM0",timeout=.25)
+    serial_port = serial.Serial("/dev/ttyACM1",timeout=.25)
     bus=pyTMCL.connect(serial_port)
     #bus.send(0,9,65,0,0)
     #print(bus.send(0,10,65,0,0).value)
