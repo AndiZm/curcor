@@ -32,7 +32,7 @@ class CONTROLLER():
         self.offset_standa = 512000
         
         self.halogen = psupp.powerSupply()
-        self.halogen.connect()
+        #self.halogen.connect()
         
     #maximum current of the motors
     # Current regulation

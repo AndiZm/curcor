@@ -18,7 +18,7 @@ def init():
         else:
             a[i].set_axis_parameter(5,500)  # acceleration einstellen
         
-    a[3].set_pullups(3) #disable pullups for Mirror motors
+    #a[3].set_pullups(3) #disable pullups for Mirror motors
     
     for i in range (4):
         a[i].set_axis_parameter(140,5) #32 Microsteps

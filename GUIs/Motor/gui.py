@@ -91,15 +91,18 @@ class GUI:
 
         self.switchFrame = Frame(self.overMainFrame, width=200, height=20)
         self.switchFrame.grid(row=0,column=0, padx=10, pady=3)
+        
+        self.centerFrame = Frame(self.mainFrame, width=600, height=400)
+        self.centerFrame.grid(row=1, column=0)
+        
+        #self.MirrorTFrame = Frame(self.mainFrame, width=200, height=400)
+        #self.MirrorTFrame.grid(row=1, column=0, padx=10, pady=3)
 
-        self.MirrorTFrame = Frame(self.mainFrame, width=200, height=400)
-        self.MirrorTFrame.grid(row=1, column=0, padx=10, pady=3)
+        #self.MirrorRFrame = Frame(self.mainFrame, width=200, height=400)
+        #self.MirrorRFrame.grid(row=1, column=1, padx=10, pady=3)
 
-        self.MirrorRFrame = Frame(self.mainFrame, width=200, height=400)
-        self.MirrorRFrame.grid(row=1, column=1, padx=10, pady=3)
-
-        self.CameraFrame = Frame(self.mainFrame, width=200, height=400)
-        self.CameraFrame.grid(row=1, column=2, padx=10, pady=3)
+        #self.CameraFrame = Frame(self.mainFrame, width=200, height=400)
+        #self.CameraFrame.grid(row=1, column=2, padx=10, pady=3)
 
         self.RateFrame = Frame(self.overMainFrame, width=200, height=40)
         self.RateFrame.grid(row=0, column=1, pady=3)
@@ -128,13 +131,13 @@ class GUI:
 
 
         #MirrorT-Content
-        self.MirrorTHeadFrame = Frame(self.MirrorTFrame, width=200, height=20); self.MirrorTHeadFrame.grid(row=0, column=0, padx=10, pady=3)
+        self.MirrorTHeadFrame = Frame(self.centerFrame, width=200, height=20); self.MirrorTHeadFrame.grid(row=0, column=0, padx=10, pady=3)
         self.leftLabel1 = Label(self.MirrorTHeadFrame, text="Mirror Height"); self.leftLabel1.grid(row=0, column=0, padx=10, pady=3)
         self.MirrorHeightDisplay = Canvas(self.MirrorTHeadFrame, width=20,height=20); self.MirrorHeightDisplay.grid(row=0, column=1, padx=3, pady=3)
         self.MirrorHeightPositionLabel = Label(self.MirrorTHeadFrame, fg=self.LEDColors[1], bg="black", font=("Helvetica 15 bold"), text=str(self.controller.get_position_mirror_height())); self.MirrorHeightPositionLabel.grid(row=0, column=2, padx=10, pady=3)
         self.MirrorHeightSetButton = Button(self.MirrorTHeadFrame, text="Set", width=2, command=self.set_mirror_height); self.MirrorHeightSetButton.grid(row=0,column=3)
         
-        self.MirrorTUpperFrame = Frame(self.MirrorTFrame, width=200, height=300); self.MirrorTUpperFrame.grid(row=1, column=0)
+        self.MirrorTUpperFrame = Frame(self.centerFrame, width=200, height=300); self.MirrorTUpperFrame.grid(row=1, column=0)
         self.MirrorHeight_USTOP = Canvas(self.MirrorTUpperFrame, bg=self.ENDSwitchColors[self.controller.get_endswitch_lower_mirror_height()], width=20, height=10); self.MirrorHeight_USTOP.grid(row=0, column=0)
         self.MirrorHeight= Scale(self.MirrorTUpperFrame,from_=0, to=50, resolution=0.1, orient=VERTICAL, length=350); self.MirrorHeight.set(self.controller.get_position_mirror_height()); self.MirrorHeight.grid(row=1, column=0, padx=10, pady=3)
         self.MirrorHeightRefsearch = Button(self.MirrorTHeadFrame, text="Ref", width=2, command=self.refsearch_mirror_height); self.MirrorHeightRefsearch.grid(row=0, column=4) 
@@ -150,19 +153,19 @@ class GUI:
         self.CenterMirrorPos = Button(self.MirrorTButtonFrame, text="Center Mirror Pos", bg="#C0C0C0", width=16, command=self.center_mirror_pos); self.CenterMirrorPos.grid(row=3, column=0)
         self.MirrorZSpeed = Scale(self.MirrorTButtonFrame,from_=0, to=100000, resolution=1000, orient=HORIZONTAL, length=140, label="Speed");  self.MirrorZSpeed.set(controller.get_max_speed_mirror_z()); self.MirrorZSpeed.grid(row=4, column=0, padx=10, pady=3)
         self.MirrorZSpeed.bind("<ButtonRelease-1>", self.new_velocity_mirror_z); self.MirrorZSpeed.set(controller.get_max_speed_mirror_z())
-        self.MirrorZAcc = Scale(self.MirrorTButtonFrame,from_=0, to=20000, resolution=200, orient=HORIZONTAL, length=140, label="Acceleration");  self.MirrorZAcc.set(controller.get_max_acc_mirror_z()); self.MirrorZAcc.grid(row=6, column=0, padx=10, pady=3)
+        self.MirrorZAcc = Scale(self.MirrorTButtonFrame,from_=0, to=20000, resolution=200, orient=HORIZONTAL, length=140, label="Acceleration");  self.MirrorZAcc.set(controller.get_max_acc_mirror_z()); self.MirrorZAcc.grid(row=5, column=0, padx=10, pady=3)
         self.MirrorZAcc.bind("<ButtonRelease-1>", self.new_acceleration_mirror_z); self.MirrorZAcc.set(controller.get_max_acc_mirror_z())
-        self.MirrorZCurrent = Scale(self.MirrorTButtonFrame,from_=0.06, to=1.44, resolution=0.06, orient=HORIZONTAL, length=140, label="Max I"); self.MirrorZCurrent.grid(row=7, column=0, padx=10, pady=3)
+        self.MirrorZCurrent = Scale(self.MirrorTButtonFrame,from_=0.06, to=1.44, resolution=0.06, orient=HORIZONTAL, length=140, label="Max I"); self.MirrorZCurrent.grid(row=6, column=0, padx=10, pady=3)
         self.MirrorZCurrent.bind("<ButtonRelease-1>", self.new_current_mirror_z); self.MirrorZCurrent.set(controller.get_max_current_mirror_z())
 
-        self.MirrorTLowerFrame = Frame(self.MirrorTFrame, width=200, height=20); self.MirrorTLowerFrame.grid(row=2, column=0)
+        self.MirrorTLowerFrame = Frame(self.centerFrame, width=200, height=20); self.MirrorTLowerFrame.grid(row=2, column=0)
         self.leftLabel2 = Label(self.MirrorTLowerFrame, text="Mirror Z"); self.leftLabel2.grid(row=0, column=0, padx=10, pady=3)
         self.MirrorZDisplay = Canvas(self.MirrorTLowerFrame, width=20,height=20); self.MirrorZDisplay.grid(row=0, column=1, padx=3, pady=3)
         self.MirrorZPositionLabel = Label(self.MirrorTLowerFrame, fg=self.LEDColors[1], bg="black", font=("Helvetica 15 bold"), text=str(self.controller.get_max_acc_mirror_height())); self.MirrorZPositionLabel.grid(row=0, column=2, padx=10, pady=3)
         self.MirrorZSetButton = Button(self.MirrorTLowerFrame, text="Set", width=2, command=self.set_mirror_z); self.MirrorZSetButton.grid(row=0,column=3)
         self.MirrorZRefsearch = Button(self.MirrorTLowerFrame, text="Ref", width=2, command=self.refsearch_mirror_z); self.MirrorZRefsearch.grid(row=0, column=4)
 
-        self.MirrorTBottomFrame = Frame(self.MirrorTFrame, width=200, height=60); self.MirrorTBottomFrame.grid(row=3, column=0)
+        self.MirrorTBottomFrame = Frame(self.centerFrame, width=200, height=60); self.MirrorTBottomFrame.grid(row=3, column=0)
         self.MirrorZ_LSTOP = Canvas(self.MirrorTBottomFrame, bg=self.ENDSwitchColors[controller.get_endswitch_upper_mirror_z()], width=10, height=20); self.MirrorZ_LSTOP.grid(row=0, column=0)
         self.MirrorZ = Scale(self.MirrorTBottomFrame, from_=0, to=140, resolution=0.1, orient=HORIZONTAL, length=250); self.MirrorZ.set(self.controller.get_position_mirror_z()); self.MirrorZ.grid(row=0, column=1, padx=10, pady=3)
         self.MirrorZ.bind("<ButtonRelease-1>", self.moveto_mirror_z); self.MirrorZ.set(lastpositions[2])
@@ -170,54 +173,54 @@ class GUI:
 
 
         #MirrorR-Content
-        self.MirrorRHeadFrame = Frame(self.MirrorRFrame, width=200, height=20); self.MirrorRHeadFrame.grid(row=0, column=0)
+        self.MirrorRHeadFrame = Frame(self.centerFrame, width=200, height=20); self.MirrorRHeadFrame.grid(row=0, column=1)
         self.midLabel1 = Label(self.MirrorRHeadFrame, text="Mirror Psi"); self.midLabel1.grid(row=0, column=0, padx=10, pady=3)
         self.MirrorPsiDisplay = Canvas(self.MirrorRHeadFrame, width=20,height=20); self.MirrorPsiDisplay.grid(row=0, column=1, padx=3, pady=3)
         self.MirrorPsiPositionLabel = Label(self.MirrorRHeadFrame, fg=self.LEDColors[1], bg="black", font=("Helvetica 15 bold"), text=str(self.controller.get_position_mirror_psi())); self.MirrorPsiPositionLabel.grid(row=0, column=2, padx=10, pady=3)
         self.MirrorPsiSetButton = Button(self.MirrorRHeadFrame, text="Set", width=2, command=self.set_mirror_psi); self.MirrorPsiSetButton.grid(row=0,column=3)
         self.MirrorPsiRefsearch = Button(self.MirrorRHeadFrame, text="Ref", width=2, command=self.refsearch_mirror_psi); self.MirrorPsiRefsearch.grid(row=0, column=4) 
 
-        self.MirrorRUpperFrame = Frame(self.MirrorRFrame, width=200, height=300); self.MirrorRUpperFrame.grid(row=1, column=0)
+        self.MirrorRUpperFrame = Frame(self.centerFrame, width=200, height=300); self.MirrorRUpperFrame.grid(row=1, column=1, pady=32)
         self.MirrorPsi_OSTOP = Canvas(self.MirrorRUpperFrame, bg=self.ENDSwitchColors[self.controller.get_endswitch_upper_mirror_psi()], width=20, height=10); self.MirrorPsi_OSTOP.grid(row=0, column=0)
-        self.MirrorPsi = Scale(self.MirrorRUpperFrame, from_=4.5, to=-4.5, resolution=0.01, orient=VERTICAL, length=300); self.MirrorPsi.set(self.controller.get_position_mirror_psi()); self.MirrorPsi.grid(row=1, column=0, padx=10, pady=3)
+        self.MirrorPsi = Scale(self.MirrorRUpperFrame, from_=4.5, to=-4.5, resolution=0.01, orient=VERTICAL, length=350); self.MirrorPsi.set(self.controller.get_position_mirror_psi()); self.MirrorPsi.grid(row=1, column=0, padx=10, pady=3)
         self.MirrorPsi.bind("<ButtonRelease-1>", self.moveto_mirror_psi); self.MirrorPsi.set(lastpositions[4])
         self.MirrorPsi_USTOP = Canvas(self.MirrorRUpperFrame, bg=self.ENDSwitchColors[self.controller.get_endswitch_lower_mirror_psi()], width=20, height=10); self.MirrorPsi_USTOP.grid(row=2, column=0)
         self.MirrorRButtonFrame = Frame(self.MirrorRUpperFrame, width=100, height=150); self.MirrorRButtonFrame.grid(row=1, column=1)
-        self.MirrorPsiSpeed = Scale(self.MirrorRButtonFrame,from_=0, to=10000, resolution=500, orient=HORIZONTAL, length=140, label="Speed"); self.MirrorPsiSpeed.set(self.controller.get_max_speed_mirror_psi()); self.MirrorPsiSpeed.grid(row=0, column=0, padx=10, pady=3)
+        self.MirrorPsiSpeed = Scale(self.MirrorRButtonFrame,from_=0, to=10000, resolution=500, orient=HORIZONTAL, length=140, label="Speed"); self.MirrorPsiSpeed.set(self.controller.get_max_speed_mirror_psi()); self.MirrorPsiSpeed.grid(row=0, column=0, padx=10, pady=10)
         self.MirrorPsiSpeed.bind("<ButtonRelease-1>", self.new_velocity_mirror_psi); self.MirrorPsiSpeed.set(self.controller.get_max_speed_mirror_psi())
-        self.MirrorPsiCurrent = Scale(self.MirrorRButtonFrame,from_=0.06, to=0.66, resolution=0.06, orient=HORIZONTAL, length=140, label="Max I"); self.MirrorPsiCurrent.set(self.controller.get_max_current_mirror_height()); self.MirrorPsiCurrent.grid(row=1, column=0, padx=10, pady=3)
+        self.MirrorPsiCurrent = Scale(self.MirrorRButtonFrame,from_=0.06, to=0.66, resolution=0.06, orient=HORIZONTAL, length=140, label="Max I"); self.MirrorPsiCurrent.set(self.controller.get_max_current_mirror_height()); self.MirrorPsiCurrent.grid(row=1, column=0, padx=10, pady=10)
         self.MirrorPsiCurrent.bind("<ButtonRelease-1>", self.new_current_mirror_psi); self.MirrorPsiCurrent.set(self.controller.get_max_current_mirror_psi())
         self.B6 = Button(self.MirrorRButtonFrame, text="Center Mirror Angle", bg="#C0C0C0", width=16, command=self.center_mirror_angle); self.B6.grid(row=2, column=0, padx=10, pady=3)
-        self.MirrorPhiSpeed = Scale(self.MirrorRButtonFrame,from_=0, to=10000, resolution=500, orient=HORIZONTAL, length=140, label="Speed"); self.MirrorPhiSpeed.set(self.controller.get_max_speed_mirror_phi()); self.MirrorPhiSpeed.grid(row=3, column=0, padx=10, pady=3)
+        self.MirrorPhiSpeed = Scale(self.MirrorRButtonFrame,from_=0, to=10000, resolution=500, orient=HORIZONTAL, length=140, label="Speed"); self.MirrorPhiSpeed.set(self.controller.get_max_speed_mirror_phi()); self.MirrorPhiSpeed.grid(row=3, column=0, padx=10, pady=10)
         self.MirrorPhiSpeed.bind("<ButtonRelease-1>", self.new_velocity_mirror_phi); self.MirrorPhiSpeed.set(self.controller.get_max_speed_mirror_phi())
-        self.MirrorPhiCurrent = Scale(self.MirrorRButtonFrame,from_=0.06, to=0.66, resolution=0.06, orient=HORIZONTAL, length=140, label="Max I"); self.MirrorPhiCurrent.set(self.controller.get_max_current_mirror_phi()); self.MirrorPhiCurrent.grid(row=4, column=0, padx=10, pady=3)
+        self.MirrorPhiCurrent = Scale(self.MirrorRButtonFrame,from_=0.06, to=0.66, resolution=0.06, orient=HORIZONTAL, length=140, label="Max I"); self.MirrorPhiCurrent.set(self.controller.get_max_current_mirror_phi()); self.MirrorPhiCurrent.grid(row=4, column=0, padx=10, pady=10)
         self.MirrorPhiCurrent.bind("<ButtonRelease-1>",self.new_current_mirror_phi); self.MirrorPhiCurrent.set(controller.get_max_current_mirror_phi())
 
-        self.MirrorRLowerFrame = Frame(self.MirrorRFrame, width=200, height=20); self.MirrorRLowerFrame.grid(row=2, column=0)
+        self.MirrorRLowerFrame = Frame(self.centerFrame, width=200, height=20); self.MirrorRLowerFrame.grid(row=2, column=1)
         self.midLabel2 = Label(self.MirrorRLowerFrame, text="Mirror Phi"); self.midLabel2.grid(row=0, column=0, padx=10, pady=3)
         self.MirrorPhiDisplay = Canvas(self.MirrorRLowerFrame, width=20,height=20); self.MirrorPhiDisplay.grid(row=0, column=1, padx=3, pady=3)
         self.MirrorPhiPositionLabel = Label(self.MirrorRLowerFrame, fg=self.LEDColors[1], bg="black", font=("Helvetica 15 bold"), text=str(self.controller.get_position_mirror_phi())); self.MirrorPhiPositionLabel.grid(row=0, column=2, padx=10, pady=3)
         self.MirrorPhiSetButton = Button(self.MirrorRLowerFrame, text="Set", width=2, command=self.set_mirror_phi); self.MirrorPhiSetButton.grid(row=0,column=3)
         self.MirrorPhiRefsearch = Button(self.MirrorRLowerFrame, text="Ref", width=2, command=self.refsearch_mirror_phi); self.MirrorPhiRefsearch.grid(row=0, column=4)
 
-        self.MirrorRBottomFrame = Frame(self.MirrorRFrame, width=200, height=60); self.MirrorRBottomFrame.grid(row=3, column=0)
+        self.MirrorRBottomFrame = Frame(self.centerFrame, width=200, height=60); self.MirrorRBottomFrame.grid(row=3, column=1)
         self.MirrorPhi_LSTOP = Canvas(self.MirrorRBottomFrame, bg=self.ENDSwitchColors[self.controller.get_endswitch_lower_mirror_phi()], width=10, height=20); self.MirrorPhi_LSTOP.grid(row=0, column=0)
-        self.MirrorPhi = Scale(self.MirrorRBottomFrame, from_=-4.5, to=4.5, resolution=0.01, orient=HORIZONTAL, length=300); self.MirrorPhi.set(self.controller.get_position_mirror_phi()); self.MirrorPhi.grid(row=0, column=1, padx=10, pady=3)
+        self.MirrorPhi = Scale(self.MirrorRBottomFrame, from_=-4.5, to=4.5, resolution=0.01, orient=HORIZONTAL, length=300); self.MirrorPhi.set(self.controller.get_position_mirror_phi()); self.MirrorPhi.grid(row=0, column=1, padx=10, pady=10)
         self.MirrorPhi.bind("<ButtonRelease-1>", self.moveto_mirror_phi); self.MirrorPhi.set(lastpositions[5])
         self.MirrorPhi_RSTOP = Canvas(self.MirrorRBottomFrame, bg=self.ENDSwitchColors[self.controller.get_endswitch_upper_mirror_phi()], width=10, height=20); self.MirrorPhi_RSTOP.grid(row=0, column=2)
 
 
         #Camera-Content
-        self.CameraHeadFrame = Frame(self.CameraFrame, width=200, height=20); self.CameraHeadFrame.grid(row=0, column=0)
+        self.CameraHeadFrame = Frame(self.centerFrame, width=200, height=20); self.CameraHeadFrame.grid(row=0, column=2)
         self.rightLabel1 = Label(self.CameraHeadFrame, text="Camera X"); self.rightLabel1.grid(row=0, column=0, padx=10, pady=3)
         self.CameraXDisplay = Canvas(self.CameraHeadFrame, width=20,height=20); self.CameraXDisplay.grid(row=0, column=1, padx=3, pady=3)
         self.CameraXPositionLabel = Label(self.CameraHeadFrame, fg=self.LEDColors[1], bg="black", font=("Helvetica 15 bold"), text=str(self.controller.get_position_mirror_height())); self.CameraXPositionLabel.grid(row=0, column=2, padx=10, pady=3)
         self.CameraXSetButton = Button(self.CameraHeadFrame, text="Set", width=2, command=self.set_camera_x); self.CameraXSetButton.grid(row=0,column=3)
         self.CameraXRefsearch = Button(self.CameraHeadFrame, text="Ref", width=2, command=self.refsearch_camera_x); self.CameraXRefsearch.grid(row=0, column=4)
 
-        self.CameraUpperFrame = Frame(self.CameraFrame, width=200, height=300); self.CameraUpperFrame.grid(row=1, column=0)
+        self.CameraUpperFrame = Frame(self.centerFrame, width=200, height=300); self.CameraUpperFrame.grid(row=1, column=2)
         self.CameraX_USTOP = Canvas(self.CameraUpperFrame, bg=self.ENDSwitchColors[self.controller.get_endswitch_lower_camera_x()], width=20, height=10); self.CameraX_USTOP.grid(row=0, column=0)
-        self.CameraX = Scale(self.CameraUpperFrame, from_=0, to=250, resolution=0.1, orient=VERTICAL, length=300); self.CameraX.set(self.controller.get_position_camera_x()); self.CameraX.grid(row=1, column=0, padx=10, pady=3)
+        self.CameraX = Scale(self.CameraUpperFrame, from_=0, to=250, resolution=0.1, orient=VERTICAL, length=350); self.CameraX.set(self.controller.get_position_camera_x()); self.CameraX.grid(row=1, column=0, padx=10, pady=3)
         self.CameraX.bind("<ButtonRelease-1>", self.moveto_camera_x); self.CameraX.set(lastpositions[1])
         self.CameraX_OSTOP = Canvas(self.CameraUpperFrame, bg=self.ENDSwitchColors[self.controller.get_endswitch_upper_camera_x()], width=20, height=10); self.CameraX_OSTOP.grid(row=2, column=0)
         self.CameraButtonFrame = Frame(self.CameraUpperFrame, width=100, height=150); self.CameraButtonFrame.grid(row=1, column=1)
@@ -230,13 +233,13 @@ class GUI:
         self.CenterCamera = Button(self.CameraButtonFrame, text="Center Camera", bg="#C0C0C0", width=16, command=self.center_camera); self.CenterCamera.grid(row=3, column=0, padx=10, pady=3)
         self.CameraZSpeed = Scale(self.CameraButtonFrame,from_=0, to=100000, resolution=1000, orient=HORIZONTAL, length=140, label="Speed"); self.CameraZSpeed.set(self.controller.get_max_speed_camera_z()); self.CameraZSpeed.grid(row=4, column=0, padx=10, pady=3)
         self.CameraZSpeed.bind("<ButtonRelease-1>", self.new_velocity_camera_z); self.CameraZSpeed.set(self.controller.get_max_speed_camera_z())
-        self.CameraZAcc = Scale(self.CameraButtonFrame,from_=0, to=20000, resolution=200, orient=HORIZONTAL, length=140, label="Acceleration"); self.CameraZAcc.set(controller.get_max_acc_camera_z()); self.CameraZAcc.grid(row=6, column=0, padx=10, pady=3)
+        self.CameraZAcc = Scale(self.CameraButtonFrame,from_=0, to=20000, resolution=200, orient=HORIZONTAL, length=140, label="Acceleration"); self.CameraZAcc.set(controller.get_max_acc_camera_z()); self.CameraZAcc.grid(row=5, column=0, padx=10, pady=3)
         self.CameraZAcc.bind("<ButtonRelease-1>", self.new_acceleration_camera_z); self.CameraZAcc.set(controller.get_max_acc_camera_z())
-        self.CameraZCurrent = Scale(self.CameraButtonFrame,from_=0.06, to=1.44, resolution=0.06, orient=HORIZONTAL, length=140, label="Max I"); self.CameraZCurrent.grid(row=7, column=0, padx=10, pady=3)
+        self.CameraZCurrent = Scale(self.CameraButtonFrame,from_=0.06, to=1.44, resolution=0.06, orient=HORIZONTAL, length=140, label="Max I"); self.CameraZCurrent.grid(row=6, column=0, padx=10, pady=3)
         self.CameraZCurrent.bind("<ButtonRelease-1>", self.new_current_camera_z); self.CameraZCurrent.set(self.controller.get_max_current_camera_z())
 
 
-        self.CameraLowerFrame = Frame(self.CameraFrame, width=200, height=20); self.CameraLowerFrame.grid(row=2, column=0)
+        self.CameraLowerFrame = Frame(self.centerFrame, width=200, height=20); self.CameraLowerFrame.grid(row=2, column=2)
         self.rightLabel2 = Label(self.CameraLowerFrame, text="Camera Z"); self.rightLabel2.grid(row=0, column=0, padx=10, pady=3)
         self.CameraZDisplay = Canvas(self.CameraLowerFrame, width=20,height=20)
         self.CameraZDisplay.grid(row=0, column=1, padx=3, pady=3)
@@ -245,7 +248,7 @@ class GUI:
         self.CameraZSetButton = Button(self.CameraLowerFrame, text="Set", width=2, command=self.set_camera_z); self.CameraZSetButton.grid(row=0,column=3)
         self.CameraZRefsearch = Button(self.CameraLowerFrame, text="Ref", width=2, command=self.refsearch_camera_z); self.CameraZRefsearch.grid(row=0, column=4)
 
-        self.CameraBottomFrame = Frame(self.CameraFrame, width=200, height=60); self.CameraBottomFrame.grid(row=3, column=0)
+        self.CameraBottomFrame = Frame(self.centerFrame, width=200, height=60); self.CameraBottomFrame.grid(row=3, column=2)
         self.CameraZ_LSTOP = Canvas(self.CameraBottomFrame, bg=self.ENDSwitchColors[self.controller.get_endswitch_upper_camera_z()], width=10, height=20); self.CameraZ_LSTOP.grid(row=0, column=0)
         self.CameraZ = Scale(self.CameraBottomFrame, from_= 150, to=0, resolution=0.1, orient=HORIZONTAL, length=250); self.CameraZ.set(self.controller.get_position_camera_z()); self.CameraZ.grid(row=0, column=1, padx=10, pady=3)
         self.CameraZ.bind("<ButtonRelease-1>", self.moveto_camera_z); self.CameraZ.set(lastpositions[0])
@@ -331,7 +334,7 @@ class GUI:
 
         #Hübsche Farben
         MirrorTColor = "#b3daff"
-        self.MirrorTFrame.config(background = MirrorTColor)
+        self.centerFrame.config(background = "#003366")
         self.MirrorTHeadFrame.config(background = MirrorTColor)
         self.leftLabel1.config(background = MirrorTColor)
         self.MirrorHeightDisplay.config(background = MirrorTColor)
@@ -351,7 +354,7 @@ class GUI:
         self.MirrorZCurrent.config(background = MirrorTColor)
 
         MirrorRColor = "#66b5ff"
-        self.MirrorRFrame.config(background = MirrorRColor)
+        #self.MirrorRFrame.config(background = MirrorRColor)
         self.MirrorRHeadFrame.config(background = MirrorRColor)
         self.midLabel1.config(background = MirrorRColor)
         self.MirrorPhiDisplay.config(background = MirrorRColor)
@@ -369,7 +372,7 @@ class GUI:
         self.MirrorPsiCurrent.config(background = MirrorRColor)
 
         CameraColor = "#ccff99"
-        self.CameraFrame.config(background = CameraColor)
+        #self.CameraFrame.config(background = CameraColor)
         self.CameraHeadFrame.config(background = CameraColor)
         self.rightLabel1.config(background = CameraColor)
         self.CameraXDisplay.config(background = CameraColor)
@@ -453,7 +456,7 @@ class GUI:
         self.Shutter.set(0)
         
     def set_servo(self, event):
-        new_pos=Servo.get()
+        new_pos=int(self.Shutter.get())
         self.controller.set_servo_angle(new_pos)
         self.servoPositionLabel.set(new_pos)
         
