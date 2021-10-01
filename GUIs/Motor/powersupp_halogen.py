@@ -1,6 +1,8 @@
 import serial
 from tkinter import *
 import time
+import configparser
+
 
 class powerSupply:
     # Device
@@ -14,7 +16,32 @@ class powerSupply:
         pass
 
     def connect(self):
-        self.dev = serial.Serial('/dev/ttyACM1', timeout=0.2)
+        #read address of the motorboard from the config-file
+        motor_pc_no = None
+        address_halogen = None
+        this_config = configparser.ConfigParser()
+        this_config.read('../../../this_pc.conf')
+        if "who_am_i" in this_config:
+            if this_config["who_am_i"]["type"]!="motor_pc":
+                print("According to the 'this_pc.config'-file this pc is not meant as a motor pc! Please fix that!")
+                exit()
+            motor_pc_no = int(this_config["who_am_i"]["no"])
+        else:
+            print("There is no config file on this computer which specifies the computer function! Please fix that!")
+            exit()
+        global_config = configparser.ConfigParser()
+        global_config.read('../global.conf')
+        if "rate_transmission" in global_config:
+            if motor_pc_no == 1:
+                address_halogen=global_config["motor_pc_1"]["address_halogen"]
+            elif motor_pc_no == 2:
+                address_halogen=global_config["motor_pc_2"]["address_halogen"]
+            else:
+                print("Error in the 'this_pc.config'-file. The number of the Motor PC is neither 1 nor 2. Please correct!")
+        else:
+            print("Error in the 'this_pc.config'-file. The file does not contain the section 'rate_transmission'. Please correct!")
+            exit()    
+        self.dev = serial.Serial(address_halogen, timeout=0.2)
         self.get_state()
         
     def get_state(self):

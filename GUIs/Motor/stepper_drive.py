@@ -1,9 +1,36 @@
 import serial 
 import pyTMCL
+import configparser
+
 
 def init():
+    #read address of the motorboard from the config-file
+    motor_pc_no = None
+    address_motorboard = None
+    this_config = configparser.ConfigParser()
+    this_config.read('../../../this_pc.conf')
+    if "who_am_i" in this_config:
+        if this_config["who_am_i"]["type"]!="motor_pc":
+            print("According to the 'this_pc.config'-file this pc is not meant as a motor pc! Please fix that!")
+            exit()
+        motor_pc_no = int(this_config["who_am_i"]["no"])
+    else:
+        print("There is no config file on this computer which specifies the computer function! Please fix that!")
+        exit()
+    global_config = configparser.ConfigParser()
+    global_config.read('../global.conf')
+    if "rate_transmission" in global_config:
+        if motor_pc_no == 1:
+            address_motorboard=global_config["motor_pc_1"]["address_motorboard"]
+        elif motor_pc_no == 2:
+            address_motorboard=global_config["motor_pc_2"]["address_motorboard"]
+        else:
+            print("Error in the 'this_pc.config'-file. The number of the Motor PC is neither 1 nor 2. Please correct!")
+    else:
+        print("Error in the 'this_pc.config'-file. The file does not contain the section 'rate_transmission'. Please correct!")
+        exit()    
     #serial_port = serial.Serial("/dev/ttyUSB0",baudrate=9600,timeout=1)
-    serial_port = serial.Serial("/dev/ttyACM1",timeout=.25)
+    serial_port = serial.Serial(address_motorboard,timeout=.25)
     bus=pyTMCL.connect(serial_port)
     #bus.send(0,9,65,0,0)
     #print(bus.send(0,10,65,0,0).value)

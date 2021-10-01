@@ -26,13 +26,33 @@ class rate_client:
     
     def __init__(self):
         #check if config file exists and load it, otherwise standard parameters are kept
-        config = configparser.ConfigParser()
-        config.read('rate_transmission.conf')
-        if "connection" in config:
-            self.port=int(config["connection"]["port"])
-            self.address=config["connection"]["address"]
-            self.msg_length=int(config["connection"]["msg_length"])
-        print("rate-client inii completed. Configuation: addr {0} port {1} msg_length {2}".format(self.address, self.port, self.msg_length))
+        motor_pc_no = None
+        this_config = configparser.ConfigParser()
+        this_config.read('../../../this_pc.conf')
+        if "who_am_i" in this_config:
+            if this_config["who_am_i"]["type"]!="motor_pc":
+                print("According to the 'this_pc.config'-file this pc is not meant as a motor pc! Please fix that!")
+                exit()
+            motor_pc_no = int(this_config["who_am_i"]["no"])
+        else:
+            print("There is no config file on this computer which specifies the computer function! Please fix that!")
+            exit()
+        global_config = configparser.ConfigParser()
+        global_config.read('../global.conf')
+        if "rate_transmission" in global_config:
+            if motor_pc_no == 1:
+                self.port=int(global_config["cam_pc_1"]["port_motor"])
+                self.address=global_config["cam_pc_1"]["address"]
+            elif motor_pc_no == 2:
+                self.port=int(global_config["cam_pc_2"]["port_motor"])
+                self.address=global_config["cam_pc_2"]["address"]
+            else:
+                print("Error in the 'this_pc.config'-file. The number of the Motor PC is neither 1 nor 2. Please correct!")
+            self.msg_length=int(global_config["rate_transmission"]["msg_length"])
+        else:
+            print("Error in the 'this_pc.config'-file. The file does not contain the section 'rate_transmission'. Please correct!")
+            exit()
+        print("rate-client init completed. Configuation: addr {0} port {1} msg_length {2}".format(self.address, self.port, self.msg_length))
 
         
     #connects the rate client to the rate server
