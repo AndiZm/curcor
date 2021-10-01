@@ -15,7 +15,7 @@ class server:
 	msg_length = 13
 	
 	#listening port and address for the server
-	port = 2610 
+	port = 0000 
 	address = ""
 	connections = 1
 	
@@ -30,13 +30,32 @@ class server:
 
 	def __init__(self):
 		#check if config file exists and load it, otherwise standard parameters are kept
-		config = configparser.ConfigParser()
-		config.read('rate_transmission.conf')
-		if "connection" in config:
-			self.port=int(config["connection"]["port_motor"])
-			self.address=config["connection"]["address"]
-			self.msg_length=int(config["connection"]["msg_length"])
-	
+		cam_pc_no = None
+		this_config = configparser.ConfigParser()
+		this_config.read('../../../this_pc.conf')
+		if "who_am_i" in this_config:
+			cam_pc_no = int(this_config["who_am_i"]["no"])
+			if  this_config["who_am_i"]["type"] != "cam_pc":
+				print("According to the 'this_pc.config'-file this pc is not meant as a camera pc. Please correct the configuarion or start the right GUI!")
+				exit()
+		else:
+			print("There is no config file on this computer which specifies the computer function! Please add a 'this_pc.config' file next to the curcor-directory!")
+			exit()
+		global_config = configparser.ConfigParser()
+		global_config.read('../global.conf')
+		if "rate_transmission" in global_config:
+			if cam_pc_no == 1:
+				self.port=int(global_config["cam_pc_1"]["port_motor"])
+				self.address=global_config["cam_pc_1"]["address"]
+			elif cam_pc_no == 2:
+				self.port=int(global_config["cam_pc_2"]["port_motor"])
+				self.address=global_config["cam_pc_2"]["address"]
+			else:
+				print("Error in the 'this_pc.config'-file. The number of the Cam PC is neither 1 nor 2. Please correct!")
+			self.msg_length=int(global_config["rate_transmission"]["msg_length"])
+		else:
+			print("Error in the 'this_pc.config'-file. The file does not contain the section 'rate_transmission'. Please correct!")
+			exit()
 	#starts the server by opening a listening socket			
 	def start(self):
 		#Check if server is already running
@@ -60,7 +79,7 @@ class server:
 			self.still_listening=True
 			self.listen_thread.start()
 			if self.listen_thread != None:
-				print("Server listens on Port {0} for Motor!".format(self.port))	
+				print("Server listens on Port {0} IP {1} for Motor!".format(self.port, self.address))	
 		else:
 			print("Server already started")
 			return
@@ -123,6 +142,32 @@ class server_controller:
 
 	def __init__(self):
 		#check if config file exists and load it, otherwise standard parameters are kept
+		cam_pc_no = None
+		this_config = configparser.ConfigParser()
+		this_config.read('../../../this_pc.conf')
+		if "who_am_i" in this_config:
+			cam_pc_no = int(this_config["who_am_i"]["no"])
+			if  this_config["who_am_i"]["type"] != "cam_pc":
+				print("According to the 'this_pc.config'-file this pc is not meant as a camera pc. Please correct the configuarion or start the right GUI!")
+				exit()
+		else:
+			print("There is no config file on this computer which specifies the computer function! Please add a 'this_pc.config' file next to the curcor-directory!")
+			exit()
+		global_config = configparser.ConfigParser()
+		global_config.read('../global.conf')
+		if "rate_transmission" in global_config:
+			if cam_pc_no == 1:
+				self.port=int(global_config["cam_pc_1"]["port_controller"])
+				self.address=global_config["cam_pc_1"]["address"]
+			elif cam_pc_no == 2:
+				self.port=int(global_config["cam_pc_2"]["port_controller"])
+				self.address=global_config["cam_pc_2"]["address"]
+			else:
+				print("Error in the 'this_pc.config'-file. The number of the Cam PC is neither 1 nor 2. Please correct!")
+		else:
+			print("Error in the 'this_pc.config'-file. The file does not contain the section 'rate_transmission'. Please correct!")
+			exit()
+
 		config = configparser.ConfigParser()
 		config.read('rate_transmission.conf')
 		if "connection" in config:
@@ -152,7 +197,7 @@ class server_controller:
 			self.listening_accept = True
 			self.listen_thread.start()
 			if self.listen_thread != None:
-				print("Server listens on Port {0} for Controller!".format(self.port))
+				print("Server listens on Port {0} IP {1} for Controller!".format(self.port, self.address))
 
 		else:
 			print("Server already started")
