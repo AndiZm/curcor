@@ -154,47 +154,56 @@ class RATE_ANALYZER():
   
     def replotRates(self):
         #make a nice plot
+        print("1")
         self.plot=plt.Figure(figsize=(6,6))
         sub_plot = self.plot.add_subplot(111)
         sub_plot.set_title("Heatmap of the mirror Positions")
+        print("2")
         sub_plot.imshow(self.rates, cmap='cool', extent=( self.min_phi-(self.max_phi-self.min_phi)/(self.spacing_phi)/2, self.max_phi+(self.max_phi-self.min_phi)/(self.spacing_phi)/2, self.min_psi-(self.max_psi-self.min_psi)/(self.spacing_psi)/2, self.max_psi+(self.max_psi-self.min_psi)/(self.spacing_psi)/2))
+        print("3")
         sub_plot.set_xlabel("$\phi$ [°]")
         sub_plot.set_ylabel("$\psi$ [°]")
         plt.draw()
+        print("4")
         self.canvas = FigureCanvasTkAgg(self.plot, master=self.plot_frame)
+        print("5")
         self.canvas.get_tk_widget().grid(row=0, column=0)
+        print("6")
         self.canvas.draw()
+        print("replotted the canvas")
     
-    def replotRatesUpdate(self):
-        while self.still_recording:
-            sleep(0.05)
-            if self.new_recording:
-                self.replotRates()
-                new_recording=False
-                print("T2 replotted")
+#    def replotRatesUpdate(self):
+#        print("started updating")
+#        while self.still_recording:
+#            sleep(0.05)
+#            print("still looking for updates")
+#            if self.new_record:
+#                self.replotRates()
+#                new_record=False
+#                print("T2 replotted")
+#        print("stopped updating")
     
     def recordRateDistributionRead(self):
-        still_recording=True
-        new_record=False
+        #self.still_recording=True
+        #new_record=False
         print(self.checked)
         print("check 1")
-        t1 = threading.Thread(target= lambda arg_min_phi=self.box_min_phi.get(), arg_max_phi=self.box_max_phi.get(), arg_min_psi=self.box_min_psi.get(), arg_max_psi=self.box_max_psi.get(), arg_spacing_phi=self.box_spacing_phi.get(), arg_spacing_psi=self.box_spacing_psi.get(), arg_live=self.checked : self.recordRateDistribution(spacing_phi=arg_spacing_phi, spacing_psi=arg_spacing_psi, min_phi=arg_min_phi, max_phi=arg_max_phi, min_psi=arg_min_psi, max_psi=arg_max_psi, live=arg_live))
-        print("check 2")
-        t1.start()
+        self.recordRateDistribution(self.box_spacing_phi.get(), self.box_spacing_psi.get(), self.box_min_phi.get(), self.box_max_phi.get(), self.box_min_psi.get(), self.box_max_psi.get(), False)#self.checked)
+        #self.still_recording=False
+        #self.replotRatesUpdate()
+        print("By now the distribution should be plotted!")
+        #t1 = threading.Thread(target= lambda arg_min_phi=self.box_min_phi.get(), arg_max_phi=self.box_max_phi.get(), arg_min_psi=self.box_min_psi.get(), arg_max_psi=self.box_max_psi.get(), arg_spacing_phi=self.box_spacing_phi.get(), arg_spacing_psi=self.box_spacing_psi.get(), arg_live=self.checked : self.recordRateDistribution(spacing_phi=arg_spacing_phi, spacing_psi=arg_spacing_psi, min_phi=arg_min_phi, max_phi=arg_max_phi, min_psi=arg_min_psi, max_psi=arg_max_psi, live=arg_live))
+        #print("check 2")
+        #t1.start()
         #t1.join()
-        print("check 3")
-        print("Checkpoint T1 started")
-        if self.checked:
-            t2 = threading.Thread(target=self.replotRatesUpdate)
-            t2.start()
-            #t2.join()
-            print("Checkpoint T2 started")
+        #print("check 3")
+        #print("Checkpoint T1 started")
         
             
          
     def recordRateDistribution(self, spacing_phi=25, spacing_psi=26, min_phi=-2., max_phi=2, min_psi=-3.80, max_psi=-0.5, live=False):
         #print("You entered the DUMMY-state")
-        print("Starting to measure the rate distribution. MinPhi={0:4.2f} ; MaxPhi={1:4.2f} ; MinPsi={2:4.2f} ; MaxPsi={3:4.2f} ; SpacingPhi={4} ; SpacingPsi={5}".format(min_phi, max_phi, min_psi, max_psi, spacing_phi, spacing_psi))
+        print("Starting to measure the rate distribution. MinPhi={0:4.2f} ; MaxPhi={1:4.2f} ; MinPsi={2:4.2f} ; MaxPsi={3:4.2f} ; SpacingPhi={4} ; SpacingPsi={5}; Live={6}".format(min_phi, max_phi, min_psi, max_psi, spacing_phi, spacing_psi, live))
         
         if self.client==None:
             print("No client connected! Cannot plot Mirrors")
@@ -203,14 +212,13 @@ class RATE_ANALYZER():
         coordinates_psi=np.linspace(min_psi, max_psi, num=spacing_psi)
         x, y=np.meshgrid(coordinates_phi, coordinates_psi)
         rates=np.empty(shape=(spacing_phi, spacing_psi))
-        if live:
-            self.rates=np.transpose(rates)
-            self.spacing_psi=spacing_psi
-            self.spacing_phi=spacing_phi
-            self.min_psi=min_psi
-            self.max_psi=max_psi
-            self.min_phi=min_phi
-            self.max_phi=max_phi
+        self.rates=np.transpose(rates)
+        self.spacing_psi=spacing_psi
+        self.spacing_phi=spacing_phi
+        self.min_psi=min_psi
+        self.max_psi=max_psi
+        self.min_phi=min_phi
+        self.max_phi=max_phi
         for i in range(0, spacing_phi, 1):
             pos_phi=min_phi+(max_phi-min_phi)/(spacing_phi-1)*i
             self.controller.set_position_mirror_phi(pos_phi)
@@ -232,23 +240,22 @@ class RATE_ANALYZER():
                 else:
                     rates[i][j]=self.client.getRateA()+self.client.getRateB()
                 if live:
-                    self.new_recording=True
+                    #self.new_record=True
+                    self.rates=np.transpose(rates)
+                    t = threading.Thread(target=self.replotRates)
+                    t.start()
+                    #t2.join()
+                    print("Started replot thread")
         if live==False:
             self.rates=np.transpose(rates)
-            self.spacing_psi=spacing_psi
-            self.spacing_phi=spacing_phi
-            self.min_psi=min_psi
-            self.max_psi=max_psi
-            self.min_phi=min_phi
-            self.max_phi=max_phi
             print("before replot")
             self.replotRates()
             print("after replot")
             print(rates)
-        self.still_recording=False
         # coordinates_phi=np.linspace(min_phi, max_phi, num=spacing_phi)
         #coordinates_psi=np.linspace(min_psi, max_psi, num=spacing_psi)
         #x, y=np.meshgrid(coordinates_phi, coordinates_psi)
+        print("Recording of the rate distribution done!")
     def findActiveArea():
         #do some crude narrowing of the spot
         max_rate=np.max(rates)

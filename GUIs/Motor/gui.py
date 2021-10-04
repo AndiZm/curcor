@@ -450,12 +450,12 @@ class GUI:
             
     def open_shutter(self):
         self.controller.open_shutter()
-        self.ServoPositionLabel.config(text="180")
+        #self.self.Shutter.config(text="180")
         self.Shutter.set(180)
               
     def close_shutter(self):
         self.controller.close_shutter()
-        self.ServoPositionLabel.config(text="0")
+        #self.ServoPositionLabel.config(text="0")
         self.Shutter.set(0)
         
     def set_servo(self, event):
