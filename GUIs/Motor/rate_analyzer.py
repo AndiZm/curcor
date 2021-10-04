@@ -3,12 +3,16 @@ import scipy.optimize as opt
 from numpy import random
 from tkinter import *
 from tkinter import simpledialog
+from tkinter import filedialog
+
 from time import sleep
 
 import numpy as np #only needed for simulations
 from PIL import Image
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
+
+
 
 
 class RATE_ANALYZER():
@@ -28,11 +32,13 @@ class RATE_ANALYZER():
     spacing_phi=10
     
     #Stuff for the GUI
+    master=None
     window=None
     main_frame=None
     plot_frame=None
     button_frame=None
-    nextIterationButton=None
+    loadButton=None
+    saveButton=None
     recordButton=None
     label_min_psi=None
     label_max_psi=None
@@ -47,7 +53,7 @@ class RATE_ANALYZER():
     box_max_psi=None
     box_spacing_phi=None
     box_spacing_psi=None
-    checked=False
+    checked=None
     
     #values for (live) recording
     still_recording=False
@@ -59,7 +65,8 @@ class RATE_ANALYZER():
         #copy stuff
         self.controller=controller
         self.client=client
-                
+        self.master=master
+        
         #create new window and frames
         self.window = Toplevel(master)
         self.main_frame = Frame(self.window, width=840, height = 620)
@@ -71,8 +78,9 @@ class RATE_ANALYZER():
         self.button_frame.grid(row=0, column=1, padx=10,pady=10)
         self.button_frame.config(background = "#003366")
         self.record_frame = Frame(self.button_frame, width=180, height=200)
-        self.record_frame.grid(row=1, column=0, padx=10, pady=10)
+        self.record_frame.grid(row=2, column=0, padx=10, pady=10)
         
+        self.checked=IntVar()
         
         #create the plot
         self.plot=plt.Figure(figsize=(6,6))
@@ -88,8 +96,12 @@ class RATE_ANALYZER():
         self.canvas.draw()
         
         #add GUI elements
-        self.nextIterationButton = Button(self.button_frame, text="next Iteration in marked area", width=40, pady=3, padx=3)
-        self.nextIterationButton.grid(row=0,column=0)
+        self.loadButton = Button(self.button_frame, text="Load Rate Distribution", width=40, pady=3, padx=3, command=self.loadRates)
+        self.loadButton.grid(row=0,column=0)
+        self.saveButton = Button(self.button_frame, text="Save Rate Distribution", width=40, pady=3, padx=3, command=self.saveRates)
+        self.saveButton.grid(row=1,column=0)
+
+
         
         
         #add record elements
@@ -117,10 +129,10 @@ class RATE_ANALYZER():
         self.label_spacing_psi.grid(row=5, column=0, padx=10, pady=3)
 
         #create and place checkbutton
-        self.checked=True
-        self.checkbutton_live = Checkbutton(self.record_frame, text="draw live", onvalue = True, offvalue = False, variable=self.checked)
+        self.checkbutton_live = Checkbutton(self.record_frame, text="draw live", onvalue = 1, offvalue = 0, variable=self.checked)
         self.checkbutton_live.select()
         self.checkbutton_live.grid(row=6, column=0, padx=10, pady=3)
+
 
         #create sliders
         self.box_min_phi = Scale(self.record_frame, from_=-4.5, to=4.5, orient=HORIZONTAL, length=150, resolution=0.1)
@@ -148,62 +160,51 @@ class RATE_ANALYZER():
         
         #record button
         self.recordButton = Button(self.button_frame, text="record rate Distribution", width=40, pady=3, padx=3)
-        self.recordButton.grid(row=2)
+        self.recordButton.grid(row=3)
         self.recordButton["command"]= self.recordRateDistributionRead
         
   
     def replotRates(self):
         #make a nice plot
-        print("1")
         self.plot=plt.Figure(figsize=(6,6))
         sub_plot = self.plot.add_subplot(111)
         sub_plot.set_title("Heatmap of the mirror Positions")
-        print("2")
         sub_plot.imshow(self.rates, cmap='cool', extent=( self.min_phi-(self.max_phi-self.min_phi)/(self.spacing_phi)/2, self.max_phi+(self.max_phi-self.min_phi)/(self.spacing_phi)/2, self.min_psi-(self.max_psi-self.min_psi)/(self.spacing_psi)/2, self.max_psi+(self.max_psi-self.min_psi)/(self.spacing_psi)/2))
-        print("3")
         sub_plot.set_xlabel("$\phi$ [°]")
         sub_plot.set_ylabel("$\psi$ [°]")
         plt.draw()
-        print("4")
         self.canvas = FigureCanvasTkAgg(self.plot, master=self.plot_frame)
-        print("5")
         self.canvas.get_tk_widget().grid(row=0, column=0)
-        print("6")
         self.canvas.draw()
-        print("replotted the canvas")
+        self.master.update()
+        #print("replotted the canvas")
     
-#    def replotRatesUpdate(self):
-#        print("started updating")
-#        while self.still_recording:
-#            sleep(0.05)
-#            print("still looking for updates")
-#            if self.new_record:
-#                self.replotRates()
-#                new_record=False
-#                print("T2 replotted")
-#        print("stopped updating")
+    def replotRatesUpdate(self):
+        print("started updating")
+        while self.still_recording:
+            sleep(0.05)
+            if self.new_record:
+                self.replotRates()
+                self.new_record=False
+                #print("replotted")
+        print("stopped updating")
     
     def recordRateDistributionRead(self):
-        #self.still_recording=True
-        #new_record=False
-        print(self.checked)
-        print("check 1")
-        self.recordRateDistribution(self.box_spacing_phi.get(), self.box_spacing_psi.get(), self.box_min_phi.get(), self.box_max_phi.get(), self.box_min_psi.get(), self.box_max_psi.get(), False)#self.checked)
-        #self.still_recording=False
-        #self.replotRatesUpdate()
-        print("By now the distribution should be plotted!")
-        #t1 = threading.Thread(target= lambda arg_min_phi=self.box_min_phi.get(), arg_max_phi=self.box_max_phi.get(), arg_min_psi=self.box_min_psi.get(), arg_max_psi=self.box_max_psi.get(), arg_spacing_phi=self.box_spacing_phi.get(), arg_spacing_psi=self.box_spacing_psi.get(), arg_live=self.checked : self.recordRateDistribution(spacing_phi=arg_spacing_phi, spacing_psi=arg_spacing_psi, min_phi=arg_min_phi, max_phi=arg_max_phi, min_psi=arg_min_psi, max_psi=arg_max_psi, live=arg_live))
-        #print("check 2")
-        #t1.start()
-        #t1.join()
-        #print("check 3")
-        #print("Checkpoint T1 started")
-        
+        if self.checked.get()==1:
+            self.still_recording=True
+            new_record=False
+            t1 = threading.Thread(target= lambda arg_min_phi=self.box_min_phi.get(), arg_max_phi=self.box_max_phi.get(), arg_min_psi=self.box_min_psi.get(), arg_max_psi=self.box_max_psi.get(), arg_spacing_phi=self.box_spacing_phi.get(), arg_spacing_psi=self.box_spacing_psi.get() : self.recordRateDistribution(spacing_phi=arg_spacing_phi, spacing_psi=arg_spacing_psi, min_phi=arg_min_phi, max_phi=arg_max_phi, min_psi=arg_min_psi, max_psi=arg_max_psi))
+            t1.start()
+            self.replotRatesUpdate()
+        else:
+            print("Result will be plotted after everything is measured!")
+            self.recordRateDistribution(self.box_spacing_phi.get(), self.box_spacing_psi.get(), self.box_min_phi.get(), self.box_max_phi.get(), self.box_min_psi.get(), self.box_max_psi.get())
+            self.replotRates()
             
          
-    def recordRateDistribution(self, spacing_phi=25, spacing_psi=26, min_phi=-2., max_phi=2, min_psi=-3.80, max_psi=-0.5, live=False):
+    def recordRateDistribution(self, spacing_phi=25, spacing_psi=26, min_phi=-2., max_phi=2, min_psi=-3.80, max_psi=-0.5):
         #print("You entered the DUMMY-state")
-        print("Starting to measure the rate distribution. MinPhi={0:4.2f} ; MaxPhi={1:4.2f} ; MinPsi={2:4.2f} ; MaxPsi={3:4.2f} ; SpacingPhi={4} ; SpacingPsi={5}; Live={6}".format(min_phi, max_phi, min_psi, max_psi, spacing_phi, spacing_psi, live))
+        print("Starting to measure the rate distribution. MinPhi={0:4.2f} ; MaxPhi={1:4.2f} ; MinPsi={2:4.2f} ; MaxPsi={3:4.2f} ; SpacingPhi={4} ; SpacingPsi={5}".format(min_phi, max_phi, min_psi, max_psi, spacing_phi, spacing_psi))
         
         if self.client==None:
             print("No client connected! Cannot plot Mirrors")
@@ -239,23 +240,14 @@ class RATE_ANALYZER():
                     rates[i][spacing_psi-1-j]=self.client.getRateA()+self.client.getRateB()
                 else:
                     rates[i][j]=self.client.getRateA()+self.client.getRateB()
-                if live:
-                    #self.new_record=True
-                    self.rates=np.transpose(rates)
-                    t = threading.Thread(target=self.replotRates)
-                    t.start()
-                    #t2.join()
-                    print("Started replot thread")
-        if live==False:
-            self.rates=np.transpose(rates)
-            print("before replot")
-            self.replotRates()
-            print("after replot")
-            print(rates)
+                self.new_record=True
+                self.rates=np.transpose(rates)
+        self.still_recording=False
         # coordinates_phi=np.linspace(min_phi, max_phi, num=spacing_phi)
         #coordinates_psi=np.linspace(min_psi, max_psi, num=spacing_psi)
         #x, y=np.meshgrid(coordinates_phi, coordinates_psi)
         print("Recording of the rate distribution done!")
+        
     def findActiveArea():
         #do some crude narrowing of the spot
         max_rate=np.max(rates)
@@ -391,7 +383,38 @@ class RATE_ANALYZER():
             sub_plot.axes.add_patch(rect)
         sub_plot.legend()
         print("added rectangle")
+    
+    def loadRates(self):
+        file = filedialog.askopenfile(initialdir = "../../..", title = "Load Rate Distribution", filetypes = (("rate files","*.rate"),("all files","*.*")))
+        if file!=None:
+            string=file.read()
+            parts=string.split("~")
+            self.min_phi=float(parts[0])
+            self.max_phi=float(parts[1])
+            self.min_psi=float(parts[2])
+            self.max_psi=float(parts[3])
+            self.spacing_psi=float(parts[4])
+            self.spacing_phi=float(parts[5])
+            array_data=parts[6]
+            lines=array_data.splitlines()
+            rates=np.empty((len(lines), len(lines[0].split())))
+            lines[0]=lines[0].replace("[[", "[")
+            lines[-1]=lines[-1].replace("]]", "]")
+            for no in range(0, len(lines), 1):
+                lines[no]=lines[no].replace("[","")
+                lines[no]=lines[no].replace("]","")
+                entries=lines[no].split()
+                for no_2 in range(0, len(entries), 1):
+                    rates[no][no_2]=float(entries[no_2])
+            self.rates=rates
+        self.replotRates()
 
-        
+    def saveRates(self):
+        file = filedialog.asksaveasfile(initialdir = "../../..", title = "Save Rate Distribution", filetypes = (("rate files","*.rate"),("all files","*.*")))
+        if file!=None:
+            #file=open(filename, "w")
+            file.write("{0}~{1}~{2}~{3}~{4}~{5}~{6}".format(self.min_phi, self.max_phi, self.min_psi, self.max_psi, self.spacing_psi, self.spacing_phi, self.rates))
+            file.close()
+
 def gauss2d(datapoints, prefactor=1, x_0=0, x_sigma=1, y_0=0, y_sigma=1, offset=0):
     return offset+prefactor*np.exp(-(np.power(datapoints[0]-x_0, 2)/(2*np.power(x_sigma,2)))-(np.power(datapoints[1]-y_0,2)/(2*np.power(y_sigma,2)))).ravel()
