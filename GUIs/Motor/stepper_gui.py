@@ -12,7 +12,7 @@ from controller import *
 controller=CONTROLLER()
 root = Tk()
 my_gui=GUI(root,controller)
-my_gui.run()  
+my_gui.run()
 root.mainloop()
 os._exit(0)
 

@@ -10,6 +10,7 @@ from rate_analyzer import *
 
 
 import warnings
+import traceback
 import rate_client as rcl
 from time import sleep
 
@@ -818,12 +819,19 @@ class GUI:
             if self.stop_thread:
                 sleep(0.1)
                 break
+            if self.controller.isBussy():
+                while self.controller.isBussy():
+                    sleep(1.0)
+                    #print("I Know when to stop...")
+            #print("update GUI")
             try:
                 self.update_items()
             except SerialException:
                 print("Serial Exception. This only causes the GUI to miss one update!")
             except Exception as e:
+                print("there was an exception in the update routine of the main GUI. The error was:")
                 print(e)
+                traceback.print_exc()
             sleep(0.1)
     
     def run(self):
