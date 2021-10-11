@@ -7,6 +7,8 @@ from tkinter import filedialog
 
 from time import sleep
 import warnings
+import os
+import time
 
 
 import numpy as np #only needed for simulations
@@ -27,10 +29,10 @@ class RATE_ANALYZER():
     
     #currently loaded distribution
     rates=None
-    min_phi=-4.5
-    max_phi=4.5
-    min_psi=-4.5
-    max_psi=4.5
+    min_phi=-4.4
+    max_phi=4.4
+    min_psi=-4.4
+    max_psi=4.4
     spacing_psi=10
     spacing_phi=10
     
@@ -83,6 +85,7 @@ class RATE_ANALYZER():
     new_record=False
 
     figure=None
+    canvas=None
     subplot=None
     legend=None
     
@@ -152,10 +155,10 @@ class RATE_ANALYZER():
         ################
 
         #add record elements
-        min_phi=-4.5
-        max_phi=4.5
-        min_psi=-4.5
-        max_psi=4.5
+        min_phi=-4.4
+        max_phi=4.4
+        min_psi=-4.4
+        max_psi=4.4
         spacing_phi=10
         spacing_psi=11
         
@@ -185,10 +188,10 @@ class RATE_ANALYZER():
         self.adoptButton.grid(row=6, column=1, padx=10, pady=3)
         
         #create sliders
-        self.box_min_phi = Scale(self.record_frame, from_=-4.5, to=4.5, orient=HORIZONTAL, length=150, resolution=0.1)
-        self.box_max_phi = Scale(self.record_frame, from_=-4.5, to=4.5, orient=HORIZONTAL, length=150, resolution=0.1)
-        self.box_min_psi = Scale(self.record_frame, from_=-4.5, to=4.5, orient=HORIZONTAL, length=150, resolution=0.1)
-        self.box_max_psi = Scale(self.record_frame, from_=-4.5, to=4.5, orient=HORIZONTAL, length=150, resolution=0.1)
+        self.box_min_phi = Scale(self.record_frame, from_=-4.4, to=4.4, orient=HORIZONTAL, length=150, resolution=0.1)
+        self.box_max_phi = Scale(self.record_frame, from_=-4.4, to=4.4, orient=HORIZONTAL, length=150, resolution=0.1)
+        self.box_min_psi = Scale(self.record_frame, from_=-4.4, to=4.4, orient=HORIZONTAL, length=150, resolution=0.1)
+        self.box_max_psi = Scale(self.record_frame, from_=-4.4, to=4.4, orient=HORIZONTAL, length=150, resolution=0.1)
         self.box_spacing_phi = Scale(self.record_frame, from_=5, to=50, orient=HORIZONTAL, length=150)
         self.box_spacing_psi = Scale(self.record_frame, from_=5, to=50, orient=HORIZONTAL, length=150)
 
@@ -257,15 +260,27 @@ class RATE_ANALYZER():
   
     def replotRates(self):
         #make a nice plot
-        self.figure=plt.Figure(figsize=(6,6))
-        self.subplot = self.figure.add_subplot(111)
-        self.subplot.set_title("Heatmap of the mirror positions")
+        try:
+            if self.rates==None:
+                print("There are no rates in the rates array. therfore none can be displayed!")
+                return
+        except:
+            x=True
+        plt.clf()
+        plt.close()
+        if self.figure==None:
+            self.figure=plt.Figure(figsize=(6,6))
+            self.subplot.set_title("Heatmap of the mirror positions")
+            self.subplot.set_xlabel("$\phi$ [°]")
+            self.subplot.set_ylabel("$\psi$ [°]")
+        if self.subplot==None:
+            self.subplot = self.figure.add_subplot(111)
         self.subplot.imshow(self.rates, cmap='cool', extent=( self.min_phi-(self.max_phi-self.min_phi)/(self.spacing_phi)/2, self.max_phi+(self.max_phi-self.min_phi)/(self.spacing_phi)/2, self.min_psi-(self.max_psi-self.min_psi)/(self.spacing_psi)/2, self.max_psi+(self.max_psi-self.min_psi)/(self.spacing_psi)/2))
-        self.subplot.set_xlabel("$\phi$ [°]")
-        self.subplot.set_ylabel("$\psi$ [°]")
         plt.draw()
-        self.canvas = FigureCanvasTkAgg(self.figure, master=self.plot_frame)
-        self.canvas.get_tk_widget().grid(row=0, column=0)
+        del self.canvas
+        if self.canvas==None:
+            self.canvas = FigureCanvasTkAgg(self.figure, master=self.plot_frame)
+            self.canvas.get_tk_widget().grid(row=0, column=0)
         self.canvas.draw()
         self.master.update()
         #print("replotted the canvas")
@@ -292,7 +307,6 @@ class RATE_ANALYZER():
             print("Result will be plotted after everything is measured!")
             self.recordRateDistribution(self.box_spacing_phi.get(), self.box_spacing_psi.get(), self.box_min_phi.get(), self.box_max_phi.get(), self.box_min_psi.get(), self.box_max_psi.get())
             self.replotRates()
-            
          
     def recordRateDistribution(self, spacing_phi=25, spacing_psi=26, min_phi=-2., max_phi=2, min_psi=-3.80, max_psi=-0.5):
         print("Starting to measure the rate distribution. MinPhi={0:4.2f} ; MaxPhi={1:4.2f} ; MinPsi={2:4.2f} ; MaxPsi={3:4.2f} ; SpacingPhi={4} ; SpacingPsi={5}".format(min_phi, max_phi, min_psi, max_psi, spacing_phi, spacing_psi))
@@ -391,6 +405,7 @@ class RATE_ANALYZER():
             print("No Gaussian could be fitted.")
             for warn in w:
                 print(warn)
+            return np.array([0,0,0,0,0,0])            
         self.subplot.legend()
         self.updateResults(popt)
         self.canvas = FigureCanvasTkAgg(self.figure, master=self.plot_frame)
@@ -421,6 +436,11 @@ class RATE_ANALYZER():
                 min_x=i
             if np.sum(mask[:,i])>0 and max_x<i:
                 max_x=i
+        if np.sum(mask) == 0:
+            min_x=len(rates)-1
+            max_x=0
+            min_y=len(mask[0])-1
+            max_y=0
         print("min_x={0}; max_x={1}; min_y={2}; max_y={3}".format(min_x, max_x, min_y, max_y))
         print(coordinates_phi)
         print(coordinates_psi)
@@ -470,7 +490,6 @@ class RATE_ANALYZER():
                     rates[no][no_2]=float(entries[no_2])
             self.rates=rates
         self.resetRectangle()
-        self.replotRates()
 
     def saveRates(self, path=None):
         if path==None:
@@ -479,7 +498,7 @@ class RATE_ANALYZER():
             file = open(path, "w")
         if file!=None:
             #file=open(filename, "w")
-            file.write("{0}~{1}~{2}~{3}~{4}~{5}~{6}".format(self.min_phi, self.max_phi, self.min_psi, self.max_psi, self.spacing_psi, self.spacing_phi, self.rates))
+            file.write("{0}~{1}~{2}~{3}~{4}~{5}~{6}".format(self.min_phi, self.max_phi, self.min_psi, self.max_psi, self.spacing_psi, self.spacing_phi, self.rates).replace("\n ", "").replace("]", "]\n").replace("]\n]", "]]"))
             file.close()
             
     def adoptProposal(self):
@@ -524,6 +543,8 @@ class RATE_ANALYZER():
         max_psi_rect=None
         min_phi_rect=None
         max_phi_rect=None
+        #if self.subplot!=None:
+        #    self.subplot.axes.cla()
         
     def updateResults(self, results):
         self.resultsCenterPhiLabel['text']='Center PHI: {0:3.2f}'.format(results[1])
@@ -536,6 +557,7 @@ class RATE_ANALYZER():
     def crazyBatch(self):
         #this method is used to get a huge batch of data in many different configuarations of the setup.
         print("Start to do a crazy batch!")
+        self.controller.setBussy(True)
         
         ########################################################################################
         #  this method will perform all measurements that are listed in the measurement array  #
@@ -561,13 +583,84 @@ class RATE_ANALYZER():
         #     [17] timestamp                                                                   #
         ########################################################################################
         
-        path="../../../crazy_batch/"
-        measurements=np.array([0, 1, 2])        
+        path="../../../crazy_batch"
+        try:
+            os.mkdir(path, mode=0o777)
+            os.mkdir("{0}/rates".format(path), mode=0o777)
+        except:
+            print("Cannot create new directory! Does the directory already exist? Please check and retry!")
+            return
+        measurements=np.empty(shape=(2,10))
+        #first measurement is the "equilibrium position"
+        measurements[0]=[70, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 5, 5]
+        #now check "depth" by slowly moving the camera away from the mirror
+        measurements[1]=[95, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 5, 5]
+        '''measurements[2]=[90, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[3]=[85, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[4]=[80, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[5]=[75, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[6]=[70, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[7]=[65, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[8]=[60, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[9]=[55, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[10]=[50, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[11]=[45, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[12]=[40, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[13]=[35, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[14]=[30, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[15]=[25, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[16]=[20, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[17]=[15, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[18]=[10, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[19]=[5, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[20]=[0, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        #now try to measure the influence of the mirror height
+        measurements[21]=[70, 125. , 94.5, 0, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[22]=[70, 125. , 94.5, 5, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[23]=[70, 125. , 94.5, 10, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[24]=[70, 125. , 94.5, 15, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[25]=[70, 125. , 94.5, 20, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[26]=[70, 125. , 94.5, 25, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[27]=[70, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[28]=[70, 125. , 94.5, 35, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[29]=[70, 125. , 94.5, 40, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        #try to measure the horizontal shift of the camera
+        measurements[30]=[70, 50 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[31]=[70, 60 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[32]=[70, 65 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[33]=[70, 70 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[34]=[70, 75 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[35]=[70, 80 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[36]=[70, 85 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[37]=[70, 90 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[38]=[70, 95 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[39]=[70, 100 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[40]=[70, 105 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[41]=[70, 110 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[42]=[70, 115 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[43]=[70, 120 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[44]=[70, 125 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[45]=[70, 130 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[46]=[70, 135 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[47]=[70, 140 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[48]=[70, 145 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[49]=[70, 150 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[50]=[70, 155 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[51]=[70, 160 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[52]=[70, 165 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[53]=[70, 170 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[54]=[70, 175 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[55]=[70, 180 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[56]=[70, 185 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[57]=[70, 190 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[58]=[70, 200 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]'''
+        
+        
         results=np.empty(shape=(len(measurements), 18))
         no=0
         for m in measurements:
-            self.controller.setBussy(True)
-            print("Next measurement is: Pos_Cam_Z: {0:5.2f} ; Pos_Cam_X: {1:5.2f} ; Pos_mirr_Z: {2:5.2f}  ; Pos_mirr_Height: {3:5.2f} ; phi_min: {4:5.2f} ; phi_max: {5:5.2f} ; psi_min: {6:5.2f} ; psi_max: {7:5.2f} ; spacing_psi: {8:5.2f} ; spacing_phi: {9:5.2f}".format(m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8], m[9]))
+            self.resetRectangle()
+            print("Next measurement: NO: {10} ; Pos_Cam_Z: {0:5.2f} ; Pos_Cam_X: {1:5.2f} ; Pos_mirr_Z: {2:5.2f}  ; Pos_mirr_Height: {3:5.2f} ; phi_min: {4:5.2f} ; phi_max: {5:5.2f} ; psi_min: {6:5.2f} ; psi_max: {7:5.2f} ; spacing_psi: {8:5.2f} ; spacing_phi: {9:5.2f}".format(m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8], m[9], no))
             
             #move setup in the right position
             self.controller.set_position_camera_z(m[0], verbose=True)
@@ -576,7 +669,7 @@ class RATE_ANALYZER():
             self.controller.set_position_mirror_height(m[3], verbose=True)
             
             #wait till the setup is in the right position
-            while self.controller.get_position_camera_z_moving() or self.controller.get_position_camera_x_moving() or self.controller.get_position_mirror_z_moving() or self.controller.get_position_mirror_height_moving():
+            while self.controller.get_camera_z_moving() or self.controller.get_camera_x_moving() or self.controller.get_mirror_z_moving() or self.controller.get_mirror_height_moving():
                 sleep(0.05)
                 
             #measure the rate distribution
@@ -590,17 +683,18 @@ class RATE_ANALYZER():
             
             #record the distribution
             self.recordRateDistributionRead()
+            self.controller.setBussy(True)
         
             #save the rates
-            save_path="{0}/rates/{1:3.0}_individual.rates".format(path, no)
-            saveRates(save_path)
+            save_path="{0}/rates/{1:03d}_individual.rate".format(path, no)
+            self.saveRates(save_path)
             
             #do the gauss-fit
             gaussian=self.fitGaussian()
             
             #save the parameters of the gaussian to the results array
             for i in range(0,10,1):
-                results[no][i]=measurement[i]
+                results[no][i]=m[i]
             results[no][10]=no
             results[no][11]=gaussian[1]
             results[no][12]=gaussian[3]
@@ -608,9 +702,10 @@ class RATE_ANALYZER():
             results[no][14]=gaussian[4]
             results[no][15]=gaussian[0]
             results[no][16]=gaussian[5]
-            results[no][17]=time()
+            results[no][17]=time.time()
             np.savetxt("{0}/results.txt".format(path), results, delimiter=',')
             no+=1
         self.controller.setBussy(False)
+        print("Done with the whole Batch!")
 def gauss2d(datapoints, prefactor=1, x_0=0, x_sigma=1, y_0=0, y_sigma=1, offset=0):
     return offset+prefactor*np.exp(-(np.power(datapoints[0]-x_0, 2)/(2*np.power(x_sigma,2)))-(np.power(datapoints[1]-y_0,2)/(2*np.power(y_sigma,2)))).ravel()
