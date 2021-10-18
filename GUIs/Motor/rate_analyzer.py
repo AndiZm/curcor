@@ -9,6 +9,8 @@ from time import sleep
 import time
 import os
 import warnings
+import os
+import time
 
 
 import numpy as np #only needed for simulations
@@ -85,6 +87,7 @@ class RATE_ANALYZER():
     new_record=False
 
     figure=None
+    canvas=None
     subplot=None
     legend=None
     
@@ -259,15 +262,27 @@ class RATE_ANALYZER():
   
     def replotRates(self):
         #make a nice plot
-        self.figure=plt.Figure(figsize=(6,6))
-        self.subplot = self.figure.add_subplot(111)
-        self.subplot.set_title("Heatmap of the mirror positions")
+        try:
+            if self.rates==None:
+                print("There are no rates in the rates array. therfore none can be displayed!")
+                return
+        except:
+            x=True
+        plt.clf()
+        plt.close()
+        if self.figure==None:
+            self.figure=plt.Figure(figsize=(6,6))
+            self.subplot.set_title("Heatmap of the mirror positions")
+            self.subplot.set_xlabel("$\phi$ [°]")
+            self.subplot.set_ylabel("$\psi$ [°]")
+        if self.subplot==None:
+            self.subplot = self.figure.add_subplot(111)
         self.subplot.imshow(self.rates, cmap='cool', extent=( self.min_phi-(self.max_phi-self.min_phi)/(self.spacing_phi)/2, self.max_phi+(self.max_phi-self.min_phi)/(self.spacing_phi)/2, self.min_psi-(self.max_psi-self.min_psi)/(self.spacing_psi)/2, self.max_psi+(self.max_psi-self.min_psi)/(self.spacing_psi)/2))
-        self.subplot.set_xlabel("$\phi$ [°]")
-        self.subplot.set_ylabel("$\psi$ [°]")
         plt.draw()
-        self.canvas = FigureCanvasTkAgg(self.figure, master=self.plot_frame)
-        self.canvas.get_tk_widget().grid(row=0, column=0)
+        del self.canvas
+        if self.canvas==None:
+            self.canvas = FigureCanvasTkAgg(self.figure, master=self.plot_frame)
+            self.canvas.get_tk_widget().grid(row=0, column=0)
         self.canvas.draw()
         self.master.update()
         #print("replotted the canvas")
@@ -294,7 +309,6 @@ class RATE_ANALYZER():
             print("Result will be plotted after everything is measured!")
             self.recordRateDistribution(self.box_spacing_phi.get(), self.box_spacing_psi.get(), self.box_min_phi.get(), self.box_max_phi.get(), self.box_min_psi.get(), self.box_max_psi.get())
             self.replotRates()
-            
          
     def recordRateDistribution(self, spacing_phi=25, spacing_psi=26, min_phi=-2., max_phi=2, min_psi=-3.80, max_psi=-0.5):
         print("Starting to measure the rate distribution. MinPhi={0:4.2f} ; MaxPhi={1:4.2f} ; MinPsi={2:4.2f} ; MaxPsi={3:4.2f} ; SpacingPhi={4} ; SpacingPsi={5}".format(min_phi, max_phi, min_psi, max_psi, spacing_phi, spacing_psi))
@@ -406,7 +420,7 @@ class RATE_ANALYZER():
             print("No Gaussian could be fitted.")
             for warn in w:
                 print(warn)
-            popt=[-1, -1, -1, -1, -1, -1]    
+            return np.array([0,0,0,0,0,0])
         return popt
                 
     def findRectangle(self, contrast_factor=1.5):
@@ -431,6 +445,11 @@ class RATE_ANALYZER():
                 min_x=i
             if np.sum(mask[:,i])>0 and max_x<i:
                 max_x=i
+        if np.sum(mask) == 0:
+            min_x=len(rates)-1
+            max_x=0
+            min_y=len(mask[0])-1
+            max_y=0
         print("min_x={0}; max_x={1}; min_y={2}; max_y={3}".format(min_x, max_x, min_y, max_y))
         print(coordinates_phi)
         print(coordinates_psi)
@@ -480,7 +499,6 @@ class RATE_ANALYZER():
                     rates[no][no_2]=float(entries[no_2])
             self.rates=rates
         self.resetRectangle()
-        self.replotRates()
 
     def saveRates(self, path=None):
         if path==None:
@@ -489,7 +507,7 @@ class RATE_ANALYZER():
             file = open(path, "w")
         if file!=None:
             #file=open(filename, "w")
-            file.write("{0}~{1}~{2}~{3}~{4}~{5}~{6}".format(self.min_phi, self.max_phi, self.min_psi, self.max_psi, self.spacing_psi, self.spacing_phi, self.rates))
+            file.write("{0}~{1}~{2}~{3}~{4}~{5}~{6}".format(self.min_phi, self.max_phi, self.min_psi, self.max_psi, self.spacing_psi, self.spacing_phi, self.rates).replace("\n ", "").replace("]", "]\n").replace("]\n]", "]]"))
             file.close()
             
     def adoptProposal(self):
@@ -534,6 +552,8 @@ class RATE_ANALYZER():
         max_psi_rect=None
         min_phi_rect=None
         max_phi_rect=None
+        #if self.subplot!=None:
+        #    self.subplot.axes.cla()
         
     def updateResults(self, results):
         self.resultsCenterPhiLabel['text']='Center PHI: {0:3.2f}'.format(results[1])
@@ -546,6 +566,7 @@ class RATE_ANALYZER():
     def crazyBatch(self):
         #this method is used to get a huge batch of data in many different configuarations of the setup.
         print("Start to do a crazy batch!")
+        self.controller.setBussy(True)
         
         ########################################################################################
         #  this method will perform all measurements that are listed in the measurement array  #
@@ -573,6 +594,7 @@ class RATE_ANALYZER():
         
         path="../../../crazy_batch"
         try:
+<<<<<<< HEAD
             #print(path)
             os.mkdir(path, mode=0o777)
             #print("{0}/rates".format(path))
@@ -644,11 +666,12 @@ class RATE_ANALYZER():
         measurements[56]=[70, 185 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
         measurements[57]=[70, 190 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
         measurements[58]=[70, 200 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]'''       
+
         results=np.empty(shape=(len(measurements), 18))
         no=0
         for m in measurements:
-            self.controller.setBussy(True)
-            print("Next measurement is: Pos_Cam_Z: {0:5.2f} ; Pos_Cam_X: {1:5.2f} ; Pos_mirr_Z: {2:5.2f}  ; Pos_mirr_Height: {3:5.2f} ; phi_min: {4:5.2f} ; phi_max: {5:5.2f} ; psi_min: {6:5.2f} ; psi_max: {7:5.2f} ; spacing_psi: {8:5.2f} ; spacing_phi: {9:5.2f}".format(m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8], m[9]))
+            self.resetRectangle()
+            print("Next measurement: NO: {10} ; Pos_Cam_Z: {0:5.2f} ; Pos_Cam_X: {1:5.2f} ; Pos_mirr_Z: {2:5.2f}  ; Pos_mirr_Height: {3:5.2f} ; phi_min: {4:5.2f} ; phi_max: {5:5.2f} ; psi_min: {6:5.2f} ; psi_max: {7:5.2f} ; spacing_psi: {8:5.2f} ; spacing_phi: {9:5.2f}".format(m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8], m[9], no))
             
             #move setup in the right position
             self.controller.set_position_camera_z(m[0], verbose=True)
@@ -671,9 +694,11 @@ class RATE_ANALYZER():
             
             #record the distribution
             self.recordRateDistributionRead()
+            self.controller.setBussy(True)
         
             #save the rates
-            save_path="{0}/rates/{1:03d}_individual.rates".format(path, no)
+
+            save_path="{0}/rates/{1:03d}_individual.rate".format(path, no)
             self.saveRates(save_path)
             
             #do the gauss-fit
@@ -693,5 +718,6 @@ class RATE_ANALYZER():
             np.savetxt("{0}/results.txt".format(path), results, delimiter=',')
             no+=1
         self.controller.setBussy(False)
+        print("Done with the whole Batch!")
 def gauss2d(datapoints, prefactor=1, x_0=0, x_sigma=1, y_0=0, y_sigma=1, offset=0):
     return offset+prefactor*np.exp(-(np.power(datapoints[0]-x_0, 2)/(2*np.power(x_sigma,2)))-(np.power(datapoints[1]-y_0,2)/(2*np.power(y_sigma,2)))).ravel()
