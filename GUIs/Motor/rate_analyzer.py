@@ -6,6 +6,8 @@ from tkinter import simpledialog
 from tkinter import filedialog
 
 from time import sleep
+import time
+import os
 import warnings
 
 
@@ -27,10 +29,10 @@ class RATE_ANALYZER():
     
     #currently loaded distribution
     rates=None
-    min_phi=-4.5
-    max_phi=4.5
-    min_psi=-4.5
-    max_psi=4.5
+    min_phi=-4.4
+    max_phi=4.4
+    min_psi=-4.4
+    max_psi=4.4
     spacing_psi=10
     spacing_phi=10
     
@@ -152,10 +154,10 @@ class RATE_ANALYZER():
         ################
 
         #add record elements
-        min_phi=-4.5
-        max_phi=4.5
-        min_psi=-4.5
-        max_psi=4.5
+        min_phi=-4.4
+        max_phi=4.4
+        min_psi=-4.4
+        max_psi=4.4
         spacing_phi=10
         spacing_psi=11
         
@@ -185,10 +187,10 @@ class RATE_ANALYZER():
         self.adoptButton.grid(row=6, column=1, padx=10, pady=3)
         
         #create sliders
-        self.box_min_phi = Scale(self.record_frame, from_=-4.5, to=4.5, orient=HORIZONTAL, length=150, resolution=0.1)
-        self.box_max_phi = Scale(self.record_frame, from_=-4.5, to=4.5, orient=HORIZONTAL, length=150, resolution=0.1)
-        self.box_min_psi = Scale(self.record_frame, from_=-4.5, to=4.5, orient=HORIZONTAL, length=150, resolution=0.1)
-        self.box_max_psi = Scale(self.record_frame, from_=-4.5, to=4.5, orient=HORIZONTAL, length=150, resolution=0.1)
+        self.box_min_phi = Scale(self.record_frame, from_=-4.4, to=4.4, orient=HORIZONTAL, length=150, resolution=0.1)
+        self.box_max_phi = Scale(self.record_frame, from_=-4.4, to=4.4, orient=HORIZONTAL, length=150, resolution=0.1)
+        self.box_min_psi = Scale(self.record_frame, from_=-4.4, to=4.4, orient=HORIZONTAL, length=150, resolution=0.1)
+        self.box_max_psi = Scale(self.record_frame, from_=-4.4, to=4.4, orient=HORIZONTAL, length=150, resolution=0.1)
         self.box_spacing_phi = Scale(self.record_frame, from_=5, to=50, orient=HORIZONTAL, length=150)
         self.box_spacing_psi = Scale(self.record_frame, from_=5, to=50, orient=HORIZONTAL, length=150)
 
@@ -304,7 +306,7 @@ class RATE_ANALYZER():
         coordinates_phi=np.linspace(min_phi, max_phi, num=spacing_phi)
         coordinates_psi=np.linspace(min_psi, max_psi, num=spacing_psi)
         x, y=np.meshgrid(coordinates_phi, coordinates_psi)
-        rates=np.empty(shape=(spacing_phi, spacing_psi))
+        rates=np.zeros(shape=(spacing_phi, spacing_psi))
         self.rates=np.transpose(rates)
         self.spacing_psi=spacing_psi
         self.spacing_phi=spacing_phi
@@ -313,6 +315,13 @@ class RATE_ANALYZER():
         self.min_phi=min_phi
         self.max_phi=max_phi
         self.controller.setBussy(True)
+        sleep(0.02)
+        #move psi and phi simultaneously into the starting position
+        self.controller.set_position_mirror_phi(min_phi)
+        self.controller.set_position_mirror_psi(min_psi)
+        while self.controller.get_mirror_phi_moving() or self.controller.get_mirror_psi_moving():
+                sleep(0.05)
+        #walk through the whole space of different positions
         for i in range(0, spacing_phi, 1):
             pos_phi=min_phi+(max_phi-min_phi)/(spacing_phi-1)*i
             self.controller.set_position_mirror_phi(pos_phi)
@@ -387,16 +396,17 @@ class RATE_ANALYZER():
             print("Gaussian was fitted and plotted!")
             print("CENTER: phi={0} , psi={1} , SIGMA: phi={2} , psi={3} , CONSTS: prefactor={4} , offset={5}".format(popt[1], popt[3], popt[2], popt[4], popt[0], popt[5]))
             #print("recommended next fit borders: rect_start_phi={0} ; rect_start_psi={1} ; rect_width_phi={2} ; rect_width_psi={3}".format(rect_start_phi, rect_start_psi, rect_width_phi, rect_width_psi))
+            self.subplot.legend()
+            self.updateResults(popt)
+            self.canvas = FigureCanvasTkAgg(self.figure, master=self.plot_frame)
+            self.canvas.get_tk_widget().grid(row=0, column=0)
+            self.canvas.draw()
+            self.master.update()
         else:
             print("No Gaussian could be fitted.")
             for warn in w:
                 print(warn)
-        self.subplot.legend()
-        self.updateResults(popt)
-        self.canvas = FigureCanvasTkAgg(self.figure, master=self.plot_frame)
-        self.canvas.get_tk_widget().grid(row=0, column=0)
-        self.canvas.draw()
-        self.master.update()
+            popt=[-1, -1, -1, -1, -1, -1]    
         return popt
                 
     def findRectangle(self, contrast_factor=1.5):
@@ -561,8 +571,79 @@ class RATE_ANALYZER():
         #     [17] timestamp                                                                   #
         ########################################################################################
         
-        path="../../../crazy_batch/"
-        measurements=np.array([0, 1, 2])        
+        path="../../../crazy_batch"
+        try:
+            #print(path)
+            os.mkdir(path, mode=0o777)
+            #print("{0}/rates".format(path))
+            os.mkdir("{0}/rates".format(path), mode=0o777)
+        except:
+            print("Cannot create new directory! Does the directory already exist? Please check and retry!")
+            return
+        measurements=np.empty(shape=(2,10))
+        #first measurement is the "equilibrium position"
+        measurements[0]=[70, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 5, 5]
+        #now check "depth" by slowly moving the camera away from the mirror
+        measurements[1]=[95, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 5, 5]
+        '''measurements[2]=[90, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[3]=[85, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[4]=[80, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[5]=[75, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[6]=[70, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[7]=[65, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[8]=[60, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[9]=[55, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[10]=[50, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[11]=[45, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[12]=[40, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[13]=[35, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[14]=[30, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[15]=[25, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[16]=[20, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[17]=[15, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[18]=[10, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[19]=[5, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[20]=[0, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        #now try to measure the influence of the mirror height
+        measurements[21]=[70, 125. , 94.5, 0, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[22]=[70, 125. , 94.5, 5, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[23]=[70, 125. , 94.5, 10, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[24]=[70, 125. , 94.5, 15, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[25]=[70, 125. , 94.5, 20, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[26]=[70, 125. , 94.5, 25, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[27]=[70, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[28]=[70, 125. , 94.5, 35, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[29]=[70, 125. , 94.5, 40, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        #try to measure the horizontal shift of the camera
+        measurements[30]=[70, 50 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[31]=[70, 60 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[32]=[70, 65 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[33]=[70, 70 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[34]=[70, 75 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[35]=[70, 80 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[36]=[70, 85 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[37]=[70, 90 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[38]=[70, 95 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[39]=[70, 100 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[40]=[70, 105 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[41]=[70, 110 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[42]=[70, 115 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[43]=[70, 120 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[44]=[70, 125 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[45]=[70, 130 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[46]=[70, 135 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[47]=[70, 140 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[48]=[70, 145 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[49]=[70, 150 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[50]=[70, 155 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[51]=[70, 160 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[52]=[70, 165 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[53]=[70, 170 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[54]=[70, 175 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[55]=[70, 180 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[56]=[70, 185 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[57]=[70, 190 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[58]=[70, 200 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]'''       
         results=np.empty(shape=(len(measurements), 18))
         no=0
         for m in measurements:
@@ -576,7 +657,7 @@ class RATE_ANALYZER():
             self.controller.set_position_mirror_height(m[3], verbose=True)
             
             #wait till the setup is in the right position
-            while self.controller.get_position_camera_z_moving() or self.controller.get_position_camera_x_moving() or self.controller.get_position_mirror_z_moving() or self.controller.get_position_mirror_height_moving():
+            while self.controller.get_camera_z_moving() or self.controller.get_camera_x_moving() or self.controller.get_mirror_z_moving() or self.controller.get_mirror_height_moving():
                 sleep(0.05)
                 
             #measure the rate distribution
@@ -592,15 +673,15 @@ class RATE_ANALYZER():
             self.recordRateDistributionRead()
         
             #save the rates
-            save_path="{0}/rates/{1:3.0}_individual.rates".format(path, no)
-            saveRates(save_path)
+            save_path="{0}/rates/{1:03d}_individual.rates".format(path, no)
+            self.saveRates(save_path)
             
             #do the gauss-fit
             gaussian=self.fitGaussian()
             
             #save the parameters of the gaussian to the results array
             for i in range(0,10,1):
-                results[no][i]=measurement[i]
+                results[no][i]=m[i]
             results[no][10]=no
             results[no][11]=gaussian[1]
             results[no][12]=gaussian[3]
@@ -608,7 +689,7 @@ class RATE_ANALYZER():
             results[no][14]=gaussian[4]
             results[no][15]=gaussian[0]
             results[no][16]=gaussian[5]
-            results[no][17]=time()
+            results[no][17]=time.time()
             np.savetxt("{0}/results.txt".format(path), results, delimiter=',')
             no+=1
         self.controller.setBussy(False)

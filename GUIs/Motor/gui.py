@@ -111,7 +111,7 @@ class GUI:
         self.ServoFrame = Frame(self.belowMainFrame, width=200, height=40)
         self.ServoFrame.grid(row=0, column=0, padx=10, pady=3, sticky=W)
 
-        self.OptFrame = Frame(self.belowMainFrame, width=200, height=40)
+        self.OptFrame = Frame(self.belowMainFrame, width=400, height=40)
         self.OptFrame.grid(row=0, column=1, padx=10, pady=3)
         
         self.psuppFrame = Frame(self.belowMainFrame, width=200, height=40)
@@ -292,9 +292,7 @@ class GUI:
 
         #optimziation content
         self.optimizationButton = Button(self.OptFrame, text="Start Rate\nAnalyzer", bg="#cdcfd1", command=self.optimize, width=10); self.optimizationButton.grid(row=4,column=5, padx=3, pady=3)
-        self.scanButton = Button(self.OptFrame, text="plot Mirrors", bg="#cdcfd1", command=self.showRateDistribution, width=10); self.scanButton.grid(row=4,column=6, padx=3, pady=3)
-        self.dummyButton = Button(self.OptFrame, text="dummy Button", bg="#cdcfd1", command=self.dummy_button, width=10); self.dummyButton.grid(row=4,column=7, padx=3, pady=3)
-
+        
         #Halogen Power supply content
         self.psupp_connectButton = Button(self.psuppFrame, text="Connect\nHalogen", command=self.psupp_connect); self.psupp_connectButton.grid(row=0,column=0)
         self.psupp_onoffButton = Button(self.psuppFrame, command=self.psupp_onoff, state="disabled", text="On/Off"); self.psupp_onoffButton.grid(row=0,column=1)
