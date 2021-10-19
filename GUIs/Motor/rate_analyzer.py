@@ -473,7 +473,7 @@ class RATE_ANALYZER():
             self.spacing_phi=int(parts[5])
             array_data=parts[6]
             lines=array_data.splitlines()
-            rates=np.empty((len(lines), len(lines[0].split())))
+            rates=np.empty((self.spacing_psi, self.spacing_phi))
             lines[0]=lines[0].replace("[[", "[")
             lines[-1]=lines[-1].replace("]]", "]")
             for no in range(0, len(lines), 1):
@@ -493,7 +493,7 @@ class RATE_ANALYZER():
             file = open(path, "w")
         if file!=None:
             #file=open(filename, "w")
-            file.write("{0}~{1}~{2}~{3}~{4}~{5}~{6}".format(self.min_phi, self.max_phi, self.min_psi, self.max_psi, self.spacing_psi, self.spacing_phi, self.rates))
+            file.write("{0}~{1}~{2}~{3}~{4}~{5}~{6}".format(self.min_phi, self.max_phi, self.min_psi, self.max_psi, self.spacing_psi, self.spacing_phi, self.rates).replace("\n ", "").replace("]", "]\n").replace("]\n]", "]]"))
             file.close()
             
     def adoptProposal(self):
@@ -584,11 +584,11 @@ class RATE_ANALYZER():
         except:
             print("Cannot create new directory! Does the directory already exist? Please check and retry!")
             return
-        measurements=np.empty(shape=(59,10))
+        measurements=np.zeros(shape=(59,10))
         #first measurement is the "equilibrium position"
-        measurements[0]=[70, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 5, 5]
+        measurements[0]=[70, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
         #now check "depth" by slowly moving the camera away from the mirror
-        measurements[1]=[95, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 5, 5]
+        measurements[1]=[95, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
         measurements[2]=[90, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
         measurements[3]=[85, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
         measurements[4]=[80, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
@@ -648,7 +648,7 @@ class RATE_ANALYZER():
         measurements[56]=[70, 185 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
         measurements[57]=[70, 190 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
         measurements[58]=[70, 200 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]       
-        results=np.empty(shape=(len(measurements), 18))
+        results=np.zeros(shape=(len(measurements), 18))
         no=0
         for m in measurements:
             self.controller.setBussy(True)

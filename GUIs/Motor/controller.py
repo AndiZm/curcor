@@ -281,22 +281,22 @@ class CONTROLLER():
         return self.motoron
     
     def set_position_camera_z(self, position, verbose=False):
-        if verbose==False: print("Move camera z to",position)
+        if verbose==False: print("Move camera z to {0:4.2f}".format(position))
         self.a[0].move_absolute(self.mm_to_steps(position))
     def set_position_camera_x(self, position, verbose=False):
-        if verbose==False: print("Move camera x to",position)
+        if verbose==False: print("Move camera x to {0:4.2f}".format(position))
         self.a[1].move_absolute(self.mm_to_steps(position))  
     def set_position_mirror_z(self, position, verbose=False):
-        if verbose==False: print("Move mirror z to",position)
+        if verbose==False: print("Move mirror z to {0:4.2f}".format(position))
         self.a[2].move_absolute(self.mm_to_steps(position))  
     def set_position_mirror_height(self, position, verbose=False):
-        if verbose==False: print("Move mirror height to",position)
+        if verbose==False: print("Move mirror height to {0:4.2f}".format(position))
         self.a[3].move_absolute(self.hmm_to_steps(position))  
     def set_position_mirror_psi(self, position, verbose=False):
-        if verbose==False: print("Move mirror psi to",position)
+        if verbose==False: print("Move mirror psi to {0:4.2f}".format(position))
         self.a[4].move_absolute(self.degree_to_steps(position))
     def set_position_mirror_phi(self, position, verbose=False):
-        if verbose==False: print("Move mirror phi to",position)
+        if verbose==False: print("Move mirror phi to {0:4.2f}".format(position))
         self.a[5].move_absolute(self.degree_to_steps(position))
         
     def get_position_camera_z(self):
