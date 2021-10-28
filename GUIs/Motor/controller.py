@@ -8,6 +8,7 @@ import powersupp_halogen as psupp
 class CONTROLLER():
 
     bussy=False
+    batch=False
 
     def __init__(self):
         self.a, self.serial_port=sd.init()  #stepper_drive
@@ -358,6 +359,10 @@ class CONTROLLER():
         self.bussy=bussy
     def isBussy(self):
         return self.bussy
+    def setBatch(self, batch):
+        self.batch=batch
+    def getBatch(self):
+        return self.batch
     def psupp_onoff(self):
         self.halogen.onoff()
  

@@ -550,6 +550,7 @@ class RATE_ANALYZER():
     def crazyBatch(self):
         #this method is used to get a huge batch of data in many different configuarations of the setup.
         print("Start to do a crazy batch!")
+        self.controller.setBatch(True)
         
         ########################################################################################
         #  this method will perform all measurements that are listed in the measurement array  #
@@ -647,7 +648,8 @@ class RATE_ANALYZER():
         measurements[55]=[70, 180 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
         measurements[56]=[70, 185 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
         measurements[57]=[70, 190 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[58]=[70, 200 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]       
+        measurements[58]=[70, 200 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements=measurements[42:]
         results=np.zeros(shape=(len(measurements), 18))
         no=0
         for m in measurements:
@@ -697,6 +699,7 @@ class RATE_ANALYZER():
             np.savetxt("{0}/results.txt".format(path), results, delimiter=',')
             no+=1
         self.controller.setBussy(False)
+        self.controller.setBatch(False)
         print("The batch is done!")
 def gauss2d(datapoints, prefactor=1, x_0=0, x_sigma=1, y_0=0, y_sigma=1, offset=0):
     return offset+prefactor*np.exp(-(np.power(datapoints[0]-x_0, 2)/(2*np.power(x_sigma,2)))-(np.power(datapoints[1]-y_0,2)/(2*np.power(y_sigma,2)))).ravel()

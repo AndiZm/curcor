@@ -817,8 +817,8 @@ class GUI:
             if self.stop_thread:
                 sleep(0.1)
                 break
-            if self.controller.isBussy():
-                while self.controller.isBussy():
+            if self.controller.isBussy() or self.controller.getBatch():
+                while self.controller.isBussy() or self.controller.getBatch():
                     sleep(1.0)
                     #print("I Know when to stop...")
             #print("update GUI")
