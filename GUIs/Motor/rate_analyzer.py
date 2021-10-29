@@ -35,10 +35,10 @@ class RATE_ANALYZER():
     max_psi=4.4
     spacing_psi=10
     spacing_phi=10
-    camera_z=controller.get_position_camera_z()
-    camera_x=controller.get_position_camera_x()
-    mirror_z=controller.get_position_mirror_z()
-    mirror_height=controller.get_position_mirror_height()
+    camera_z=np.nan
+    camera_x=np.nan
+    mirror_z=np.nan
+    mirror_height=np.nan
     
     #currently set rectangle
     min_psi_rect=None
@@ -83,6 +83,10 @@ class RATE_ANALYZER():
     resultsSigmaPsiLabel=None
     resultsOffsetLabel=None
     resultsPrefactorPhiLabel=None
+    camZLabel = None
+    camXLabel = None
+    mirZLabel = None
+    mirHLabel = None
     
     #values for (live) recording
     still_recording=False
@@ -98,6 +102,15 @@ class RATE_ANALYZER():
         self.client=client
         self.master=master
         
+        #get positions of the controller
+        self.controller.setBussy(True)
+        sleep(0.1)
+        self.camera_z=controller.get_position_camera_z()
+        self.camera_x=controller.get_position_camera_x()
+        self.mirror_z=controller.get_position_mirror_z()
+        self.mirror_height=controller.get_position_mirror_height()
+        self.controller.setBussy(False)
+        
         #create new window and frames
         self.window = Toplevel(master)
         self.main_frame = Frame(self.window, width=840, height = 700)
@@ -106,6 +119,9 @@ class RATE_ANALYZER():
         self.plot_frame = Frame(self.main_frame, width=600, height=600)
         self.plot_frame.grid(row=0, column=0, padx=10,pady=10)
         self.plot_frame.config(background = "#003366")
+        self.positions_frame = Frame(self.main_frame, width=600, height=100)
+        self.positions_frame.grid(row=1, column=0, padx=10,pady=2)
+        self.positions_frame.config(background = "#DBDBDB")
         self.control_frame = Frame(self.main_frame, width=320, height=600)
         self.control_frame.grid(row=0, column=1)
         self.control_frame.config(background = "#003366")
@@ -141,6 +157,22 @@ class RATE_ANALYZER():
         self.canvas.get_tk_widget().grid(row=0, column=0)
         self.canvas.draw()
         
+        
+        ###################
+        # POSITIONS FRAME #
+        ###################
+        
+        #create labels
+        self.camZLabel = Label(self.positions_frame, pady=10, text='Camera Z: {0:4.1f}'.format(self.camera_z), width="15")
+        self.camXLabel = Label(self.positions_frame, pady=10, text='Camera X: {0:4.1f}'.format(self.camera_x), width="15")
+        self.mirZLabel = Label(self.positions_frame, pady=10, text='Mirror Z: {0:4.1f}'.format(self.mirror_z), width="15")
+        self.mirHLabel = Label(self.positions_frame, pady=10, text='Mirror Height: {0:4.1f}'.format(self.mirror_height), width="20")
+        
+        #place labels
+        self.camZLabel.grid(row=0, column=0)
+        self.camXLabel.grid(row=0, column=1)
+        self.mirZLabel.grid(row=0, column=2)
+        self.mirHLabel.grid(row=0, column=3)
         
         ##############
         # FILE FRAME #
@@ -262,6 +294,12 @@ class RATE_ANALYZER():
         self.crazyBatchButton["command"]= self.crazyBatch
   
     def replotRates(self):
+        #update the other parameters
+        
+        self.camZLabel["text"]='Camera Z: {0:4.1f}'.format(self.camera_z)
+        self.camXLabel["text"] ='Camera X: {0:4.1f}'.format(self.camera_x)
+        self.mirZLabel["text"] ='Mirror Z: {0:4.1f}'.format(self.mirror_z)
+        self.mirHLabel["text"] ='Mirror Height: {0:4.1f}'.format(self.mirror_height)
         #make a nice plot
         if self.figure==None:
             self.figure=plt.Figure(figsize=(6,6))
@@ -492,17 +530,17 @@ class RATE_ANALYZER():
             self.spacing_psi=int(parts[4])
             self.spacing_phi=int(parts[5])
             if len(parts)==7:
-		        self.camera_z=np.nan
-		        self.camera_x=np.nan
-		        self.mirror_z=np.nan
-		        self.mirror_height=np.nan
-		        array_data=parts[6]
-	        else:
-		        self.camera_z=int(parts[6])
-		        self.camera_x=int(parts[7])
-		        self.mirror_z=int(parts[8])
-		        self.mirror_height=int(parts[9])
-	            array_data=parts[10]
+                self.camera_z=np.nan
+                self.camera_x=np.nan
+                self.mirror_z=np.nan
+                self.mirror_height=np.nan
+                array_data=parts[6]
+            else:
+                self.camera_z=float(parts[6])
+                self.camera_x=float(parts[7])
+                self.mirror_z=float(parts[8])
+                self.mirror_height=float(parts[9])
+                array_data=parts[10]
             lines=array_data.splitlines()
             rates=np.empty((self.spacing_psi, self.spacing_phi))
             lines[0]=lines[0].replace("[[", "[")
@@ -616,10 +654,10 @@ class RATE_ANALYZER():
         except:
             print("Cannot create new directory! Does the directory already exist? Please check and retry!")
             return
-        measurements=np.zeros(shape=(59,10))
+        measurements=np.zeros(shape=(211,10))
         #first measurement is the "equilibrium position"
         measurements[0]=[70, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        #now check "depth" by slowly moving the camera away from the mirror
+        #now check "depth" by slowly moving the camera away from the mirror (center pos)
         measurements[1]=[95, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
         measurements[2]=[90, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
         measurements[3]=[85, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
@@ -640,47 +678,204 @@ class RATE_ANALYZER():
         measurements[18]=[10, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
         measurements[19]=[5, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
         measurements[20]=[0, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        #now check "depth" by slowly moving the camera away from the mirror (left pos)
+        measurements[21]=[95, 100. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 5, 5]
+        measurements[22]=[90, 100. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 5, 5]
+        measurements[23]=[85, 100. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[24]=[80, 100. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[25]=[75, 100. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[26]=[70, 100. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[27]=[65, 100. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[28]=[60, 100. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[29]=[55, 100. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[30]=[50, 100. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[31]=[45, 100. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[32]=[40, 100. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[33]=[35, 100. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[34]=[30, 100. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[35]=[25, 100. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[36]=[20, 100. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[37]=[15, 100. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[38]=[10, 100. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[39]=[5, 100. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[40]=[0, 100. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        #now check "depth" by slowly moving the camera away from the mirror (right pos)
+        measurements[41]=[95, 150. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 5, 5]
+        measurements[42]=[90, 150. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 5, 5]
+        measurements[43]=[85, 150. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[44]=[80, 150. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[45]=[75, 150. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[46]=[70, 150. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[47]=[65, 150. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[48]=[60, 150. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[49]=[55, 150. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[50]=[50, 150. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[51]=[45, 150. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[52]=[40, 150. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[53]=[35, 150. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[54]=[30, 150. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[55]=[25, 150. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[56]=[20, 150. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[57]=[15, 150. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[58]=[10, 150. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[59]=[5, 150. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[60]=[0, 150. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        #now check "depth" by slowly moving the camera away from the mirror (upper pos)
+        measurements[61]=[95, 125. , 94.5, 1, -4.4, 4.4, -4.4, 4.4, 5, 5]
+        measurements[62]=[90, 125. , 94.5, 1, -4.4, 4.4, -4.4, 4.4, 5, 5]
+        measurements[63]=[85, 125. , 94.5, 1, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[64]=[80, 125. , 94.5, 1, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[65]=[75, 125. , 94.5, 1, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[66]=[70, 125. , 94.5, 1, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[67]=[65, 125. , 94.5, 1, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[68]=[60, 125. , 94.5, 1, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[69]=[55, 125. , 94.5, 1, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[70]=[50, 125. , 94.5, 1, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[71]=[45, 125. , 94.5, 1, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[72]=[40, 125. , 94.5, 1, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[73]=[35, 125. , 94.5, 1, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[74]=[30, 125. , 94.5, 1, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[75]=[25, 125. , 94.5, 1, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[76]=[20, 125. , 94.5, 1, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[77]=[15, 125. , 94.5, 1, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[78]=[10, 125. , 94.5, 1, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[79]=[5, 125. , 94.5, 1, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[80]=[0, 125. , 94.5, 1, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        #now check "depth" by slowly moving the camera away from the mirror (lower pos)
+        measurements[81]=[95, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 5, 5]
+        measurements[82]=[90, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 5, 5]
+        measurements[83]=[85, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[84]=[80, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[85]=[75, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[86]=[70, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[87]=[65, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[88]=[60, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[89]=[55, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[90]=[50, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[91]=[45, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[92]=[40, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[93]=[35, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[94]=[30, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[95]=[25, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[96]=[20, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[97]=[15, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[98]=[10, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[99]=[5, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[100]=[0, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
         #now try to measure the influence of the mirror height
-        measurements[21]=[70, 125. , 94.5, 0, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[22]=[70, 125. , 94.5, 5, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[23]=[70, 125. , 94.5, 10, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[24]=[70, 125. , 94.5, 15, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[25]=[70, 125. , 94.5, 20, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[26]=[70, 125. , 94.5, 25, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[27]=[70, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[28]=[70, 125. , 94.5, 35, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[29]=[70, 125. , 94.5, 40, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[101]=[70, 125. , 94.5, 0, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[102]=[70, 125. , 94.5, 5, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[103]=[70, 125. , 94.5, 10, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[104]=[70, 125. , 94.5, 15, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[105]=[70, 125. , 94.5, 20, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[106]=[70, 125. , 94.5, 25, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[107]=[70, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[108]=[70, 125. , 94.5, 35, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[109]=[70, 125. , 94.5, 40, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        #now try to measure the influence of the mirror position
+        measurements[110]=[70, 125. , 94.5, 0, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[111]=[70, 125. , 90, 0, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[112]=[70, 125. , 85, 0, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[113]=[70, 125. , 80, 0, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[114]=[70, 125. , 70, 0, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[115]=[70, 125. , 60, 0, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[116]=[70, 125. , 50, 0, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[117]=[70, 125. , 40, 0, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[118]=[70, 125. , 94.5, 5, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[119]=[70, 125. , 90, 5, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[120]=[70, 125. , 85, 5, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[121]=[70, 125. , 80, 5, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[122]=[70, 125. , 70, 5, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[123]=[70, 125. , 60, 5, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[124]=[70, 125. , 50, 5, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[125]=[70, 125. , 40, 5, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[126]=[70, 125. , 94.5, 10, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[127]=[70, 125. , 90, 10, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[128]=[70, 125. , 85, 10, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[129]=[70, 125. , 80, 10, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[130]=[70, 125. , 70, 10, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[131]=[70, 125. , 60, 10, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[132]=[70, 125. , 50, 10, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[133]=[70, 125. , 40, 10, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[134]=[70, 125. , 94.5, 15, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[135]=[70, 125. , 90, 15, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[136]=[70, 125. , 85, 15, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[137]=[70, 125. , 80, 15, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[138]=[70, 125. , 70, 15, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[139]=[70, 125. , 60, 15, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[140]=[70, 125. , 50, 15, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[141]=[70, 125. , 40, 15, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[142]=[70, 125. , 94.5, 20, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[143]=[70, 125. , 90, 20, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[144]=[70, 125. , 85, 20, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[145]=[70, 125. , 80, 20, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[146]=[70, 125. , 70, 20, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[147]=[70, 125. , 60, 20, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[148]=[70, 125. , 50, 20, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[149]=[70, 125. , 40, 20, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[150]=[70, 125. , 94.5, 25, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[151]=[70, 125. , 90, 25, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[152]=[70, 125. , 85, 25, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[153]=[70, 125. , 80, 25, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[154]=[70, 125. , 70, 25, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[155]=[70, 125. , 60, 25, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[156]=[70, 125. , 50, 25, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[157]=[70, 125. , 40, 25, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[158]=[70, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[159]=[70, 125. , 90, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[160]=[70, 125. , 85, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[161]=[70, 125. , 80, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[162]=[70, 125. , 70, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[163]=[70, 125. , 60, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[164]=[70, 125. , 50, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[165]=[70, 125. , 40, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[166]=[70, 125. , 94.5, 35, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[167]=[70, 125. , 90, 35, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[168]=[70, 125. , 85, 35, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[169]=[70, 125. , 80, 35, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[170]=[70, 125. , 70, 35, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[171]=[70, 125. , 60, 35, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[172]=[70, 125. , 50, 35, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[173]=[70, 125. , 40, 35, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[174]=[70, 125. , 94.5, 40, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[175]=[70, 125. , 90, 40, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[176]=[70, 125. , 85, 40, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[177]=[70, 125. , 80, 40, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[178]=[70, 125. , 70, 40, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[179]=[70, 125. , 60, 40, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[180]=[70, 125. , 50, 40, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[181]=[70, 125. , 40, 40, -4.4, 4.4, -4.4, 4.4, 25, 25]
         #try to measure the horizontal shift of the camera
-        measurements[30]=[70, 50 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[31]=[70, 60 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[32]=[70, 65 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[33]=[70, 70 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[34]=[70, 75 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[35]=[70, 80 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[36]=[70, 85 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[37]=[70, 90 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[38]=[70, 95 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[39]=[70, 100 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[40]=[70, 105 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[41]=[70, 110 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[42]=[70, 115 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[43]=[70, 120 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[44]=[70, 125 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[45]=[70, 130 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[46]=[70, 135 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[47]=[70, 140 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[48]=[70, 145 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[49]=[70, 150 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[50]=[70, 155 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[51]=[70, 160 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[52]=[70, 165 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[53]=[70, 170 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[54]=[70, 175 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[55]=[70, 180 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[56]=[70, 185 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[57]=[70, 190 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[58]=[70, 200 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements=measurements[42:]
+        measurements[182]=[70, 50 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[183]=[70, 60 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[184]=[70, 65 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[185]=[70, 70 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[186]=[70, 75 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[187]=[70, 80 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[188]=[70, 85 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[189]=[70, 90 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[190]=[70, 95 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[191]=[70, 100 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[192]=[70, 105 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[193]=[70, 110 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[194]=[70, 115 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[195]=[70, 120 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[196]=[70, 125 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[197]=[70, 130 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[198]=[70, 135 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[199]=[70, 140 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[200]=[70, 145 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[201]=[70, 150 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[202]=[70, 155 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[203]=[70, 160 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[204]=[70, 165 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[205]=[70, 170 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[206]=[70, 175 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[207]=[70, 180 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[208]=[70, 185 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[209]=[70, 190 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        measurements[210]=[70, 200 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
+        #measurements=measurements[42:]
         results=np.zeros(shape=(len(measurements), 18))
         no=0
         for m in measurements:
@@ -688,15 +883,23 @@ class RATE_ANALYZER():
             print("Next measurement is: Pos_Cam_Z: {0:5.2f} ; Pos_Cam_X: {1:5.2f} ; Pos_mirr_Z: {2:5.2f}  ; Pos_mirr_Height: {3:5.2f} ; phi_min: {4:5.2f} ; phi_max: {5:5.2f} ; psi_min: {6:5.2f} ; psi_max: {7:5.2f} ; spacing_psi: {8:5.2f} ; spacing_phi: {9:5.2f}".format(m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8], m[9]))
             
             #move setup in the right position
-            self.controller.set_position_camera_z(m[0], verbose=True)
-            self.controller.set_position_camera_x(m[1], verbose=True)
-            self.controller.set_position_mirror_z(m[2], verbose=True)
-            self.controller.set_position_mirror_height(m[3], verbose=True)
+            self.camera_z=m[0]
+            self.camera_x=m[1]
+            self.mirror_z=m[2]
+            self.mirror_height=m[3]
+            self.controller.set_position_camera_z(self.camera_z, verbose=True)
+            self.controller.set_position_camera_x(self.camera_x, verbose=True)
+            self.controller.set_position_mirror_z(self.mirror_z, verbose=True)
+            self.controller.set_position_mirror_height(self.mirror_height, verbose=True)
             
             #wait till the setup is in the right position
             while self.controller.get_camera_z_moving() or self.controller.get_camera_x_moving() or self.controller.get_mirror_z_moving() or self.controller.get_mirror_height_moving():
                 sleep(0.05)
                 
+            self.camera_z=self.controller.get_position_camera_z()
+            self.camera_x=self.controller.get_position_camera_x()
+            self.mirror_z=self.controller.get_position_mirror_z()
+            self.mirror_height=self.controller.get_position_mirror_height()
             #measure the rate distribution
             #set the sliders to the borders of the rectangle
             self.box_min_phi.set(m[4])
