@@ -9,6 +9,8 @@ from time import sleep
 import time
 import os
 import warnings
+from serial.serialutil import SerialException
+from pyTMCL.reply import TrinamicException
 
 
 import numpy as np #only needed for simulations
@@ -367,30 +369,30 @@ class RATE_ANALYZER():
         self.controller.set_position_mirror_psi(min_psi)
         moving_both=True
         try:
-        	moving_both=self.controller.get_mirror_phi_moving() or self.controller.get_mirror_psi_moving() 
+            moving_both=self.controller.get_mirror_phi_moving() or self.controller.get_mirror_psi_moving() 
         except TrinamicException:
-    		print("Trinamic Exception while waiting for PHI and PSI to stop moving")
+            print("Trinamic Exception while waiting for PHI and PSI to stop moving")
         while moving_both:
             sleep(0.05)
             try:
-		    	moving_both=self.controller.get_mirror_phi_moving() or self.controller.get_mirror_psi_moving() 
-		    except TrinamicException:
-	    		print("Trinamic Exception while waiting for PHI and PSI to stop moving")
+                moving_both=self.controller.get_mirror_phi_moving() or self.controller.get_mirror_psi_moving() 
+            except TrinamicException:
+                print("Trinamic Exception while waiting for PHI and PSI to stop moving")
         #walk through the whole space of different positions
         for i in range(0, spacing_phi, 1):
             pos_phi=min_phi+(max_phi-min_phi)/(spacing_phi-1)*i
             self.controller.set_position_mirror_phi(pos_phi)
             moving_phi=True
             try:
-            	moving_phi=self.controller.get_mirror_phi_moving()
-        	except TrinamicException:
-        		print("Trinamic Exception while waiting for PHI to stop moving")
+                moving_phi=self.controller.get_mirror_phi_moving()
+            except TrinamicException:
+                print("Trinamic Exception while waiting for PHI to stop moving")
             while moving_phi:
                 sleep(0.05)
                 try:
-		        	moving_phi=self.controller.get_mirror_phi_moving()
-		    	except TrinamicException:
-		    		print("Trinamic Exception while waiting for PHI to stop moving")
+                    moving_phi=self.controller.get_mirror_phi_moving()
+                except TrinamicException:
+                    print("Trinamic Exception while waiting for PHI to stop moving")
             for j in range(0, spacing_psi, 1):
                 if i%2==0:
                     pos_psi=min_psi+(max_psi-min_psi)/(spacing_psi-1)*j
@@ -400,15 +402,15 @@ class RATE_ANALYZER():
                 self.controller.set_position_mirror_psi(pos_psi)
                 moving_psi=True
                 try:
-                	moving_psi=self.controller.get_mirror_psi_moving()
-            	except TrinamicException:
-            		print("Trinamic Exception while waiting for PSI to stop moving")
+                    moving_psi=self.controller.get_mirror_psi_moving()
+                except TrinamicException:
+                    print("Trinamic Exception while waiting for PSI to stop moving")
                 while moving_psi:
                     sleep(0.05)
-            		try:
-             		   	moving_psi=self.controller.get_mirror_psi_moving()
-        			except TrinamicException:
-            			print("Trinamic Exception while waiting for PSI to stop moving")
+                    try:
+                        moving_psi=self.controller.get_mirror_psi_moving()
+                    except TrinamicException:
+                        print("Trinamic Exception while waiting for PSI to stop moving")
                 if i%2==0:
                     rates[i][spacing_psi-1-j]=self.client.getRateA()+self.client.getRateB()
                 else:
@@ -920,32 +922,32 @@ class RATE_ANALYZER():
             #wait till the setup is in the right position
             moving_all=True
             try:
-            	moving_all=self.controller.get_camera_z_moving() or self.controller.get_camera_x_moving() or self.controller.get_mirror_z_moving() or self.controller.get_mirror_height_moving()
-        	except TrinamicException:
-        		print("Trinamic Exception while waiting for 4 Dimensions to stop moving")
+                moving_all=self.controller.get_camera_z_moving() or self.controller.get_camera_x_moving() or self.controller.get_mirror_z_moving() or self.controller.get_mirror_height_moving()
+            except TrinamicException:
+                print("Trinamic Exception while waiting for 4 Dimensions to stop moving")
             while moving_all:
                 sleep(0.05)
-	            try:
-		        	moving_all=self.controller.get_camera_z_moving() or self.controller.get_camera_x_moving() or self.controller.get_mirror_z_moving() or self.controller.get_mirror_height_moving()
-		    	except TrinamicException:
-		    		print("Trinamic Exception while waiting for 4 Dimensions to stop moving")
+                try:
+                    moving_all=self.controller.get_camera_z_moving() or self.controller.get_camera_x_moving() or self.controller.get_mirror_z_moving() or self.controller.get_mirror_height_moving()
+                except TrinamicException:
+                    print("Trinamic Exception while waiting for 4 Dimensions to stop moving")
             try:
-		        self.camera_z=self.controller.get_position_camera_z()
-		        self.camera_x=self.controller.get_position_camera_x()
-		        self.mirror_z=self.controller.get_position_mirror_z()
-		        self.mirror_height=self.controller.get_position_mirror_height()
-		    except TrinamicException:
-		    	try:
-				    self.camera_z=self.controller.get_position_camera_z()
-				    self.camera_x=self.controller.get_position_camera_x()
-				    self.mirror_z=self.controller.get_position_mirror_z()
-				    self.mirror_height=self.controller.get_position_mirror_height()
-				except TrinamicException:
-					print("Tried twice to get the Positions but failed both times! Instead take the ones that were initally set!")
-				    self.camera_z=m[0]
-				    self.camera_x=m[1]
-				    self.mirror_z=m[2]
-				    self.mirror_height=m[3]
+                self.camera_z=self.controller.get_position_camera_z()
+                self.camera_x=self.controller.get_position_camera_x()
+                self.mirror_z=self.controller.get_position_mirror_z()
+                self.mirror_height=self.controller.get_position_mirror_height()
+            except TrinamicException:
+                try:
+                    self.camera_z=self.controller.get_position_camera_z()
+                    self.camera_x=self.controller.get_position_camera_x()
+                    self.mirror_z=self.controller.get_position_mirror_z()
+                    self.mirror_height=self.controller.get_position_mirror_height()
+                except TrinamicException:
+                    print("Tried twice to get the Positions but failed both times! Instead take the ones that were initally set!")
+                    self.camera_z=m[0]
+                    self.camera_x=m[1]
+                    self.mirror_z=m[2]
+                    self.mirror_height=m[3]
             #measure the rate distribution
             #set the sliders to the borders of the rectangle
             self.box_min_phi.set(m[4])
