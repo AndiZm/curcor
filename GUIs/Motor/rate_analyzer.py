@@ -35,6 +35,10 @@ class RATE_ANALYZER():
     max_psi=4.4
     spacing_psi=10
     spacing_phi=10
+    camera_z=controller.get_position_camera_z()
+    camera_x=controller.get_position_camera_x()
+    mirror_z=controller.get_position_mirror_z()
+    mirror_height=controller.get_position_mirror_height()
     
     #currently set rectangle
     min_psi_rect=None
@@ -459,6 +463,22 @@ class RATE_ANALYZER():
         self.max_phi_rect=rect_start_phi+rect_width_phi
         self.min_psi_rect=rect_start_psi+rect_width_psi
         self.max_psi_rect=rect_start_psi
+        
+    #####################################
+    #  FILE FORMAT FOR THE .rate FILES  #
+    # [00] Min Phi                      #
+    # [01] Max Phi                      #
+    # [02] Min Psi                      #
+    # [03] Max Psi                      #
+    # [04] Spacing Phi                  #
+    # [05] Spacing Psi                  #
+    # [06] Camera Z                     #
+    # [07] Camera X                     #
+    # [08] Mirror Z                     #
+    # [09] Mirror Height                #
+    # [10] actual Rates                 #
+    #####################################
+    
     
     def loadRates(self):
         file = filedialog.askopenfile(parent=self.window, initialdir = "../../..", title = "Load Rate Distribution", filetypes = (("rate files","*.rate"),("all files","*.*")))
@@ -471,7 +491,18 @@ class RATE_ANALYZER():
             self.max_psi=float(parts[3])
             self.spacing_psi=int(parts[4])
             self.spacing_phi=int(parts[5])
-            array_data=parts[6]
+            if len(parts)==7:
+		        self.camera_z=np.nan
+		        self.camera_x=np.nan
+		        self.mirror_z=np.nan
+		        self.mirror_height=np.nan
+		        array_data=parts[6]
+	        else:
+		        self.camera_z=int(parts[6])
+		        self.camera_x=int(parts[7])
+		        self.mirror_z=int(parts[8])
+		        self.mirror_height=int(parts[9])
+	            array_data=parts[10]
             lines=array_data.splitlines()
             rates=np.empty((self.spacing_psi, self.spacing_phi))
             lines[0]=lines[0].replace("[[", "[")
@@ -493,7 +524,7 @@ class RATE_ANALYZER():
             file = open(path, "w")
         if file!=None:
             #file=open(filename, "w")
-            file.write("{0}~{1}~{2}~{3}~{4}~{5}~{6}".format(self.min_phi, self.max_phi, self.min_psi, self.max_psi, self.spacing_psi, self.spacing_phi, self.rates).replace("\n ", "").replace("]", "]\n").replace("]\n]", "]]"))
+            file.write("{0}~{1}~{2}~{3}~{4}~{5}~{6}~{7}~{8}~{9}~{10}".format(self.min_phi, self.max_phi, self.min_psi, self.max_psi, self.spacing_psi, self.spacing_phi, self.camera_z, self.camera_x, self.mirror_z, self.mirror_height, self.rates).replace("\n ", "").replace("]", "]\n").replace("]\n]", "]]"))
             file.close()
             
     def adoptProposal(self):
