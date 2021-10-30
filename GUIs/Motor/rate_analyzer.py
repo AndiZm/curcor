@@ -925,12 +925,16 @@ class RATE_ANALYZER():
                 moving_all=self.controller.get_camera_z_moving() or self.controller.get_camera_x_moving() or self.controller.get_mirror_z_moving() or self.controller.get_mirror_height_moving()
             except TrinamicException:
                 print("Trinamic Exception while waiting for 4 Dimensions to stop moving")
+            except:
+                print("Not Trinamic Exception but something else while waiting for 4 Dimensions to stop moving")
             while moving_all:
                 sleep(0.05)
                 try:
                     moving_all=self.controller.get_camera_z_moving() or self.controller.get_camera_x_moving() or self.controller.get_mirror_z_moving() or self.controller.get_mirror_height_moving()
                 except TrinamicException:
                     print("Trinamic Exception while waiting for 4 Dimensions to stop moving")
+                except:
+                    print("Not Trinamic Exception but something else while waiting for 4 Dimensions to stop moving")
             try:
                 self.camera_z=self.controller.get_position_camera_z()
                 self.camera_x=self.controller.get_position_camera_x()
@@ -943,11 +947,25 @@ class RATE_ANALYZER():
                     self.mirror_z=self.controller.get_position_mirror_z()
                     self.mirror_height=self.controller.get_position_mirror_height()
                 except TrinamicException:
-                    print("Tried twice to get the Positions but failed both times! Instead take the ones that were initally set!")
+                    print("Tried twice to get the Positions but failed both times (Trinamic Exception)! Instead take the ones that were initally set!")
                     self.camera_z=m[0]
                     self.camera_x=m[1]
                     self.mirror_z=m[2]
                     self.mirror_height=m[3]
+                except:
+                    print("Tried twice to get the Positions but failed both times (But notTrinamic Exception)! Instead take the ones that were initally set!")
+                    self.camera_z=m[0]
+                    self.camera_x=m[1]
+                    self.mirror_z=m[2]
+                    self.mirror_height=m[3]
+            except:
+                    print("Tried to get the Positions but failed both times (No Trinamic Exception)! Instead take the ones that were initally set!")
+                    self.camera_z=m[0]
+                    self.camera_x=m[1]
+                    self.mirror_z=m[2]
+                    self.mirror_height=m[3]
+
+                    
             #measure the rate distribution
             #set the sliders to the borders of the rectangle
             self.box_min_phi.set(m[4])

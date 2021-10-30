@@ -826,6 +826,8 @@ class GUI:
                 self.update_items()
             except SerialException:
                 print("Serial Exception. This only causes the GUI to miss one update!")
+            except IndexError:
+                print("Index Error. The reply given by the controller was no valid value. This only causes the GUI to miss one update!")
             except Exception as e:
                 print("there was an exception in the update routine of the main GUI. The error was:")
                 print(e)
