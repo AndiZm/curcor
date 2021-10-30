@@ -372,12 +372,17 @@ class RATE_ANALYZER():
             moving_both=self.controller.get_mirror_phi_moving() or self.controller.get_mirror_psi_moving() 
         except TrinamicException:
             print("Trinamic Exception while waiting for PHI and PSI to stop moving")
+        except:
+            print("Non-Trinamic Exception while waiting for PHI and PSI to stop moving")
+
         while moving_both:
             sleep(0.05)
             try:
                 moving_both=self.controller.get_mirror_phi_moving() or self.controller.get_mirror_psi_moving() 
             except TrinamicException:
                 print("Trinamic Exception while waiting for PHI and PSI to stop moving")
+            except:
+                print("Non-Trinamic Exception while waiting for PHI and PSI to stop moving")
         #walk through the whole space of different positions
         for i in range(0, spacing_phi, 1):
             pos_phi=min_phi+(max_phi-min_phi)/(spacing_phi-1)*i
@@ -387,12 +392,16 @@ class RATE_ANALYZER():
                 moving_phi=self.controller.get_mirror_phi_moving()
             except TrinamicException:
                 print("Trinamic Exception while waiting for PHI to stop moving")
+            except:
+                print("Non-Trinamic Exception while waiting for PHI to stop moving")
             while moving_phi:
                 sleep(0.05)
                 try:
                     moving_phi=self.controller.get_mirror_phi_moving()
                 except TrinamicException:
                     print("Trinamic Exception while waiting for PHI to stop moving")
+                except:
+                    print("Non-Trinamic Exception while waiting for PHI to stop moving")
             for j in range(0, spacing_psi, 1):
                 if i%2==0:
                     pos_psi=min_psi+(max_psi-min_psi)/(spacing_psi-1)*j
@@ -405,12 +414,16 @@ class RATE_ANALYZER():
                     moving_psi=self.controller.get_mirror_psi_moving()
                 except TrinamicException:
                     print("Trinamic Exception while waiting for PSI to stop moving")
+                except:
+                    print("Non-Trinamic Exception while waiting for PSI to stop moving")
                 while moving_psi:
                     sleep(0.05)
                     try:
                         moving_psi=self.controller.get_mirror_psi_moving()
                     except TrinamicException:
                         print("Trinamic Exception while waiting for PSI to stop moving")
+                    except:
+                        print("Non-Trinamic Exception while waiting for PSI to stop moving")
                 if i%2==0:
                     rates[i][spacing_psi-1-j]=self.client.getRateA()+self.client.getRateB()
                 else:
@@ -959,11 +972,11 @@ class RATE_ANALYZER():
                     self.mirror_z=m[2]
                     self.mirror_height=m[3]
             except:
-                    print("Tried to get the Positions but failed both times (No Trinamic Exception)! Instead take the ones that were initally set!")
-                    self.camera_z=m[0]
-                    self.camera_x=m[1]
-                    self.mirror_z=m[2]
-                    self.mirror_height=m[3]
+                print("Tried to get the Positions but failed both times (No Trinamic Exception)! Instead take the ones that were initally set!")
+                self.camera_z=m[0]
+                self.camera_x=m[1]
+                self.mirror_z=m[2]
+                self.mirror_height=m[3]
 
                     
             #measure the rate distribution
