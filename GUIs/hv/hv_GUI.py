@@ -5,8 +5,6 @@ import hv_commands as com
 from tkinter import *
 from threading import Thread
 
-# This is a test comment
-
 
 gl.vset = [com.get_vset(0),com.get_vset(1),com.get_vset(2),com.get_vset(3)]
 com.apply_ratio_0()
@@ -20,6 +18,7 @@ def exit():
 ExitButton = Button(rootExitFrame, text="Close", command=exit); ExitButton.grid(row=0,column=0)
 gl.frameLabel = Label(rootExitFrame, text=str(gl.scheck)); gl.frameLabel.grid(row=0, column=1)
 rootMainFrame = Frame(gl.root); rootMainFrame.grid(row=1,column=0)
+
 gl.hv0Button = Button(rootMainFrame, text="HV 0", font=("Helvetica 12 bold"), bg="grey", command=com.toggle_0); gl.hv0Button.grid(row=0,column=2)
 gl.hv1Label = Label(rootMainFrame, text="HV 1", font=("Helvetica 8 italic"), bg="grey"); gl.hv1Label.grid(row=0,column=3)
 gl.hv2Button = Button(rootMainFrame, text="HV 2", font=("Helvetica 12 bold"), bg="grey", command=com.toggle_2); gl.hv2Button.grid(row=0,column=4)
@@ -34,7 +33,6 @@ if com.get_status(2) == 1:
 	gl.hv2Button.config(bg="orange")
 	gl.hv3Label.config(bg="orange")
 	gl.status2 = True
-
 
 # Ratio between HV and Booster
 def change_ratio():
@@ -62,14 +60,27 @@ def change_vSet():
 		cvset.destroy()
 	cvset_Button = Button(cvset, text="Apply", command=apply_vSet); cvset_Button.grid(row=1,column=2)
 #vSetLabel = Label(rootMainFrame, text="V-Set"); vSetLabel.grid(row=2,column=0)
-vSetButton = Button(rootMainFrame, text="V-Set",command=change_vSet); vSetButton.grid(row=2,column=0)
-gl.vSet0Label = Label(rootMainFrame, width=5, text=str(gl.vset[0]), bg="black", fg="orange"); gl.vSet0Label.grid(row=2,column=2)
-gl.vSet1Label = Label(rootMainFrame, width=4, text=str(gl.vset[1]), font=("Helvetica 7"), bg="light grey", fg="black"); gl.vSet1Label.grid(row=2,column=3)
-gl.vSet2Label = Label(rootMainFrame, width=5, text=str(gl.vset[2]), bg="black", fg="orange"); gl.vSet2Label.grid(row=2,column=4)
-gl.vSet3Label = Label(rootMainFrame, width=4, text=str(gl.vset[3]), font=("Helvetica 7"), bg="light grey", fg="black"); gl.vSet3Label.grid(row=2,column=5)
+vSetButton = Button(rootMainFrame, text="V-Set",command=change_vSet); vSetButton.grid(row=1,column=0)
+gl.vSet0Label = Label(rootMainFrame, width=7, text=str(gl.vset[0]), bg="black", fg="orange"); gl.vSet0Label.grid(row=1,column=2)
+gl.vSet1Label = Label(rootMainFrame, width=4, text=str(gl.vset[1]), font=("Helvetica 7"), bg="light grey", fg="black"); gl.vSet1Label.grid(row=1,column=3)
+gl.vSet2Label = Label(rootMainFrame, width=7, text=str(gl.vset[2]), bg="black", fg="orange"); gl.vSet2Label.grid(row=1,column=4)
+gl.vSet3Label = Label(rootMainFrame, width=4, text=str(gl.vset[3]), font=("Helvetica 7"), bg="light grey", fg="black"); gl.vSet3Label.grid(row=1,column=5)
+
+# Quick Change
+quickChange0Frame = Frame(rootMainFrame); quickChange0Frame.grid(row=2,column=2)
+q0_up10Button   = Button(quickChange0Frame, text="+10", font=("Helvetica 7"), width=3, command=lambda:com.safe_vset_0(gl.vset[0]+10)); q0_up10Button.grid(row=0,column=0)
+q0_up50Button   = Button(quickChange0Frame, text="+50", font=("Helvetica 7"), width=3, command=lambda:com.safe_vset_0(gl.vset[0]+50)); q0_up50Button.grid(row=0,column=1)
+q0_down10Button = Button(quickChange0Frame, text="-10", font=("Helvetica 7"), width=3, command=lambda:com.safe_vset_0(gl.vset[0]-10)); q0_down10Button.grid(row=1,column=0)
+q0_down50Button = Button(quickChange0Frame, text="-50", font=("Helvetica 7"), width=3, command=lambda:com.safe_vset_0(gl.vset[0]-50)); q0_down50Button.grid(row=1,column=1)
+
+quickChange2Frame = Frame(rootMainFrame); quickChange2Frame.grid(row=2,column=4)
+q2_up10Button   = Button(quickChange2Frame, text="+10", font=("Helvetica 7"), width=3, command=lambda:com.safe_vset_2(gl.vset[0]+10)); q2_up10Button.grid(row=0,column=0)
+q2_up50Button   = Button(quickChange2Frame, text="+50", font=("Helvetica 7"), width=3, command=lambda:com.safe_vset_2(gl.vset[0]+50)); q2_up50Button.grid(row=0,column=1)
+q2_down10Button = Button(quickChange2Frame, text="-10", font=("Helvetica 7"), width=3, command=lambda:com.safe_vset_2(gl.vset[0]-10)); q2_down10Button.grid(row=1,column=0)
+q2_down50Button = Button(quickChange2Frame, text="-50", font=("Helvetica 7"), width=3, command=lambda:com.safe_vset_2(gl.vset[0]-50)); q2_down50Button.grid(row=1,column=1)
 
 # MON Voltage
-vMonLabel = Label(rootMainFrame, text ="V-Mon"); vMonLabel.grid(row=3,column=0)
+vMonLabel = Label(rootMainFrame, text ="V-Mon", width=10); vMonLabel.grid(row=3,column=0)
 
 gl.vMon0Label = Label(rootMainFrame, width=5, text=str(gl.vmon0), bg="black", fg="red"); gl.vMon0Label.grid(row=3,column=2)
 gl.vMon1Label = Label(rootMainFrame, width=4, text=str(gl.vmon1), font=("Helvetica 7"), bg="light grey", fg="red"); gl.vMon1Label.grid(row=3,column=3)
@@ -77,7 +88,7 @@ gl.vMon2Label = Label(rootMainFrame, width=5, text=str(gl.vmon2), bg="black", fg
 gl.vMon3Label = Label(rootMainFrame, width=4, text=str(gl.vmon3), font=("Helvetica 7"), bg="light grey", fg="red"); gl.vMon3Label.grid(row=3,column=5)
 
 # MON Current
-iMonLabel = Label(rootMainFrame, text ="I-Mon (mA)"); iMonLabel.grid(row=4,column=0)
+iMonLabel = Label(rootMainFrame, text ="I-Mon (mA)", width=10); iMonLabel.grid(row=4,column=0)
 
 gl.iMon0Label = Label(rootMainFrame, width=5, text="{:.2f}".format(com.get_imon(0)), font=("Helvetica 7"), bg="light grey", fg="red"); gl.iMon0Label.grid(row=4,column=2)
 gl.iMon1Label = Label(rootMainFrame, width=4, text="{:.2f}".format(com.get_imon(1)), font=("Helvetica 7"), bg="light grey", fg="red"); gl.iMon1Label.grid(row=4,column=3)
