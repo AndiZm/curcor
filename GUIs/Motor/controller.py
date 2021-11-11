@@ -9,6 +9,15 @@ class CONTROLLER():
 
     bussy=False
     batch=False
+    
+    dist_max_mirr_cam=439 #mm maximum distance between the "left" edge of the mirror sled and the cam sled 
+    dist_min_mirr_cam=308.5 #mm minumum distance that has to be kept between the mirror sled and the cam sled
+    offset_camera_x=-125
+    offset_mirror_height=120 #mm minimum distance between the upper edge of the jack plate and the lid
+    #################
+    # THIS IS WRONG #
+    #################
+    range_mirror_height=50 #mm range that the jack can move
 
     def __init__(self):
         self.a, self.serial_port=sd.init()  #stepper_drive
@@ -55,38 +64,43 @@ class CONTROLLER():
         return (int(num/8)+1)*0.06
     
     
-    #some basic math
-    
+    #conversion between units in deltas 
     def degree_to_mm(self, degree):
         return (8./9.)*degree ##8mm/9degrees
-      
     def mm_to_degree(self, mm):
         return (9./8.)*mm #9degrees/8mm
-
     def steps_to_degree(self, steps):
         return self.mm_to_degree(steps/(800.*self.microsteps_standa))-4.5  #1mm /800step*microsteps_standa
-
     def degree_to_steps(self, degree): #800step*microsteps_standa / 1mm
         return int(self.degree_to_mm(degree+4.5)*800*self.microsteps_standa)
-
     def steps_to_mm(self, steps):
         return steps/(200.*self.microsteps_nano) #1mm / 200steps*microsteps_nano
-        
     def mm_to_steps(self, mm):
         return int(mm*200*self.microsteps_nano) #200steps*microsteps_nano / 1mm
-
-    #Für Höhenmotor
     def steps_to_hmm(self, steps):
-        #return steps/(200.*self.microsteps_nano) #CHANGE
-        return steps/(200.*4.66*self.microsteps_nano) #4.66 for gear_motor, 200 schritte pro umdrehung
-        #return steps/(200./4.66**self.microsteps_nano) #4.66 for gear_motor
-        #return steps/(0.03125*(200.*4.66*self.microsteps_nano)*25.4) # formel fuer labjack, 25.4 fuer inch in mm
-    
+        return steps/(200.*4.66*self.microsteps_nano)
     def hmm_to_steps(self, mm):
-        #return int(mm*200*self.microsteps_nano) #CHANGE
-        return int(mm*200*4.66*self.microsteps_nano) #4.66 for gear motor
-        #return int(mm*200*4.66**self.microsteps_nano) #4.66 for gear motor
+        return int(mm*200*4.66*self.microsteps_nano)
 
+    #conversion between units and absolute positions
+    def mm_absolute_to_steps_camera_z(self, mm):
+        return self.mm_to_steps(mm)
+    def mm_absolute_to_steps_mirror_z(self, mm):
+        return self.mm_to_steps(self.dist_max_mirr_cam-mm)
+    def mm_absolute_to_steps_camera_x(self, mm):
+        return self.mm_to_steps(mm)+self.offset_camera_x
+    def mm_absolute_to_steps_mirror_height(self, mm):
+        return self.hmm_to_steps(self.offset_mirror_height+self.range_mirror_height-mm)
+    def steps_to_mm_absolute_camera_z(self, steps):
+        return self.steps_to_mm(steps)
+    def steps_to_mm_absolute_mirror_z(self, steps):
+        return self.dist_max_mirr_cam-self.steps_to_mm(steps)
+    def steps_to_mm_absolute_camera_x(self, steps):
+        return self.steps_to_mm(steps)#+self.offset_camera_x+1000
+    def steps_to_mm_absolute_mirror_height(self, steps):
+        return self.offset_mirror_height+self.range_mirror_height-self.steps_to_hmm(steps)
+    
+    #set methods for all kinds of parameters
     def set_driving_speed(self, motor,speed):
         motor.axis.max_positioning_speed=int(speed)
         motor.set_axis_parameter(194, 300)
@@ -283,16 +297,16 @@ class CONTROLLER():
     
     def set_position_camera_z(self, position, verbose=False):
         if verbose==False: print("Move camera z to {0:4.2f}".format(position))
-        self.a[0].move_absolute(self.mm_to_steps(position))
+        self.a[0].move_absolute(self.mm_absolute_to_steps_camera_z(position))
     def set_position_camera_x(self, position, verbose=False):
         if verbose==False: print("Move camera x to {0:4.2f}".format(position))
-        self.a[1].move_absolute(self.mm_to_steps(position))  
+        self.a[1].move_absolute(self.mm_absolute_to_steps_camera_x(position))  
     def set_position_mirror_z(self, position, verbose=False):
         if verbose==False: print("Move mirror z to {0:4.2f}".format(position))
-        self.a[2].move_absolute(self.mm_to_steps(position))  
+        self.a[2].move_absolute(self.mm_absolute_to_steps_mirror_z(position))  
     def set_position_mirror_height(self, position, verbose=False):
         if verbose==False: print("Move mirror height to {0:4.2f}".format(position))
-        self.a[3].move_absolute(self.hmm_to_steps(position))  
+        self.a[3].move_absolute(self.mm_absolute_to_steps_mirror_height(position))  
     def set_position_mirror_psi(self, position, verbose=False):
         if verbose==False: print("Move mirror psi to {0:4.2f}".format(position))
         self.a[4].move_absolute(self.degree_to_steps(position))
@@ -301,13 +315,13 @@ class CONTROLLER():
         self.a[5].move_absolute(self.degree_to_steps(position))
         
     def get_position_camera_z(self):
-        return self.steps_to_mm(sd.position(self.a[0]))
+        return self.steps_to_mm_absolute_camera_z(sd.position(self.a[0]))
     def get_position_camera_x(self):
-        return self.steps_to_mm(sd.position(self.a[1]))
+        return self.steps_to_mm_absolute_camera_x(sd.position(self.a[1]))
     def get_position_mirror_z(self):
-        return self.steps_to_mm(sd.position(self.a[2]))
+        return self.steps_to_mm_absolute_mirror_z(sd.position(self.a[2]))
     def get_position_mirror_height(self):
-        return self.steps_to_hmm(sd.position(self.a[3]))
+        return self.steps_to_mm_absolute_mirror_height(sd.position(self.a[3]))
     def get_position_mirror_psi(self):
         return self.steps_to_degree(sd.position(self.a[4]))
     def get_position_mirror_phi(self):
