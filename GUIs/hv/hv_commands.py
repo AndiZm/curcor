@@ -7,7 +7,7 @@ host = "192.168.0.27"
 port = 23
 timeout = 100
 
-waittime = 0.05 # between commands in seconds
+waittime = 0.03 # between commands in seconds
 def wait():
 	time.sleep(waittime)
 
@@ -165,7 +165,7 @@ def safe_off_2():
 	switch_off_2_thread.start()
 
 def switch_on_0():
-	gl.hv0Button.config(state="disabled")
+	#gl.hv0Button.config(state="disabled")
 	switch_on(1)
 	switch_on(0)
 	gl.hv0Button.config(state="normal")
@@ -174,7 +174,7 @@ def safe_on_0():
 	switch_on_0_thread.start()
 
 def switch_on_2():
-	gl.hv2Button.config(state="disabled")
+	#gl.hv2Button.config(state="disabled")
 	switch_on(3)
 	switch_on(2)
 	gl.hv2Button.config(state="normal")
