@@ -98,7 +98,7 @@ class CONTROLLER():
         #the function used here is made up due to geometric ideas of the Labjack
         print("--------------------------")
         print("got MM: {0}".format(mm))
-		turns=np.sqrt((((mm-self.offset_mirror_height+self.mirror_height_offset_mm)/10)**2-self.mirror_height_A**2)/(self.mirror_height_B))+self.mirror_height_offset_turns-self.mirror_height_C
+        turns=np.sqrt((((mm-self.offset_mirror_height+self.mirror_height_offset_mm)/10)**2-self.mirror_height_A**2)/(self.mirror_height_B))+self.mirror_height_offset_turns-self.mirror_height_C
         #(self.mirror_height_A**2+mm-self.offset_mirror_height**2)/self.mirror_height_B+self.mirror_height_C+self.mirror_height_offset_turns
         steps=turns*self.gear_ratio_mirror_height*200*self.microsteps_nano
         print("calculated STEPS: {0}  , equals TURNS: {1}".format(steps, turns))
@@ -112,13 +112,13 @@ class CONTROLLER():
         return self.steps_to_mm(steps)#+self.offset_camera_x+1000
     def steps_to_mm_absolute_mirror_height(self, steps):
         turns=-steps/(200.*self.microsteps_nano)/self.gear_ratio_mirror_height
-        print("--------------------------")
-        print("got STEPS: {0}  , equals TURNS:  {1}   ".format(steps, -turns))
+        #print("--------------------------")
+        #print("got STEPS: {0}  , equals TURNS:  {1}   ".format(steps, -turns))
         #the function used here is made up due to geometric ideas of the Labjack
-		mm=self.offset_mirror_height+np.sqrt(self.mirror_height_A**2+self.mirror_height_B*(-turns+self.mirror_height_offset_turns-self.mirror_height_C)**2)*10-self.mirror_height_offset_mm
+        mm=self.offset_mirror_height+np.sqrt(self.mirror_height_A**2+self.mirror_height_B*(-turns+self.mirror_height_offset_turns-self.mirror_height_C)**2)*10-self.mirror_height_offset_mm
         #np.sqrt(self.mirror_height_A**2+self.mirror_height_B*(turns+self.mirror_height_offset_turns-self.mirror_height_C))-self.mirror_height_offset_cm  print("calculated MM: {0}".format(mm))
-        print("calculated MM: {0}".format(mm))
-        print("--------------------------")
+        #print("calculated MM: {0}".format(mm))
+        #print("--------------------------")
         return mm
         #return self.hmm_to_steps(self.offset_mirror_height+self.range_mirror_height-mm)
         #return self.offset_mirror_height+self.range_mirror_height-self.steps_to_hmm(steps)
