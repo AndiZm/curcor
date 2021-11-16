@@ -21,7 +21,7 @@ class CONTROLLER():
     mirror_height_B=-1.53803335e-03
     mirror_height_C=9.89581577e+01
     mirror_height_offset_turns=80
-    mirror_height_offset_cm=4.38650828274221
+    mirror_height_offset_mm=43.8650828274221
 
     def __init__(self):
         self.a, self.serial_port=sd.init()  #stepper_drive
@@ -98,8 +98,7 @@ class CONTROLLER():
         #the function used here is made up due to geometric ideas of the Labjack
         print("--------------------------")
         print("got MM: {0}".format(mm))
-        cm=mm*0.1
-        turns=((cm+self.mirror_height_offset_cm)**2-self.mirror_height_A**2)/self.mirror_height_B+self.mirror_height_C+self.mirror_height_offset_turns
+        turns=np.sqrt((((mm-self.offset_mirror_height+self.mirror_height_offset_mm)/10)**2-self.mirror_height_A**2)/(self.mirror_height_B))+self.mirror_height_offset_turns-self.mirror_height_C
         #(self.mirror_height_A**2+mm-self.offset_mirror_height**2)/self.mirror_height_B+self.mirror_height_C+self.mirror_height_offset_turns
         steps=turns*self.gear_ratio_mirror_height*200*self.microsteps_nano
         print("calculated STEPS: {0}  , equals TURNS: {1}".format(steps, turns))
@@ -112,11 +111,11 @@ class CONTROLLER():
     def steps_to_mm_absolute_camera_x(self, steps):
         return self.steps_to_mm(steps)#+self.offset_camera_x+1000
     def steps_to_mm_absolute_mirror_height(self, steps):
-        turns=steps/(200.*self.microsteps_nano)/self.gear_ratio_mirror_height
+        turns=-steps/(200.*self.microsteps_nano)/self.gear_ratio_mirror_height
         print("--------------------------")
-        print("got STEPS: {0}  , equals TURNS:  {1}   ".format(steps, turns))
+        print("got STEPS: {0}  , equals TURNS:  {1}   ".format(steps, -turns))
         #the function used here is made up due to geometric ideas of the Labjack
-        mm=self.offset_mirror_height+np.sqrt(self.mirror_height_A**2+self.mirror_height_B*(turns+self.mirror_height_offset_turns-self.mirror_height_C)**2)-self.mirror_height_offset_cm
+    	mm=offset_mirror_height+np.sqrt(self.mirror_height_A**2+self.mirror_height_B*(turns+self.mirror_height_offset_turns-self.mirror_height_C)**2)-self.mirror_height_offset_mm
         #np.sqrt(self.mirror_height_A**2+self.mirror_height_B*(turns+self.mirror_height_offset_turns-self.mirror_height_C))-self.mirror_height_offset_cm  print("calculated MM: {0}".format(mm))
         print("calculated MM: {0}".format(mm))
         print("--------------------------")
