@@ -142,7 +142,9 @@ class GUI:
 
         self.MirrorTUpperFrame = Frame(self.MirrorTFrame, width=200, height=300); self.MirrorTUpperFrame.grid(row=1, column=0)
         self.MirrorHeight_USTOP = Canvas(self.MirrorTUpperFrame, bg=self.ENDSwitchColors[self.controller.get_endswitch_lower_mirror_height()], width=20, height=10); self.MirrorHeight_USTOP.grid(row=0, column=0)
-        self.MirrorHeight= Scale(self.MirrorTUpperFrame,from_=120+50, to=129, resolution=0.1, orient=VERTICAL, length=400); self.MirrorHeight.set(self.controller.get_position_mirror_height()); self.MirrorHeight.grid(row=1, column=0, padx=10, pady=3)
+        self.MirrorHeight= Scale(self.MirrorTUpperFrame,from_=146, to=120, resolution=0.1, orient=VERTICAL, length=400);
+        self.MirrorHeight.set(int(self.controller.get_position_mirror_height()));
+        self.MirrorHeight.grid(row=1, column=0, padx=10, pady=3)
         self.MirrorHeight.bind("<ButtonRelease-1>", self.moveto_mirror_height); self.MirrorHeight.set(lastpositions[3])
         self.MirrorHeight_OSTOP = Canvas(self.MirrorTUpperFrame, bg=self.ENDSwitchColors[self.controller.get_endswitch_upper_mirror_height()], width=20, height=10); self.MirrorHeight_OSTOP.grid(row=2, column=0)
         self.MirrorTButtonFrame = Frame(self.MirrorTUpperFrame, width=100, height=150); self.MirrorTButtonFrame.grid(row=1, column=1)

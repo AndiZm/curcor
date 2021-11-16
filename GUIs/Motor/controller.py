@@ -3,6 +3,7 @@ import stepper_drive as sd
 import motor_switch as ms
 import servo_test as servo
 import powersupp_halogen as psupp
+import numpy as np
 
 #this class contains everything that is needed to controll the motorboard
 class CONTROLLER():
@@ -13,11 +14,14 @@ class CONTROLLER():
     dist_max_mirr_cam=439 #mm maximum distance between the "left" edge of the mirror sled and the cam sled 
     dist_min_mirr_cam=308.5 #mm minumum distance that has to be kept between the mirror sled and the cam sled
     offset_camera_x=-125
-    offset_mirror_height=120 #mm minimum distance between the upper edge of the jack plate and the lid
-    #################
-    # THIS IS WRONG #
-    #################
-    range_mirror_height=50 #mm range that the jack can move
+    offset_mirror_height=146 #mm maximum distance between the upper edge of the jack plate and the lid
+    gear_ratio_mirror_height=4.66 # is this actually true?
+    #these values were determined by fitting the curve given by ThorLabs for this labjack!
+    mirror_height_A=4.44907206e+00
+    mirror_height_B=-1.53803335e-03
+    mirror_height_C=9.89581577e+01
+    mirror_height_offset_turns=80
+    mirror_height_offset_cm=4.38650828274221
 
     def __init__(self):
         self.a, self.serial_port=sd.init()  #stepper_drive
@@ -77,10 +81,11 @@ class CONTROLLER():
         return steps/(200.*self.microsteps_nano) #1mm / 200steps*microsteps_nano
     def mm_to_steps(self, mm):
         return int(mm*200*self.microsteps_nano) #200steps*microsteps_nano / 1mm
-    def steps_to_hmm(self, steps):
-        return steps/(200.*4.66*self.microsteps_nano)
-    def hmm_to_steps(self, mm):
-        return int(mm*200*4.66*self.microsteps_nano)
+    #this cant be calculated, as the relationship is non-linear 
+    #def steps_to_hmm(self, steps):
+    #    return steps/(200.*4.66*self.microsteps_nano)
+    #def hmm_to_steps(self, mm):
+    #    return int(mm*200*4.66*self.microsteps_nano)
 
     #conversion between units and absolute positions
     def mm_absolute_to_steps_camera_z(self, mm):
@@ -90,7 +95,16 @@ class CONTROLLER():
     def mm_absolute_to_steps_camera_x(self, mm):
         return self.mm_to_steps(mm)+self.offset_camera_x
     def mm_absolute_to_steps_mirror_height(self, mm):
-        return self.hmm_to_steps(self.offset_mirror_height+self.range_mirror_height-mm)
+        #the function used here is made up due to geometric ideas of the Labjack
+        print("--------------------------")
+        print("got MM: {0}".format(mm))
+        cm=mm*0.1
+        turns=((cm+self.mirror_height_offset_cm)**2-self.mirror_height_A**2)/self.mirror_height_B+self.mirror_height_C+self.mirror_height_offset_turns
+        #(self.mirror_height_A**2+mm-self.offset_mirror_height**2)/self.mirror_height_B+self.mirror_height_C+self.mirror_height_offset_turns
+        steps=turns*self.gear_ratio_mirror_height*200*self.microsteps_nano
+        print("calculated STEPS: {0}  , equals TURNS: {1}".format(steps, turns))
+        return steps
+        #return self.hmm_to_steps(self.offset_mirror_height+self.range_mirror_height-mm)
     def steps_to_mm_absolute_camera_z(self, steps):
         return self.steps_to_mm(steps)
     def steps_to_mm_absolute_mirror_z(self, steps):
@@ -98,7 +112,17 @@ class CONTROLLER():
     def steps_to_mm_absolute_camera_x(self, steps):
         return self.steps_to_mm(steps)#+self.offset_camera_x+1000
     def steps_to_mm_absolute_mirror_height(self, steps):
-        return self.offset_mirror_height+self.range_mirror_height-self.steps_to_hmm(steps)
+        turns=steps/(200.*self.microsteps_nano)/self.gear_ratio_mirror_height
+        print("--------------------------")
+        print("got STEPS: {0}  , equals TURNS:  {1}   ".format(steps, turns))
+        #the function used here is made up due to geometric ideas of the Labjack
+        mm=self.offset_mirror_height+np.sqrt(self.mirror_height_A**2+self.mirror_height_B*(turns+self.mirror_height_offset_turns-self.mirror_height_C)**2)-self.mirror_height_offset_cm
+        #np.sqrt(self.mirror_height_A**2+self.mirror_height_B*(turns+self.mirror_height_offset_turns-self.mirror_height_C))-self.mirror_height_offset_cm  print("calculated MM: {0}".format(mm))
+        print("calculated MM: {0}".format(mm))
+        print("--------------------------")
+        return mm
+        #return self.hmm_to_steps(self.offset_mirror_height+self.range_mirror_height-mm)
+        #return self.offset_mirror_height+self.range_mirror_height-self.steps_to_hmm(steps)
     
     #set methods for all kinds of parameters
     def set_driving_speed(self, motor,speed):
