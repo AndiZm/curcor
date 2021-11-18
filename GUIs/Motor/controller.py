@@ -111,7 +111,7 @@ class CONTROLLER():
     def steps_to_mm_absolute_camera_x(self, steps):
         return self.steps_to_mm(steps)#+self.offset_camera_x+1000
     def steps_to_mm_absolute_mirror_height(self, steps):
-        turns=-steps/(200.*self.microsteps_nano)/self.gear_ratio_mirror_height
+        turns=steps/(200.*self.microsteps_nano)/self.gear_ratio_mirror_height
         #print("--------------------------")
         #print("got STEPS: {0}  , equals TURNS:  {1}   ".format(steps, -turns))
         #the function used here is made up due to geometric ideas of the Labjack
