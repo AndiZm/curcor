@@ -2,10 +2,34 @@ import telnetlib
 import time
 import hv_glob as gl
 from threading import Thread
+import configparser
 
-host = "192.168.0.27"
+host = ""
 port = 23
 timeout = 100
+
+# Start with init
+this_config = configparser.ConfigParser()
+this_config.read("../../../this_pc.conf")
+if "who_am_i" in this_config:
+	cam_pc_no = int(this_config["who_am_i"]["no"])
+	if  this_config["who_am_i"]["type"] != "cam_pc":
+		print("According to the 'this_pc.config'-file this pc is not meant as a camera pc. Please correct the configuarion or start the right GUI!")
+		exit()
+else:
+	print("There is no config file on this computer which specifies the computer function! Please add a 'this_pc.config' file next to the curcor-directory!")
+	exit()
+global_config = configparser.ConfigParser()
+global_config.read('../global.conf')
+if cam_pc_no == 1:
+	hv_address = global_config["cam_pc_1"]["hv_address"]
+elif cam_pc_no == 2:
+	hv_address = global_config["cam_pc_2"]["hv_address"]
+else:
+	print("Error in the 'this_pc.config'-file. The number of the Cam PC is neither 1 nor 2. Please correct!")
+
+host = hv_address
+
 
 waittime = 0.03 # between commands in seconds
 def wait():
