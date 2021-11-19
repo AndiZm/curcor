@@ -26,7 +26,7 @@ class CONTROLLER():
     mirror_height_B=-0.9922775931781906
     mirror_height_C=98.95815765034412
     mirror_height_upper_limit_turns=60.966
-    mirror_height_upper_limit_mm=np.sqrt(A**2+B*(mirror_height_upper_limit_turns-C)**2)
+    mirror_height_upper_limit_mm=np.sqrt(mirror_height_A**2+mirror_height_B*(mirror_height_upper_limit_turns-mirror_height_C)**2)
     mirror_height_total_turns=80
     mirror_height_shift_turns=mirror_height_total_turns-mirror_height_upper_limit_turns
 
@@ -105,7 +105,7 @@ class CONTROLLER():
         #the function used here is made up due to geometric ideas of the Labjack
         print("--------------------------")
         print("got MM: {0}".format(mm))
-        turns=mirror_height_total_turns-mirror_height_shift_turns-mirror_height_C+np.sqrt(((mm+mirror_height_upper_limit_mm-offset_mirror_height)**2-mirror_height_A**2)/mirror_height_B)
+        turns=self.mirror_height_total_turns-self.mirror_height_shift_turns-self.mirror_height_C+np.sqrt(((mm+self.mirror_height_upper_limit_mm-self.offset_mirror_height)**2-self.mirror_height_A**2)/self.mirror_height_B)
         #turns=np.sqrt((((mm-self.offset_mirror_height+self.mirror_height_offset_mm))**2-self.mirror_height_A**2)/(self.mirror_height_B))+self.mirror_height_offset_turns-self.mirror_height_C
         #(self.mirror_height_A**2+mm-self.offset_mirror_height**2)/self.mirror_height_B+self.mirror_height_C+self.mirror_height_offset_turns
         steps=turns*self.gear_ratio_mirror_height*200*self.microsteps_nano
@@ -124,7 +124,7 @@ class CONTROLLER():
         #print("got STEPS: {0}  , equals TURNS:  {1}   ".format(steps, -turns))
         #the function used here is made up due to geometric ideas of the Labjack
         try:
-            mm=np.sqrt(mirror_height_A**2+mirror_height_B*((-turns-mirror_height_shift_turns+mirror_height_total_turns)-mirror_height_C)**2)-mirror_height_upper_limit_mm+offset_mirror_height
+            mm=np.sqrt(self.mirror_height_A**2+self.mirror_height_B*((-turns-self.mirror_height_shift_turns+self.mirror_height_total_turns)-self.mirror_height_C)**2)-self.mirror_height_upper_limit_mm+self.offset_mirror_height
         except:
             mm=self.offset_mirror_height
         #np.sqrt(self.mirror_height_A**2+self.mirror_height_B*(turns+self.mirror_height_offset_turns-self.mirror_height_C))-self.mirror_height_offset_cm  print("calculated MM: {0}".format(mm))
