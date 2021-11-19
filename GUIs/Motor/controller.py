@@ -23,10 +23,10 @@ class CONTROLLER():
     #mirror_height_offset_turns=80
     #mirror_height_offset_mm=43.8650828274221
     mirror_height_A=113.00643014078436
-	mirror_height_B=-0.9922775931781906
-	mirror_height_C=98.95815765034412
-	mirror_height_offset_turns=80
-	mirror_height_offset_mm=111.41731030388875
+    mirror_height_B=-0.9922775931781906
+    mirror_height_C=98.95815765034412
+    mirror_height_offset_turns=80
+    mirror_height_offset_mm=111.41731030388875
 
     def __init__(self):
         self.a, self.serial_port=sd.init()  #stepper_drive
@@ -120,7 +120,10 @@ class CONTROLLER():
         #print("--------------------------")
         #print("got STEPS: {0}  , equals TURNS:  {1}   ".format(steps, -turns))
         #the function used here is made up due to geometric ideas of the Labjack
-        mm=self.offset_mirror_height+np.sqrt(self.mirror_height_A**2+self.mirror_height_B*(-x+self.mirror_height_offset_turns-self.mirror_height_C)**2)-self.mirror_height_offset_mm
+        try:
+            mm=self.offset_mirror_height+np.sqrt(self.mirror_height_A**2+self.mirror_height_B*(-turns+self.mirror_height_offset_turns-self.mirror_height_C)**2)-self.mirror_height_offset_mm
+        except:
+            mm=self.offset_mirror_height
         #np.sqrt(self.mirror_height_A**2+self.mirror_height_B*(turns+self.mirror_height_offset_turns-self.mirror_height_C))-self.mirror_height_offset_cm  print("calculated MM: {0}".format(mm))
         #print("calculated MM: {0}".format(mm))
         #print("--------------------------")
