@@ -10,6 +10,7 @@ from os import listdir
 from os.path import isfile, join
 from tkinter import *
 from tkinter import filedialog
+import sys
 
 import live_offset_meas as off
 import live_fit_phd as fphd
@@ -21,6 +22,8 @@ import rate_server as svr
 import card_commands as cc
 import transfer_files as tf
 import live_header as header
+import hv_commands as com
+
 
 from threading import Thread
 
@@ -333,6 +336,125 @@ wf_sub.set_ylim(-127,10)
 gl.wf_canvas = FigureCanvasTkAgg(wf_fig, master=displayFrame)
 gl.wf_canvas.get_tk_widget().grid(row=0,column=0)
 gl.wf_canvas.draw()
+
+##############
+## HV FRAME ##
+##############
+hvFrame = Frame(leftFrame, bg="#003366"); hvFrame.grid(row=8, column=0)
+hvMainFrame = Frame(hvFrame, bg="#003366"); hvMainFrame.grid(row=0,column=1)
+
+gl.hv0Button = Button(hvMainFrame, text="HV 0", font=("Helvetica 12 bold"), bg="grey", command=com.toggle_0); gl.hv0Button.grid(row=0,column=2)
+gl.hv1Label = Label(hvMainFrame, text="HV 1", font=("Helvetica 8 italic"), bg="grey"); gl.hv1Label.grid(row=0,column=3)
+gl.hv2Button = Button(hvMainFrame, text="HV 2", font=("Helvetica 12 bold"), bg="grey", command=com.toggle_2); gl.hv2Button.grid(row=0,column=4)
+gl.hv3Label = Label(hvMainFrame, text="HV 3", font=("Helvetica 8 italic"), bg="grey"); gl.hv3Label.grid(row=0,column=5)
+def enableElements(frame):
+	frame.config(bg="#003366")
+	for child in frame.winfo_children():
+		if child.winfo_class() not in ("Frame","Labelframe"):
+			child.configure(state="normal")
+def disableElements(frame):
+	frame.config(bg="grey")
+	for child in frame.winfo_children():
+		if child.winfo_class() not in ("Frame","Labelframe"):
+			child.configure(state="disabled")
+
+def connect_hv():
+	hvConnectButton.config(state="disabled")
+	time.sleep(1)
+	com.init()
+	gl.vset = [com.get_vset(0),com.get_vset(1),com.get_vset(2),com.get_vset(3)]
+	com.apply_ratio_0(); com.apply_ratio_2()
+	gl.vmon = [com.get_vmon(0),com.get_vmon(1),com.get_vmon(2),com.get_vmon(3)]
+	# Initially on or off
+	if com.get_status(0) == 1:
+		gl.hv0Button.config(bg="orange")
+		gl.hv1Label.config(bg="orange")
+		gl.status0 = True
+	if com.get_status(2) == 1:
+		gl.hv2Button.config(bg="orange")
+		gl.hv3Label.config(bg="orange")
+		gl.status2 = True
+	com.start_monitor()
+	enableElements(hvMainFrame); enableElements(quickChange0Frame); enableElements(quickChange2Frame)
+	exitButton.config(state="normal")
+
+# Ratio between HV and Booster
+def change_ratio():
+	cr = Tk()
+	cr_label01 = Label(cr, text="Ratio 0/1"); cr_label01.grid(row=0,column=0)
+	cr_label23 = Label(cr, text="Ratio 2/3"); cr_label23.grid(row=0,column=1)
+	cr_entry01 = Entry(cr, width=5); cr_entry01.grid(row=1,column=0); cr_entry01.insert(0,str(gl.ratio01))
+	cr_entry23 = Entry(cr, width=5); cr_entry23.grid(row=1,column=1); cr_entry23.insert(0,str(gl.ratio23))
+	def apply_ratio():
+		gl.ratio01 = float(cr_entry01.get()); gl.ratio23 = float(cr_entry23.get())
+		com.apply_ratio_0(); com.apply_ratio_2()
+		cr.destroy()
+	cr_Button = Button(cr, text="Apply", command=apply_ratio); cr_Button.grid(row=1,column=2)
+ratioButton = Button(hvMainFrame, text="Ratio",command=change_ratio); ratioButton.grid(row=0,column=0)
+
+# Set Voltage
+def change_vSet():
+	cvset = Tk()
+	cvset_label0 = Label(cvset, text="HV 0"); cvset_label0.grid(row=0,column=0)
+	cvset_label2 = Label(cvset, text="HV 2"); cvset_label2.grid(row=0,column=1)
+	cvset_entry0 = Entry(cvset, width=5); cvset_entry0.grid(row=1,column=0); cvset_entry0.insert(0,str(gl.vset[0]))
+	cvset_entry2 = Entry(cvset, width=5); cvset_entry2.grid(row=1,column=1); cvset_entry2.insert(0,str(gl.vset[2]))
+	def apply_vSet():
+		com.safe_vset_0(float(cvset_entry0.get())); com.safe_vset_2(float(cvset_entry2.get()))
+		cvset.destroy()
+	cvset_Button = Button(cvset, text="Apply", command=apply_vSet); cvset_Button.grid(row=1,column=2)
+vSetButton = Button(hvMainFrame, text="V-Set",command=change_vSet); vSetButton.grid(row=1,column=0)
+gl.vSet0Label = Label(hvMainFrame, width=7, text=str(gl.vset[0]), bg="black", fg="orange"); gl.vSet0Label.grid(row=1,column=2)
+gl.vSet1Label = Label(hvMainFrame, width=4, text=str(gl.vset[1]), font=("Helvetica 7"), bg="light grey", fg="black"); gl.vSet1Label.grid(row=1,column=3)
+gl.vSet2Label = Label(hvMainFrame, width=7, text=str(gl.vset[2]), bg="black", fg="orange"); gl.vSet2Label.grid(row=1,column=4)
+gl.vSet3Label = Label(hvMainFrame, width=4, text=str(gl.vset[3]), font=("Helvetica 7"), bg="light grey", fg="black"); gl.vSet3Label.grid(row=1,column=5)
+
+# Quick Change
+quickChange0Frame = Frame(hvMainFrame, bg="#003366"); quickChange0Frame.grid(row=2,column=2)
+q0_up10Button   = Button(quickChange0Frame, text="+10", font=("Helvetica 7"), width=3, command=lambda:com.safe_vset_0(gl.vset[0]+10)); q0_up10Button.grid(row=0,column=0)
+q0_up50Button   = Button(quickChange0Frame, text="+50", font=("Helvetica 7"), width=3, command=lambda:com.safe_vset_0(gl.vset[0]+50)); q0_up50Button.grid(row=0,column=1)
+q0_down10Button = Button(quickChange0Frame, text="-10", font=("Helvetica 7"), width=3, command=lambda:com.safe_vset_0(gl.vset[0]-10)); q0_down10Button.grid(row=1,column=0)
+q0_down50Button = Button(quickChange0Frame, text="-50", font=("Helvetica 7"), width=3, command=lambda:com.safe_vset_0(gl.vset[0]-50)); q0_down50Button.grid(row=1,column=1)
+
+quickChange2Frame = Frame(hvMainFrame, bg="#003366"); quickChange2Frame.grid(row=2,column=4)
+q2_up10Button   = Button(quickChange2Frame, text="+10", font=("Helvetica 7"), width=3, command=lambda:com.safe_vset_2(gl.vset[0]+10)); q2_up10Button.grid(row=0,column=0)
+q2_up50Button   = Button(quickChange2Frame, text="+50", font=("Helvetica 7"), width=3, command=lambda:com.safe_vset_2(gl.vset[0]+50)); q2_up50Button.grid(row=0,column=1)
+q2_down10Button = Button(quickChange2Frame, text="-10", font=("Helvetica 7"), width=3, command=lambda:com.safe_vset_2(gl.vset[0]-10)); q2_down10Button.grid(row=1,column=0)
+q2_down50Button = Button(quickChange2Frame, text="-50", font=("Helvetica 7"), width=3, command=lambda:com.safe_vset_2(gl.vset[0]-50)); q2_down50Button.grid(row=1,column=1)
+
+# MON Voltage
+vMonLabel = Label(hvMainFrame, text ="V-Mon", width=10); vMonLabel.grid(row=3,column=0)
+
+gl.vMon0Label = Label(hvMainFrame, width=5, text=str(gl.vmon0), bg="black", fg="red"); gl.vMon0Label.grid(row=3,column=2)
+gl.vMon1Label = Label(hvMainFrame, width=4, text=str(gl.vmon1), font=("Helvetica 7"), bg="light grey", fg="red"); gl.vMon1Label.grid(row=3,column=3)
+gl.vMon2Label = Label(hvMainFrame, width=5, text=str(gl.vmon2), bg="black", fg="red"); gl.vMon2Label.grid(row=3,column=4)
+gl.vMon3Label = Label(hvMainFrame, width=4, text=str(gl.vmon3), font=("Helvetica 7"), bg="light grey", fg="red"); gl.vMon3Label.grid(row=3,column=5)
+
+# MON Current
+iMonLabel = Label(hvMainFrame, text ="I-Mon (mA)", width=10); iMonLabel.grid(row=4,column=0)
+
+#gl.iMon0Label = Label(hvMainFrame, width=5, text="{:.2f}".format(com.get_imon(0)), font=("Helvetica 7"), bg="light grey", fg="red"); gl.iMon0Label.grid(row=4,column=2)
+#gl.iMon1Label = Label(hvMainFrame, width=4, text="{:.2f}".format(com.get_imon(1)), font=("Helvetica 7"), bg="light grey", fg="red"); gl.iMon1Label.grid(row=4,column=3)
+#gl.iMon2Label = Label(hvMainFrame, width=5, text="{:.2f}".format(com.get_imon(2)), font=("Helvetica 7"), bg="light grey", fg="red"); gl.iMon2Label.grid(row=4,column=4)
+#gl.iMon3Label = Label(hvMainFrame, width=4, text="{:.2f}".format(com.get_imon(3)), font=("Helvetica 7"), bg="light grey", fg="red"); gl.iMon3Label.grid(row=4,column=5)
+gl.iMon0Label = Label(hvMainFrame, width=5, text="0", font=("Helvetica 7"), bg="light grey", fg="red"); gl.iMon0Label.grid(row=4,column=2)
+gl.iMon1Label = Label(hvMainFrame, width=4, text="0", font=("Helvetica 7"), bg="light grey", fg="red"); gl.iMon1Label.grid(row=4,column=3)
+gl.iMon2Label = Label(hvMainFrame, width=5, text="0", font=("Helvetica 7"), bg="light grey", fg="red"); gl.iMon2Label.grid(row=4,column=4)
+gl.iMon3Label = Label(hvMainFrame, width=4, text="0", font=("Helvetica 7"), bg="light grey", fg="red"); gl.iMon3Label.grid(row=4,column=5)
+
+disableElements(hvMainFrame); disableElements(quickChange0Frame); disableElements(quickChange2Frame)
+
+
+rootExitFrame=Frame(hvFrame, bg="#003366"); rootExitFrame.grid(row=0,column=0)
+def exit():
+	exitButton.config(state="disabled")
+	gl.mon_thread = False
+	hvConnectButton.config(state="normal")
+	
+hvHeaderLabel = Label(rootExitFrame, text="HV", font=("Helvetica 12 bold"), fg="white", bg="#003366")
+hvConnectButton = Button(rootExitFrame, text="Connect", width=8, bg="#003366", fg="white", command=connect_hv); hvConnectButton.grid(row=0,column=0)
+exitButton = Button(rootExitFrame, text="Close", width=8, command=exit, bg="#003366", fg="white", state="disabled"); exitButton.grid(row=1,column=0)
+gl.frameLabel = Label(rootExitFrame, text=str(gl.scheck)); gl.frameLabel.grid(row=2, column=0)
 
 ##################
 ## OFFSET FRAME ##

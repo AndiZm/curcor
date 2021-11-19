@@ -96,7 +96,6 @@ gl.iMon2Label = Label(rootMainFrame, width=5, text="{:.2f}".format(com.get_imon(
 gl.iMon3Label = Label(rootMainFrame, width=4, text="{:.2f}".format(com.get_imon(3)), font=("Helvetica 7"), bg="light grey", fg="red"); gl.iMon3Label.grid(row=4,column=5)
 
 
-
 com.start_monitor()
 
 gl.root.mainloop()
