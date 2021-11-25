@@ -13,7 +13,7 @@ class CONTROLLER():
     
     dist_max_mirr_cam=439 #mm maximum distance between the "left" edge of the mirror sled and the cam sled 
     dist_min_mirr_cam=308.5 #mm minumum distance that has to be kept between the mirror sled and the cam sled
-    offset_camera_x=-125
+    offset_camera_x=-125-1.2
     offset_mirror_height=146 #mm maximum distance between the upper edge of the jack plate and the lid
     gear_ratio_mirror_height=4.66 # is this actually true?
     #these values were determined by fitting the curve given by ThorLabs for this labjack!
@@ -100,16 +100,16 @@ class CONTROLLER():
     def mm_absolute_to_steps_mirror_z(self, mm):
         return self.mm_to_steps(self.dist_max_mirr_cam-mm)
     def mm_absolute_to_steps_camera_x(self, mm):
-        return self.mm_to_steps(mm)+self.offset_camera_x
+        return self.mm_to_steps(mm-self.offset_camera_x)
     def mm_absolute_to_steps_mirror_height(self, mm):
         #the function used here is made up due to geometric ideas of the Labjack
-        print("--------------------------")
-        print("got MM: {0}".format(mm))
+        #print("--------------------------")
+        #print("got MM: {0}".format(mm))
         turns=self.mirror_height_total_turns-self.mirror_height_shift_turns-self.mirror_height_C+np.sqrt(((mm+self.mirror_height_upper_limit_mm-self.offset_mirror_height)**2-self.mirror_height_A**2)/self.mirror_height_B)
         #turns=np.sqrt((((mm-self.offset_mirror_height+self.mirror_height_offset_mm))**2-self.mirror_height_A**2)/(self.mirror_height_B))+self.mirror_height_offset_turns-self.mirror_height_C
         #(self.mirror_height_A**2+mm-self.offset_mirror_height**2)/self.mirror_height_B+self.mirror_height_C+self.mirror_height_offset_turns
         steps=turns*self.gear_ratio_mirror_height*200*self.microsteps_nano
-        print("calculated STEPS: {0}  , equals TURNS: {1}".format(steps, turns))
+        #print("calculated STEPS: {0}  , equals TURNS: {1}".format(steps, turns))
         return steps
         #return self.hmm_to_steps(self.offset_mirror_height+self.range_mirror_height-mm)
     def steps_to_mm_absolute_camera_z(self, steps):
@@ -117,7 +117,7 @@ class CONTROLLER():
     def steps_to_mm_absolute_mirror_z(self, steps):
         return self.dist_max_mirr_cam-self.steps_to_mm(steps)
     def steps_to_mm_absolute_camera_x(self, steps):
-        return self.steps_to_mm(steps)#+self.offset_camera_x+1000
+        return self.steps_to_mm(steps)+self.offset_camera_x#+1000
     def steps_to_mm_absolute_mirror_height(self, steps):
         turns=steps/(200.*self.microsteps_nano)/self.gear_ratio_mirror_height
         #print("--------------------------")

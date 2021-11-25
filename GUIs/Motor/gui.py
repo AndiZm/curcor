@@ -37,6 +37,7 @@ class GUI:
     change_position_mirror_z=False
     change_position_mirror_height=False
     change_position_camera_x=False
+    change_position_camera_x=False
     change_position_camera_z=False
     
     change_velocity_mirror_phi=False
@@ -81,50 +82,67 @@ class GUI:
         #----------------#
         #---- Frames ----#
         #----------------#
-        self.overMainFrame = Frame(self.master, width=200, bg="#003366")
-        self.overMainFrame.grid(row=0, column=0)
+        
+        width_frame=1050
+        
+        self.overMainFrame = Frame(self.master, width=width_frame, height=40, bg="#003366")
+        self.overMainFrame.grid(row=0, column=0, pady=10)
+        self.overMainFrame.grid_propagate(0)
             
-        self.mainFrame = Frame(self.master, width=200, height = 400)
+        self.mainFrame = Frame(self.master, width=width_frame, height = 600)
         self.mainFrame.grid(row=1, column=0)
         self.mainFrame.config(background = "#003366")
+        self.mainFrame.grid_propagate(0)
         
-        self.belowMainFrame = Frame(self.master, width=200, bg="#003366")
+        self.belowMainFrame = Frame(self.master, width=width_frame, height=80, bg="#003366")
         self.belowMainFrame.grid(row=2, column=0)
+        self.belowMainFrame.grid_propagate(0)
 
-        self.switchFrame = Frame(self.overMainFrame, width=200, height=20)
-        self.switchFrame.grid(row=0,column=0, padx=10, ipady=3)
+        self.switchFrame = Frame(self.overMainFrame)
+        self.switchFrame.grid(row=0,column=0, padx=70, ipady=3) #(325-width_switch_frame)/2
+        
+        self.RateFrame = Frame(self.overMainFrame)
+        self.RateFrame.grid(row=0, column=1, padx=0, pady=3)
         
         #self.centerFrame = Frame(self.mainFrame, width=600, height=400)
         #self.centerFrame.grid(row=1, column=0)
         
-        self.MirrorTFrame = Frame(self.mainFrame, width=200, height=400)
-        self.MirrorTFrame.grid(row=1, column=1, padx=10, pady=3)
+        height_controller_frames=590-6
+        width_controller_frames=325
+        padx_controller_frames=10
+        pady_controller_frames=3
+        
+        self.MirrorTFrame = Frame(self.mainFrame, width=width_controller_frames, height=height_controller_frames)
+        self.MirrorTFrame.grid(row=1, column=1, padx=padx_controller_frames, pady=pady_controller_frames)
+        self.MirrorTFrame.grid_propagate(0)
 
-        self.MirrorRFrame = Frame(self.mainFrame, width=200, height=400)
-        self.MirrorRFrame.grid(row=1, column=2, padx=10, pady=3)
+        self.MirrorRFrame = Frame(self.mainFrame, width=width_controller_frames, height=height_controller_frames)
+        self.MirrorRFrame.grid(row=1, column=2, padx=padx_controller_frames, pady=pady_controller_frames)
+        self.MirrorRFrame.grid_propagate(0)
 
-        self.CameraFrame = Frame(self.mainFrame, width=200, height=400)
-        self.CameraFrame.grid(row=1, column=0, padx=10, pady=3)
-
-        self.RateFrame = Frame(self.overMainFrame, width=200, height=40)
-        self.RateFrame.grid(row=0, column=1, padx =10, pady=3)
+        self.CameraFrame = Frame(self.mainFrame, width=width_controller_frames, height=height_controller_frames)
+        self.CameraFrame.grid(row=1, column=0, padx=padx_controller_frames, pady=pady_controller_frames)
+        self.CameraFrame.grid_propagate(0)
+        
+        self.buttonFrame = Frame(self.master, width=30, height = 400, bg="#003366")
+        self.buttonFrame.grid(row=1, column=1, padx=10,pady=3)
 
         self.ServoFrame = Frame(self.belowMainFrame, width=200, height=40)
-        self.ServoFrame.grid(row=0, column=0, padx=10, pady=3, sticky=W)
+        self.ServoFrame.grid(row=2, column=0, padx=65, pady=3, sticky=W)
 
-        self.OptFrame = Frame(self.belowMainFrame, width=400, height=40)
-        self.OptFrame.grid(row=0, column=1, padx=10, pady=3)
+        self.GeometryFrame = Frame(self.belowMainFrame, width=100, height=40)
+        self.GeometryFrame.grid(row=2, column=1, padx=10, pady=3)
         
         self.psuppFrame = Frame(self.belowMainFrame, width=200, height=40)
-        self.psuppFrame.grid(row=0, column=2, padx=10, pady=3)
+        self.psuppFrame.grid(row=2, column=2, padx=10, pady=3)
 
         #SwitchFrame Content
-        self.switchLabel = Label(self.switchFrame, text="Motor is ")
+        self.switchLabel = Label(self.switchFrame, text="Motor is ", padx=3, pady=3)
         self.switchLabel.grid(row=0, column=0)
         if self.controller.get_motor_on():
-            self.onoffButton = Button(self.switchFrame, text="ON", bg="#91CC66")
+            self.onoffButton = Button(self.switchFrame, text="ON", bg="#91CC66", padx=3, pady=3)
         else:
-            onoffButton.config(text="OFF", bg="#a3a3a3")
+            onoffButton.config(text="OFF", bg="#a3a3a3", padx=3, pady=3)
             
 
         self.onoffButton.config(command=self.switch_motor)
@@ -136,7 +154,7 @@ class GUI:
         self.MirrorTHeadFrame = Frame(self.MirrorTFrame, width=200, height=20); self.MirrorTHeadFrame.grid(row=0, column=0, padx=10, pady=3)
         self.leftLabel1 = Label(self.MirrorTHeadFrame, text="Mirror Height"); self.leftLabel1.grid(row=0, column=0, padx=10, pady=3)
         self.MirrorHeightDisplay = Canvas(self.MirrorTHeadFrame, width=20,height=20); self.MirrorHeightDisplay.grid(row=0, column=1, padx=3, pady=3)
-        self.MirrorHeightPositionLabel = Label(self.MirrorTHeadFrame, fg=self.LEDColors[1], bg="black", font=("Helvetica 15 bold"), text=str(self.controller.get_position_mirror_height())); self.MirrorHeightPositionLabel.grid(row=0, column=2, padx=10, pady=3)
+        self.MirrorHeightPositionLabel = Label(self.MirrorTHeadFrame, fg=self.LEDColors[1], bg="black", font=("Helvetica 15 bold"), text=str(self.controller.get_position_mirror_height()), width=5); self.MirrorHeightPositionLabel.grid(row=0, column=2, padx=10, pady=3)
         self.MirrorHeightSetButton = Button(self.MirrorTHeadFrame, text="Set", width=2, command=self.set_mirror_height); self.MirrorHeightSetButton.grid(row=0,column=3)
         self.MirrorHeightRefsearch = Button(self.MirrorTHeadFrame, text="Ref", width=2, command=self.refsearch_mirror_height); self.MirrorHeightRefsearch.grid(row=0, column=4) 
 
@@ -165,7 +183,7 @@ class GUI:
         self.MirrorTLowerFrame = Frame(self.MirrorTFrame, width=200, height=20); self.MirrorTLowerFrame.grid(row=2, column=0)
         self.leftLabel2 = Label(self.MirrorTLowerFrame, text="Mirror Z"); self.leftLabel2.grid(row=0, column=0, padx=10, pady=3)
         self.MirrorZDisplay = Canvas(self.MirrorTLowerFrame, width=20,height=20); self.MirrorZDisplay.grid(row=0, column=1, padx=3, pady=3)
-        self.MirrorZPositionLabel = Label(self.MirrorTLowerFrame, fg=self.LEDColors[1], bg="black", font=("Helvetica 15 bold"), text=str(self.controller.get_max_acc_mirror_height())); self.MirrorZPositionLabel.grid(row=0, column=2, padx=10, pady=3)
+        self.MirrorZPositionLabel = Label(self.MirrorTLowerFrame, fg=self.LEDColors[1], bg="black", font=("Helvetica 15 bold"), text=str(self.controller.get_max_acc_mirror_height()), width=5); self.MirrorZPositionLabel.grid(row=0, column=2, padx=10, pady=3)
         self.MirrorZSetButton = Button(self.MirrorTLowerFrame, text="Set", width=2, command=self.set_mirror_z); self.MirrorZSetButton.grid(row=0,column=3)
         self.MirrorZRefsearch = Button(self.MirrorTLowerFrame, text="Ref", width=2, command=self.refsearch_mirror_z); self.MirrorZRefsearch.grid(row=0, column=4)
 
@@ -180,7 +198,7 @@ class GUI:
         self.MirrorRHeadFrame = Frame(self.MirrorRFrame, width=200, height=20); self.MirrorRHeadFrame.grid(row=0, column=1)
         self.midLabel1 = Label(self.MirrorRHeadFrame, text="Mirror Psi"); self.midLabel1.grid(row=0, column=0, padx=10, pady=3)
         self.MirrorPsiDisplay = Canvas(self.MirrorRHeadFrame, width=20,height=20); self.MirrorPsiDisplay.grid(row=0, column=1, padx=3, pady=3)
-        self.MirrorPsiPositionLabel = Label(self.MirrorRHeadFrame, fg=self.LEDColors[1], bg="black", font=("Helvetica 15 bold"), text=str(self.controller.get_position_mirror_psi())); self.MirrorPsiPositionLabel.grid(row=0, column=2, padx=10, pady=3)
+        self.MirrorPsiPositionLabel = Label(self.MirrorRHeadFrame, fg=self.LEDColors[1], bg="black", font=("Helvetica 15 bold"), text=str(self.controller.get_position_mirror_psi()), width=7); self.MirrorPsiPositionLabel.grid(row=0, column=2, padx=10, pady=3)
         self.MirrorPsiSetButton = Button(self.MirrorRHeadFrame, text="Set", width=2, command=self.set_mirror_psi); self.MirrorPsiSetButton.grid(row=0,column=3)
         self.MirrorPsiRefsearch = Button(self.MirrorRHeadFrame, text="Ref", width=2, command=self.refsearch_mirror_psi); self.MirrorPsiRefsearch.grid(row=0, column=4) 
 
@@ -205,13 +223,13 @@ class GUI:
         self.MirrorRLowerFrame = Frame(self.MirrorRFrame, width=200, height=20); self.MirrorRLowerFrame.grid(row=2, column=1)
         self.midLabel2 = Label(self.MirrorRLowerFrame, text="Mirror Phi"); self.midLabel2.grid(row=0, column=0, padx=10, pady=3)
         self.MirrorPhiDisplay = Canvas(self.MirrorRLowerFrame, width=20,height=20); self.MirrorPhiDisplay.grid(row=0, column=1, padx=3, pady=3)
-        self.MirrorPhiPositionLabel = Label(self.MirrorRLowerFrame, fg=self.LEDColors[1], bg="black", font=("Helvetica 15 bold"), text=str(self.controller.get_position_mirror_phi())); self.MirrorPhiPositionLabel.grid(row=0, column=2, padx=10, pady=3)
+        self.MirrorPhiPositionLabel = Label(self.MirrorRLowerFrame, fg=self.LEDColors[1], bg="black", font=("Helvetica 15 bold"), text=str(self.controller.get_position_mirror_phi()), width=7); self.MirrorPhiPositionLabel.grid(row=0, column=2, padx=10, pady=3)
         self.MirrorPhiSetButton = Button(self.MirrorRLowerFrame, text="Set", width=2, command=self.set_mirror_phi); self.MirrorPhiSetButton.grid(row=0,column=3)
         self.MirrorPhiRefsearch = Button(self.MirrorRLowerFrame, text="Ref", width=2, command=self.refsearch_mirror_phi); self.MirrorPhiRefsearch.grid(row=0, column=4)
 
         self.MirrorRBottomFrame = Frame(self.MirrorRFrame, width=200, height=60); self.MirrorRBottomFrame.grid(row=3, column=1)
         self.MirrorPhi_LSTOP = Canvas(self.MirrorRBottomFrame, bg=self.ENDSwitchColors[self.controller.get_endswitch_lower_mirror_phi()], width=10, height=20); self.MirrorPhi_LSTOP.grid(row=0, column=0)
-        self.MirrorPhi = Scale(self.MirrorRBottomFrame, from_=-4.5, to=4.5, resolution=0.01, orient=HORIZONTAL, length=300); self.MirrorPhi.set(self.controller.get_position_mirror_phi()); self.MirrorPhi.grid(row=0, column=1, padx=10, pady=3)
+        self.MirrorPhi = Scale(self.MirrorRBottomFrame, from_=-4.5, to=4.5, resolution=0.01, orient=HORIZONTAL, length=250); self.MirrorPhi.set(self.controller.get_position_mirror_phi()); self.MirrorPhi.grid(row=0, column=1, padx=10, pady=3)
         self.MirrorPhi.bind("<ButtonRelease-1>", self.moveto_mirror_phi); self.MirrorPhi.set(lastpositions[5])
         self.MirrorPhi_RSTOP = Canvas(self.MirrorRBottomFrame, bg=self.ENDSwitchColors[self.controller.get_endswitch_upper_mirror_phi()], width=10, height=20); self.MirrorPhi_RSTOP.grid(row=0, column=2)
 
@@ -220,15 +238,15 @@ class GUI:
         self.CameraHeadFrame = Frame(self.CameraFrame, width=200, height=20); self.CameraHeadFrame.grid(row=0, column=2)
         self.rightLabel1 = Label(self.CameraHeadFrame, text="Camera X"); self.rightLabel1.grid(row=0, column=0, padx=10, pady=3)
         self.CameraXDisplay = Canvas(self.CameraHeadFrame, width=20,height=20); self.CameraXDisplay.grid(row=0, column=1, padx=3, pady=3)
-        self.CameraXPositionLabel = Label(self.CameraHeadFrame, fg=self.LEDColors[1], bg="black", font=("Helvetica 15 bold"), text=str(self.controller.get_position_camera_x())); self.CameraXPositionLabel.grid(row=0, column=2, padx=10, pady=3)
+        self.CameraXPositionLabel = Label(self.CameraHeadFrame, fg=self.LEDColors[1], bg="black", font=("Helvetica 15 bold"), text=str(self.controller.get_position_camera_x()), width=7); self.CameraXPositionLabel.grid(row=0, column=2, padx=10, pady=3)
         self.CameraXSetButton = Button(self.CameraHeadFrame, text="Set", width=2, command=self.set_camera_x); self.CameraXSetButton.grid(row=0,column=3)
         self.CameraXRefsearch = Button(self.CameraHeadFrame, text="Ref", width=2, command=self.refsearch_camera_x); self.CameraXRefsearch.grid(row=0, column=4)
 
         self.CameraUpperFrame = Frame(self.CameraFrame, width=200, height=300); self.CameraUpperFrame.grid(row=1, column=2)
-        self.CameraX_USTOP = Canvas(self.CameraUpperFrame, bg=self.ENDSwitchColors[self.controller.get_endswitch_lower_camera_x()], width=20, height=10); self.CameraX_USTOP.grid(row=0, column=0)
-        self.CameraX = Scale(self.CameraUpperFrame, from_=-125, to=125, resolution=0.1, orient=VERTICAL, length=400); self.CameraX.set(self.controller.get_position_camera_x()); self.CameraX.grid(row=1, column=0, padx=10, pady=3)
+        self.CameraX_USTOP = Canvas(self.CameraUpperFrame, bg=self.ENDSwitchColors[self.controller.get_endswitch_upper_camera_x()], width=20, height=10); self.CameraX_USTOP.grid(row=0, column=0)
+        self.CameraX = Scale(self.CameraUpperFrame, from_=125, to=-127, resolution=0.1, orient=VERTICAL, length=400); self.CameraX.set(self.controller.get_position_camera_x()); self.CameraX.grid(row=1, column=0, padx=10, pady=3)
         self.CameraX.bind("<ButtonRelease-1>", self.moveto_camera_x); self.CameraX.set(lastpositions[1])
-        self.CameraX_OSTOP = Canvas(self.CameraUpperFrame, bg=self.ENDSwitchColors[self.controller.get_endswitch_upper_camera_x()], width=20, height=10); self.CameraX_OSTOP.grid(row=2, column=0)
+        self.CameraX_OSTOP = Canvas(self.CameraUpperFrame, bg=self.ENDSwitchColors[self.controller.get_endswitch_lower_camera_x()], width=20, height=10); self.CameraX_OSTOP.grid(row=2, column=0)
         self.CameraButtonFrame = Frame(self.CameraUpperFrame, width=100, height=150); self.CameraButtonFrame.grid(row=1, column=1)
         self.CameraXSpeed = Scale(self.CameraButtonFrame,from_=0, to=100000, resolution=1000, orient=HORIZONTAL, length=140, label="Speed"); self.CameraXSpeed.set(self.controller.get_max_speed_camera_x()); self.CameraXSpeed.grid(row=0, column=0, padx=10, pady=3)
         self.CameraXSpeed.bind("<ButtonRelease-1>", self.new_velocity_camera_x); self.CameraXSpeed.set(self.controller.get_max_speed_camera_x())
@@ -249,7 +267,7 @@ class GUI:
         self.rightLabel2 = Label(self.CameraLowerFrame, text="Camera Z"); self.rightLabel2.grid(row=0, column=0, padx=10, pady=3)
         self.CameraZDisplay = Canvas(self.CameraLowerFrame, width=20,height=20)
         self.CameraZDisplay.grid(row=0, column=1, padx=3, pady=3)
-        self.CameraZPositionLabel = Label(self.CameraLowerFrame, fg=self.LEDColors[1], bg="black", font=("Helvetica 15 bold"), text=str(self.controller.get_position_camera_z()))
+        self.CameraZPositionLabel = Label(self.CameraLowerFrame, fg=self.LEDColors[1], bg="black", font=("Helvetica 15 bold"), text=str(self.controller.get_position_camera_z()), width=7)
         self.CameraZPositionLabel.grid(row=0, column=2, padx=10, pady=3)
         self.CameraZSetButton = Button(self.CameraLowerFrame, text="Set", width=2, command=self.set_camera_z); self.CameraZSetButton.grid(row=0,column=3)
         self.CameraZRefsearch = Button(self.CameraLowerFrame, text="Ref", width=2, command=self.refsearch_camera_z); self.CameraZRefsearch.grid(row=0, column=4)
@@ -293,9 +311,6 @@ class GUI:
         self.CHb_Label_rate = Label(self.RateFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 15 bold"), width=7);   self.CHb_Label_rate.grid(row=4, column=4, padx=3, pady=3)
         self.rateClientButton = Button(self.RateFrame, text="Connect", bg="#cdcfd1", command=self.startStopClient, width=8); self.rateClientButton.grid(row=4,column=5, padx=3, pady=3)
 
-        #optimziation content
-        self.optimizationButton = Button(self.OptFrame, text="Start Rate\nAnalyzer", bg="#cdcfd1", command=self.optimize, width=10); self.optimizationButton.grid(row=4,column=5, padx=3, pady=3)
-        
         #Halogen Power supply content
         self.psupp_connectButton = Button(self.psuppFrame, text="Connect\nHalogen", command=self.psupp_connect); self.psupp_connectButton.grid(row=0,column=0)
         self.psupp_onoffButton = Button(self.psuppFrame, command=self.psupp_onoff, state="disabled", text="On/Off"); self.psupp_onoffButton.grid(row=0,column=1)
@@ -303,23 +318,15 @@ class GUI:
         self.voltageScale.bind("<ButtonRelease-1>", self.set_step_from_scale)
         self.voltageScale.grid(row=0,column=2)
         
-        
-        
-        
         # Displays with LEDs
         self.MirrorHeightLED = self.MirrorHeightDisplay.create_oval(1,1,19,19, fill=self.LEDColors[0], width=0)
-        self.MirrorZLED = self.MirrorZDisplay.create_oval(1,1,19,19, fill=self.LEDColors[0], width=0)
-            
+        self.MirrorZLED = self.MirrorZDisplay.create_oval(1,1,19,19, fill=self.LEDColors[0], width=0) 
         self.MirrorPhiLED = self.MirrorPhiDisplay.create_oval(1,1,19,19, fill=self.LEDColors[0], width=0)
         self.MirrorPsiLED = self.MirrorPsiDisplay.create_oval(1,1,19,19, fill=self.LEDColors[0], width=0)
-
         self.CameraXLED = self.CameraXDisplay.create_oval(1,1,19,19, fill=self.LEDColors[0], width=0)
         self.CameraZLED = self.CameraZDisplay.create_oval(1,1,19,19, fill=self.LEDColors[0], width=0)
 
-        #ServoLED = ServoDisplay.create_oval(1,1,19,19, fill=LEDColors[0], width=0)
-        
-        #ButtonFrame
-        self.buttonFrame = Frame(self.master, width=30, height = 400, bg="#003366"); self.buttonFrame.grid(row=1, column=1, padx=10,pady=3)
+        #Button-Content
         self.img=PhotoImage(file="stepper_items/ecap_blue.png")
         self.ecap = Label(self.buttonFrame, image=self.img, bg="#003366"); self.ecap.grid(row=0,column=0)
         self.titlelabel= Label(self.buttonFrame, text="II Motor Control", font="Helvetica 18 bold", fg="white", bg="#003366"); self.titlelabel.grid(row=1, column=0)
@@ -328,14 +335,20 @@ class GUI:
         self.globFrame = Frame(self.buttonFrame, bg="#003366"); self.globFrame.grid(row=10,column=0)
         self.AllRefsearch = Button(self.globFrame, text="Ref All", bg="#A9A9A9", width=6, command=self.refsearch_all); self.AllRefsearch.grid(row=0, column=0, padx=1, pady=3)
         self.B15 = Button(self.globFrame, text="Set All", bg="#A9A9A9", width=6, command=self.set_all); self.B15.grid(row=0, column=1, padx=1, pady=3)
-        self.SavePositions = Button(self.buttonFrame, text="Save current positions", bg="#A9A9A9", width=17, command=self.controller.save_this_position); self.SavePositions.grid(row=11, column=0, padx=10, pady=3)
-        self.GoSavedPositions = Button(self.buttonFrame, text="Go to saved position", bg = "#A9A9A9", width=17, command=self.go_to_saved_position); self.GoSavedPositions.grid(row=12, column=0, padx=10, pady=3)
-        self.exit_button = Button(self.buttonFrame, text="Save Positions and exit", bg="#A9A9A9", width=17, command=self.exitGUI); self.exit_button.grid(row=13, column=0, padx=10, pady=3)
+        self.optimizationButton = Button(self.buttonFrame, text="Start Rate Analyzer", bg="#A9A9A9", command=self.optimize, width=17); self.optimizationButton.grid(row=11,column=0, padx=1, pady=3)
+        self.SavePositions = Button(self.buttonFrame, text="Save current positions", bg="#A9A9A9", width=17, command=self.controller.save_this_position); self.SavePositions.grid(row=12, column=0, padx=10, pady=3)
+        self.GoSavedPositions = Button(self.buttonFrame, text="Go to saved position", bg = "#A9A9A9", width=17, command=self.go_to_saved_position); self.GoSavedPositions.grid(row=13, column=0, padx=10, pady=3)
+        self.exit_button = Button(self.buttonFrame, text="Save Positions and exit", bg="#A9A9A9", width=17, command=self.exitGUI); self.exit_button.grid(row=14, column=0, padx=10, pady=3)
+        
+        #Geometry content
+        self.desc_Label_pathlength = Label(self.GeometryFrame, text="Estimated Pathlength Difference [mm]"); self.desc_Label_pathlength.grid(row=0, column=0, padx=5)
+        self.Label_pathlength = Label(self.GeometryFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 15 bold"), width=7);   self.Label_pathlength.grid(row=0, column=1, padx=3, pady=3)
+        self.desc_Label_angle = Label(self.GeometryFrame, text="Estimated Angle of Incidence [degree]"); self.desc_Label_angle.grid(row=1, column=0, padx=5)
+        self.Label_angle = Label(self.GeometryFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 15 bold"), width=7);   self.Label_angle.grid(row=1, column=1, padx=3, pady=3)
+        
 
 
-
-
-        #Hübsche Farben
+        #Pretty Colors
         MirrorTColor = "#b3daff"
         self.MirrorTFrame.config(background = MirrorTColor)
         self.MirrorTHeadFrame.config(background = MirrorTColor)
@@ -401,6 +414,11 @@ class GUI:
         self.desc_Label_rate.config(background = RateColor)
         self.desc_Label_rate_A.config(background = RateColor)
         self.desc_Label_rate_B.config(background = RateColor)
+        
+        GeometryColor = RateColor
+        self.GeometryFrame.config(background = GeometryColor)
+        self.desc_Label_angle.config(background = GeometryColor)
+        self.desc_Label_pathlength.config(background = GeometryColor)
 
         ServoColor = "cornsilk"
         self.ServoFrame.config(bg=ServoColor)
@@ -581,7 +599,7 @@ class GUI:
         print("Searching for camera x-position 0mm")
         self.WarningStatus[1]=0
         self.controller.refsearch_camera_x()
-        self.CameraX.set(0)  
+        self.CameraX.set(-140)  
     def refsearch_mirror_z(self):
         print("Searching for mirror z position 0mm")
         self.WarningStatus[2]=0
@@ -796,8 +814,8 @@ class GUI:
         self.MirrorPhi_RSTOP.config(bg=self.ENDSwitchColors[self.controller.get_endswitch_upper_mirror_phi()])
         self.CameraXPositionLabel.config(text="{0:4.1f}".format(self.controller.get_position_camera_x()))
         self.CameraXDisplay.itemconfig(self.CameraXLED, fill=self.LEDColors[self.controller.get_camera_x_moving()+self.WarningStatus[1]])
-        self.CameraX_OSTOP.config(bg=self.ENDSwitchColors[self.controller.get_endswitch_upper_camera_x()])
-        self.CameraX_USTOP.config(bg=self.ENDSwitchColors[self.controller.get_endswitch_lower_camera_x()]) 
+        self.CameraX_OSTOP.config(bg=self.ENDSwitchColors[self.controller.get_endswitch_lower_camera_x()])
+        self.CameraX_USTOP.config(bg=self.ENDSwitchColors[self.controller.get_endswitch_upper_camera_x()]) 
         self.CameraZPositionLabel.config(text="{0:4.1f}".format(self.controller.get_position_camera_z()))
         self.CameraZDisplay.itemconfig(self.CameraZLED, fill=self.LEDColors[self.controller.get_camera_z_moving()+self.WarningStatus[0]])
         self.CameraZ_LSTOP.config(bg=self.ENDSwitchColors[self.controller.get_endswitch_lower_camera_z()])
