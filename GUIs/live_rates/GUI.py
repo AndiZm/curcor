@@ -81,7 +81,6 @@ def placeRateLineB(rate):
 rmaxaText = rateACanvas.create_text(r_width/2,0.2*r_height, fill="white", text="--")
 rmaxbText = rateBCanvas.create_text(r_width/2,0.2*r_height, fill="white", text="--")
 
-
 rootMainFrame = Frame(root); rootMainFrame.grid(row=0,column=2)
 
 ################
@@ -325,17 +324,22 @@ gl.remoteMeasButton = Button(measurementFrame, text="R", state="disabled", comma
 # Display Frame #
 displayFrame = Frame(leftFrame); displayFrame.grid(row=7,column=0)
 wf_fig = Figure(figsize=(5,5))
-wf_a = []
-wf_b = []
-wf_sub = wf_fig.add_subplot(111)
-wf_sub.grid()
-gl.wf_a_line, = wf_sub.plot(wf_a)
-gl.wf_b_line, = wf_sub.plot(wf_b)
-wf_sub.set_xlim(0,1000)
-wf_sub.set_ylim(-127,10)
+# Plot waveforms
+wf_a = []; wf_b = []
+wf_sub = wf_fig.add_subplot(211); wf_sub.grid()
+gl.wf_a_line, = wf_sub.plot(wf_a); gl.wf_b_line, = wf_sub.plot(wf_b)
+wf_sub.set_xlim(0,1000); wf_sub.set_ylim(-127,10)
+# Plot rates
+rates_a = []; rates_b = []
+rates_sub = wf_fig.add_subplot(212); rates_sub.grid()
+gl.rates_a_line, = rates_sub.plot(gl.rates_a); gl.rates_b_line, = rates_sub.plot(gl.rates_b)
+rates_sub.set_xlim(-99,0)
 gl.wf_canvas = FigureCanvasTkAgg(wf_fig, master=displayFrame)
 gl.wf_canvas.get_tk_widget().grid(row=0,column=0)
 gl.wf_canvas.draw()
+def update_rate_plot():
+	gl.update_rate_plot()
+	rates_sub.set_ylim( np.min( [np.min(gl.rates_a),np.min(gl.rates_b)] ), np.max( [np.max(gl.rates_a),np.max(gl.rates_b)]) )
 
 ##############
 ## HV FRAME ##
@@ -424,7 +428,6 @@ q2_down50Button = Button(quickChange2Frame, text="-50", font=("Helvetica 7"), wi
 
 # MON Voltage
 vMonLabel = Label(hvMainFrame, text ="V-Mon", width=10); vMonLabel.grid(row=3,column=0)
-
 gl.vMon0Label = Label(hvMainFrame, width=5, text=str(gl.vmon0), bg="black", fg="red"); gl.vMon0Label.grid(row=3,column=2)
 gl.vMon1Label = Label(hvMainFrame, width=4, text=str(gl.vmon1), font=("Helvetica 7"), bg="light grey", fg="red"); gl.vMon1Label.grid(row=3,column=3)
 gl.vMon2Label = Label(hvMainFrame, width=5, text=str(gl.vmon2), bg="black", fg="red"); gl.vMon2Label.grid(row=3,column=4)
@@ -432,11 +435,6 @@ gl.vMon3Label = Label(hvMainFrame, width=4, text=str(gl.vmon3), font=("Helvetica
 
 # MON Current
 iMonLabel = Label(hvMainFrame, text ="I-Mon (mA)", width=10); iMonLabel.grid(row=4,column=0)
-
-#gl.iMon0Label = Label(hvMainFrame, width=5, text="{:.2f}".format(com.get_imon(0)), font=("Helvetica 7"), bg="light grey", fg="red"); gl.iMon0Label.grid(row=4,column=2)
-#gl.iMon1Label = Label(hvMainFrame, width=4, text="{:.2f}".format(com.get_imon(1)), font=("Helvetica 7"), bg="light grey", fg="red"); gl.iMon1Label.grid(row=4,column=3)
-#gl.iMon2Label = Label(hvMainFrame, width=5, text="{:.2f}".format(com.get_imon(2)), font=("Helvetica 7"), bg="light grey", fg="red"); gl.iMon2Label.grid(row=4,column=4)
-#gl.iMon3Label = Label(hvMainFrame, width=4, text="{:.2f}".format(com.get_imon(3)), font=("Helvetica 7"), bg="light grey", fg="red"); gl.iMon3Label.grid(row=4,column=5)
 gl.iMon0Label = Label(hvMainFrame, width=5, text="0", font=("Helvetica 7"), bg="light grey", fg="red"); gl.iMon0Label.grid(row=4,column=2)
 gl.iMon1Label = Label(hvMainFrame, width=4, text="0", font=("Helvetica 7"), bg="light grey", fg="red"); gl.iMon1Label.grid(row=4,column=3)
 gl.iMon2Label = Label(hvMainFrame, width=5, text="0", font=("Helvetica 7"), bg="light grey", fg="red"); gl.iMon2Label.grid(row=4,column=4)
@@ -449,12 +447,15 @@ rootExitFrame=Frame(hvFrame, bg="#003366"); rootExitFrame.grid(row=0,column=0)
 def exit():
 	exitButton.config(state="disabled")
 	gl.mon_thread = False
+	disableElements(hvMainFrame); disableElements(quickChange0Frame); disableElements(quickChange2Frame)
+	gl.scheck = 0; gl.failed_check= 0
 	hvConnectButton.config(state="normal")
+
 	
-hvHeaderLabel = Label(rootExitFrame, text="HV", font=("Helvetica 12 bold"), fg="white", bg="#003366")
-hvConnectButton = Button(rootExitFrame, text="Connect", width=8, bg="#003366", fg="white", command=connect_hv); hvConnectButton.grid(row=0,column=0)
-exitButton = Button(rootExitFrame, text="Close", width=8, command=exit, bg="#003366", fg="white", state="disabled"); exitButton.grid(row=1,column=0)
-gl.frameLabel = Label(rootExitFrame, text=str(gl.scheck)); gl.frameLabel.grid(row=2, column=0)
+hvHeaderLabel = Label(rootExitFrame, text="HV", font=("Helvetica 20 bold"), fg="white", bg="#003366"); hvHeaderLabel.grid(row=0,column=0)
+hvConnectButton = Button(rootExitFrame, text="Connect", width=8, bg="#003366", fg="white", command=connect_hv); hvConnectButton.grid(row=1,column=0)
+exitButton = Button(rootExitFrame, text="Close", width=8, command=exit, bg="#003366", fg="white", state="disabled"); exitButton.grid(row=2,column=0)
+gl.frameLabel = Label(rootExitFrame, text=str(gl.scheck)); gl.frameLabel.grid(row=3, column=0)
 
 ##################
 ## OFFSET FRAME ##
@@ -834,6 +835,8 @@ def calculate_data(mean_a, mean_b):
 	# Rates
 	if gl.calc_rate == True:
 		r_a = 1e-6 * mean_a/(gl.avg_charge_a*binRange)
+		gl.rates_a.pop(0)
+		gl.rates_a.append(r_a)
 		CHa_Label_rate.config(text="{:.1f}".format(r_a))
 		placeRateLineA(r_a)
 	# mV
@@ -852,7 +855,9 @@ def calculate_data(mean_a, mean_b):
 		mean_b = mean_b - gl.off_b
 		# Rates
 		if gl.calc_rate == True:
-			r_b = 1e-6 * mean_b/(gl.avg_charge_b*binRange)	
+			r_b = 1e-6 * mean_b/(gl.avg_charge_b*binRange)
+			gl.rates_b.pop(0)
+			gl.rates_b.append(r_b)
 			CHb_Label_rate.config(text="{:.1f}".format(r_b))
 			placeRateLineB(r_b)
 		# mV	
@@ -872,6 +877,7 @@ def calculate_data(mean_a, mean_b):
 			server_controller.sendRate(r_a)
 		else:
 			server_controller.sendRates(r_a,r_b)
+	update_rate_plot()
 	root.update()
 
 
@@ -884,6 +890,8 @@ def analysis():
 	mean_a_ADC = mean_a_ADC - gl.off_a
 	# Rates
 	r_a = 1e-6 * mean_a_ADC/(gl.avg_charge_a*binRange)
+	gl.rates_a.pop(0)
+	gl.rates_a.append(r_a)
 	CHa_Label_rate.config(text="{:.1f}".format(r_a))
 	placeRateLineA(r_a)
 	# mV
@@ -901,7 +909,9 @@ def analysis():
 		# Waveform mean	
 		mean_b_ADC = mean_b_ADC - gl.off_b
 		# Rates	
-		r_b = 1e-6 * mean_b_ADC/(gl.avg_charge_b*binRange)	
+		r_b = 1e-6 * mean_b_ADC/(gl.avg_charge_b*binRange)
+		gl.rates_b.pop(0)
+		gl.rates_b.append(r_b)	
 		CHb_Label_rate.config(text="{:.1f}".format(r_b))
 		placeRateLineB(r_b)
 		# mV	
@@ -921,6 +931,7 @@ def analysis():
 			server_controller.sendRate(r_a)
 		else:
 			server_controller.sendRates(r_a,r_b)
+	update_rate_plot()
 	root.update()
 def quick_analysis():
 	global stop_thread

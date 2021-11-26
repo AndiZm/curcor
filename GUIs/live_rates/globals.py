@@ -55,20 +55,27 @@ act_start_file = False
 
 # Wafevorm plot data
 wf_canvas = None
-wf_a_line = None
-wf_b_line = None
+wf_a_line = None; wf_b_line = None
 import numpy as np
 def update_waveform(a,b):
-	wf_a_line.set_xdata(np.arange(0,len(a)))
-	wf_a_line.set_ydata(a)
-	wf_b_line.set_xdata(np.arange(0,len(b)))
-	wf_b_line.set_ydata(b)
+	wf_a_line.set_xdata(np.arange(0,len(a))); wf_a_line.set_ydata(a)
+	wf_b_line.set_xdata(np.arange(0,len(b))); wf_b_line.set_ydata(b)
+	wf_canvas.draw()
+rates_a_line = None; rates_b_line = None
+rates_a = []; rates_b = []
+for i in range(0,100):
+	rates_a.append(0); rates_b.append(0)
+def update_rate_plot():
+	rates_a_line.set_xdata(np.arange(-len(rates_a),0)); rates_a_line.set_ydata(rates_a)
+	rates_b_line.set_xdata(np.arange(-len(rates_b),0)); rates_b_line.set_ydata(rates_b)
 	wf_canvas.draw()
 
 copythread = None
 projectName = None
 
+##################
 ### HV globals ###
+##################
 ratio01 = 3.34
 ratio23 = 3.34
 
