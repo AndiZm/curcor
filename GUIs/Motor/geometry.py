@@ -1,3 +1,4 @@
+import numpy as np
 #######################################################################
 #                                                                     #
 #   The definition of the coordinate system as used here is:          #
@@ -39,7 +40,7 @@ offset_center_y=0
 offset_center_z=0
 
 #calculate the position of the center according to the parameters that we inserted before
-center_z=z_len/2=offset_center_z
+center_z=z_len/2+offset_center_z
 center_y=offset_center_y
 center_x=offset_center_x
 
@@ -48,5 +49,12 @@ dish_focal_length=1500 #focal length of the dish. Is the same as the distance be
 dish_diameter=1300 # diamter of the dish
 
 #constants of the setup
-lens_focal_length= #focal length of the lens used in the optics to parralelize the light
-lens_center_offset_y= #height of the lens-center above the lid
+lens_focal_length=100 #focal length of the lens used in the optics to parralelize the light
+lens_center_offset_y=128 #height of the lens-center above the lid
+
+#returns the incidence angle of the central ray with respect to the normal vector of the lens plane (in degrees)
+def getIncidentAngle(phi, psi):
+	#convert angles so that they are given in the right frame of reference and units (radians)
+	psi=np.pi/2-2*(psi/180*np.pi)
+	phi=np.pi/2-2*(phi/180*np.pi)
+	return 90-np.arctan(1/np.sqrt(np.tan(psi)**(-2)+np.tan(phi)**(-2)))/np.pi*180

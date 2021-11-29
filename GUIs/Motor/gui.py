@@ -8,6 +8,7 @@ from serial.serialutil import SerialException
 import time
 from rate_analyzer import *
 import numpy as np
+import geometry as geo
 
 
 import warnings
@@ -821,6 +822,7 @@ class GUI:
         self.CameraZ_LSTOP.config(bg=self.ENDSwitchColors[self.controller.get_endswitch_lower_camera_z()])
         #time.sleep(.05)
         self.CameraZ_RSTOP.config(bg=self.ENDSwitchColors[self.controller.get_endswitch_upper_camera_z()])
+        self.Label_angle.config(text="{0:5.2f}".format(geo.getIncidentAngle(get_position_mirror_phi(), get_position_mirror_psi())))
         #time.sleep(.05)
         if self.client != None:
             try:
