@@ -823,6 +823,18 @@ class GUI:
         #time.sleep(.05)
         self.CameraZ_RSTOP.config(bg=self.ENDSwitchColors[self.controller.get_endswitch_upper_camera_z()])
         self.Label_angle.config(text="{0:5.2f}".format(geo.getIncidentAngle(self.controller.get_position_mirror_phi(), self.controller.get_position_mirror_psi())))
+        mirr_phi=self.controller.get_position_mirror_phi()
+        mirr_psi=self.controller.get_position_mirror_psi()
+        mirr_height=self.controller.get_position_mirror_height()
+        mirr_z=self.controller.get_position_mirror_z()
+        cam_z=self.controller.get_position_camera_z()
+        try:
+                #print(" ")
+                self.Label_pathlength.config(text="{0:5.2f}".format(geo.getPathLengthDelta(mirr_phi, mirr_psi, mirr_height, mirr_z, cam_z, 0)))
+        except IndexError as e:
+                print("index error in the pathlength!")
+                print(e)
+                traceback.print_exc()
         #time.sleep(.05)
         if self.client != None:
             try:
