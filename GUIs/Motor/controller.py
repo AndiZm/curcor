@@ -4,6 +4,8 @@ import motor_switch as ms
 import servo_test as servo
 import powersupp_halogen as psupp
 import numpy as np
+import configparser
+
 
 #this class contains everything that is needed to controll the motorboard
 class CONTROLLER():
@@ -13,9 +15,9 @@ class CONTROLLER():
     
     dist_max_mirr_cam=439 #mm maximum distance between the "left" edge of the mirror sled and the cam sled 
     dist_min_mirr_cam=308.5 #mm minumum distance that has to be kept between the mirror sled and the cam sled
-    offset_camera_x=-125-1.2
+    offset_camera_x=0 # is replaced with value from config during init 
     offset_mirror_height=146 #mm maximum distance between the upper edge of the jack plate and the lid
-    gear_ratio_mirror_height=4.66 # is this actually true?
+    gear_ratio_mirror_height=0 # is replaced with value from config during init 
     #these values were determined by fitting the curve given by ThorLabs for this labjack!
     #mirror_height_A=4.44907206e+00
     #mirror_height_B=-1.53803335e-03
@@ -56,6 +58,31 @@ class CONTROLLER():
         
         self.halogen = psupp.powerSupply()
         #self.halogen.connect()
+        
+        #check if config file exists and load it, otherwise standard parameters are kept
+        motor_pc_no = None
+        this_config = configparser.ConfigParser()
+        this_config.read('../../../this_pc.conf')
+        if "who_am_i" in this_config:
+            if this_config["who_am_i"]["type"]!="motor_pc":
+                print("According to the 'this_pc.config'-file this pc is not meant as a motor pc! Please fix that!")
+                exit()
+            motor_pc_no = int(this_config["who_am_i"]["no"])
+            print("Motor PC no is {}".format(motor_pc_no))
+        else:
+            print("There is no config file on this computer which specifies the computer function! Please fix that!")
+            exit()
+        global_config = configparser.ConfigParser()
+        global_config.read('../global.conf')
+        if "rate_transmission" in global_config:
+            if motor_pc_no==1 or motor_pc_no==2:
+                self.gear_ratio_mirror_height=float(global_config["motor_pc_{}".format(motor_pc_no)]["gear_ratio"])
+                self.offset_camera_x=float(global_config["motor_pc_{}".format(motor_pc_no)]["offset_camera_x"])
+            else:
+                print("Error in the 'this_pc.config'-file. The number of the Motor PC is neither 1 nor 2. Please correct!")
+                exit()
+            
+        print("Initalized controller with gear ratio {}".format(self.gear_ratio_mirror_height))
         
     #maximum current of the motors
     # Current regulation
@@ -136,6 +163,8 @@ class CONTROLLER():
     
     #set methods for all kinds of parameters
     def set_driving_speed(self, motor,speed):
+        if motor==3:
+            speed=speed*self.gear_ratio_mirror_height/4.66
         motor.axis.max_positioning_speed=int(speed)
         motor.set_axis_parameter(194, 300)
     

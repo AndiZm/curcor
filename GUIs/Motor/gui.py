@@ -171,7 +171,7 @@ class GUI:
         self.MirrorHeightSpeed.bind("<ButtonRelease-1>", self.new_velocity_mirror_height); self.MirrorHeightSpeed.set(controller.get_max_speed_mirror_height())
         self.MirrorHeightAcc = Scale(self.MirrorTButtonFrame,from_=0, to=20000, resolution=200, orient=HORIZONTAL, length=140, label="Acceleration"); self.MirrorHeightAcc.set(self.controller.get_max_acc_mirror_height());self.MirrorHeightAcc.grid(row=1, column=0, padx=10, pady=3)
         self.MirrorHeightAcc.bind("<ButtonRelease-1>", self.new_acceleration_mirror_height); self.MirrorHeightAcc.set(self.controller.get_max_acc_mirror_height())
-        self.MirrorHeightCurrent = Scale(self.MirrorTButtonFrame,from_=0.06, to=1.92, resolution=0.06, orient=HORIZONTAL, length=140, label="Max I"); self.MirrorHeightCurrent.set(self.controller.get_max_current_mirror_height());self.MirrorHeightCurrent.grid(row=2, column=0, padx=10, pady=3)
+        self.MirrorHeightCurrent = Scale(self.MirrorTButtonFrame,from_=0.06, to=1.5, resolution=0.06, orient=HORIZONTAL, length=140, label="Max I"); self.MirrorHeightCurrent.set(self.controller.get_max_current_mirror_height());self.MirrorHeightCurrent.grid(row=2, column=0, padx=10, pady=3)
         self.MirrorHeightCurrent.bind("<ButtonRelease-1>", self.new_current_mirror_height); self.MirrorHeightCurrent.set(controller.get_max_current_mirror_height())
         self.CenterMirrorPos = Button(self.MirrorTButtonFrame, text="Center Mirror Pos", bg="#C0C0C0", width=16, command=self.center_mirror_pos); self.CenterMirrorPos.grid(row=3, column=0)
         self.MirrorZSpeed = Scale(self.MirrorTButtonFrame,from_=0, to=100000, resolution=1000, orient=HORIZONTAL, length=140, label="Speed");  self.MirrorZSpeed.set(controller.get_max_speed_mirror_z()); self.MirrorZSpeed.grid(row=4, column=0, padx=10, pady=3)
@@ -275,7 +275,7 @@ class GUI:
 
         self.CameraBottomFrame = Frame(self.CameraFrame, width=200, height=60); self.CameraBottomFrame.grid(row=3, column=2)
         self.CameraZ_LSTOP = Canvas(self.CameraBottomFrame, bg=self.ENDSwitchColors[self.controller.get_endswitch_lower_camera_z()], width=10, height=20); self.CameraZ_LSTOP.grid(row=0, column=0)
-        self.CameraZ = Scale(self.CameraBottomFrame, from_= 0, to=439-308, resolution=0.1, orient=HORIZONTAL, length=250); self.CameraZ.set(self.controller.get_position_camera_z()); self.CameraZ.grid(row=0, column=1, padx=10, pady=3)
+        self.CameraZ = Scale(self.CameraBottomFrame, from_= 0, to=131.9, resolution=0.1, orient=HORIZONTAL, length=250); self.CameraZ.set(self.controller.get_position_camera_z()); self.CameraZ.grid(row=0, column=1, padx=10, pady=3)
         self.CameraZ.bind("<ButtonRelease-1>", self.moveto_camera_z); self.CameraZ.set(lastpositions[0])
         self.CameraZ_RSTOP = Canvas(self.CameraBottomFrame, bg=self.ENDSwitchColors[self.controller.get_endswitch_upper_camera_z()], width=10, height=20); self.CameraZ_RSTOP.grid(row=0, column=2)
 
@@ -830,7 +830,8 @@ class GUI:
         cam_z=self.controller.get_position_camera_z()
         try:
                 #print(" ")
-                self.Label_pathlength.config(text="{0:5.2f}".format(geo.getPathLengthDelta(mirr_phi, mirr_psi, mirr_height, mirr_z, cam_z, 0)))
+                #self.Label_pathlength.config(text="{0:5.2f}".format(geo.getPathLengthDelta(mirr_phi, mirr_psi, mirr_height, mirr_z, cam_z, 0)))
+                a=0
         except IndexError as e:
                 print("index error in the pathlength!")
                 print(e)
