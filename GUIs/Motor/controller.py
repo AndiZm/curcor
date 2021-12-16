@@ -127,7 +127,7 @@ class CONTROLLER():
     def mm_absolute_to_steps_mirror_z(self, mm):
         return self.mm_to_steps(self.dist_max_mirr_cam-mm)
     def mm_absolute_to_steps_camera_x(self, mm):
-        return self.mm_to_steps(mm-self.offset_camera_x)
+        return self.mm_to_steps(-mm-self.offset_camera_x)
     def mm_absolute_to_steps_mirror_height(self, mm):
         #the function used here is made up due to geometric ideas of the Labjack
         #print("--------------------------")
@@ -144,7 +144,7 @@ class CONTROLLER():
     def steps_to_mm_absolute_mirror_z(self, steps):
         return self.dist_max_mirr_cam-self.steps_to_mm(steps)
     def steps_to_mm_absolute_camera_x(self, steps):
-        return self.steps_to_mm(steps)+self.offset_camera_x#+1000
+        return -(self.steps_to_mm(steps)+self.offset_camera_x)#+1000
     def steps_to_mm_absolute_mirror_height(self, steps):
         turns=steps/(200.*self.microsteps_nano)/self.gear_ratio_mirror_height
         #print("--------------------------")
