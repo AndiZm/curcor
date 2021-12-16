@@ -830,7 +830,7 @@ class GUI:
         cam_z=self.controller.get_position_camera_z()
         try:
                 #print(" ")
-                #self.Label_pathlength.config(text="{0:5.2f}".format(geo.getPathLengthDelta(mirr_phi, mirr_psi, mirr_height, mirr_z, cam_z, 0)))
+                self.Label_pathlength.config(text="{0:5.2f}".format(geo.getPathLengthDelta(mirr_phi, mirr_psi, mirr_height, mirr_z, cam_z, 0)))
                 a=0
         except IndexError as e:
                 print("index error in the pathlength!")

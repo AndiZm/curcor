@@ -26,6 +26,11 @@ import numpy as np
 #            (coordinates x=0, y=0, z=z_len/2)                        #
 #          - all values used here are given in mm                     #
 #                                                                     #
+#          - all calculations here are performed in the               #
+#            frame of reference of the setup. If anything             #
+#            is ever shifted, it is the incoming light,               #
+#            which comes from another FOR                             #
+#                                                                     #
 #                                                                     #
 #######################################################################
 
@@ -45,17 +50,18 @@ center_y=offset_center_y
 center_x=offset_center_x
 
 #constants due to the geometry of the telescope
-dish_focal_length=1500 #focal length of the dish. Is the same as the distance between the lid and a hypothetical mirror in the middle of the dish
-dish_diameter=1300 # diamter of the dish
+dish_focal_length=15000 #focal length of the dish. Is the same as the distance between the lid and a hypothetical mirror in the middle of the dish
+dish_diameter=13000 # diamter of the dish
 
 #constants of the setup
 lens_focal_length=100 #focal length of the lens used in the optics to parralelize the light
 lens_center_offset_y=128 #height of the lens-center above the lid
 #dummy
+lens_center_offset_z=200
 mirror_ball_offset_x=20 #x position of the ball around which the mirror can be rotated
 mirror_ball_offset_y=20 #y position of the ball around which the mirror can be rotated. Relative to the upper edge of the labjack
 mirror_ball_offset_z=20 #z position of the ball around which the mirror can be rotated. Relative to the nominal position of the mirror-sled
-mirror_ball_seperation=80 #length of the vector orthogonal to the plane
+mirror_ball_seperation=60 #length of the vector orthogonal to the plane
 
 
 #returns the incidence angle of the central ray with respect to the normal vector of the lens plane (in degrees)
@@ -64,10 +70,10 @@ def getIncidentAngle(mirror_phi, mirror_psi):
 	psi=np.pi/2-2*(mirror_psi/180*np.pi)
 	phi=np.pi/2-2*(mirror_phi/180*np.pi)
 	return 90-np.arctan(1/np.sqrt(np.tan(psi)**(-2)+np.tan(phi)**(-2)))/np.pi*180
-
+	
 #returns the height at which the central ray hits the mirror
-def get_mirror_incidence_height(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z, debug=True):
-	print("Calculate mirror incidence height for mirr_phi={0}, mirr_psi={1}, mirr_height={2}, mirr_z={3}, cam_z={4}".format(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z))
+def get_mirror_incidence(mirror_phi, mirror_psi, mirror_height, mirror_z, debug=True):
+	print("Calculate mirror incidence height for mirr_phi={0}, mirr_psi={1}, mirr_height={2}, mirr_z={3}".format(mirror_phi, mirror_psi, mirror_height, mirror_z))
 	#calculate at what height above the focal plane (=lid) the mirror is hit by the central ray
 	#Assumptions: The central ray hits the setup perpandicularly on the focal point, as marked in the sketch
 	ball_position=np.array([mirror_ball_offset_x,
@@ -105,48 +111,79 @@ def get_mirror_incidence_height(mirror_phi, mirror_psi, mirror_height, mirror_z,
 	current_length=np.sqrt(cross[0]**2+cross[1]**2+cross[2]**2)
 	factor=mirror_ball_seperation/current_length
 	if debug:
-		print("    Current length".format(current_length))
+		print("    Current length: {0}".format(current_length))
 	point_in_mirror_plane=ball_position+cross*factor #add the ball-point and the orthogonal vector to get the uppoint of the plane
 	if debug:
-		print("    Extended to the ball:  {}".format(point_in_mirror_plane))
+		print("    Position of the tilt ball:  {}".format(point_in_mirror_plane))
 		print("  The full plane can now be written as:")
 		print("      {0} + a * {1} + b * {2}:".format(point_in_mirror_plane, direction_psi, direction_phi))
 		print("  Now find intersection of the plane and a ray comming centrally at the setup:")
 		print("    Solve system of linear equations:")
-	#the plane is now defined by point_in_mirror_plane and the two vectors direction_psi, diection_phi
-	#
-	#	We describe this whole mess as the following set of equations:
-	#	point_in_mirror_plane + lambda * direction_psi + lambda * direction_phi = center + alpha * (0, 1, 0)
-	#
 	#now calculate at which point the central ray and the mirror-plane intersect each other
-	beta=(center_z-point_in_mirror_plane[2]-(center_x)+(point_in_mirror_plane[0]))/(direction_phi[2]-direction_phi[0])
-	lambda_=(center_x-point_in_mirror_plane[0])/direction_psi[0]-(direction_phi[0]/direction_psi[0])*beta
-	if debug:
-		print("    Parameter BETA  : {}".format(beta))
-		print("    Parameter LAMBDA: {}".format(lambda_))
-	#(center_x-beta*direction_phi-point_in_mirror_plane[0])/direction_psi[0]
-	#print(direction_psi[0])
-	if debug:
-		print("    Found height using BETA and LAMBDA  : {}".format(point_in_mirror_plane[1]+lambda_*direction_psi[1]+beta*direction_phi[1]))
-		print("*************************************************************")
-	return point_in_mirror_plane[1]+lambda_*direction_psi[1]+beta*direction_phi[1]
+	plane_point=point_in_mirror_plane
+	plane_dir1=direction_phi
+	plane_dir2=direction_psi
+	ray_point=np.array([center_x,0,center_z])
+	ray_dir=np.array([0,1,0])
+	return ray_penetrates_plane(plane_point, plane_dir1, plane_dir2, ray_point, ray_dir)
+	
+#returns the incidence point on the mirror plane /// STILL needs to be implemented
+def get_lens_indidence(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z):
+	#first get the point at which the central ray hits the mirror
+	mirror_hit=get_mirror_incidence(mirror_phi, mirror_psi, mirror_height, mirror_z)
+	#now calculate the further direction of the central ray
+	
+	#calculate where the ray hits the lens plane
+	place_point=get_lens_absolute
+	lens_hitray_penetrates_plane(plane_point, plane_dir1, plane_dir2, ray_point, ray_dir)
 
-#returns the difference in the pathlenght fri 
-def getPathLengthDelta(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z, shift):
-	#first get the height at which the central ray hits the mirror
-	height=get_mirror_incidence_height(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z)
-	#calculate the distance between the mirror incidence point and the lens plane
-	distance=1 #dummy
+#returns the difference in the pathlenght
+def getPathLengthDelta(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z, shift=0):
+	#get the incidence point on the mirror plane
+	mirror_hit=get_mirror_incidence(mirror_phi, mirror_psi, mirror_height, mirror_z)
+	#get the incidence point on the lens plane
+	lens_hit=get_lens_indidence(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z)
+	#calculate the distance betwee the lens_hit point and the mirror_hit point
+	point_to_point=np.sqrt(np.sum((lens_hit-mirror_hit)**2))
+	pathlength_delta=point_to_point-mirror_hit[1]+shift
 	#return the difference from the originaly choosen pathlength
-	return distance-height-shift
+	return pathlength_delta
 	
+#returns the distance between the point where the calculated central ray hits the mirror plane and the center of the lens as a 2D array for both dimensions /// STILL needs to be implemented
+def get_diff_hit_lens(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z):
+	return np.array([-1, -1])
 	
+#returns the abolute coordinates of the lens-fronts center /// STILL NEEDS TO BE IMPLEMENTED
+def get_lens_center(camera_z, camera_x):
+	return np.array([camera_x,lens_center_offset_y,camera_z+lens_center_offset_z])
 	
-#returns a calculated distance which quantifies the distance between the incident ray hitting the lens plane and the center of the lens
-def ray_dist_from_center(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z, camera_x):
-	return 100. 
+#the following stuff is mainly internal for this package
 	
-	
-	
-	
-	
+#returns the point at which a ray pentrates a plane.
+def ray_penetrates_plane(plane_point, plane_dir1, plane_dir2, ray_point, ray_dir, debug=False):
+	#rename all the stuff to make our equations shorter
+	p=plane_point
+	x=plane_dir1
+	y=plane_dir2
+	q=ray_point
+	z=ray_dir
+	#the equation to solve is now given as p+a*x+b*y=c*z+q
+	#using the first two dimensions of our vectors we can find an equation for a=c*alpha+beta with
+	alpha=(z[0]-(z[1]*y[0])/y[1])/(x[0]-x[1]*y[0]/y[1])
+	beta=(q[0]-p[0]-(q[1]-q[1])/y[1]*y[0])/(x[0]-x[1]*y[0]/y[1])
+	#using the first two dimensions of our vectors we can find also an equation for b=c*gamma+epsilon with
+	gamma=(z[1]-z[0]*x[1]/x[0])/(y[1]-y[0]*x[1]/x[0])
+	epsilon=(q[1]-p[1]-(q[0]-p[0])/x[0]*x[1])/(y[1]-y[0]*x[1]/x[0])
+	#from the third dimension we get an expression for c that can be calculated from the paramenters and alpha, beta, gamma, epsilon
+	c=(p[2]-q[2]+beta*x[2]+epsilon*y[2])/(z[2]-alpha*x[2]-gamma*y[2])
+	#now plugging c into the right hand side of the equation yields
+	point_right=c*z+q
+	#doing the same for our left hand side, we first need to calculate a and b and then plug them into the equation
+	if debug:
+		a=c*alpha+beta
+		b=c*gamma+epsilon
+		point_left=p+a*x+b*y
+		print("Point right = {0}".format(point_right))
+		print("Point left  = {0}".format(point_left))
+	#obviously those two should be about the same
+	return point_right
