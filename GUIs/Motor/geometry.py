@@ -134,7 +134,7 @@ def get_lens_indidence(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z
 	#now calculate the further direction of the central ray
 	
 	#calculate where the ray hits the lens plane
-	place_point=get_lens_absolute
+	place_point=get_lens_center(camera_z, camera_x)
 	lens_hitray_penetrates_plane(plane_point, plane_dir1, plane_dir2, ray_point, ray_dir)
 
 #returns the difference in the pathlenght
