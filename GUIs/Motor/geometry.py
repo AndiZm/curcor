@@ -128,7 +128,7 @@ def get_mirror_incidence(mirror_phi, mirror_psi, mirror_height, mirror_z, debug=
 	return ray_penetrates_plane(plane_point, plane_dir1, plane_dir2, ray_point, ray_dir)
 	
 #returns the incidence point on the mirror plane /// STILL needs to be implemented
-def get_lens_indidence(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z):
+def get_lens_incidence(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z, camera_x):
 	#first get the point at which the central ray hits the mirror
 	mirror_hit=get_mirror_incidence(mirror_phi, mirror_psi, mirror_height, mirror_z)
 	#now calculate the further direction of the central ray
@@ -138,11 +138,11 @@ def get_lens_indidence(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z
 	lens_hitray_penetrates_plane(plane_point, plane_dir1, plane_dir2, ray_point, ray_dir)
 
 #returns the difference in the pathlenght
-def getPathLengthDelta(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z, shift=0):
+def getPathLengthDelta(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z, camera_x, shift=0):
 	#get the incidence point on the mirror plane
 	mirror_hit=get_mirror_incidence(mirror_phi, mirror_psi, mirror_height, mirror_z)
 	#get the incidence point on the lens plane
-	lens_hit=get_lens_indidence(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z)
+	lens_hit=get_lens_incidence(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z, camera_x)
 	#calculate the distance betwee the lens_hit point and the mirror_hit point
 	point_to_point=np.sqrt(np.sum((lens_hit-mirror_hit)**2))
 	pathlength_delta=point_to_point-mirror_hit[1]+shift
