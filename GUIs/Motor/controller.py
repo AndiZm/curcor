@@ -74,14 +74,16 @@ class CONTROLLER():
             exit()
         global_config = configparser.ConfigParser()
         global_config.read('../global.conf')
-        if "rate_transmission" in global_config:
+        if "motor_pc_{}".format(motor_pc_no) in global_config:
             if motor_pc_no==1 or motor_pc_no==2:
                 self.gear_ratio_mirror_height=float(global_config["motor_pc_{}".format(motor_pc_no)]["gear_ratio"])
                 self.offset_camera_x=float(global_config["motor_pc_{}".format(motor_pc_no)]["offset_camera_x"])
             else:
                 print("Error in the 'this_pc.config'-file. The number of the Motor PC is neither 1 nor 2. Please correct!")
                 exit()
-            
+        else:
+            print("Error in the 'this_pc.config'-file. Section the Motor PC is missing!")
+            exit()
         print("Initalized controller with gear ratio {}".format(self.gear_ratio_mirror_height))
         
     #maximum current of the motors

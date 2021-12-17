@@ -1,4 +1,5 @@
 import numpy as np
+import configparser
 #######################################################################
 #                                                                     #
 #   The definition of the coordinate system as used here is:          #
@@ -38,31 +39,57 @@ import numpy as np
 x_len=500
 z_len=640
 
-#offset values of the focal spot in relation to the setup (due to imprecisions in the mounting of the setup)
-#these values are determined experimentally and then inserted here
-offset_center_x=0
-offset_center_y=0
-offset_center_z=0
+#initialization sequence
 
-#calculate the position of the center according to the parameters that we inserted before
-center_z=z_len/2+offset_center_z
-center_y=offset_center_y
-center_x=offset_center_x
+#read all required parameters from the config file
+#check if config file exists and load it, otherwise standard parameters are kept
+motor_pc_no = None
+this_config = configparser.ConfigParser()
+this_config.read('../../../this_pc.conf')
+if "who_am_i" in this_config:
+	if this_config["who_am_i"]["type"]!="motor_pc":
+		print("According to the 'this_pc.config'-file this pc is not meant as a motor pc! Please fix that!")
+		exit()
+	motor_pc_no = int(this_config["who_am_i"]["no"])
+	print("Motor PC no is {}".format(motor_pc_no))
+else:
+	print("There is no config file on this computer which specifies the computer function! Please fix that!")
+	exit()
+global_config = configparser.ConfigParser()
+global_config.read('../global.conf')
+if "motor_pc_{}".format(motor_pc_no) in global_config:
+	if motor_pc_no==1 or motor_pc_no==2:
+		#offset values of the focal spot in relation to the setup (due to imprecisions in the mounting of the setup)
+		#these values are determined experimentally and then inserted here
+		offset_center_x=float(global_config["motor_pc_{}".format(motor_pc_no)]["offset_center_x"])
+		offset_center_y=float(global_config["motor_pc_{}".format(motor_pc_no)]["offset_center_y"])
+		offset_center_z=float(global_config["motor_pc_{}".format(motor_pc_no)]["offset_center_z"])
 
-#constants due to the geometry of the telescope
-dish_focal_length=15000 #focal length of the dish. Is the same as the distance between the lid and a hypothetical mirror in the middle of the dish
-dish_diameter=13000 # diamter of the dish
+		#calculate the position of the center according to the parameters that we inserted before
+		center_z=z_len/2+offset_center_z
+		center_y=offset_center_y
+		center_x=offset_center_x
 
-#constants of the setup
-lens_focal_length=100 #focal length of the lens used in the optics to parralelize the light
-lens_center_offset_y=128 #height of the lens-center above the lid
-#dummy
-lens_center_offset_z=200
-mirror_ball_offset_x=20 #x position of the ball around which the mirror can be rotated
-mirror_ball_offset_y=20 #y position of the ball around which the mirror can be rotated. Relative to the upper edge of the labjack
-mirror_ball_offset_z=20 #z position of the ball around which the mirror can be rotated. Relative to the nominal position of the mirror-sled
-mirror_ball_seperation=60 #length of the vector orthogonal to the plane
+		#constants due to the geometry of the telescope
+		dish_focal_length=15000 #focal length of the dish. Is the same as the distance between the lid and a hypothetical mirror in the middle of the dish
+		dish_diameter=13000 # diamter of the dish
 
+		#constants of the setup
+		lens_focal_length=float(global_config["motor_pc_{}".format(motor_pc_no)]["lens_focal_lenght"]) #focal length of the lens used in the optics to parralelize the light
+		lens_center_offset_y=float(global_config["motor_pc_{}".format(motor_pc_no)]["lens_center_offset_y"]) #height of the lens-center above the lid
+		lens_center_offset_z=float(global_config["motor_pc_{}".format(motor_pc_no)]["lens_center_offset_z"]) #dislpacement of the lens center relative to the middle of its carriage
+		mirror_ball_offset_x=float(global_config["motor_pc_{}".format(motor_pc_no)]["mirror_ball_offset_x"]) #x position of the ball around which the mirror can be rotated
+		mirror_ball_offset_y=float(global_config["motor_pc_{}".format(motor_pc_no)]["mirror_ball_offset_y"]) #y position of the ball around which the mirror can be rotated. Relative to the upper edge of the labjack
+		mirror_ball_offset_z=float(global_config["motor_pc_{}".format(motor_pc_no)]["mirror_ball_offset_z"]) #z position of the ball around which the mirror can be rotated. Relative to the nominal position of the mirror-sled
+		mirror_ball_seperation=float(global_config["motor_pc_{}".format(motor_pc_no)]["mirror_ball_seperation"]) #length of the vector orthogonal to the plane
+	else:
+		print("Error in the 'this_pc.config'-file. The number of the Motor PC is neither 1 nor 2. Please correct!")
+		exit()
+else:
+	print("Error in the 'this_pc.config'-file. Section the Motor PC is missing!")
+	exit()
+print("Initalized geometry for Motor PC / Setup {}".format(motor_pc_no))
+        
 
 #returns the incidence angle of the central ray with respect to the normal vector of the lens plane (in degrees)
 def getIncidentAngle(mirror_phi, mirror_psi):
@@ -134,8 +161,8 @@ def get_lens_incidence(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z
 	#now calculate the further direction of the central ray
 	
 	#calculate where the ray hits the lens plane
-	place_point=get_lens_center(camera_z, camera_x)
-	lens_hitray_penetrates_plane(plane_point, plane_dir1, plane_dir2, ray_point, ray_dir)
+	plane_point=get_lens_center(camera_z, camera_x)
+	#lens_hit=ray_penetrates_plane(plane_point, plane_dir1, plane_dir2, ray_point, ray_dir)
 
 #returns the difference in the pathlenght
 def getPathLengthDelta(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z, camera_x, shift=0):
