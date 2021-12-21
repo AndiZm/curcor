@@ -91,37 +91,21 @@ else:
 print("Initalized geometry for Motor PC / Setup {}".format(motor_pc_no))
         
 
-#returns the incidence angle of the central ray with respect to the normal vector of the lens plane (in degrees)
+
+
+#returns the incidence angle of the central ray with respect to the normal vector of the lens plane (in degrees) //DOES NOT YET CONSIDER THE ACTUAL ANGLE OF THE INCOMING LIGHT
 def getIncidentAngle(mirror_phi, mirror_psi):
 	#convert angles so that they are given in the right frame of reference and units (radians)
 	psi=np.pi/2-2*(mirror_psi/180*np.pi)
 	phi=np.pi/2-2*(mirror_phi/180*np.pi)
 	return 90-np.arctan(1/np.sqrt(np.tan(psi)**(-2)+np.tan(phi)**(-2)))/np.pi*180
 	
-#returns the height at which the central ray hits the mirror
-def get_mirror_incidence(mirror_phi, mirror_psi, mirror_height, mirror_z, debug=True):
+#returns the point at which the central ray hits the mirror
+def get_mirror_incidence_point(mirror_phi, mirror_psi, mirror_height, mirror_z, debug=False):
 	print("Calculate mirror incidence height for mirr_phi={0}, mirr_psi={1}, mirr_height={2}, mirr_z={3}".format(mirror_phi, mirror_psi, mirror_height, mirror_z))
 	#calculate at what height above the focal plane (=lid) the mirror is hit by the central ray
-	#Assumptions: The central ray hits the setup perpandicularly on the focal point, as marked in the sketch
-	ball_position=np.array([mirror_ball_offset_x,
-	mirror_ball_offset_y+mirror_height,
-	mirror_ball_offset_z+mirror_z]) #3D vector which marks the center of the ball
-	#calculate the two vectors that span the mirror plane
-	direction_psi=np.array([0,1,0]) #first define the non-rotated vector in an easier reference frame
-	direction_phi=np.array([1,0,0]) #first define the non-rotated vector in an easier reference frame
-	#now rotate both vectors using a rotation matrix first assume that PSI rotates aroud the x-axis and PHI around the y-axis
-	rotation_psi=np.array( [[1,0,0],
-							[0,np.cos(mirror_psi/180*np.pi),-np.sin(mirror_psi/180*np.pi)],
-							[0,np.sin(mirror_psi/180*np.pi), np.cos(mirror_psi/180*np.pi)]])
-	rotation_phi=np.array( [[np.cos(mirror_phi/180*np.pi),0,np.sin(mirror_phi/180*np.pi)],
-							[0,1,0],
-							[-np.sin(mirror_phi/180*np.pi),0,np.cos(mirror_phi/180*np.pi)]])
-	#rotate the whole plane in the correct reference frame
-	rotation_frame=np.array([[1,0,0],
-							[0,np.cos(np.pi/4),-np.sin(np.pi/4)],
-							[0,np.sin(np.pi/4), np.cos(np.pi/4)]])
-	direction_psi=rotation_frame @ rotation_psi @ direction_psi
-	direction_phi=rotation_frame @ rotation_phi @ direction_phi
+	#Assumptions: The central ray hits the setup perpendicularly on the focal point, as marked in the sketch
+	plane_point, direction_psi, direction_phi = get_mirror_plane(mirror_phi, mirror_psi, mirror_height, mirror_z)
 	if debug:
 		print("*************************************************************")
 		print("Calculation of the mirror incidence height")
@@ -130,16 +114,6 @@ def get_mirror_incidence(mirror_phi, mirror_psi, mirror_height, mirror_z, debug=
 		print("     Vector of direction (plane) PHI:  {}".format(direction_phi))
 	#calculate a point in the plane by extending the ball-point orthogonally towards the mirror plane
 	#calculate cross-product of the span to get a vector which is orthogonal to the plane
-	cross=np.cross(direction_psi, direction_phi)
-	if debug:
-		print("  Calculate normal vector on the plane:")
-		print("    Crossproduct of plane vectors:  {}".format(cross))
-	#extend the calculated vector to the length that lies between ball and plane
-	current_length=np.sqrt(cross[0]**2+cross[1]**2+cross[2]**2)
-	factor=mirror_ball_seperation/current_length
-	if debug:
-		print("    Current length: {0}".format(current_length))
-	point_in_mirror_plane=ball_position+cross*factor #add the ball-point and the orthogonal vector to get the uppoint of the plane
 	if debug:
 		print("    Position of the tilt ball:  {}".format(point_in_mirror_plane))
 		print("  The full plane can now be written as:")
@@ -147,48 +121,51 @@ def get_mirror_incidence(mirror_phi, mirror_psi, mirror_height, mirror_z, debug=
 		print("  Now find intersection of the plane and a ray comming centrally at the setup:")
 		print("    Solve system of linear equations:")
 	#now calculate at which point the central ray and the mirror-plane intersect each other
-	plane_point=point_in_mirror_plane
-	plane_dir1=direction_phi
-	plane_dir2=direction_psi
-	ray_point=np.array([center_x,0,center_z])
-	ray_dir=np.array([0,1,0])
-	return ray_penetrates_plane(plane_point, plane_dir1, plane_dir2, ray_point, ray_dir)
+	plane_point = point_in_mirror_plane
+	plane_dir1 = direction_phi
+	plane_dir2 = direction_psi
+	ray_point, ray_dir = get_incoming_ray()
+	return ray_intersects_plane(plane_point, plane_dir1, plane_dir2, ray_point, ray_dir)
 	
-#returns the incidence point on the mirror plane /// STILL needs to be implemented
-def get_lens_incidence(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z, camera_x):
-	#first get the point at which the central ray hits the mirror
-	mirror_hit=get_mirror_incidence(mirror_phi, mirror_psi, mirror_height, mirror_z)
-	#now calculate the further direction of the central ray
-	
+#returns the incidence point on the mirror plane /// STILL needs to be tested
+def get_lens_incidence_point(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z, camera_x):
+	#get the reflected central ray after the mirror
+	mirror_plane_point, mirror_plane_dir1, mirror_plane_dir1 = get_mirror_plane(mirror_phi, mirror_psi, mirror_height, mirror_z)
+	incoming_ray_point , incoming_ray_dir = get_incoming_ray()
+	refelected_ray_point, reflected_ray_dir = mirror_ray_on_plane(mirror_plane_point, mirror_plane_dir1, mirror_plane_dir2, incoming_ray_point, incoming_ray_dir)
 	#calculate where the ray hits the lens plane
-	lens_hit=ray_penetrates_plane(plane_point, plane_dir1, plane_dir2, ray_point, ray_dir)
-	plane_point=get_lens_center(camera_z, camera_x)
-	#lens_hit=ray_penetrates_plane(plane_point, plane_dir1, plane_dir2, ray_point, ray_dir)
+	lens_plane_point, lens_plane_dir1, lens_plane_dir2 = get_lens_plane(camera_z, camera_x)
+	lens_hit_point = ray_intersects_plane(lens_plane_point, lens_plane_dir1, lens_plane_dir2, refelected_ray_point, refelected_ray_dir)
+	return lens_hit_point
 
-#returns the difference in the pathlenght
+#returns the difference in the pathlenght. It assumes an about perpendcular incoming central ray // STILL needs to be tested
 def getPathLengthDelta(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z, camera_x, shift=0):
-	#get the incidence point on the mirror plane
-	mirror_hit=get_mirror_incidence(mirror_phi, mirror_psi, mirror_height, mirror_z)
+	#get the point where the mirror hits the mirror
+	mirror_incidence_point = get_mirror_incidence_point(mirror_phi, mirror_psi, mirror_height, mirror_z)
 	#get the incidence point on the lens plane
-	lens_hit=get_lens_incidence(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z, camera_x)
+	lens_incidence_point = get_lens_incidence_point(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z, camera_x)
 	#calculate the distance betwee the lens_hit point and the mirror_hit point
-	point_to_point=np.sqrt(np.sum((lens_hit-mirror_hit)**2))
-	pathlength_delta=point_to_point-mirror_hit[1]+shift
+	point_to_point=np.sqrt(np.sum((lens_incidence_point-mirror_incidence_point)**2))
+	pathlength_delta=point_to_point-mirror_incidence_point[1]+shift
 	#return the difference from the originaly choosen pathlength
 	return pathlength_delta
 	
-#returns the distance between the point where the calculated central ray hits the mirror plane and the center of the lens as a 2D array for both dimensions /// STILL needs to be implemented
+#returns the distance between the point where the calculated central ray hits the mirror plane and the center of the lens as a 2D array for both dimensions /// STILL needs to be tested 
 def get_diff_hit_lens(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z):
-	return np.array([-1, -1])
-	
-#returns the abolute coordinates of the lens-fronts center /// STILL NEEDS TO BE IMPLEMENTED
+	#get incidence point of the ray in the mirror plane
+	lens_incidence_point = get_lens_incidence_point(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z, camera_x)
+	center_of_lens = get_lens_center(camera_z, camera_x)
+	return np.sqrt(np.sum((lens_incidence_point-center_of_lens)**2))
+
+#returns the abolute coordinates of the lens-fronts center
 def get_lens_center(camera_z, camera_x):
 	return np.array([camera_x,lens_center_offset_y,camera_z+lens_center_offset_z])
-	
+
+
 #the following stuff is mainly internal for this package
 	
 #returns the point at which a ray pentrates a plane.
-def ray_penetrates_plane(plane_point, plane_dir1, plane_dir2, ray_point, ray_dir, debug=False):
+def ray_intersects_plane(plane_point, plane_dir1, plane_dir2, ray_point, ray_dir, debug=False):
 	#rename all the stuff to make our equations shorter
 	p=plane_point
 	x=plane_dir1
@@ -215,3 +192,66 @@ def ray_penetrates_plane(plane_point, plane_dir1, plane_dir2, ray_point, ray_dir
 		print("Point left  = {0}".format(point_left))
 	#obviously those two should be about the same
 	return point_right
+	
+#returns the ray as it is mirrored by the plane (first point, second direction vector)
+def mirror_ray_on_plane(plane_point, plane_dir1, plane_dir2, ray_point, ray_dir):
+	#find the point of the new ray by using the intersection 
+	new_ray_point = ray_intersects_plane(plane_point, plane_dir1, plane_dir2, ray_point, ray_dir)
+	#calculate the normed normal vector of the plane
+	normal_vec = np.cross(plane_dir1, plane_dir2)
+	normal_vec = normal_vec/np.sqrt(np.sum((normal_vec)**2))
+	#create an auxilary line that is perpendicular to the plane and intersect it with the plane
+	aux_line_vec = normal_vec
+	aux_line_point = ray_point
+	aux_plane_intersection = ray_intersects_plane(plane_point, plane_dir1, plane_dir2, aux_line_point, aux_line_vec)
+	#calculate distance between point of the ray and its projection on the plane
+	distance = point_to_point=np.sqrt(np.sum((aux_plane_intersection-ray_point)**2))
+	#calculate mirror point of the ray point
+	#check the direction of the normal vector
+	multi=2
+	if np.sqrt(np.sum(((ray_point + multi * distance * normal_vec)-aux_plane_intersection)**2))>0.01:
+		multi=-2
+	mirror_point = ray_point + multi * distance * normal_vec
+	new_ray_vector=(mirror_point-new_ray_point)/(np.sqrt(np.sum((mirror_point-new_ray_point)**2)))
+	return (new_ray_point,new_ray_vector)
+	
+#calculates the vector parametrization of the plane from the inserted state of the setup
+def get_mirror_plane(mirror_phi, mirror_psi, mirror_height, mirror_z):
+	ball_position=np.array([mirror_ball_offset_x,
+	mirror_ball_offset_y+mirror_height,
+	mirror_ball_offset_z+mirror_z]) #3D vector which marks the center of the ball
+	#calculate the two vectors that span the mirror plane
+	direction_psi=np.array([0,1,0]) #first define the non-rotated vector in an easier reference frame
+	direction_phi=np.array([1,0,0]) #first define the non-rotated vector in an easier reference frame
+	#now rotate both vectors using a rotation matrix first assume that PSI rotates aroud the x-axis and PHI around the y-axis
+	rotation_psi=np.array( [[1,0,0],
+							[0,np.cos(mirror_psi/180*np.pi),-np.sin(mirror_psi/180*np.pi)],
+							[0,np.sin(mirror_psi/180*np.pi), np.cos(mirror_psi/180*np.pi)]])
+	rotation_phi=np.array( [[np.cos(mirror_phi/180*np.pi),0,np.sin(mirror_phi/180*np.pi)],
+							[0,1,0],
+							[-np.sin(mirror_phi/180*np.pi),0,np.cos(mirror_phi/180*np.pi)]])
+	#rotate the whole plane in the correct reference frame
+	rotation_frame=np.array([[1,0,0],
+							[0,np.cos(np.pi/4),-np.sin(np.pi/4)],
+							[0,np.sin(np.pi/4), np.cos(np.pi/4)]])
+	direction_psi=rotation_frame @ rotation_psi @ direction_psi
+	direction_phi=rotation_frame @ rotation_phi @ direction_phi
+	#calculate the point in the mirror plane using the normal vector, the coordinates of the ball and the planes distance from the ball
+	cross=np.cross(direction_psi, direction_phi)
+	current_length=np.sqrt(cross[0]**2+cross[1]**2+cross[2]**2)
+	factor=mirror_ball_seperation/current_length
+	point_in_mirror_plane=ball_position+cross*factor #add the ball-point and the orthogonal vector to get the uppoint of the plane
+	return point_in_mirror_plane, direction_psi, direction_phi
+	
+#returns a vector parametrization of the incoming ray (point, dir)
+def get_incoming_ray():
+	ray_point=np.array([center_x,0,center_z])
+	ray_dir=np.array([0,1,0])
+	return ray_point, ray_dir
+	
+#returns the plane of the lens (point, dir1, dir2) where "point" is also the center of the lens
+def get_lens_plane(camera_z, camera_x):
+	lens_center=get_lens_center(camera_z, camera_x)
+	dir_1=np.array([1,0,0])
+	dir_2=np.array([0,1,0])
+	return lens_center, dir_1, dir_2
