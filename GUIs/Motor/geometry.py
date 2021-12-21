@@ -102,7 +102,7 @@ def getIncidentAngle(mirror_phi, mirror_psi):
 	
 #returns the point at which the central ray hits the mirror
 def get_mirror_incidence_point(mirror_phi, mirror_psi, mirror_height, mirror_z, debug=False):
-	print("Calculate mirror incidence height for mirr_phi={0}, mirr_psi={1}, mirr_height={2}, mirr_z={3}".format(mirror_phi, mirror_psi, mirror_height, mirror_z))
+	if debug: print("Calculate mirror incidence height for mirr_phi={0}, mirr_psi={1}, mirr_height={2}, mirr_z={3}".format(mirror_phi, mirror_psi, mirror_height, mirror_z))
 	#calculate at what height above the focal plane (=lid) the mirror is hit by the central ray
 	#Assumptions: The central ray hits the setup perpendicularly on the focal point, as marked in the sketch
 	plane_point, direction_psi, direction_phi = get_mirror_plane(mirror_phi, mirror_psi, mirror_height, mirror_z)
@@ -115,39 +115,55 @@ def get_mirror_incidence_point(mirror_phi, mirror_psi, mirror_height, mirror_z, 
 	#calculate a point in the plane by extending the ball-point orthogonally towards the mirror plane
 	#calculate cross-product of the span to get a vector which is orthogonal to the plane
 	if debug:
-		print("    Position of the tilt ball:  {}".format(point_in_mirror_plane))
+		print("    Position of the tilt ball:  {}".format(plane_point))
 		print("  The full plane can now be written as:")
-		print("      {0} + a * {1} + b * {2}:".format(point_in_mirror_plane, direction_psi, direction_phi))
+		print("      {0} + a * {1} + b * {2}:".format(plane_point, direction_psi, direction_phi))
 		print("  Now find intersection of the plane and a ray comming centrally at the setup:")
 		print("    Solve system of linear equations:")
 	#now calculate at which point the central ray and the mirror-plane intersect each other
-	plane_point = point_in_mirror_plane
 	plane_dir1 = direction_phi
 	plane_dir2 = direction_psi
 	ray_point, ray_dir = get_incoming_ray()
 	return ray_intersects_plane(plane_point, plane_dir1, plane_dir2, ray_point, ray_dir)
 	
 #returns the incidence point on the mirror plane /// STILL needs to be tested
-def get_lens_incidence_point(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z, camera_x):
+def get_lens_incidence_point(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z, camera_x, debug=False):
 	#get the reflected central ray after the mirror
-	mirror_plane_point, mirror_plane_dir1, mirror_plane_dir1 = get_mirror_plane(mirror_phi, mirror_psi, mirror_height, mirror_z)
+	debug=True
+	mirror_plane_point, mirror_plane_dir1, mirror_plane_dir2 = get_mirror_plane(mirror_phi, mirror_psi, mirror_height, mirror_z)
+	if debug: print("Mirror plane: Point {}  Dir1 {}  Dir2 {}".format(mirror_plane_point, mirror_plane_dir1, mirror_plane_dir2))
 	incoming_ray_point , incoming_ray_dir = get_incoming_ray()
-	refelected_ray_point, reflected_ray_dir = mirror_ray_on_plane(mirror_plane_point, mirror_plane_dir1, mirror_plane_dir2, incoming_ray_point, incoming_ray_dir)
+	if debug: print("incoming ray: Point {}  Dir {}".format(incoming_ray_point , incoming_ray_dir))
+	reflected_ray_point, reflected_ray_dir = mirror_ray_on_plane(mirror_plane_point, mirror_plane_dir1, mirror_plane_dir2, incoming_ray_point, incoming_ray_dir)
 	#calculate where the ray hits the lens plane
+	if debug: print("Reflected ray: Point {}  Dir {}".format(reflected_ray_point, reflected_ray_dir))
 	lens_plane_point, lens_plane_dir1, lens_plane_dir2 = get_lens_plane(camera_z, camera_x)
-	lens_hit_point = ray_intersects_plane(lens_plane_point, lens_plane_dir1, lens_plane_dir2, refelected_ray_point, refelected_ray_dir)
+	if debug: print("Lens plane: Point {}  Dir1 {}  Dir2 {}".format(lens_plane_point, lens_plane_dir1, lens_plane_dir2))
+	lens_hit_point = ray_intersects_plane(lens_plane_point, lens_plane_dir1, lens_plane_dir2, reflected_ray_point, reflected_ray_dir)
 	return lens_hit_point
 
 #returns the difference in the pathlenght. It assumes an about perpendcular incoming central ray // STILL needs to be tested
-def getPathLengthDelta(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z, camera_x, shift=0):
+def getPathLengthDelta(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z, camera_x, shift=0, debug=False):
 	#get the point where the mirror hits the mirror
-	mirror_incidence_point = get_mirror_incidence_point(mirror_phi, mirror_psi, mirror_height, mirror_z)
+	debug=True
+	if debug: print("***********************************************")
+	debug=False
+	mirror_incidence_point = get_mirror_incidence_point(mirror_phi, mirror_psi, mirror_height, mirror_z, debug)
+	if debug: print("Mirror incidence Point is at: {}".format(mirror_incidence_point))
 	#get the incidence point on the lens plane
-	lens_incidence_point = get_lens_incidence_point(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z, camera_x)
+	lens_incidence_point = get_lens_incidence_point(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z, camera_x, debug)
+	debug=True
+	if debug: print("Lens incidence Point is at: {}".format(lens_incidence_point))
+	debug=False
 	#calculate the distance betwee the lens_hit point and the mirror_hit point
 	point_to_point=np.sqrt(np.sum((lens_incidence_point-mirror_incidence_point)**2))
+	debug=True
+	if debug: print("Distance between incidence points is: {}".format(point_to_point))
+	debug=False
 	pathlength_delta=point_to_point-mirror_incidence_point[1]+shift
 	#return the difference from the originaly choosen pathlength
+	debug=True
+	if debug: print("pathlenght delta is is: {}".format(pathlength_delta))
 	return pathlength_delta
 	
 #returns the distance between the point where the calculated central ray hits the mirror plane and the center of the lens as a 2D array for both dimensions /// STILL needs to be tested 
@@ -172,13 +188,15 @@ def ray_intersects_plane(plane_point, plane_dir1, plane_dir2, ray_point, ray_dir
 	y=plane_dir2
 	q=ray_point
 	z=ray_dir
+	if debug: print("p={} , x={} , y={} , q={} , z={}".format(p, x, y, q, z))
 	#the equation to solve is now given as p+a*x+b*y=c*z+q
 	#using the first two dimensions of our vectors we can find an equation for a=c*alpha+beta with
-	alpha=(z[0]-(z[1]*y[0])/y[1])/(x[0]-x[1]*y[0]/y[1])
-	beta=(q[0]-p[0]-(q[1]-q[1])/y[1]*y[0])/(x[0]-x[1]*y[0]/y[1])
+	alpha=(z[0]*y[1]-(z[1]*y[0]))/(x[0]*y[1]-x[1]*y[0])
+	beta=((q[0]-p[0])*y[1]-(q[1]-q[1])*y[0])/(x[0]*y[1]-x[1]*y[0])
 	#using the first two dimensions of our vectors we can find also an equation for b=c*gamma+epsilon with
-	gamma=(z[1]-z[0]*x[1]/x[0])/(y[1]-y[0]*x[1]/x[0])
-	epsilon=(q[1]-p[1]-(q[0]-p[0])/x[0]*x[1])/(y[1]-y[0]*x[1]/x[0])
+	gamma=(z[1]*x[0]-z[0]*x[1])/(y[1]*x[0]-y[0]*x[1])
+	epsilon=((q[1]-p[1])*x[0]-(q[0]-p[0])*x[1])/(y[1]*x[0]-y[0]*x[1])
+	#if  float('nan') == alpha or float('nan') == beta or float('nan') == gamma or float('nan') == epsilon: print("The ray and the plane seem not to intersect! The return value if most certainly wrong")
 	#from the third dimension we get an expression for c that can be calculated from the paramenters and alpha, beta, gamma, epsilon
 	c=(p[2]-q[2]+beta*x[2]+epsilon*y[2])/(z[2]-alpha*x[2]-gamma*y[2])
 	#now plugging c into the right hand side of the equation yields
@@ -188,22 +206,25 @@ def ray_intersects_plane(plane_point, plane_dir1, plane_dir2, ray_point, ray_dir
 		a=c*alpha+beta
 		b=c*gamma+epsilon
 		point_left=p+a*x+b*y
+		print("Alpha {}  ,Beta {}  , Gamma {}    ,Epsilon {}".format(alpha, beta, gamma, epsilon))
 		print("Point right = {0}".format(point_right))
 		print("Point left  = {0}".format(point_left))
 	#obviously those two should be about the same
 	return point_right
 	
 #returns the ray as it is mirrored by the plane (first point, second direction vector)
-def mirror_ray_on_plane(plane_point, plane_dir1, plane_dir2, ray_point, ray_dir):
+def mirror_ray_on_plane(plane_point, plane_dir1, plane_dir2, ray_point, ray_dir, debug=False):
 	#find the point of the new ray by using the intersection 
-	new_ray_point = ray_intersects_plane(plane_point, plane_dir1, plane_dir2, ray_point, ray_dir)
+	new_ray_point = ray_intersects_plane(plane_point, plane_dir1, plane_dir2, ray_point, ray_dir, debug)
+	if debug: print("Intersection of point and plane: {}".format(new_ray_point))
 	#calculate the normed normal vector of the plane
 	normal_vec = np.cross(plane_dir1, plane_dir2)
 	normal_vec = normal_vec/np.sqrt(np.sum((normal_vec)**2))
+	if debug: print("Normal vec: {}".format(normal_vec))
 	#create an auxilary line that is perpendicular to the plane and intersect it with the plane
 	aux_line_vec = normal_vec
 	aux_line_point = ray_point
-	aux_plane_intersection = ray_intersects_plane(plane_point, plane_dir1, plane_dir2, aux_line_point, aux_line_vec)
+	aux_plane_intersection = ray_intersects_plane(plane_point, plane_dir1, plane_dir2, aux_line_point, aux_line_vec, debug)
 	#calculate distance between point of the ray and its projection on the plane
 	distance = point_to_point=np.sqrt(np.sum((aux_plane_intersection-ray_point)**2))
 	#calculate mirror point of the ray point
