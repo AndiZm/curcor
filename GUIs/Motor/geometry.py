@@ -135,7 +135,7 @@ def get_lens_incidence(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z
 	
 	#calculate where the ray hits the lens plane
 	place_point=get_lens_center(camera_z, camera_x)
-	lens_hitray_penetrates_plane(plane_point, plane_dir1, plane_dir2, ray_point, ray_dir)
+	lens_hit=ray_penetrates_plane(plane_point, plane_dir1, plane_dir2, ray_point, ray_dir)
 
 #returns the difference in the pathlenght
 def getPathLengthDelta(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z, camera_x, shift=0):
