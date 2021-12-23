@@ -805,6 +805,7 @@ ampBEntry = Entry(abFrame, width=5); ampBEntry.grid(row=1, column=2); ampBEntry.
 desc_Label_mean = Label(abFrame, text="Voltage [mV]"); desc_Label_mean.grid(row=2, column=0)
 desc_Label_curr = Label(abFrame, text="PMT current [µA]"); desc_Label_curr.grid(row=3, column=0)
 desc_Label_rate = Label(abFrame, text="Photon rate [MHz]");	desc_Label_rate.grid(row=4, column=0)
+desc_Label_avgrate = Label(abFrame, text="100-Avg rate");	desc_Label_avgrate.grid(row=5, column=0)
 
 CHa_Label_mean = Label(abFrame, text="0.0", fg="orange", bg="black", width=5, font=("Helvetica 10 bold")); CHa_Label_mean.grid(row=2, column=1)
 CHb_Label_mean = Label(abFrame, text="0.0", fg="orange", bg="black", width=5, font=("Helvetica 10 bold")); CHb_Label_mean.grid(row=2, column=2)
@@ -815,6 +816,8 @@ CHb_Label_curr = Label(abFrame, text="0.0", fg="orange", bg="black", width=5, fo
 CHa_Label_rate = Label(abFrame, text="0.0", fg="orange", bg="black", width=5, font=("Helvetica 12 bold"));	CHa_Label_rate.grid(row=4, column=1, padx=3)
 CHb_Label_rate = Label(abFrame, text="0.0", fg="orange", bg="black", width=5, font=("Helvetica 12 bold"));	CHb_Label_rate.grid(row=4, column=2)
 
+CHa_Label_avgrate = Label(abFrame, text="0.0", fg="orange", bg="grey", width=5, font=("Helvetica 10 bold")); CHa_Label_avgrate.grid(row=5, column=1, padx=3)
+CHb_Label_avgrate = Label(abFrame, text="0.0", fg="orange", bg="grey", width=5, font=("Helvetica 10 bold")); CHb_Label_avgrate.grid(row=5, column=2)
 
 #################
 ## START FRAME ##
@@ -838,6 +841,7 @@ def calculate_data(mean_a, mean_b):
 		gl.rates_a.pop(0)
 		gl.rates_a.append(r_a)
 		CHa_Label_rate.config(text="{:.1f}".format(r_a))
+		CHa_Label_avgrate.config(text="{:.0f}".format(np.mean(gl.rates_a)))
 		placeRateLineA(r_a)
 	# mV
 	mean_a_mV = ADC_to_mV(adc=mean_a, range=vRange)
@@ -859,6 +863,7 @@ def calculate_data(mean_a, mean_b):
 			gl.rates_b.pop(0)
 			gl.rates_b.append(r_b)
 			CHb_Label_rate.config(text="{:.1f}".format(r_b))
+			CHb_Label_avgrate.config(text="{:.0f}".format(np.mean(gl.rates_b)))
 			placeRateLineB(r_b)
 		# mV	
 		mean_b_mV = ADC_to_mV(adc=mean_b, range=vRange)	
@@ -893,6 +898,7 @@ def analysis():
 	gl.rates_a.pop(0)
 	gl.rates_a.append(r_a)
 	CHa_Label_rate.config(text="{:.1f}".format(r_a))
+	CHa_Label_avgrate.config(text="{:.0f}".format(np.mean(gl.rates_a)))
 	placeRateLineA(r_a)
 	# mV
 	mean_a_mV = ADC_to_mV(adc=mean_a_ADC, range=vRange)
@@ -913,6 +919,7 @@ def analysis():
 		gl.rates_b.pop(0)
 		gl.rates_b.append(r_b)	
 		CHb_Label_rate.config(text="{:.1f}".format(r_b))
+		CHb_Label_avgrate.config(text="{:.0f}".format(np.mean(gl.rates_b)))
 		placeRateLineB(r_b)
 		# mV	
 		mean_b_mV = ADC_to_mV(adc=mean_b_ADC, range=vRange)	
@@ -1086,6 +1093,7 @@ def analyze_files():
 	global stop_thread, plotting, rates_a, rates_b, wav_a, wav_b
 	if gl.o_nchn == 1:
 		CHb_Label_rate.config(text="-.-")
+		CHb_Label_avgrate.config(text="-.-")
 		CHb_Label_mean.config(text="-.-")
 		CHb_Label_curr.config(text="-.-")
 	if server_controller != None:
@@ -1179,6 +1187,7 @@ def singleFileRate():
 	global stop_thread, running
 	if gl.o_nchn == 1:
 		CHb_Label_rate.config(text="-.-")
+		CHb_Label_avgrate.config(text="-.-")
 		CHb_Label_mean.config(text="-.-")
 		CHb_Label_curr.config(text="-.-")
 	if running == True:
