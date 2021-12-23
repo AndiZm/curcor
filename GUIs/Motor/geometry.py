@@ -210,7 +210,7 @@ def ray_intersects_plane(plane_point, plane_dir1, plane_dir2, ray_point, ray_dir
 		print("Point right = {0}".format(point_right))
 		print("Point left  = {0}".format(point_left))
 	#obviously those two should be about the same
-	return point_right
+	return point_left
 	
 #returns the ray as it is mirrored by the plane (first point, second direction vector)
 def mirror_ray_on_plane(plane_point, plane_dir1, plane_dir2, ray_point, ray_dir, debug=False):
