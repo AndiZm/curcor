@@ -181,7 +181,7 @@ def get_lens_center(camera_z, camera_x):
 #the following stuff is mainly internal for this package
 	
 #returns the point at which a ray pentrates a plane.
-def ray_intersects_plane(plane_point, plane_dir1, plane_dir2, ray_point, ray_dir, debug=False):
+'''def ray_intersects_plane(plane_point, plane_dir1, plane_dir2, ray_point, ray_dir, debug=False):
 	#rename all the stuff to make our equations shorter
 	p=plane_point
 	x=plane_dir1
@@ -190,6 +190,10 @@ def ray_intersects_plane(plane_point, plane_dir1, plane_dir2, ray_point, ray_dir
 	z=ray_dir
 	if debug: print("p={} , x={} , y={} , q={} , z={}".format(p, x, y, q, z))
 	#the equation to solve is now given as p+a*x+b*y=c*z+q
+	#we first need to check, if our mathematical solution to this problem does not divide by 0!
+	if x[0]==0 or y[1]==0 or x[0]*y[1]-x[1]*y[0]==0 :
+		print("We cannot solve this problem, as it yould require us to devide by 0 to calculate alpha, beta, gamma or epsilon!")
+		return	
 	#using the first two dimensions of our vectors we can find an equation for a=c*alpha+beta with
 	alpha=(z[0]*y[1]-(z[1]*y[0]))/(x[0]*y[1]-x[1]*y[0])
 	beta=((q[0]-p[0])*y[1]-(q[1]-q[1])*y[0])/(x[0]*y[1]-x[1]*y[0])
@@ -198,6 +202,10 @@ def ray_intersects_plane(plane_point, plane_dir1, plane_dir2, ray_point, ray_dir
 	epsilon=((q[1]-p[1])*x[0]-(q[0]-p[0])*x[1])/(y[1]*x[0]-y[0]*x[1])
 	#if  float('nan') == alpha or float('nan') == beta or float('nan') == gamma or float('nan') == epsilon: print("The ray and the plane seem not to intersect! The return value if most certainly wrong")
 	#from the third dimension we get an expression for c that can be calculated from the paramenters and alpha, beta, gamma, epsilon
+	#we now need to check fot the next step, that our mathematical solution to this problem does not divide by 0!
+	if z[0]-alpha*x[2]-gamma*y[3]==0:
+		print("We cannot solve this problem, as it yould require us to devide by 0 to calculate our final c!")
+		return	
 	c=(p[2]-q[2]+beta*x[2]+epsilon*y[2])/(z[2]-alpha*x[2]-gamma*y[2])
 	#now plugging c into the right hand side of the equation yields
 	point_right=c*z+q
@@ -210,11 +218,27 @@ def ray_intersects_plane(plane_point, plane_dir1, plane_dir2, ray_point, ray_dir
 		print("Point right = {0}".format(point_right))
 		print("Point left  = {0}".format(point_left))
 	#obviously those two should be about the same
-	return point_left
+	return point_left'''
+
+#try a stolen plane intersection method from stackoverflow
+def ray_intersects_plane(plane_point, plane_dir1, plane_dir2, ray_point, ray_dir, epsilon=1e-6):
+	planeNormal=np.cross(plane_dir1, plane_dir2)
+	if (abs(planeNormal)<np.array([epsilon,epsilon,epsilon])).all():
+		raise RuntimeError("The direction vectors of the plane are parallel")
+	planePoint=plane_point
+	rayPoint=ray_point
+	rayDirection=ray_dir
+	ndotu = planeNormal.dot(rayDirection)
+	if abs(ndotu) < epsilon:
+		raise RuntimeError("no intersection or line is within plane")
+	w = rayPoint - planePoint
+	si = -planeNormal.dot(w) / ndotu
+	Psi = w + si * rayDirection + planePoint
+	return Psi
 	
 #returns the ray as it is mirrored by the plane (first point, second direction vector)
 def mirror_ray_on_plane(plane_point, plane_dir1, plane_dir2, ray_point, ray_dir, debug=False):
-	#find the point of the new ray by using the intersection 
+	#the new ray originates in the intesecion point of the plane and the incoming ray. Calculate this point
 	new_ray_point = ray_intersects_plane(plane_point, plane_dir1, plane_dir2, ray_point, ray_dir, debug)
 	if debug: print("Intersection of point and plane: {}".format(new_ray_point))
 	#calculate the normed normal vector of the plane
@@ -222,7 +246,7 @@ def mirror_ray_on_plane(plane_point, plane_dir1, plane_dir2, ray_point, ray_dir,
 	normal_vec = normal_vec/np.sqrt(np.sum((normal_vec)**2))
 	if debug: print("Normal vec: {}".format(normal_vec))
 	#create an auxilary line that is perpendicular to the plane and intersect it with the plane
-	aux_line_vec = normal_vec
+	'''aux_line_vec = normal_vec
 	aux_line_point = ray_point
 	aux_plane_intersection = ray_intersects_plane(plane_point, plane_dir1, plane_dir2, aux_line_point, aux_line_vec, debug)
 	#calculate distance between point of the ray and its projection on the plane
@@ -234,7 +258,8 @@ def mirror_ray_on_plane(plane_point, plane_dir1, plane_dir2, ray_point, ray_dir,
 		multi=-2
 	mirror_point = ray_point + multi * distance * normal_vec
 	new_ray_vector=(mirror_point-new_ray_point)/(np.sqrt(np.sum((mirror_point-new_ray_point)**2)))
-	return (new_ray_point,new_ray_vector)
+	return (new_ray_point,new_ray_vector)'''
+	return (new_ray_point, ray_dir - 2*ray_dir.dot(normal_vec)*normal_vec)
 	
 #calculates the vector parametrization of the plane from the inserted state of the setup
 def get_mirror_plane(mirror_phi, mirror_psi, mirror_height, mirror_z):
