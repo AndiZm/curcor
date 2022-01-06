@@ -94,7 +94,7 @@ print("Initalized geometry for Motor PC / Setup {}".format(motor_pc_no))
 
 
 #returns the incidence angle of the central ray with respect to the normal vector of the lens plane (in degrees) //DOES NOT YET CONSIDER THE ACTUAL ANGLE OF THE INCOMING LIGHT
-def getIncidentAngle(mirror_phi, mirror_psi):
+def get_incident_angle(mirror_phi, mirror_psi):
 	#convert angles so that they are given in the right frame of reference and units (radians)
 	psi=np.pi/2-2*(mirror_psi/180*np.pi)
 	phi=np.pi/2-2*(mirror_phi/180*np.pi)
@@ -143,7 +143,7 @@ def get_lens_incidence_point(mirror_phi, mirror_psi, mirror_height, mirror_z, ca
 	return lens_hit_point
 
 #returns the difference in the pathlenght. It assumes an about perpendcular incoming central ray // STILL needs to be tested
-def getPathLengthDelta(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z, camera_x, shift=0, debug=False):
+def get_path_length_delta(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z, camera_x, shift=0, debug=False):
 	#get the point where the mirror hits the mirror
 	debug=True
 	if debug: print("***********************************************")

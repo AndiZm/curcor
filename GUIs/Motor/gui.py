@@ -346,6 +346,8 @@ class GUI:
         self.Label_pathlength = Label(self.GeometryFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 15 bold"), width=7);   self.Label_pathlength.grid(row=0, column=1, padx=3, pady=3)
         self.desc_Label_angle = Label(self.GeometryFrame, text="Estimated Angle of Incidence [degree]"); self.desc_Label_angle.grid(row=1, column=0, padx=5)
         self.Label_angle = Label(self.GeometryFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 15 bold"), width=7);   self.Label_angle.grid(row=1, column=1, padx=3, pady=3)
+        self.desc_Label_lens_center = Label(self.GeometryFrame, text="Estimated dist from lens center [mm]"); self.desc_Label_angle.grid(row=2, column=0, padx=5)
+        self.Label_lens_center = Label(self.GeometryFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 15 bold"), width=7);   self.Label_angle.grid(row=2, column=1, padx=3, pady=3)
         
 
 
@@ -420,6 +422,7 @@ class GUI:
         self.GeometryFrame.config(background = GeometryColor)
         self.desc_Label_angle.config(background = GeometryColor)
         self.desc_Label_pathlength.config(background = GeometryColor)
+        self.desc_Label_lens_center.config(background = GeometryColor)
 
         ServoColor = "cornsilk"
         self.ServoFrame.config(bg=ServoColor)
@@ -820,24 +823,20 @@ class GUI:
         self.CameraZPositionLabel.config(text="{0:4.1f}".format(self.controller.get_position_camera_z()))
         self.CameraZDisplay.itemconfig(self.CameraZLED, fill=self.LEDColors[self.controller.get_camera_z_moving()+self.WarningStatus[0]])
         self.CameraZ_LSTOP.config(bg=self.ENDSwitchColors[self.controller.get_endswitch_lower_camera_z()])
-        #time.sleep(.05)
         self.CameraZ_RSTOP.config(bg=self.ENDSwitchColors[self.controller.get_endswitch_upper_camera_z()])
-        self.Label_angle.config(text="{0:5.2f}".format(geo.getIncidentAngle(self.controller.get_position_mirror_phi(), self.controller.get_position_mirror_psi())))
+        
         mirr_phi=self.controller.get_position_mirror_phi()
         mirr_psi=self.controller.get_position_mirror_psi()
         mirr_height=self.controller.get_position_mirror_height()
         mirr_z=self.controller.get_position_mirror_z()
         cam_z=self.controller.get_position_camera_z()
         cam_x=self.controller.get_position_camera_x()
-        try:
-                #print(" ")
-                self.Label_pathlength.config(text="{0:5.2f}".format(geo.getPathLengthDelta(mirr_phi, mirr_psi, mirr_height, mirr_z, cam_z, cam_x)))
-                a=0
-        except IndexError as e:
-                print("index error in the pathlength!")
-                print(e)
-                traceback.print_exc()
-        #time.sleep(.05)
+        
+        self.Label_angle.config(text="{0:5.2f}".format(geo.get_incident_angle(self.controller.get_position_mirror_phi(), self.controller.get_position_mirror_psi())))
+        self.Label_pathlength.config(text="{0:5.2f}".format(geo.get_path_length_delta(mirr_phi, mirr_psi, mirr_height, mirr_z, cam_z, cam_x)))
+        self.Label_lens_center.config(text="{0:5.2f}".format(geo.get_diff_hit_lens(mirr_phi, mirr_psi, mirr_height, mirr_z, cam_z, cam_x)))
+       
+       
         if self.client != None:
             try:
                 self.CHa_Label_rate.config(text="{0:5.1f}".format(self.client.getRateA()), fg="#00ff00")
