@@ -95,7 +95,7 @@ class GUI:
         self.mainFrame.config(background = "#003366")
         self.mainFrame.grid_propagate(0)
         
-        self.belowMainFrame = Frame(self.master, width=width_frame, height=80, bg="#003366")
+        self.belowMainFrame = Frame(self.master, width=width_frame, height=120, bg="#003366")
         self.belowMainFrame.grid(row=2, column=0)
         self.belowMainFrame.grid_propagate(0)
 
@@ -131,7 +131,7 @@ class GUI:
         self.ServoFrame = Frame(self.belowMainFrame, width=200, height=40)
         self.ServoFrame.grid(row=2, column=0, padx=65, pady=3, sticky=W)
 
-        self.GeometryFrame = Frame(self.belowMainFrame, width=100, height=40)
+        self.GeometryFrame = Frame(self.belowMainFrame, width=100, height=60)
         self.GeometryFrame.grid(row=2, column=1, padx=10, pady=3)
         
         self.psuppFrame = Frame(self.belowMainFrame, width=200, height=40)
@@ -346,8 +346,8 @@ class GUI:
         self.Label_pathlength = Label(self.GeometryFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 15 bold"), width=7);   self.Label_pathlength.grid(row=0, column=1, padx=3, pady=3)
         self.desc_Label_angle = Label(self.GeometryFrame, text="Estimated Angle of Incidence [degree]"); self.desc_Label_angle.grid(row=1, column=0, padx=5)
         self.Label_angle = Label(self.GeometryFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 15 bold"), width=7);   self.Label_angle.grid(row=1, column=1, padx=3, pady=3)
-        self.desc_Label_lens_center = Label(self.GeometryFrame, text="Estimated dist from lens center [mm]"); self.desc_Label_angle.grid(row=2, column=0, padx=5)
-        self.Label_lens_center = Label(self.GeometryFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 15 bold"), width=7);   self.Label_angle.grid(row=2, column=1, padx=3, pady=3)
+        self.desc_Label_lens_center = Label(self.GeometryFrame, text="Estimated dist from lens center [mm]"); self.desc_Label_lens_center.grid(row=2, column=0, padx=5)
+        self.Label_lens_center = Label(self.GeometryFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 15 bold"), width=7);   self.Label_lens_center.grid(row=2, column=1, padx=3, pady=3)
         
 
 
@@ -834,7 +834,8 @@ class GUI:
         
         self.Label_angle.config(text="{0:5.2f}".format(geo.get_incident_angle(self.controller.get_position_mirror_phi(), self.controller.get_position_mirror_psi())))
         self.Label_pathlength.config(text="{0:5.2f}".format(geo.get_path_length_delta(mirr_phi, mirr_psi, mirr_height, mirr_z, cam_z, cam_x)))
-        self.Label_lens_center.config(text="{0:5.2f}".format(geo.get_diff_hit_lens(mirr_phi, mirr_psi, mirr_height, mirr_z, cam_z, cam_x)))
+        lens_dist=geo.get_diff_hit_lens(mirr_phi, mirr_psi, mirr_height, mirr_z, cam_z, cam_x)
+        self.Label_lens_center.config(text="{0:5.2f}".format(np.sqrt(lens_dist[0]**2+lens_dist[1]**2)))
        
        
         if self.client != None:

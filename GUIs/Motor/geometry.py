@@ -126,10 +126,9 @@ def get_mirror_incidence_point(mirror_phi, mirror_psi, mirror_height, mirror_z, 
 	ray_point, ray_dir = get_incoming_ray()
 	return ray_intersects_plane(plane_point, plane_dir1, plane_dir2, ray_point, ray_dir)
 	
-#returns the incidence point on the mirror plane /// STILL needs to be tested
+#returns the incidence point on the mirror plane
 def get_lens_incidence_point(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z, camera_x, debug=False):
 	#get the reflected central ray after the mirror
-	debug=True
 	mirror_plane_point, mirror_plane_dir1, mirror_plane_dir2 = get_mirror_plane(mirror_phi, mirror_psi, mirror_height, mirror_z)
 	if debug: print("Mirror plane: Point {}  Dir1 {}  Dir2 {}".format(mirror_plane_point, mirror_plane_dir1, mirror_plane_dir2))
 	incoming_ray_point , incoming_ray_dir = get_incoming_ray()
@@ -142,36 +141,30 @@ def get_lens_incidence_point(mirror_phi, mirror_psi, mirror_height, mirror_z, ca
 	lens_hit_point = ray_intersects_plane(lens_plane_point, lens_plane_dir1, lens_plane_dir2, reflected_ray_point, reflected_ray_dir)
 	return lens_hit_point
 
-#returns the difference in the pathlenght. It assumes an about perpendcular incoming central ray // STILL needs to be tested
+#returns the difference in the pathlenght. It assumes an about perpendcular incoming central ray
 def get_path_length_delta(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z, camera_x, shift=0, debug=False):
 	#get the point where the mirror hits the mirror
-	debug=True
 	if debug: print("***********************************************")
-	debug=False
 	mirror_incidence_point = get_mirror_incidence_point(mirror_phi, mirror_psi, mirror_height, mirror_z, debug)
 	if debug: print("Mirror incidence Point is at: {}".format(mirror_incidence_point))
 	#get the incidence point on the lens plane
 	lens_incidence_point = get_lens_incidence_point(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z, camera_x, debug)
-	debug=True
 	if debug: print("Lens incidence Point is at: {}".format(lens_incidence_point))
-	debug=False
 	#calculate the distance betwee the lens_hit point and the mirror_hit point
 	point_to_point=np.sqrt(np.sum((lens_incidence_point-mirror_incidence_point)**2))
-	debug=True
 	if debug: print("Distance between incidence points is: {}".format(point_to_point))
-	debug=False
 	pathlength_delta=point_to_point-mirror_incidence_point[1]+shift
 	#return the difference from the originaly choosen pathlength
-	debug=True
 	if debug: print("pathlenght delta is is: {}".format(pathlength_delta))
 	return pathlength_delta
 	
-#returns the distance between the point where the calculated central ray hits the mirror plane and the center of the lens as a 2D array for both dimensions /// STILL needs to be tested 
-def get_diff_hit_lens(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z):
+#returns the distance between the point where the calculated central ray hits the mirror plane and the center of the lens as a 2D array for both dimensions
+def get_diff_hit_lens(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z, camera_x):
 	#get incidence point of the ray in the mirror plane
 	lens_incidence_point = get_lens_incidence_point(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z, camera_x)
 	center_of_lens = get_lens_center(camera_z, camera_x)
-	return np.sqrt(np.sum((lens_incidence_point-center_of_lens)**2))
+	return ((lens_incidence_point-center_of_lens)[0], (lens_incidence_point-center_of_lens)[1])
+	#return np.sqrt(np.sum((lens_incidence_point-center_of_lens)**2))
 
 #returns the abolute coordinates of the lens-fronts center
 def get_lens_center(camera_z, camera_x):
