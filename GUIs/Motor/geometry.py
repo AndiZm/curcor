@@ -170,7 +170,11 @@ def get_diff_hit_lens(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z,
 def get_lens_center(camera_z, camera_x):
 	return np.array([camera_x,lens_center_offset_y,camera_z+lens_center_offset_z])
 
-
+#returns the position (mirror height, mirror z, camera z) at which the setup is expected to be in optimal state. If naive is set, the central ray is the naive one
+def get_zero_parameters(naive=True):
+	return (123.5, 366.3, 33.9) #(mirror_height. mirror_z) #this is just a very sketchy dummy!
+	
+	
 #the following stuff is mainly internal for this package
 	
 #returns the point at which a ray pentrates a plane.
