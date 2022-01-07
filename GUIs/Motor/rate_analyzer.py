@@ -114,7 +114,7 @@ class RATE_ANALYZER():
         		self.mode="linear"
         	elif NamenDialog.result == 2:
         		self.mode="angled"
-		    print("Start Rate Analyzer in Measuring mode {0}".format(self.mode))
+			print("Start Rate Analyzer in Measuring mode {0}".format(self.mode))
         #get positions of the controller
         self.controller.setBussy(True)
         sleep(0.1)
