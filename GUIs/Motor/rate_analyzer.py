@@ -109,7 +109,7 @@ class RATE_ANALYZER():
         
         #ask which measurement mode should be used
         mode_dialog = initDialog(master)
-        if NamenDialog.result <> None:
+        if NamenDialog.result != None:
         	if NamenDialog.result == 1:
         		self.mode="linear"
         	else if NamenDialog.result == 2:
