@@ -112,7 +112,7 @@ class RATE_ANALYZER():
         if NamenDialog.result != None:
         	if NamenDialog.result == 1:
         		self.mode="linear"
-        	else if NamenDialog.result == 2:
+        	elif NamenDialog.result == 2:
         		self.mode="angled"
 		    print("Start Rate Analyzer in Measuring mode {0}".format(self.mode))
         #get positions of the controller
