@@ -29,6 +29,9 @@ class RATE_ANALYZER():
     change_mirror_psi=False
     change_mirror_phi=False
     
+    #meauremnt mode
+    mode=None
+    
     #currently loaded distribution
     rates=None
     min_phi=-4.4
@@ -104,6 +107,14 @@ class RATE_ANALYZER():
         self.client=client
         self.master=master
         
+        #ask which measurement mode should be used
+        mode_dialog = initDialog(master)
+        if NamenDialog.result <> None:
+        	if NamenDialog.result == 1:
+        		self.mode="linear"
+        	else if NamenDialog.result == 2:
+        		self.mode="angled"
+		    print("Start Rate Analyzer in Measuring mode {0}".format(self.mode))
         #get positions of the controller
         self.controller.setBussy(True)
         sleep(0.1)
@@ -1016,3 +1027,17 @@ class RATE_ANALYZER():
         print("The batch is done!")
 def gauss2d(datapoints, prefactor=1, x_0=0, x_sigma=1, y_0=0, y_sigma=1, offset=0):
     return offset+prefactor*np.exp(-(np.power(datapoints[0]-x_0, 2)/(2*np.power(x_sigma,2)))-(np.power(datapoints[1]-y_0,2)/(2*np.power(y_sigma,2)))).ravel()
+    
+class initDialog(tkSimpleDialog.Dialog):
+    ## this thing inherits stuff from the SimpleDialog class
+    def body(self, master):  ## wird ueberschrieben
+        self.title('Measurement mode')
+		self.label=Label(root, text="Measurement mode", justify = LEFT, padx = 20).pack()
+		self.linear=Radiobutton(root, text="linear", padx = 20, variable=mode, value=1).pack(anchor=W)
+		self.angeled=Radiobutton(root, text="angled", padx = 20, variable=mode, value=2).pack(anchor=W)
+
+        return self.linear #set focus on the linear option
+
+
+    def apply(self): # override
+        self.result = self.mode
