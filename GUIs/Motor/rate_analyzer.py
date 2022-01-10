@@ -930,362 +930,258 @@ class RATE_ANALYZER():
         
     def crazyBatch(self): #NEED To IMPLEMENT linear MEASUREMENTS
         #this method is used to get a huge batch of data in many different configuarations of the setup.
-        print("Start to do a crazy batch!")
-        self.controller.setBatch(True)
         
-        ########################################################################################
-        #  this method will perform all measurements that are listed in the measurement array  #
-        #  the measurements are to be stored as follows:                                       #
-        #     [0] position_camera_z        // PHI                                              #
-        #     [1] position_camera_x        // PSI                                              #
-        #     [2] position_mirror_z        // offset pathlength                                #
-        #     [3] position_mirror_height   // mirror Z                                         #
-        #     [4] phi_min                  // min X                                            #
-        #     [5] phi_max                  // max X                                            #
-        #     [6] psi_min                  // min Y                                            #
-        #     [7] psi_max                  // max Y                                            #
-        #     [8] spacing_phi              // spacing X                                        #
-        #     [9] spacing_psi              // spacing Y                                        #
-        #  the reuslts are stored in the same way, but additionally contain:                   #
-        #     [10] id / number of measurement                                                  #
-        #     [11] center_phi              // center X                                         #
-        #     [12] center_psi              // center X                                         #
-        #     [13] sigma_phi               // sigma X                                          #
-        #     [14] sigma_psi               // sigma Y                                          #
-        #     [15] prefactor                                                                   #
-        #     [16] offset                                                                      #
-        #     [17] timestamp                                                                   #
-        ########################################################################################
-        
-        path="../../../crazy_batch"
-        try:
-            #print(path)
-            os.mkdir(path, mode=0o777)
-            #print("{0}/rates".format(path))
-            os.mkdir("{0}/rates".format(path), mode=0o777)
-        except:
-            print("Cannot create new directory! Does the directory already exist? Please check and retry!")
-            return
-        measurements=np.zeros(shape=(211,10))
-        #first measurement is the "equilibrium position"
-        measurements[0]=[70, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        #now check "depth" by slowly moving the camera away from the mirror (center pos)
-        measurements[1]=[95, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[2]=[90, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[3]=[85, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[4]=[80, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[5]=[75, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[6]=[70, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[7]=[65, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[8]=[60, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[9]=[55, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[10]=[50, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[11]=[45, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[12]=[40, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[13]=[35, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[14]=[30, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[15]=[25, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[16]=[20, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[17]=[15, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[18]=[10, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[19]=[5, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[20]=[0, 125. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        #now check "depth" by slowly moving the camera away from the mirror (left pos)
-        measurements[21]=[95, 100. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 5, 5]
-        measurements[22]=[90, 100. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 5, 5]
-        measurements[23]=[85, 100. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[24]=[80, 100. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[25]=[75, 100. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[26]=[70, 100. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[27]=[65, 100. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[28]=[60, 100. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[29]=[55, 100. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[30]=[50, 100. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[31]=[45, 100. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[32]=[40, 100. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[33]=[35, 100. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[34]=[30, 100. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[35]=[25, 100. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[36]=[20, 100. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[37]=[15, 100. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[38]=[10, 100. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[39]=[5, 100. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[40]=[0, 100. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        #now check "depth" by slowly moving the camera away from the mirror (right pos)
-        measurements[41]=[95, 150. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 5, 5]
-        measurements[42]=[90, 150. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 5, 5]
-        measurements[43]=[85, 150. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[44]=[80, 150. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[45]=[75, 150. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[46]=[70, 150. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[47]=[65, 150. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[48]=[60, 150. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[49]=[55, 150. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[50]=[50, 150. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[51]=[45, 150. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[52]=[40, 150. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[53]=[35, 150. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[54]=[30, 150. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[55]=[25, 150. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[56]=[20, 150. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[57]=[15, 150. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[58]=[10, 150. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[59]=[5, 150. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[60]=[0, 150. , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        #now check "depth" by slowly moving the camera away from the mirror (upper pos)
-        measurements[61]=[95, 125. , 94.5, 1, -4.4, 4.4, -4.4, 4.4, 5, 5]
-        measurements[62]=[90, 125. , 94.5, 1, -4.4, 4.4, -4.4, 4.4, 5, 5]
-        measurements[63]=[85, 125. , 94.5, 1, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[64]=[80, 125. , 94.5, 1, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[65]=[75, 125. , 94.5, 1, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[66]=[70, 125. , 94.5, 1, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[67]=[65, 125. , 94.5, 1, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[68]=[60, 125. , 94.5, 1, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[69]=[55, 125. , 94.5, 1, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[70]=[50, 125. , 94.5, 1, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[71]=[45, 125. , 94.5, 1, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[72]=[40, 125. , 94.5, 1, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[73]=[35, 125. , 94.5, 1, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[74]=[30, 125. , 94.5, 1, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[75]=[25, 125. , 94.5, 1, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[76]=[20, 125. , 94.5, 1, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[77]=[15, 125. , 94.5, 1, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[78]=[10, 125. , 94.5, 1, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[79]=[5, 125. , 94.5, 1, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[80]=[0, 125. , 94.5, 1, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        #now check "depth" by slowly moving the camera away from the mirror (lower pos)
-        measurements[81]=[95, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 5, 5]
-        measurements[82]=[90, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 5, 5]
-        measurements[83]=[85, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[84]=[80, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[85]=[75, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[86]=[70, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[87]=[65, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[88]=[60, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[89]=[55, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[90]=[50, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[91]=[45, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[92]=[40, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[93]=[35, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[94]=[30, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[95]=[25, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[96]=[20, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[97]=[15, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[98]=[10, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[99]=[5, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[100]=[0, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        #now try to measure the influence of the mirror height
-        measurements[101]=[70, 125. , 94.5, 0, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[102]=[70, 125. , 94.5, 5, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[103]=[70, 125. , 94.5, 10, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[104]=[70, 125. , 94.5, 15, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[105]=[70, 125. , 94.5, 20, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[106]=[70, 125. , 94.5, 25, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[107]=[70, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[108]=[70, 125. , 94.5, 35, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[109]=[70, 125. , 94.5, 40, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        #now try to measure the influence of the mirror position
-        measurements[110]=[70, 125. , 94.5, 0, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[111]=[70, 125. , 90, 0, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[112]=[70, 125. , 85, 0, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[113]=[70, 125. , 80, 0, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[114]=[70, 125. , 70, 0, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[115]=[70, 125. , 60, 0, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[116]=[70, 125. , 50, 0, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[117]=[70, 125. , 40, 0, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[118]=[70, 125. , 94.5, 5, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[119]=[70, 125. , 90, 5, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[120]=[70, 125. , 85, 5, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[121]=[70, 125. , 80, 5, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[122]=[70, 125. , 70, 5, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[123]=[70, 125. , 60, 5, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[124]=[70, 125. , 50, 5, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[125]=[70, 125. , 40, 5, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[126]=[70, 125. , 94.5, 10, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[127]=[70, 125. , 90, 10, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[128]=[70, 125. , 85, 10, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[129]=[70, 125. , 80, 10, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[130]=[70, 125. , 70, 10, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[131]=[70, 125. , 60, 10, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[132]=[70, 125. , 50, 10, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[133]=[70, 125. , 40, 10, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[134]=[70, 125. , 94.5, 15, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[135]=[70, 125. , 90, 15, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[136]=[70, 125. , 85, 15, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[137]=[70, 125. , 80, 15, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[138]=[70, 125. , 70, 15, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[139]=[70, 125. , 60, 15, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[140]=[70, 125. , 50, 15, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[141]=[70, 125. , 40, 15, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[142]=[70, 125. , 94.5, 20, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[143]=[70, 125. , 90, 20, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[144]=[70, 125. , 85, 20, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[145]=[70, 125. , 80, 20, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[146]=[70, 125. , 70, 20, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[147]=[70, 125. , 60, 20, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[148]=[70, 125. , 50, 20, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[149]=[70, 125. , 40, 20, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[150]=[70, 125. , 94.5, 25, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[151]=[70, 125. , 90, 25, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[152]=[70, 125. , 85, 25, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[153]=[70, 125. , 80, 25, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[154]=[70, 125. , 70, 25, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[155]=[70, 125. , 60, 25, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[156]=[70, 125. , 50, 25, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[157]=[70, 125. , 40, 25, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[158]=[70, 125. , 94.5, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[159]=[70, 125. , 90, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[160]=[70, 125. , 85, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[161]=[70, 125. , 80, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[162]=[70, 125. , 70, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[163]=[70, 125. , 60, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[164]=[70, 125. , 50, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[165]=[70, 125. , 40, 30, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[166]=[70, 125. , 94.5, 35, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[167]=[70, 125. , 90, 35, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[168]=[70, 125. , 85, 35, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[169]=[70, 125. , 80, 35, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[170]=[70, 125. , 70, 35, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[171]=[70, 125. , 60, 35, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[172]=[70, 125. , 50, 35, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[173]=[70, 125. , 40, 35, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[174]=[70, 125. , 94.5, 40, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[175]=[70, 125. , 90, 40, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[176]=[70, 125. , 85, 40, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[177]=[70, 125. , 80, 40, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[178]=[70, 125. , 70, 40, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[179]=[70, 125. , 60, 40, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[180]=[70, 125. , 50, 40, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[181]=[70, 125. , 40, 40, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        #try to measure the horizontal shift of the camera
-        measurements[182]=[70, 50 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[183]=[70, 60 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[184]=[70, 65 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[185]=[70, 70 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[186]=[70, 75 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[187]=[70, 80 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[188]=[70, 85 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[189]=[70, 90 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[190]=[70, 95 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[191]=[70, 100 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[192]=[70, 105 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[193]=[70, 110 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[194]=[70, 115 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[195]=[70, 120 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[196]=[70, 125 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[197]=[70, 130 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[198]=[70, 135 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[199]=[70, 140 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[200]=[70, 145 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[201]=[70, 150 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[202]=[70, 155 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[203]=[70, 160 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[204]=[70, 165 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[205]=[70, 170 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[206]=[70, 175 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[207]=[70, 180 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[208]=[70, 185 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[209]=[70, 190 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        measurements[210]=[70, 200 , 94.5, 13.2, -4.4, 4.4, -4.4, 4.4, 25, 25]
-        #measurements=measurements[42:]
-        results=np.zeros(shape=(len(measurements), 18))
-        no=0
-        for m in measurements:
-            self.controller.setBussy(True)
-            print("Next measurement is: Pos_Cam_Z: {0:5.2f} ; Pos_Cam_X: {1:5.2f} ; Pos_mirr_Z: {2:5.2f}  ; Pos_mirr_Height: {3:5.2f} ; phi_min: {4:5.2f} ; phi_max: {5:5.2f} ; psi_min: {6:5.2f} ; psi_max: {7:5.2f} ; spacing_psi: {8:5.2f} ; spacing_phi: {9:5.2f}".format(m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8], m[9]))
-            
-            #move setup in the right position
-            self.camera_z=m[0]
-            self.camera_x=m[1]
-            self.mirror_z=m[2]
-            self.mirror_height=m[3]
-            self.controller.set_position_camera_z(self.camera_z, verbose=True)
-            self.controller.set_position_camera_x(self.camera_x, verbose=True)
-            self.controller.set_position_mirror_z(self.mirror_z, verbose=True)
-            self.controller.set_position_mirror_height(self.mirror_height, verbose=True)
-            
-            #wait till the setup is in the right position
-            moving_all=True
-            try:
-                moving_all=self.controller.get_camera_z_moving() or self.controller.get_camera_x_moving() or self.controller.get_mirror_z_moving() or self.controller.get_mirror_height_moving()
-            except TrinamicException:
-                print("Trinamic Exception while waiting for 4 Dimensions to stop moving")
-            except:
-                print("Not Trinamic Exception but something else while waiting for 4 Dimensions to stop moving")
-            while moving_all:
-                sleep(0.05)
-                try:
-                    moving_all=self.controller.get_camera_z_moving() or self.controller.get_camera_x_moving() or self.controller.get_mirror_z_moving() or self.controller.get_mirror_height_moving()
-                except TrinamicException:
-                    print("Trinamic Exception while waiting for 4 Dimensions to stop moving")
-                except:
-                    print("Not Trinamic Exception but something else while waiting for 4 Dimensions to stop moving")
-            try:
-                self.camera_z=self.controller.get_position_camera_z()
-                self.camera_x=self.controller.get_position_camera_x()
-                self.mirror_z=self.controller.get_position_mirror_z()
-                self.mirror_height=self.controller.get_position_mirror_height()
-            except TrinamicException:
-                try:
-                    self.camera_z=self.controller.get_position_camera_z()
-                    self.camera_x=self.controller.get_position_camera_x()
-                    self.mirror_z=self.controller.get_position_mirror_z()
-                    self.mirror_height=self.controller.get_position_mirror_height()
-                except TrinamicException:
-                    print("Tried twice to get the Positions but failed both times (Trinamic Exception)! Instead take the ones that were initally set!")
-                    self.camera_z=m[0]
-                    self.camera_x=m[1]
-                    self.mirror_z=m[2]
-                    self.mirror_height=m[3]
-                except:
-                    print("Tried twice to get the Positions but failed both times (But notTrinamic Exception)! Instead take the ones that were initally set!")
-                    self.camera_z=m[0]
-                    self.camera_x=m[1]
-                    self.mirror_z=m[2]
-                    self.mirror_height=m[3]
-            except:
-                print("Tried to get the Positions but failed both times (No Trinamic Exception)! Instead take the ones that were initally set!")
-                self.camera_z=m[0]
-                self.camera_x=m[1]
-                self.mirror_z=m[2]
-                self.mirror_height=m[3]
+    
+	    ########################################################################################
+	    #  this method will perform all measurements that are listed in the loaded file        #
+	    #																					   #
+	    #																					   #
+	    #  in ANGELD MODE the measurements are to be stored as follows:                        #
+	    #																					   #
+	    #            ANGLED MODE                 LINEAR Mode                                   #
+		#	     [0] position_camera_z        // PHI                                           #
+		#	     [1] position_camera_x        // PSI                                           #
+		#	     [2] position_mirror_z        // offset pathlength                             #
+		#	     [3] position_mirror_height   // mirror Z                                      #
+		#	     [4] phi_min                  // min X                                         #
+		#	     [5] phi_max                  // max X                                         #
+		#	     [6] psi_min                  // min Y                                         #
+		#	     [7] psi_max                  // max Y                                         #
+		#	     [8] spacing_phi              // spacing X                                     #
+		#	     [9] spacing_psi              // spacing Y                                     #
+		#	  the results are stored in the same way, but additionally contain:                #
+		#	     [10] id / number of measurement                                               #
+		#	     [11] center_phi              // center X                                      #
+		#	     [12] center_psi              // center X                                      #
+		#	     [13] sigma_phi               // sigma X                                       #
+		#	     [14] sigma_psi               // sigma Y                                       #
+		#	     [15] prefactor                                                                #
+		#	     [16] offset                                                                   #
+		#	     [17] timestamp                                                                #
+		#	                                                                                   #
+		#	     The mode of measurement can be differentiated by checking the                 #
+		#	     header of the csv file for the column names                                   #
+		#	                                                                                   #
+	    ########################################################################################
+		    
+        if self.mode=="angled": 
+            file = filedialog.askopenfile(parent=self.window, initialdir = "../../..", title = "Load Rate Distribution", filetypes = (("angled rate files","*.rate"),("all files","*.*")))
+        elif self.mode=="linear":
+            file = filedialog.askopenfile(parent=self.window, initialdir = "../../..", title = "Load Rate Distribution", filetypes = (("linear rate files","*.ratel"),("all files","*.*")))
+        else:
+            raise RuntimeError("The measuring mode needs to be definied correctly!")  
+        if file!=None:
+        	first_line=file.read()
+        	if first_line.contains("position_camera_z"):
+        		file_mode="angled"
+    		elif first_line.contains("PHI")
+    			file_mode="linear"
+			else
+				raise RuntimeException("The loaded .csv file contains an incorrect header! Please check the file formating!")
+			if file_mode is not self.mode:
+				raise RuntimeException("You tried to load a file of the {0} mode type but the current mode is {1}".format(file_mode, self.mode))
+            name=file.name
+            print("Openend file {0}".format(name))
+            runs=genfromtxt(name, delimiter=',', skip_header = 1)
+        	print("Start to do a crazy batch!")
+		    self.controller.setBatch(True)
+		    path="../../../crazy_batch"
+		    try:
+		        #print(path)
+		        os.mkdir(path, mode=0o777)
+		        #print("{0}/rates".format(path))
+		        os.mkdir("{0}/rates".format(path), mode=0o777)
+		    except:
+		        raise RuntimeError("Cannot create new directory! Does the directory already exist? Please check and retry!")
+		    
+		        
+		        
+		    results=np.zeros(shape=(len(measurements), 18))
+		    no=0
+		    if self.mode=="linear":
+				for m in measurements:
+				    self.controller.setBussy(True)
+				    print("Next measurement is: Phi: {0:5.2f} ; Psi: {1:5.2f} ; offset_pathlenght: {2:5.2f}  ; Mirror Z: {3:5.2f} ; x_min: {4:5.2f} ; x_max: {5:5.2f} ; y_min: {6:5.2f} ; y_max: {7:5.2f} ; spacing_x: {8:5.2f} ; spacing_y: {9:5.2f}".format(m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8], m[9]))
+				    
+				    #move setup in the right position
+				    self.phi=m[0]
+				    self.psi=m[1]
+				    self.offset_pathlenght=m[2]
+				    self.mirror_z=m[3]
+				    self.controller.set_position_mirror_phi(self.phi, verbose=True)
+				    self.controller.set_position_mirror_psi(self.psi, verbose=True)
+				    #this here needs TO ACCOUNT FOR THE PATHLENGHT OFFSET (if we change more than just camera z here, we need to rewrite the wait routine!)
+				    self.controller.set_position_(self.mirror_z, verbose=True)
+				    self.controller.set_position_mirror_z(self.mirror_z, verbose=True)
+				    
+				    #wait till the setup is in the right position
+				    moving_all=True
+				    while moving_all:
+				        sleep(0.05)
+				        try:
+				        moving_all=self.controller.get_mirror_phi_moving() or self.controller.get_mirror_psi_moving() or self.controller.get_camera_z_moving() or self.controller.get_mirror_height_moving()
+				        except TrinamicException:
+				            print("Trinamic Exception while waiting for 4 Dimensions to stop moving")
+				        except:
+				            print("Not Trinamic Exception but something else while waiting for 4 Dimensions to stop moving")
+				    try:
+				        self.psi=self.controller.get_position_mirror_psi()
+				        self.phi=self.controller.get_position_mirror_phi()
+				        self.mirror_z=self.controller.get_mirror_z()
+				    except TrinamicException:
+				        try:
+				        self.psi=self.controller.get_position_mirror_psi()
+				        self.phi=self.controller.get_position_mirror_phi()
+				        self.camera_z=self.controller.get_camera_z()
+				        except TrinamicException:
+				            print("Tried twice to get the Positions but failed both times (Trinamic Exception)! Instead take the ones that were initally set!")
+				            self.psi=m[0]
+				            self.phi=m[1]
+				            self.mirror_z=m[2]
+				        except:
+				            print("Tried twice to get the Positions but failed both times (But not Trinamic Exception)! Instead take the ones that were initally set!")
+				            self.psi=m[0]
+				            self.phi=m[1]
+				            self.mirror_z=m[2]
+				    except:
+				        print("Tried to get the Positions but failed both times (No Trinamic Exception)! Instead take the ones that were initally set!")
+				        self.camera_z=m[0]
+				        self.camera_x=m[1]
+				        self.mirror_z=m[2]
+				        self.mirror_height=m[3]
 
-                    
-            #measure the rate distribution
-            #set the sliders to the borders of the rectangle
-            self.box_min_phi.set(m[4])
-            self.box_max_phi.set(m[5])
-            self.box_min_psi.set(m[6])
-            self.box_max_psi.set(m[7])
-            self.box_spacing_phi.set(m[8])
-            self.box_spacing_psi.set(m[9])
-            
-            #record the distribution
-            self.recordRateDistributionRead()
-            self.controller.setBussy(True)
-            #save the rates
-            save_path="{0}/rates/{1:03d}_individual.rate".format(path, no)
-            self.saveRates(save_path)
-            
-            #do the gauss-fit
-            gaussian=self.fitGaussian()
-            
-            #save the parameters of the gaussian to the results array
-            for i in range(0,10,1):
-                results[no][i]=m[i]
-            results[no][10]=no
-            results[no][11]=gaussian[1]
-            results[no][12]=gaussian[3]
-            results[no][13]=gaussian[2]
-            results[no][14]=gaussian[4]
-            results[no][15]=gaussian[0]
-            results[no][16]=gaussian[5]
-            results[no][17]=time.time()
-            np.savetxt("{0}/results.txt".format(path), results, delimiter=',')
-            no+=1
-        self.controller.setBussy(False)
-        self.controller.setBatch(False)
-        print("The batch is done!")
+				            
+				    #measure the rate distribution
+				    #set the sliders to the borders of the rectangle
+				    self.box_min_x.set(m[4])
+				    self.box_max_x.set(m[5])
+				    self.box_min_y.set(m[6])
+				    self.box_max_y.set(m[7])
+				    self.box_spacing_x.set(m[8])
+				    self.box_spacing_y.set(m[9])
+				    
+				    #record the distribution
+				    self.recordRateDistributionRead()
+				    self.controller.setBussy(True)
+				    #save the rates
+				    save_path="{0}/rates/{1:03d}_individual.ratel".format(path, no)
+				    self.saveRates(save_path)
+				    
+				    #do the gauss-fit
+				    gaussian=self.fitGaussian()
+				    
+				    #save the parameters of the gaussian to the results array
+				    for i in range(0,10,1):
+				        results[no][i]=m[i]
+				    results[no][10]=no
+				    results[no][11]=gaussian[1]
+				    results[no][12]=gaussian[3]
+				    results[no][13]=gaussian[2]
+				    results[no][14]=gaussian[4]
+				    results[no][15]=gaussian[0]
+				    results[no][16]=gaussian[5]
+				    results[no][17]=time.time()
+				    np.savetxt("{0}/results.txt".format(path), results, delimiter=',')
+				    no+=1
+			elif self.mode=="angled":
+				for m in measurements:
+				    self.controller.setBussy(True)
+				    print("Next measurement is: Pos_Cam_Z: {0:5.2f} ; Pos_Cam_X: {1:5.2f} ; Pos_mirr_Z: {2:5.2f}  ; Pos_mirr_Height: {3:5.2f} ; phi_min: {4:5.2f} ; phi_max: {5:5.2f} ; psi_min: {6:5.2f} ; psi_max: {7:5.2f} ; spacing_psi: {8:5.2f} ; spacing_phi: {9:5.2f}".format(m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8], m[9]))
+				    
+				    #move setup in the right position
+				    self.camera_z=m[0]
+				    self.camera_x=m[1]
+				    self.mirror_z=m[2]
+				    self.mirror_height=m[3]
+				    self.controller.set_position_camera_z(self.camera_z, verbose=True)
+				    self.controller.set_position_camera_x(self.camera_x, verbose=True)
+				    self.controller.set_position_mirror_z(self.mirror_z, verbose=True)
+				    self.controller.set_position_mirror_height(self.mirror_height, verbose=True)
+				    
+				    #wait till the setup is in the right position
+				    moving_all=True
+				    try:
+				        moving_all=self.controller.get_camera_z_moving() or self.controller.get_camera_x_moving() or self.controller.get_mirror_z_moving() or self.controller.get_mirror_height_moving()
+				    except TrinamicException:
+				        print("Trinamic Exception while waiting for 4 Dimensions to stop moving")
+				    except:
+				        print("Not Trinamic Exception but something else while waiting for 4 Dimensions to stop moving")
+				    while moving_all:
+				        sleep(0.05)
+				        try:
+				            moving_all=self.controller.get_camera_z_moving() or self.controller.get_camera_x_moving() or self.controller.get_mirror_z_moving() or self.controller.get_mirror_height_moving()
+				        except TrinamicException:
+				            print("Trinamic Exception while waiting for 4 Dimensions to stop moving")
+				        except:
+				            print("Not Trinamic Exception but something else while waiting for 4 Dimensions to stop moving")
+				    try:
+				        self.camera_z=self.controller.get_position_camera_z()
+				        self.camera_x=self.controller.get_position_camera_x()
+				        self.mirror_z=self.controller.get_position_mirror_z()
+				        self.mirror_height=self.controller.get_position_mirror_height()
+				    except TrinamicException:
+				        try:
+				            self.camera_z=self.controller.get_position_camera_z()
+				            self.camera_x=self.controller.get_position_camera_x()
+				            self.mirror_z=self.controller.get_position_mirror_z()
+				            self.mirror_height=self.controller.get_position_mirror_height()
+				        except TrinamicException:
+				            print("Tried twice to get the Positions but failed both times (Trinamic Exception)! Instead take the ones that were initally set!")
+				            self.camera_z=m[0]
+				            self.camera_x=m[1]
+				            self.mirror_z=m[2]
+				            self.mirror_height=m[3]
+				        except:
+				            print("Tried twice to get the Positions but failed both times (But notTrinamic Exception)! Instead take the ones that were initally set!")
+				            self.camera_z=m[0]
+				            self.camera_x=m[1]
+				            self.mirror_z=m[2]
+				            self.mirror_height=m[3]
+				    except:
+				        print("Tried to get the Positions but failed both times (No Trinamic Exception)! Instead take the ones that were initally set!")
+				        self.camera_z=m[0]
+				        self.camera_x=m[1]
+				        self.mirror_z=m[2]
+				        self.mirror_height=m[3]
+
+				            
+				    #measure the rate distribution
+				    #set the sliders to the borders of the rectangle
+				    self.box_min_phi.set(m[4])
+				    self.box_max_phi.set(m[5])
+				    self.box_min_psi.set(m[6])
+				    self.box_max_psi.set(m[7])
+				    self.box_spacing_phi.set(m[8])
+				    self.box_spacing_psi.set(m[9])
+				    
+				    #record the distribution
+				    self.recordRateDistributionRead()
+				    self.controller.setBussy(True)
+				    #save the rates
+				    save_path="{0}/rates/{1:03d}_individual.rate".format(path, no)
+				    self.saveRates(save_path)
+				    
+				    #do the gauss-fit
+				    gaussian=self.fitGaussian()
+				    
+				    #save the parameters of the gaussian to the results array
+				    for i in range(0,10,1):
+				        results[no][i]=m[i]
+				    results[no][10]=no
+				    results[no][11]=gaussian[1]
+				    results[no][12]=gaussian[3]
+				    results[no][13]=gaussian[2]
+				    results[no][14]=gaussian[4]
+				    results[no][15]=gaussian[0]
+				    results[no][16]=gaussian[5]
+				    results[no][17]=time.time()
+				    np.savetxt("{0}/results.txt".format(path), results, delimiter=',')
+				    no+=1
+			else:
+				raise RuntimeError("The measuring mode needs to be definied correctly!")
+		    self.controller.setBussy(False)
+		    self.controller.setBatch(False)
+		    print("The batch is done!")
 def gauss2d(datapoints, prefactor=1, x_0=0, x_sigma=1, y_0=0, y_sigma=1, offset=0):
     return offset+prefactor*np.exp(-(np.power(datapoints[0]-x_0, 2)/(2*np.power(x_sigma,2)))-(np.power(datapoints[1]-y_0,2)/(2*np.power(y_sigma,2)))).ravel()
     
