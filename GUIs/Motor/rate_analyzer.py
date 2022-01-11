@@ -985,9 +985,9 @@ class RATE_ANALYZER():
             elif "PHI" in first_line:
                 file_mode="linear"
             else:
-                raise RuntimeException("The loaded .csv file contains an incorrect header! Please check the file formating!")
+                raise RuntimeError("The loaded .csv file contains an incorrect header! Please check the file formating!")
             if file_mode is not self.mode:
-                raise RuntimeException("You tried to load a file of the {0} mode type but the current mode is {1}".format(file_mode, self.mode))
+                raise RuntimeError("You tried to load a file of the {0} mode type but the current mode is {1}".format(file_mode, self.mode))
             name=file.name
             print("Openend file {0}".format(name))
             measurements=np.genfromtxt(name, delimiter=',', skip_header = 1)
@@ -1170,8 +1170,12 @@ class RATE_ANALYZER():
                     self.saveRates(save_path)
                     
                     #do the gauss-fit
-                    gaussian=self.fitGaussian()
-                    
+                    try:
+                        gaussian=self.fitGaussian()
+                    except:
+                        gaussian=np.array(['nan','nan','nan','nan','nan','nan'])
+                        print("No Gaussian could be fitted. No worries. Maybe it works for the next plot..")
+                        
                     #save the parameters of the gaussian to the results array
                     for i in range(0,10,1):
                         results[no][i]=m[i]

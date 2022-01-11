@@ -255,7 +255,7 @@ class GUI:
         self.CameraXAcc.bind("<ButtonRelease-1>", self.new_acceleration_camera_x); self.CameraXAcc.set(self.controller.get_max_acc_camera_x())
         self.CameraXCurrent = Scale(self.CameraButtonFrame,from_=0.06, to=1.44, resolution=0.06, orient=HORIZONTAL, length=140, label="Max I"); self.CameraXCurrent.grid(row=2, column=0, padx=10, pady=3)
         self.CameraXCurrent.bind("<ButtonRelease-1>", self.new_current_camera_x); self.CameraXCurrent.set(self.controller.get_max_current_camera_x())
-        self.CenterCamera = Button(self.CameraButtonFrame, text="Center Camera", bg="#C0C0C0", width=16, command=self.center_camera); self.CenterCamera.grid(row=3, column=0, padx=10, pady=3)
+        self.CenterCamera = Button(self.CameraButtonFrame, text="Center Camera X", bg="#C0C0C0", width=16, command=self.center_camera_X); self.CenterCamera.grid(row=3, column=0, padx=10, pady=3)
         self.CameraZSpeed = Scale(self.CameraButtonFrame,from_=0, to=100000, resolution=1000, orient=HORIZONTAL, length=140, label="Speed"); self.CameraZSpeed.set(self.controller.get_max_speed_camera_z()); self.CameraZSpeed.grid(row=4, column=0, padx=10, pady=3)
         self.CameraZSpeed.bind("<ButtonRelease-1>", self.new_velocity_camera_z); self.CameraZSpeed.set(self.controller.get_max_speed_camera_z())
         self.CameraZAcc = Scale(self.CameraButtonFrame,from_=0, to=20000, resolution=200, orient=HORIZONTAL, length=140, label="Acceleration"); self.CameraZAcc.set(controller.get_max_acc_camera_z()); self.CameraZAcc.grid(row=5, column=0, padx=10, pady=3)
@@ -573,9 +573,10 @@ class GUI:
         self.change_current_camera_z=True
         
     #center each axis
-    def center_camera(self):
+    def center_camera_X(self):
         self.CameraX.set(0)
         self.moveto_camera_x(event=None)
+    def center_camera_Z(self):
         self.CameraZ.set(0)
         self.moveto_camera_z(event=None)    
     def center_mirror_pos(self):
