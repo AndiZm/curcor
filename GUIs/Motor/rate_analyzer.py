@@ -702,11 +702,19 @@ class RATE_ANALYZER():
                 
     def findRectangle(self, contrast_factor=1.5):
         rates=self.rates
-        coordinates_phi=np.linspace(self.min_phi, self.max_phi, num=int(self.spacing_phi))
-        coordinates_psi=np.linspace(self.min_psi, self.max_psi, num=int(self.spacing_psi))
+        if self.mode=="angular":
+            coordinates_phi=np.linspace(self.min_phi, self.max_phi, num=int(self.spacing_phi))
+            coordinates_psi=np.linspace(self.min_psi, self.max_psi, num=int(self.spacing_psi))
+        elif self.mode=="linear":
+            coordinates_phi=np.linspace(self.min_x, self.max_x, num=int(self.spacing_x))
+            coordinates_psi=np.linspace(self.min_y, self.max_y, num=int(self.spacing_y))
+        else:
+            raise RuntimeError("The measuring mode needs to be definied correctly!")  
         x, y=np.meshgrid(coordinates_phi, coordinates_psi)
         max_rate=np.max(rates)
         mask=rates>max_rate/contrast_factor
+        if np.sum(rates)==len(rates)*len(rates[0])*(-2):
+            mask=rates>-3
         print(mask)
         min_x=len(rates)
         max_x=-1
@@ -928,7 +936,7 @@ class RATE_ANALYZER():
         self.resultsOffsetLabel['text']='Offset:     {0:3.2f}'.format(results[5])
         self.resultsPrefactorPhiLabel['text']='Prefactor:  {0:3.2f}'.format(results[0])
         
-    def crazyBatch(self): #NEED To IMPLEMENT linear MEASUREMENTS
+    def crazyBatch(self):
         #this method is used to get a huge batch of data in many different configuarations of the setup.
         
     
@@ -972,9 +980,9 @@ class RATE_ANALYZER():
             raise RuntimeError("The measuring mode needs to be definied correctly!")  
         if file!=None:
             first_line=file.read()
-            if first_line.contains("position_camera_z"):
+            if "position_camera_z" in first_line:
                 file_mode="angled"
-            elif first_line.contains("PHI"):
+            elif "PHI" in first_line:
                 file_mode="linear"
             else:
                 raise RuntimeException("The loaded .csv file contains an incorrect header! Please check the file formating!")
@@ -982,7 +990,7 @@ class RATE_ANALYZER():
                 raise RuntimeException("You tried to load a file of the {0} mode type but the current mode is {1}".format(file_mode, self.mode))
             name=file.name
             print("Openend file {0}".format(name))
-            runs=genfromtxt(name, delimiter=',', skip_header = 1)
+            measurements=np.genfromtxt(name, delimiter=',', skip_header = 1)
             print("Start to do a crazy batch!")
             self.controller.setBatch(True)
             path="../../../crazy_batch"
@@ -1008,8 +1016,6 @@ class RATE_ANALYZER():
                     self.mirror_z=m[3]
                     self.controller.set_position_mirror_phi(self.phi, verbose=True)
                     self.controller.set_position_mirror_psi(self.psi, verbose=True)
-                    #this here needs TO ACCOUNT FOR THE PATHLENGHT OFFSET (if we change more than just camera z here, we need to rewrite the wait routine!)
-                    self.controller.set_position_(self.mirror_z, verbose=True)
                     self.controller.set_position_mirror_z(self.mirror_z, verbose=True)
                     
                     #wait till the setup is in the right position
@@ -1017,7 +1023,7 @@ class RATE_ANALYZER():
                     while moving_all:
                         sleep(0.05)
                         try:
-                            moving_all=self.controller.get_mirror_phi_moving() or self.controller.get_mirror_psi_moving() or self.controller.get_camera_z_moving() or self.controller.get_mirror_height_moving()
+                            moving_all=self.controller.get_mirror_phi_moving() or self.controller.get_mirror_psi_moving() or self.controller.get_mirror_height_moving()
                         except TrinamicException:
                             print("Trinamic Exception while waiting for 4 Dimensions to stop moving")
                         except:
@@ -1066,7 +1072,11 @@ class RATE_ANALYZER():
                     self.saveRates(save_path)
                     
                     #do the gauss-fit
-                    gaussian=self.fitGaussian()
+                    try:
+                        gaussian=self.fitGaussian()
+                    except:
+                        gaussian=np.array(['nan','nan','nan','nan','nan','nan'])
+                        print("No Gaussian could be fitted. No worries. Maybe it works for the next plot..")
                     
                     #save the parameters of the gaussian to the results array
                     for i in range(0,10,1):
