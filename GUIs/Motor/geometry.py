@@ -173,7 +173,16 @@ def get_lens_center(camera_z, camera_x):
 #returns the position (mirror height, mirror z, camera z) at which the setup is expected to be in optimal state. If naive is set, the central ray is the naive one
 def get_zero_parameters(naive=True):
 	return (123.5, 366.3, 33.9) #(mirror_height. mirror_z) #this is just a very sketchy dummy!
-	
+
+def get_camera_z_postion_offset(mirror_phi, mirror_psi, mirror_height, mirror_z, offset_pathlength=0, debug=False):
+	if debug: print("Calculate Cam Z position offset using: mirror_phi={0} ; mirror_psi={1} ; mirror_height={2} ; mirror_z={3} ; offset_pathlenght={4}".format(mirror_phi, mirror_psi, mirror_height, mirror_z, offset_pathlength))
+	point=get_mirror_incidence_point(mirror_phi, mirror_psi, mirror_height, mirror_z, debug)
+	point_height=point[1]
+	point_z=point[2]
+	if debug: print("Intesection between ray and mirror plane (POINT) = {}".format(point))
+	camera_z_pos=point_z-point_height-offset_pathlength-lens_center_offset_z
+	if debug: print("proposed position of cam Z={0}".format(camera_z_pos))
+	return camera_z_pos
 	
 #the following stuff is mainly internal for this package
 	
