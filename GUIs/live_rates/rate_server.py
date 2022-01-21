@@ -35,8 +35,9 @@ class server:
 		this_config.read('../../../this_pc.conf')
 		if "who_am_i" in this_config:
 			cam_pc_no = int(this_config["who_am_i"]["no"])
-			if  this_config["who_am_i"]["type"] != "cam_pc":
+			if  this_config["who_am_i"]["type"] != "cam_pc" and this_config["who_am_i"]["type"] != "time_harp_pc":
 				print("According to the 'this_pc.config'-file this pc is not meant as a camera pc. Please correct the configuarion or start the right GUI!")
+				print (this_config["who_am_i"]["type"])
 				exit()
 		else:
 			print("There is no config file on this computer which specifies the computer function! Please add a 'this_pc.config' file next to the curcor-directory!")
@@ -50,8 +51,11 @@ class server:
 			elif cam_pc_no == 2:
 				self.port=int(global_config["cam_pc_2"]["port_motor"])
 				self.address=global_config["cam_pc_2"]["address"]
+			elif cam_pc_no == 3:
+				self.port=int(global_config["time_harp_pc"]["port_motor"])
+				self.address=global_config["time_harp_pc"]["address"]
 			else:
-				print("Error in the 'this_pc.config'-file. The number of the Cam PC is neither 1 nor 2. Please correct!")
+				print("Error in the 'this_pc.config'-file. The number of the Cam PC is neither 1,2 nor 3. Please correct!")
 			self.msg_length=int(global_config["rate_transmission"]["msg_length"])
 		else:
 			print("Error in the 'this_pc.config'-file. The file does not contain the section 'rate_transmission'. Please correct!")
@@ -147,8 +151,9 @@ class server_controller:
 		this_config.read('../../../this_pc.conf')
 		if "who_am_i" in this_config:
 			cam_pc_no = int(this_config["who_am_i"]["no"])
-			if  this_config["who_am_i"]["type"] != "cam_pc":
+			if  this_config["who_am_i"]["type"] != "cam_pc" and this_config["who_am_i"]["type"] != "time_harp_pc":
 				print("According to the 'this_pc.config'-file this pc is not meant as a camera pc. Please correct the configuarion or start the right GUI!")
+				print (this_config["who_am_i"]["type"])
 				exit()
 		else:
 			print("There is no config file on this computer which specifies the computer function! Please add a 'this_pc.config' file next to the curcor-directory!")
@@ -162,6 +167,9 @@ class server_controller:
 			elif cam_pc_no == 2:
 				self.port=int(global_config["cam_pc_2"]["port_controller"])
 				self.address=global_config["cam_pc_2"]["address"]
+			elif cam_pc_no == 3:
+				self.port=int(global_config["time_harp_pc"]["port_controller"])
+				self.address=global_config["time_harp_pc"]["address"]
 			else:
 				print("Error in the 'this_pc.config'-file. The number of the Cam PC is neither 1 nor 2. Please correct!")
 		else:
