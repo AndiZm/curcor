@@ -64,7 +64,7 @@ class GUI:
     change_acceleration_camera_z=False
 
     
-    def __init__(self, master, controller, position=None client=None):
+    def __init__(self, master, controller, position=None, client=None):
         self.master=master
         self.controller=controller
         self.client=client
