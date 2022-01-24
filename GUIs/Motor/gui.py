@@ -9,6 +9,7 @@ import time
 from rate_analyzer import *
 import numpy as np
 import geometry as geo
+import position as position
 
 
 import warnings
@@ -63,11 +64,12 @@ class GUI:
     change_acceleration_camera_z=False
 
     
-    def __init__(self, master, controller, client=None):
+    def __init__(self, master, controller, position=None client=None):
         self.master=master
         self.controller=controller
         self.client=client
         self.stop_thread=False
+        self.position=position
         self.master.wm_title("II Motor Control")
         self.master.config(background = "#003366")        
         
@@ -104,6 +106,9 @@ class GUI:
         
         self.RateFrame = Frame(self.overMainFrame)
         self.RateFrame.grid(row=0, column=1, padx=0, pady=3)
+        
+        self.positionFrame=Frame(self.overMainFrame)
+        self.positionFrame.grid(row=0, column=2, padx=0, pady=3)
         
         #self.centerFrame = Frame(self.mainFrame, width=600, height=400)
         #self.centerFrame.grid(row=1, column=0)
@@ -311,6 +316,15 @@ class GUI:
         self.CHa_Label_rate = Label(self.RateFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 15 bold"), width=7);   self.CHa_Label_rate.grid(row=4, column=2, padx=3, pady=3)
         self.CHb_Label_rate = Label(self.RateFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 15 bold"), width=7);   self.CHb_Label_rate.grid(row=4, column=4, padx=3, pady=3)
         self.rateClientButton = Button(self.RateFrame, text="Connect", bg="#cdcfd1", command=self.startStopClient, width=8); self.rateClientButton.grid(row=4,column=5, padx=3, pady=3)
+        
+        #Position-Content
+        self.desc_Label_position = Label(self.positionFrame, text="Telescope Position [°]"); self.desc_Label_position.grid(row=0, column=0, padx=5)
+        self.desc_Label_alt = Label(self.positionFrame, text="Ch A"); self.desc_Label_alt.grid(row=0, column=1, padx=3, pady=3)
+        self.desc_Label_long = Label(self.positionFrame, text="Ch B"); self.desc_Label_long.grid(row=0, column=3, padx=3, pady=3)
+        self.alt_Label_rate = Label(self.positionFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 15 bold"), width=7);   self.alt_Label_rate.grid(row=0, column=2, padx=3, pady=3)
+        self.long_Label_rate = Label(self.positionFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 15 bold"), width=7);   self.long_Label_rate.grid(row=0, column=4, padx=3, pady=3)
+        self.positionButton = Button(self.positionFrame, text="Set", bg="#cdcfd1", command=self.setPositionObject, width=8); self.positionButton.grid(row=0,column=5, padx=3, pady=3)
+ 
 
         #Halogen Power supply content
         self.psupp_connectButton = Button(self.psuppFrame, text="Connect\nHalogen", command=self.psupp_connect); self.psupp_connectButton.grid(row=0,column=0)
@@ -470,6 +484,11 @@ class GUI:
             self.rateClientButton.config(text="Connect")
             self.client = None   
     
+    def setPositionObject(self):
+    	if self.position==None:
+    		self.position=position.position()
+		#open new window that allows for selection of an object
+		
     #here are the methods triggered by the different button/sclae events
             
     def open_shutter(self):
