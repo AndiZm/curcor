@@ -648,62 +648,116 @@ class RATE_ANALYZER():
         #if not done yet: find the rectangle to get some startingvalues
         if self.min_psi_rect == None or self.max_psi_rect == None or self.min_phi_rect == None or self.max_phi_rect == None:
             self.findRectangle()
+        if self.mode=="angled":
+            #calculate starting values for the gaussian
+            center_phi=(self.min_phi_rect+self.max_phi_rect)/2
+            center_psi=(self.min_psi_rect+self.max_psi_rect)/2
+            sigma_phi=np.abs(self.min_phi_rect-self.max_phi_rect)/2
+            sigma_psi=np.abs(self.min_psi_rect-self.max_psi_rect)/2
+            offset=0
+            prefactor=np.max(self.rates)
+            p0=(prefactor, center_phi, sigma_phi, center_psi, sigma_psi, offset)
+            print("Starting gaussian fit: p0:   center_phi = {0:5f} ; center_psi = {1:5f} ; sigma_phi = {2:5f} ; sigma_psi = {3:5f} ; offset = {4:5f} ; prefactor = {5:5f}".format(p0[1],p0[3], p0[2], p0[4], p0[5], p0[0]))
             
-        #calculate starting values for the gaussian
-        center_phi=(self.min_phi_rect+self.max_phi_rect)/2
-        center_psi=(self.min_psi_rect+self.max_psi_rect)/2
-        sigma_phi=np.abs(self.min_phi_rect-self.max_phi_rect)/2
-        sigma_psi=np.abs(self.min_psi_rect-self.max_psi_rect)/2
-        offset=0
-        prefactor=np.max(self.rates)
-        p0=(prefactor, center_phi, sigma_phi, center_psi, sigma_psi, offset)
-        print("Starting gaussian fit: p0:   center_phi = {0:5f} ; center_psi = {1:5f} ; sigma_phi = {2:5f} ; sigma_psi = {3:5f} ; offset = {4:5f} ; prefactor = {5:5f}".format(p0[1],p0[3], p0[2], p0[4], p0[5], p0[0]))
-        
-        #do the fit
-        with warnings.catch_warnings(record=True) as w:
-            coordinates_phi=np.linspace(self.min_phi, self.max_phi, num=int(self.spacing_phi))
-            coordinates_psi=np.linspace(self.min_psi, self.max_psi, num=int(self.spacing_psi))
-            x, y=np.meshgrid(coordinates_phi, coordinates_psi)
-            #select only the values within the rectangle for the fit
-            #if np.size(self.rates)/4>np.sum(mask):
-            #    rates_fit=rates[mask]
-            #    x_fit=x[mask]
-            #    y_fit=y[mask]
-            #    print("Only using values within the red square for fit!")
-            #else:
-            #    rates_fit=rates
-            #    x_fit=x
-            #    y_fit=y
-            x_fit=x
-            y_fit=y
-            rates_fit=self.rates
-            try:
-                popt, pcov = opt.curve_fit(gauss2d, (x_fit,np.flip(y_fit)), rates_fit.ravel(), p0 = p0)
-            except RuntimeError as e:
-                w.append(e)
-        if len(w)==0:
-            data_fitted = gauss2d((x, y), *popt)
+            #do the fit
             with warnings.catch_warnings(record=True) as w:
-                self.subplot.axes.contour(x, y, data_fitted.reshape(self.spacing_psi, self.spacing_phi), 8, colors='b', label="Gaussian Fit")
-                self.subplot.legend()
-            print("Gaussian was fitted and plotted!")
-            print("CENTER: phi={0} , psi={1} , SIGMA: phi={2} , psi={3} , CONSTS: prefactor={4} , offset={5}".format(popt[1], popt[3], popt[2], popt[4], popt[0], popt[5]))
-            #print("recommended next fit borders: rect_start_phi={0} ; rect_start_psi={1} ; rect_width_phi={2} ; rect_width_psi={3}".format(rect_start_phi, rect_start_psi, rect_width_phi, rect_width_psi))
-            self.updateResults(popt)
-            self.canvas = FigureCanvasTkAgg(self.figure, master=self.plot_frame)
-            self.canvas.get_tk_widget().grid(row=0, column=0)
-            self.canvas.draw()
-            self.master.update()
+                coordinates_phi=np.linspace(self.min_phi, self.max_phi, num=int(self.spacing_phi))
+                coordinates_psi=np.linspace(self.min_psi, self.max_psi, num=int(self.spacing_psi))
+                x, y=np.meshgrid(coordinates_phi, coordinates_psi)
+                #select only the values within the rectangle for the fit
+                #if np.size(self.rates)/4>np.sum(mask):
+                #    rates_fit=rates[mask]
+                #    x_fit=x[mask]
+                #    y_fit=y[mask]
+                #    print("Only using values within the red square for fit!")
+                #else:
+                #    rates_fit=rates
+                #    x_fit=x
+                #    y_fit=y
+                x_fit=x
+                y_fit=y
+                rates_fit=self.rates
+                try:
+                    popt, pcov = opt.curve_fit(gauss2d, (x_fit,np.flip(y_fit)), rates_fit.ravel(), p0 = p0)
+                except RuntimeError as e:
+                    w.append(e)
+            if len(w)==0:
+                data_fitted = gauss2d((x, y), *popt)
+                with warnings.catch_warnings(record=True) as w:
+                    self.subplot.axes.contour(x, y, data_fitted.reshape(self.spacing_psi, self.spacing_phi), 8, colors='b', label="Gaussian Fit")
+                    self.subplot.legend()
+                print("Gaussian was fitted and plotted!")
+                print("CENTER: phi={0} , psi={1} , SIGMA: phi={2} , psi={3} , CONSTS: prefactor={4} , offset={5}".format(popt[1], popt[3], popt[2], popt[4], popt[0], popt[5]))
+                #print("recommended next fit borders: rect_start_phi={0} ; rect_start_psi={1} ; rect_width_phi={2} ; rect_width_psi={3}".format(rect_start_phi, rect_start_psi, rect_width_phi, rect_width_psi))
+                self.updateResults(popt)
+                self.canvas = FigureCanvasTkAgg(self.figure, master=self.plot_frame)
+                self.canvas.get_tk_widget().grid(row=0, column=0)
+                self.canvas.draw()
+                self.master.update()
+            else:
+                print("No Gaussian could be fitted.")
+                for warn in w:
+                    print(warn)
+                popt=[-1, -1, -1, -1, -1, -1]    
+            return popt
+        elif self.mode=="linear":
+            #calculate starting values for the gaussian
+            center_phi=(self.min_phi_rect+self.max_phi_rect)/2
+            center_psi=(self.min_psi_rect+self.max_psi_rect)/2
+            sigma_phi=np.abs(self.min_phi_rect-self.max_phi_rect)/2
+            sigma_psi=np.abs(self.min_psi_rect-self.max_psi_rect)/2
+            offset=0
+            prefactor=np.max(self.rates)
+            p0=(prefactor, center_phi, sigma_phi, center_psi, sigma_psi, offset)
+            print("Starting gaussian fit: p0:   center_x = {0:5f} ; center_y = {1:5f} ; sigma_x = {2:5f} ; sigma_y = {3:5f} ; offset = {4:5f} ; prefactor = {5:5f}".format(p0[1],p0[3], p0[2], p0[4], p0[5], p0[0]))
+            
+            #do the fit
+            with warnings.catch_warnings(record=True) as w:
+                coordinates_phi=np.linspace(self.min_x, self.max_x, num=int(self.spacing_x))
+                coordinates_psi=np.linspace(self.min_y, self.max_y, num=int(self.spacing_y))
+                x, y=np.meshgrid(coordinates_phi, coordinates_psi)
+                #select only the values within the rectangle for the fit
+                #if np.size(self.rates)/4>np.sum(mask):
+                #    rates_fit=rates[mask]
+                #    x_fit=x[mask]
+                #    y_fit=y[mask]
+                #    print("Only using values within the red square for fit!")
+                #else:
+                #    rates_fit=rates
+                #    x_fit=x
+                #    y_fit=y
+                x_fit=x
+                y_fit=y
+                rates_fit=self.rates
+                try:
+                    popt, pcov = opt.curve_fit(gauss2d, (x_fit,np.flip(y_fit)), rates_fit.ravel(), p0 = p0)
+                except RuntimeError as e:
+                    w.append(e)
+            if len(w)==0:
+                data_fitted = gauss2d((x, y), *popt)
+                with warnings.catch_warnings(record=True) as w:
+                    self.subplot.axes.contour(x, y, data_fitted.reshape(self.spacing_y, self.spacing_x), 8, colors='b', label="Gaussian Fit")
+                    self.subplot.legend()
+                print("Gaussian was fitted and plotted!")
+                print("CENTER: phi={0} , psi={1} , SIGMA: phi={2} , psi={3} , CONSTS: prefactor={4} , offset={5}".format(popt[1], popt[3], popt[2], popt[4], popt[0], popt[5]))
+                #print("recommended next fit borders: rect_start_phi={0} ; rect_start_psi={1} ; rect_width_phi={2} ; rect_width_psi={3}".format(rect_start_phi, rect_start_psi, rect_width_phi, rect_width_psi))
+                self.updateResults(popt)
+                self.canvas = FigureCanvasTkAgg(self.figure, master=self.plot_frame)
+                self.canvas.get_tk_widget().grid(row=0, column=0)
+                self.canvas.draw()
+                self.master.update()
+            else:
+                print("No Gaussian could be fitted.")
+                for warn in w:
+                    print(warn)
+                popt=[-1, -1, -1, -1, -1, -1]    
+            return popt
         else:
-            print("No Gaussian could be fitted.")
-            for warn in w:
-                print(warn)
-            popt=[-1, -1, -1, -1, -1, -1]    
-        return popt
+            raise RuntimeError("The measuring mode needs to be definied correctly!")
                 
     def findRectangle(self, contrast_factor=1.5):
         rates=self.rates
-        if self.mode=="angular":
+        if self.mode=="angled":
             coordinates_phi=np.linspace(self.min_phi, self.max_phi, num=int(self.spacing_phi))
             coordinates_psi=np.linspace(self.min_psi, self.max_psi, num=int(self.spacing_psi))
         elif self.mode=="linear":
@@ -750,7 +804,10 @@ class RATE_ANALYZER():
         self.canvas.draw()
         self.master.update()
         print("added rectangle")
-        print("rect_start_phi={0} ; rect_start_psi={1} ; rect_width_phi={2} ; rect_width_psi={3}".format(rect_start_phi, rect_start_psi, rect_width_phi, rect_width_psi ))
+        if self.mode=="angled":
+            print("rect_start_phi={0} ; rect_start_psi={1} ; rect_width_phi={2} ; rect_width_psi={3}".format(rect_start_phi, rect_start_psi, rect_width_phi, rect_width_psi ))
+        elif self.mode=="linear":
+            print("rect_start_x={0} ; rect_start_y={1} ; rect_width_x={2} ; rect_width_y={3}".format(rect_start_phi, rect_start_psi, rect_width_phi, rect_width_psi ))
         self.min_phi_rect=rect_start_phi
         self.max_phi_rect=rect_start_phi+rect_width_phi
         self.min_psi_rect=rect_start_psi+rect_width_psi
