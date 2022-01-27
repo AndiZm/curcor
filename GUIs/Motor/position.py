@@ -1,5 +1,6 @@
 import ephem
 from datetime import datetime
+from tkinter import simpledialog
 
 #this class provides you with the position of the observed object
 class position:
@@ -30,6 +31,25 @@ class position:
 		return np.array([
 		"Acrux",
 		"Alnair",
-		"Mimosa,
+		"Mimosa",
 		"Test"
 		])
+
+	def get_name(self):
+		return self.obj.name
+
+class selection_dialog(simpledialog.Dialog):
+    ## this thing inherits stuff from the SimpleDialog class
+    def body(self, master, position):  ## wird ueberschrieben
+        self.title('Star Selector')
+        #get list of all stars that are available in the position class
+        stars=position.get_star_list()
+        
+        self.mode=IntVar()
+        self.label=Label(master, text="Measurement mode", justify = LEFT, padx = 20).pack()
+        self.linear=Radiobutton(master, text="linear", padx = 20, variable=self.mode, value=1).pack(anchor=W)
+        self.angeled=Radiobutton(master, text="angled", padx = 20, variable=self.mode, value=2).pack(anchor=W)
+        return self.linear #set focus on the linear option
+
+    def apply(self): # override
+        self.result = self.mode

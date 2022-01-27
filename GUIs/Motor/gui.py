@@ -102,13 +102,13 @@ class GUI:
         self.belowMainFrame.grid_propagate(0)
 
         self.switchFrame = Frame(self.overMainFrame)
-        self.switchFrame.grid(row=0,column=0, padx=70, ipady=3) #(325-width_switch_frame)/2
+        self.switchFrame.grid(row=0,column=0, padx=10, ipady=3) #(325-width_switch_frame)/2
         
         self.RateFrame = Frame(self.overMainFrame)
-        self.RateFrame.grid(row=0, column=1, padx=0, pady=3)
+        self.RateFrame.grid(row=0, column=1, padx=3, pady=3)
         
         self.positionFrame=Frame(self.overMainFrame)
-        self.positionFrame.grid(row=0, column=2, padx=0, pady=3)
+        self.positionFrame.grid(row=0, column=2, padx=10, pady=3)
         
         #self.centerFrame = Frame(self.mainFrame, width=600, height=400)
         #self.centerFrame.grid(row=1, column=0)
@@ -310,20 +310,21 @@ class GUI:
         #self.ServoPositionLabel.grid(row=0, column=2, padx=10, pady=3)
 
         #Rate-Content
-        self.desc_Label_rate = Label(self.RateFrame, text="Photon rate [MHz]"); self.desc_Label_rate.grid(row=4, column=0, padx=5)
+        self.desc_Label_rate = Label(self.RateFrame, text="Rate [MHz]"); self.desc_Label_rate.grid(row=4, column=0, padx=5)
         self.desc_Label_rate_A = Label(self.RateFrame, text="Ch A"); self.desc_Label_rate_A.grid(row=4, column=1, padx=3, pady=3)
         self.desc_Label_rate_B = Label(self.RateFrame, text="Ch B"); self.desc_Label_rate_B.grid(row=4, column=3, padx=3, pady=3)
-        self.CHa_Label_rate = Label(self.RateFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 15 bold"), width=7);   self.CHa_Label_rate.grid(row=4, column=2, padx=3, pady=3)
-        self.CHb_Label_rate = Label(self.RateFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 15 bold"), width=7);   self.CHb_Label_rate.grid(row=4, column=4, padx=3, pady=3)
+        self.CHa_Label_rate = Label(self.RateFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 15 bold"), width=5);   self.CHa_Label_rate.grid(row=4, column=2, padx=3, pady=3)
+        self.CHb_Label_rate = Label(self.RateFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 15 bold"), width=5);   self.CHb_Label_rate.grid(row=4, column=4, padx=3, pady=3)
         self.rateClientButton = Button(self.RateFrame, text="Connect", bg="#cdcfd1", command=self.startStopClient, width=8); self.rateClientButton.grid(row=4,column=5, padx=3, pady=3)
         
         #Position-Content
-        self.desc_Label_position = Label(self.positionFrame, text="Telescope Position [°]"); self.desc_Label_position.grid(row=0, column=0, padx=5)
-        self.desc_Label_alt = Label(self.positionFrame, text="Ch A"); self.desc_Label_alt.grid(row=0, column=1, padx=3, pady=3)
-        self.desc_Label_long = Label(self.positionFrame, text="Ch B"); self.desc_Label_long.grid(row=0, column=3, padx=3, pady=3)
-        self.alt_Label_rate = Label(self.positionFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 15 bold"), width=7);   self.alt_Label_rate.grid(row=0, column=2, padx=3, pady=3)
-        self.long_Label_rate = Label(self.positionFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 15 bold"), width=7);   self.long_Label_rate.grid(row=0, column=4, padx=3, pady=3)
-        self.positionButton = Button(self.positionFrame, text="Set", bg="#cdcfd1", command=self.setPositionObject, width=8); self.positionButton.grid(row=0,column=5, padx=3, pady=3)
+        self.desc_Label_position = Label(self.positionFrame, text="Position [°]"); self.desc_Label_position.grid(row=0, column=0, padx=5)
+        self.name_label_pos = Label(self.positionFrame, text="n/a", width=10); self.name_label_pos.grid(row=0, column=1, padx=3, pady=3)
+        self.desc_Label_alt = Label(self.positionFrame, text="Alt:"); self.desc_Label_alt.grid(row=0, column=2, padx=3, pady=3)
+        self.desc_Label_az = Label(self.positionFrame, text="Az:"); self.desc_Label_az.grid(row=0, column=4, padx=3, pady=3)
+        self.alt_Label_pos = Label(self.positionFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 15 bold"), width=5);   self.alt_Label_pos.grid(row=0, column=3, padx=3, pady=3)
+        self.long_Label_pos = Label(self.positionFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 15 bold"), width=5);   self.long_Label_pos.grid(row=0, column=5, padx=3, pady=3)
+        self.positionButton = Button(self.positionFrame, text="Set", bg="#cdcfd1", command=self.set_position_object, width=8); self.positionButton.grid(row=0,column=6, padx=3, pady=3)
  
 
         #Halogen Power supply content
@@ -484,11 +485,17 @@ class GUI:
             self.rateClientButton.config(text="Connect")
             self.client = None   
     
-    def setPositionObject(self):
-    	if self.position==None:
-    		self.position=position.position()
-		#open new window that allows for selection of an object
-		
+    def set_position_object(self):
+        #create position object if needed
+        if self.position==None:
+            self.position=position.position()
+        #open new window that allows for selection of an object
+        dialog=position.selection_dialog(self.master, position)
+        if dialog.result != None:
+            self.position.set_star(dialog.result)
+        else:
+            raise RuntimeError("Something went wrong when selecting a new star! Old star is still in use")
+            
     #here are the methods triggered by the different button/sclae events
             
     def open_shutter(self):
