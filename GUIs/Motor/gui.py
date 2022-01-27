@@ -319,11 +319,11 @@ class GUI:
         
         #Position-Content
         self.desc_Label_position = Label(self.positionFrame, text="Position [°]"); self.desc_Label_position.grid(row=0, column=0, padx=5)
-        self.name_label_pos = Label(self.positionFrame, text="n/a", width=10); self.name_label_pos.grid(row=0, column=1, padx=3, pady=3)
+        self.name_label_pos = Label(self.positionFrame, text="n/a", width=9); self.name_label_pos.grid(row=0, column=1, padx=3, pady=3)
         self.desc_Label_alt = Label(self.positionFrame, text="Alt:"); self.desc_Label_alt.grid(row=0, column=2, padx=3, pady=3)
         self.desc_Label_az = Label(self.positionFrame, text="Az:"); self.desc_Label_az.grid(row=0, column=4, padx=3, pady=3)
         self.alt_Label_pos = Label(self.positionFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 15 bold"), width=5);   self.alt_Label_pos.grid(row=0, column=3, padx=3, pady=3)
-        self.long_Label_pos = Label(self.positionFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 15 bold"), width=5);   self.long_Label_pos.grid(row=0, column=5, padx=3, pady=3)
+        self.az_Label_pos = Label(self.positionFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 15 bold"), width=6);   self.az_Label_pos.grid(row=0, column=5, padx=3, pady=3)
         self.positionButton = Button(self.positionFrame, text="Set", bg="#cdcfd1", command=self.set_position_object, width=8); self.positionButton.grid(row=0,column=6, padx=3, pady=3)
  
 
@@ -490,7 +490,7 @@ class GUI:
         if self.position==None:
             self.position=position.position()
         #open new window that allows for selection of an object
-        dialog=position.selection_dialog(self.master, position)
+        dialog=position.selection_dialog(self.master, self.position)
         if dialog.result != None:
             self.position.set_star(dialog.result)
         else:
@@ -864,6 +864,11 @@ class GUI:
         lens_dist=geo.get_diff_hit_lens(mirr_phi, mirr_psi, mirr_height, mirr_z, cam_z, cam_x)
         self.Label_lens_center.config(text="{0:5.2f}".format(np.sqrt(lens_dist[0]**2+lens_dist[1]**2)))
        
+        if self.position is not None:
+                self.name_label_pos.config(text=self.position.get_name())
+                az, alt=self.position.get_az_alt()
+                self.alt_Label_pos.config(text="{0:4.2f}".format(alt))
+                self.az_Label_pos.config(text="{0:5.2f}".format(az))
        
         if self.client != None:
             try:
