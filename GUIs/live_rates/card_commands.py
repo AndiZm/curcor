@@ -202,18 +202,12 @@ def take_data():
                 a_np = np.array(data[:,0]); b_np = np.array(data[:,1])
                 mean_a = np.mean(a_np)
                 mean_b = np.mean(b_np)
-
-                #plt.plot(a_np[0:5000], alpha=0.3)
-                #plt.plot(a_np[-5000:])
-                #plt.axhline(y=mean_a, color="red")
-                #plt.axhline(y=np.mean(a_np[0:5000]), color="black")
-                #plt.show()
-
                 gl.update_waveform(a_np[0:1000],b_np[0:1000])
             else:
+                data = np.array(data)
                 mean_a = np.mean(data)
                 mean_b = 0 
-                gl.update_waveform(data[0:1000],[])
+                gl.update_waveform(data[0:1000],[])                
             return mean_a, mean_b
     
 
