@@ -174,7 +174,8 @@ def get_lens_center(camera_z, camera_x):
 def get_zero_parameters(naive=True):
 	return (123.5, 366.3, 33.9) #(mirror_height. mirror_z) #this is just a very sketchy dummy!
 
-def get_camera_z_postion_offset(mirror_phi, mirror_psi, mirror_height, mirror_z, offset_pathlength=0, debug=False):
+#returns the postion the camera Z should take given the postions of mirr_phi, mirr_psi, mirr_h, mirr_z and offset_pathlenght
+def get_camera_z_position_offset(mirror_phi, mirror_psi, mirror_height, mirror_z, offset_pathlength=0, debug=False):
 	if debug: print("Calculate Cam Z position offset using: mirror_phi={0} ; mirror_psi={1} ; mirror_height={2} ; mirror_z={3} ; offset_pathlenght={4}".format(mirror_phi, mirror_psi, mirror_height, mirror_z, offset_pathlength))
 	point=get_mirror_incidence_point(mirror_phi, mirror_psi, mirror_height, mirror_z, debug)
 	point_height=point[1]

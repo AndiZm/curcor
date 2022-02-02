@@ -30,13 +30,13 @@ class RATE_ANALYZER():
     change_mirror_psi=False
     change_mirror_phi=False
     
-    #meauremnt mode
+    #measurement mode
     mode=None
     
     #currently loaded distribution
     rates=None
     
-    #in case of a angled measurement
+    #in case of a psi-phi measurement
     min_phi=-4.4
     max_phi=4.4
     min_psi=-4.4
@@ -47,7 +47,7 @@ class RATE_ANALYZER():
     camera_x=np.nan
     mirror_z=np.nan
     mirror_height=np.nan
-    #in case of a linear measurment
+    #in case of a X-Y measurment
     min_x=-10
     max_x=10
     min_y=-10
@@ -58,6 +58,10 @@ class RATE_ANALYZER():
     mirror_z=350
     phi=0
     psi=0
+    #in case of a X-Z measurement (additional to the ones from an X-Y measurement)
+    min_z=-10
+    max_z=10
+    spacing_z=10
     
     #currently set rectangle
     min_psi_rect=None
@@ -131,11 +135,13 @@ class RATE_ANALYZER():
         mode_dialog = initDialog(master)
         if mode_dialog.result != None:
             if mode_dialog.result.get() == 1:
-                self.mode="linear"
-                print("set mode to linear")
+                self.mode="x-y"
+                print("set mode to X - Y")
             elif mode_dialog.result.get() == 2:
-                self.mode="angled"
-                print("set mode to angled")
+                self.mode="psi-phi"
+                print("set mode to PSI - Phi")
+            elif mode_dialog.result.get() == 3:
+                self.mode="x-z"
             else:
                 raise RuntimeError("Something went wrong with the selection of the measuring mode!")
             print("Start Rate Analyzer in measuring mode {0}".format(self.mode))
@@ -188,16 +194,20 @@ class RATE_ANALYZER():
         self.figure=plt.Figure(figsize=(6,6))
         self.subplot = self.figure.add_subplot(111)
         self.subplot.set_title("Heatmap of the mirror Positions")
-        if self.mode == "angled":
+        if self.mode == "psi-phi":
             self.subplot.set_xlabel("$\phi$ [°]")
             self.subplot.set_ylabel("$\psi$ [°]")
             self.subplot.set_xlim((self.min_phi, self.max_phi))
             self.subplot.set_ylim((self.min_psi, self.max_psi))
-        elif self.mode == "linear":
+        elif self.mode == "x-y":
             self.subplot.set_xlabel("x [mm]")
             self.subplot.set_ylabel("y [mm]")
             self.subplot.set_xlim((self.min_x, self.max_x))
             self.subplot.set_ylim((self.min_y, self.max_y))
+        elif self.mode == "x-z":
+            self.subplot.set_xlabel("z [mm]")
+            self.subplot.set_ylabel("x [mm]")
+            self.subplot.invert_xaxis()
         else:
             raise RuntimeError("The measuring mode needs to be definied correctly!")
         
@@ -253,8 +263,12 @@ class RATE_ANALYZER():
         spacing_x=10
         spacing_y=11
         
+        min_z=-50
+        max_z=50
+        spacing_z=11
         
-        if self.mode == "angled":
+        
+        if self.mode == "psi-phi":
             #create labels
             self.label_min_psi = Label(self.record_frame, text='Min PSI:  ')
             self.label_max_psi = Label(self.record_frame, text='Max PSI:  ')
@@ -290,7 +304,7 @@ class RATE_ANALYZER():
             self.box_max_psi.set(max_psi)
             self.box_spacing_phi.set(spacing_phi)
             self.box_spacing_psi.set(spacing_psi)
-        elif self.mode == "linear":
+        elif self.mode == "x-y":
             self.label_min_x = Label(self.record_frame, text='Min X:  ')
             self.label_max_x = Label(self.record_frame, text='Max X:  ')
             self.label_min_y = Label(self.record_frame, text='Min Y:  ')
@@ -325,6 +339,41 @@ class RATE_ANALYZER():
             self.box_max_y.set(max_y)
             self.box_spacing_x.set(spacing_x)
             self.box_spacing_y.set(spacing_y)
+        elif self.mode == "x-z":
+            self.label_min_z = Label(self.record_frame, text='Min Z:  ')
+            self.label_max_z = Label(self.record_frame, text='Max Z:  ')
+            self.label_min_x = Label(self.record_frame, text='Min X:  ')
+            self.label_max_x = Label(self.record_frame, text='Max X:  ')
+            self.label_spacing_z = Label(self.record_frame, text='Spacing Z:  ')
+            self.label_spacing_x = Label(self.record_frame, text='Spacing X:  ')
+            #place labels in grid
+            self.label_min_z.grid(row=0, column=0, padx=10, pady=3)
+            self.label_max_z.grid(row=1, column=0, padx=10, pady=3)
+            self.label_min_x.grid(row=2, column=0, padx=10, pady=3)
+            self.label_max_x.grid(row=3, column=0, padx=10, pady=3)
+            self.label_spacing_z.grid(row=4, column=0, padx=10, pady=3)
+            self.label_spacing_x.grid(row=5, column=0, padx=10, pady=3)
+            #create sliders
+            self.box_min_z = Scale(self.record_frame, from_=-50, to=50, orient=HORIZONTAL, length=150, resolution=0.1)
+            self.box_max_z = Scale(self.record_frame, from_=-50, to=50, orient=HORIZONTAL, length=150, resolution=0.1)
+            self.box_min_x = Scale(self.record_frame, from_=-50, to=50, orient=HORIZONTAL, length=150, resolution=0.1)
+            self.box_max_x = Scale(self.record_frame, from_=-50, to=50, orient=HORIZONTAL, length=150, resolution=0.1)
+            self.box_spacing_z= Scale(self.record_frame, from_=5, to=50, orient=HORIZONTAL, length=150)
+            self.box_spacing_x = Scale(self.record_frame, from_=5, to=50, orient=HORIZONTAL, length=150)
+            #place sliders in grid
+            self.box_min_z.grid(row=0, column=1, padx=10, pady=3)
+            self.box_max_z.grid(row=1, column=1, padx=10, pady=3)
+            self.box_min_x.grid(row=2, column=1, padx=10, pady=3)
+            self.box_max_x.grid(row=3, column=1, padx=10, pady=3)
+            self.box_spacing_z.grid(row=4, column=1, padx=10, pady=3)
+            self.box_spacing_x.grid(row=5, column=1, padx=10, pady=3)
+            #set initial values
+            self.box_min_x.set(min_x)
+            self.box_max_x.set(max_x)
+            self.box_min_z.set(min_z)
+            self.box_max_z.set(max_z)
+            self.box_spacing_x.set(spacing_x)
+            self.box_spacing_z.set(spacing_z)
         else:
             raise RuntimeError("The measuring mode needs to be definied correctly!")
 
@@ -363,11 +412,17 @@ class RATE_ANALYZER():
         self.resultsOffsetLabel = Label(self.results_frame, text='Offset:  ', width="15")
         self.resultsPrefactorPhiLabel = Label(self.results_frame, text='Prefactor:  ', width="15")
         
-        if self.mode=="linear":
+        if self.mode=="x-y":
             self.resultsCenterPhiLabel.config(text='Center X:    ')
             self.resultsCenterPsiLabel.config(text='Center Y:    ')
             self.resultsSigmaPhiLabel.config(text='Sigma X:    ')
             self.resultsSigmaPsiLabel.config(text='Sigma Y:    ')
+        
+        if self.mode=="x-z":
+            self.resultsCenterPhiLabel.config(text='Center X:    ')
+            self.resultsCenterPsiLabel.config(text='Center Z:    ')
+            self.resultsSigmaPhiLabel.config(text='Sigma X:    ')
+            self.resultsSigmaPsiLabel.config(text='Sigma Z:    ')
         
         #place labels
         self.resultsHeadLabel.grid(row=0)
@@ -406,14 +461,18 @@ class RATE_ANALYZER():
             self.figure.clf()
         self.subplot = self.figure.add_subplot(111)
         self.subplot.set_title("Heatmap of the mirror positions")
-        if self.mode=="angled":
+        if self.mode=="psi-phi":
             self.subplot.imshow(self.rates, cmap='cool', extent=( self.min_phi-(self.max_phi-self.min_phi)/(self.spacing_phi)/2, self.max_phi+(self.max_phi-self.min_phi)/(self.spacing_phi)/2, self.min_psi-(self.max_psi-self.min_psi)/(self.spacing_psi)/2, self.max_psi+(self.max_psi-self.min_psi)/(self.spacing_psi)/2))
             self.subplot.set_xlabel("$\phi$ [°]")
             self.subplot.set_ylabel("$\psi$ [°]")
-        elif self.mode=="linear":
+        elif self.mode=="x-y":
             self.subplot.imshow(self.rates, cmap='cool', extent=( self.min_x-(self.max_x-self.min_x)/(self.spacing_x)/2, self.max_x+(self.max_x-self.min_x)/(self.spacing_x)/2, self.min_y-(self.max_y-self.min_y)/(self.spacing_y)/2, self.max_y+(self.max_y-self.min_y)/(self.spacing_y)/2))
             self.subplot.set_xlabel("X [mm]")
             self.subplot.set_ylabel("Y [mm]")
+        elif self.mode=="x-z":
+            self.subplot.imshow(self.rates, cmap='cool', extent=( self.max_z+(self.max_z-self.min_z)/(self.spacing_z)/2, self.min_z-(self.max_z-self.min_z)/(self.spacing_z)/2, self.min_x-(self.max_x-self.min_x)/(self.spacing_x)/2, self.max_x+(self.max_x-self.min_x)/(self.spacing_x)/2))
+            self.subplot.set_xlabel("Z [mm]")
+            self.subplot.set_ylabel("X [mm]")
         else:
             raise RuntimeError("The measuring mode needs to be definied correctly!")
         plt.draw()
@@ -439,10 +498,12 @@ class RATE_ANALYZER():
         if self.checked.get()==1:
             self.still_recording=True
             new_record=False
-            if self.mode=="angled":
+            if self.mode=="psi-phi":
                 t1 = threading.Thread(target= lambda arg_min_phi=self.box_min_phi.get(), arg_max_phi=self.box_max_phi.get(), arg_min_psi=self.box_min_psi.get(), arg_max_psi=self.box_max_psi.get(), arg_spacing_phi=self.box_spacing_phi.get(), arg_spacing_psi=self.box_spacing_psi.get() : self.recordRateDistribution(spacing_phi=arg_spacing_phi, spacing_psi=arg_spacing_psi, min_phi=arg_min_phi, max_phi=arg_max_phi, min_psi=arg_min_psi, max_psi=arg_max_psi))
-            elif self.mode=="linear":
+            elif self.mode=="x-y":
                 t1 = threading.Thread(target= lambda arg_min_x=self.box_min_x.get(), arg_max_x=self.box_max_x.get(), arg_min_y=self.box_min_y.get(), arg_max_y=self.box_max_y.get(), arg_spacing_x=self.box_spacing_x.get(), arg_spacing_y=self.box_spacing_y.get() : self.recordRateDistribution(spacing_phi=arg_spacing_x, spacing_psi=arg_spacing_y, min_phi=arg_min_x, max_phi=arg_max_x, min_psi=arg_min_y, max_psi=arg_max_y))
+            elif self.mode=="x-z":
+                t1 = threading.Thread(target= lambda arg_min_x=self.box_min_x.get(), arg_max_x=self.box_max_x.get(), arg_min_z=self.box_min_z.get(), arg_max_z=self.box_max_z.get(), arg_spacing_x=self.box_spacing_x.get(), arg_spacing_z=self.box_spacing_z.get() : self.recordRateDistribution(spacing_phi=arg_spacing_x, spacing_psi=arg_spacing_z, min_phi=arg_min_x, max_phi=arg_max_x, min_psi=arg_min_z, max_psi=arg_max_z))
             else:
                 raise RuntimeError("The measuring mode needs to be definied correctly!")  
             t1.start()
@@ -461,7 +522,7 @@ class RATE_ANALYZER():
             return
         self.controller.setBussy(True)
         sleep(0.02)
-        if self.mode=="angled":
+        if self.mode=="psi-phi":
             print("Starting to measure the rate distribution. MinPhi={0:4.2f} ; MaxPhi={1:4.2f} ; MinPsi={2:4.2f} ; MaxPsi={3:4.2f} ; SpacingPhi={4} ; SpacingPsi={5}".format(min_phi, max_phi, min_psi, max_psi, spacing_phi, spacing_psi))
             #coordinates_phi=np.linspace(min_phi, max_phi, num=spacing_phi)
             #coordinates_psi=np.linspace(min_psi, max_psi, num=spacing_psi)
@@ -498,12 +559,6 @@ class RATE_ANALYZER():
                 pos_phi=min_phi+(max_phi-min_phi)/(spacing_phi-1)*i
                 self.controller.set_position_mirror_phi(pos_phi)
                 moving_phi=True
-                try:
-                    moving_phi=self.controller.get_mirror_phi_moving()
-                except TrinamicException:
-                    print("Trinamic Exception while waiting for PHI to stop moving")
-                except:
-                    print("Non-Trinamic Exception while waiting for PHI to stop moving")
                 while moving_phi:
                     sleep(0.05)
                     try:
@@ -540,7 +595,7 @@ class RATE_ANALYZER():
                         rates[i][j]=self.client.getRateA()+self.client.getRateB()
                     self.rates=np.transpose(rates)
                     self.new_record=True
-        elif self.mode=="linear":
+        elif self.mode=="x-y":
             zeros=geo.get_zero_parameters()
             spacing_x=spacing_phi
             spacing_y=spacing_psi
@@ -561,7 +616,7 @@ class RATE_ANALYZER():
             self.controller.set_position_mirror_height(min_y)
             #while seting camera z to the correct position (also accounting for offset on pathlenght)
             #print("PHI={0} ; PSI={1} ; Height={2} ; Mirr_Z={3} ; Offset={4}".format(self.phi, self.psi, min_y, self.mirror_z, self.offset_pathlength))
-            new_cam_z=geo.get_camera_z_postion_offset(self.phi, self.psi, min_y, self.mirror_z, offset_pathlength=self.offset_pathlength, debug=False)
+            new_cam_z=geo.get_camera_z_position_offset(self.phi, self.psi, min_y, self.mirror_z, offset_pathlength=self.offset_pathlength, debug=False)
             if new_cam_z<=max_y-min_y:
                 raise RuntimeError("The calulated Camera z is smaller than the y-range that is to be surpassed ({0}<={1}). Is the mirror too close to the camera?".format(new_cam_z, max_y-min_y))
             self.controller.set_position_camera_z(new_cam_z)
@@ -634,6 +689,88 @@ class RATE_ANALYZER():
                         rates[spacing_y-i-1][j]=self.client.getRateA()+self.client.getRateB()
                     self.rates=rates
                     self.new_record=True
+        elif self.mode=="x-z":
+            zeros=geo.get_zero_parameters()
+            spacing_x=spacing_psi
+            spacing_y=spacing_phi
+            #attention! This is only correct if the setup is mounted perfectly! Needs to be adjusted when the mirror arrives and optimal spot is found
+            min_x=min_psi+geo.z_len/2+70
+            max_x=max_psi+geo.z_len/2+70
+            min_y=min_phi
+            max_y=max_phi
+            rates=np.zeros(shape=(spacing_y, spacing_x))
+            #change the global parameters so the plot can be redrawn correctly
+            self.spacing_x=spacing_x
+            self.spacing_y=spacing_y
+            self.min_x=min_y
+            self.max_x=max_y
+            self.min_z=min_x
+            self.max_z=max_x
+            #move mirror and camera simultaneously into the starting position
+            #mirror height and offset stay the same as  set before the start of the measurement
+            self.controller.set_position_mirror_z(min_x)
+            self.controller.set_position_camera_x(min_y)
+            #while seting camera z to the correct position (also accounting for offset on pathlenght)
+            #print("PHI={0} ; PSI={1} ; Height={2} ; Mirr_Z={3} ; Offset={4}".format(self.phi, self.psi, min_y, self.mirror_z, self.offset_pathlength))
+            new_cam_z=geo.get_camera_z_position_offset(self.phi, self.psi, self.mirror_height, min_x, offset_pathlength=self.offset_pathlength, debug=False)
+            if new_cam_z<=0:
+                raise RuntimeError("The calulated Camera z is smaller than the allowed range of the camera z ({0}<=0).".format(new_cam_z))
+            self.controller.set_position_camera_z(new_cam_z)
+            moving_all=True
+            try:
+                moving_all=self.controller.get_camera_x_moving() or self.controller.get_mirror_z_moving() or self.controller.get_camera_z_moving()
+            except TrinamicException:
+                print("Trinamic Exception while waiting for camera and mirror to stop moving")
+            except:
+                print("Non-Trinamic Exception while waiting for camera and mirror to stop moving")
+            while moving_all:
+                try:
+                    moving_all=self.controller.get_camera_x_moving() or self.controller.get_mirror_z_moving() or self.controller.get_camera_z_moving()
+                except TrinamicException:
+                    print("Trinamic Exception while waiting for camera X, camera Z, mirror Z to stop moving")
+                except:
+                    print("Non-Trinamic Exception while waiting for camera X, camera Z, mirror Z to stop moving")
+            print("Succesfully set all Motors to correct starting positions. Now start Scan!")
+            #walk through the whole space of different positions
+            #the lesser shifted dimension should be X (actual coordinates Z), as one needs to move two motors (mirror Z, camera Z) to correctly adjust this
+            #now also move X
+            for j in range(0, spacing_x, 1):
+                #calculate the correct x-position (real coord Z) of the mirror
+                pos_x=min_x+(max_x-min_x)/(spacing_x-1)*j
+                self.controller.set_position_mirror_z(pos_x)
+                #also move the camera z along
+                self.controller.set_position_camera_z(new_cam_z+(max_x-min_x)/(spacing_x-1)*j)
+                moving_x=True
+                while moving_x:
+                    sleep(0.05)
+                    try:
+                        moving_x=self.controller.get_camera_z_moving() or self.controller.get_mirror_z_moving()
+                    except TrinamicException:
+                        print("Trinamic Exception while waiting for camera Z and mirror Z to stop moving")
+                    except:
+                        print("Non-Trinamic Exception while waiting for camera Z and mirror Z to stop moving")
+                for i in range(0, spacing_y, 1):
+                    #calculate the position
+                    if j%2==0:
+                        pos_y=min_y+(max_y-min_y)/(spacing_y-1)*i
+                    else:
+                        pos_y=max_y-(max_y-min_y)/(spacing_y-1)*i
+                    self.controller.set_position_camera_x(pos_y)
+                    moving_y=True
+                    while moving_y:
+                        sleep(0.05)
+                        try:
+                            moving_y=self.controller.get_camera_x_moving()
+                        except TrinamicException:
+                            print("Trinamic Exception while waiting for camera Z to stop moving")
+                        except:
+                            print("Non-Trinamic Exception while waiting for camera Z to stop moving")
+                        if j%2==0:
+                            rates[spacing_y-i-1][j]=self.client.getRateA()+self.client.getRateB()
+                        else:
+                            rates[i][j]=self.client.getRateA()+self.client.getRateB()
+                        self.rates=rates
+                        self.new_record=True
         else:
             raise RuntimeError("The measuring mode needs to be definied correctly!")
         sleep(0.1)
@@ -648,7 +785,7 @@ class RATE_ANALYZER():
         #if not done yet: find the rectangle to get some startingvalues
         if self.min_psi_rect == None or self.max_psi_rect == None or self.min_phi_rect == None or self.max_phi_rect == None:
             self.findRectangle()
-        if self.mode=="angled":
+        if self.mode=="psi-phi":
             #calculate starting values for the gaussian
             center_phi=(self.min_phi_rect+self.max_phi_rect)/2
             center_psi=(self.min_psi_rect+self.max_psi_rect)/2
@@ -700,7 +837,7 @@ class RATE_ANALYZER():
                     print(warn)
                 popt=[-1, -1, -1, -1, -1, -1]    
             return popt
-        elif self.mode=="linear":
+        elif self.mode=="x-y":
             #calculate starting values for the gaussian
             center_phi=(self.min_phi_rect+self.max_phi_rect)/2
             center_psi=(self.min_psi_rect+self.max_psi_rect)/2
@@ -739,7 +876,59 @@ class RATE_ANALYZER():
                     self.subplot.axes.contour(x, y, data_fitted.reshape(self.spacing_y, self.spacing_x), 8, colors='b', label="Gaussian Fit")
                     self.subplot.legend()
                 print("Gaussian was fitted and plotted!")
-                print("CENTER: phi={0} , psi={1} , SIGMA: phi={2} , psi={3} , CONSTS: prefactor={4} , offset={5}".format(popt[1], popt[3], popt[2], popt[4], popt[0], popt[5]))
+                print("CENTER: x={0} , y={1} , SIGMA: x={2} , y={3} , CONSTS: prefactor={4} , offset={5}".format(popt[1], popt[3], popt[2], popt[4], popt[0], popt[5]))
+                #print("recommended next fit borders: rect_start_phi={0} ; rect_start_psi={1} ; rect_width_phi={2} ; rect_width_psi={3}".format(rect_start_phi, rect_start_psi, rect_width_phi, rect_width_psi))
+                self.updateResults(popt)
+                self.canvas = FigureCanvasTkAgg(self.figure, master=self.plot_frame)
+                self.canvas.get_tk_widget().grid(row=0, column=0)
+                self.canvas.draw()
+                self.master.update()
+            else:
+                print("No Gaussian could be fitted.")
+                for warn in w:
+                    print(warn)
+                popt=[-1, -1, -1, -1, -1, -1]    
+            return popt
+        elif self.mode=="x-z":
+            #calculate starting values for the gaussian
+            center_phi=(self.min_phi_rect+self.max_phi_rect)/2
+            center_psi=(self.min_psi_rect+self.max_psi_rect)/2
+            sigma_phi=np.abs(self.min_phi_rect-self.max_phi_rect)/2
+            sigma_psi=np.abs(self.min_psi_rect-self.max_psi_rect)/2
+            offset=0
+            prefactor=np.max(self.rates)
+            p0=(prefactor, center_phi, sigma_phi, center_psi, sigma_psi, offset)
+            print("Starting gaussian fit: p0:   center_z = {0:5f} ; center_x = {1:5f} ; sigma_z = {2:5f} ; sigma_x = {3:5f} ; offset = {4:5f} ; prefactor = {5:5f}".format(p0[1],p0[3], p0[2], p0[4], p0[5], p0[0]))
+            
+            #do the fit
+            with warnings.catch_warnings(record=True) as w:
+                coordinates_phi=np.linspace(self.min_y, self.max_y, num=int(self.spacing_x))
+                coordinates_psi=np.linspace(self.min_z, self.max_z, num=int(self.spacing_z))
+                x, y=np.meshgrid(coordinates_phi, coordinates_psi)
+                #select only the values within the rectangle for the fit
+                #if np.size(self.rates)/4>np.sum(mask):
+                #    rates_fit=rates[mask]
+                #    x_fit=x[mask]
+                #    y_fit=y[mask]
+                #    print("Only using values within the red square for fit!")
+                #else:
+                #    rates_fit=rates
+                #    x_fit=x
+                #    y_fit=y
+                x_fit=x
+                y_fit=y
+                rates_fit=self.rates
+                try:
+                    popt, pcov = opt.curve_fit(gauss2d, (x_fit,np.flip(y_fit)), rates_fit.ravel(), p0 = p0)
+                except RuntimeError as e:
+                    w.append(e)
+            if len(w)==0:
+                data_fitted = gauss2d((x, y), *popt)
+                with warnings.catch_warnings(record=True) as w:
+                    self.subplot.axes.contour(x, y, data_fitted.reshape(self.spacing_y, self.spacing_x), 8, colors='b', label="Gaussian Fit")
+                    self.subplot.legend()
+                print("Gaussian was fitted and plotted!")
+                print("CENTER: z={0} , x={1} , SIGMA: z={2} , x={3} , CONSTS: prefactor={4} , offset={5}".format(popt[1], popt[3], popt[2], popt[4], popt[0], popt[5]))
                 #print("recommended next fit borders: rect_start_phi={0} ; rect_start_psi={1} ; rect_width_phi={2} ; rect_width_psi={3}".format(rect_start_phi, rect_start_psi, rect_width_phi, rect_width_psi))
                 self.updateResults(popt)
                 self.canvas = FigureCanvasTkAgg(self.figure, master=self.plot_frame)
@@ -757,12 +946,15 @@ class RATE_ANALYZER():
                 
     def findRectangle(self, contrast_factor=1.5):
         rates=self.rates
-        if self.mode=="angled":
+        if self.mode=="psi-phi":
             coordinates_phi=np.linspace(self.min_phi, self.max_phi, num=int(self.spacing_phi))
             coordinates_psi=np.linspace(self.min_psi, self.max_psi, num=int(self.spacing_psi))
-        elif self.mode=="linear":
+        elif self.mode=="x-y":
             coordinates_phi=np.linspace(self.min_x, self.max_x, num=int(self.spacing_x))
             coordinates_psi=np.linspace(self.min_y, self.max_y, num=int(self.spacing_y))
+        elif self.mode=="x-z":
+            coordinates_phi=np.linspace(self.min_x, self.max_x, num=int(self.spacing_x))
+            coordinates_psi=np.linspace(self.min_z, self.max_z, num=int(self.spacing_y))
         else:
             raise RuntimeError("The measuring mode needs to be definied correctly!")  
         x, y=np.meshgrid(coordinates_phi, coordinates_psi)
@@ -804,58 +996,77 @@ class RATE_ANALYZER():
         self.canvas.draw()
         self.master.update()
         print("added rectangle")
-        if self.mode=="angled":
+        if self.mode=="psi-phi":
             print("rect_start_phi={0} ; rect_start_psi={1} ; rect_width_phi={2} ; rect_width_psi={3}".format(rect_start_phi, rect_start_psi, rect_width_phi, rect_width_psi ))
-        elif self.mode=="linear":
+        elif self.mode=="x-y":
             print("rect_start_x={0} ; rect_start_y={1} ; rect_width_x={2} ; rect_width_y={3}".format(rect_start_phi, rect_start_psi, rect_width_phi, rect_width_psi ))
+        elif self.mode=="x-z":
+            print("rect_start_x={0} ; rect_start_z={1} ; rect_width_x={2} ; rect_width_z={3}".format(rect_start_phi, rect_start_psi, rect_width_phi, rect_width_psi ))
         self.min_phi_rect=rect_start_phi
         self.max_phi_rect=rect_start_phi+rect_width_phi
         self.min_psi_rect=rect_start_psi+rect_width_psi
         self.max_psi_rect=rect_start_psi
         
-    #####################################
-    #  FILE FORMAT FOR THE .rate FILES  #
-    # [00] Min Phi                      #
-    # [01] Max Phi                      #
-    # [02] Min Psi                      #
-    # [03] Max Psi                      #
-    # [04] Spacing Phi                  #
-    # [05] Spacing Psi                  #
-    # [06] Camera Z                     #
-    # [07] Camera X                     #
-    # [08] Mirror Z                     #
-    # [09] Mirror Height                #
-    # [10] actual Rates                 #
-    #####################################
+    #######################################
+    #  FILE FORMAT FOR THE .ratepp FILES  #
+    # [00] Min Phi                        #
+    # [01] Max Phi                        #
+    # [02] Min Psi                        #
+    # [03] Max Psi                        #
+    # [04] Spacing Phi                    #
+    # [05] Spacing Psi                    #
+    # [06] Camera Z                       #
+    # [07] Camera X                       #
+    # [08] Mirror Z                       #
+    # [09] Mirror Height                  #
+    # [10] actual Rates                   #
+    #######################################
     
-    ######################################
-    #  FILE FORMAT FOR THE .ratel FILES  #
-    # [00] Min X                         #
-    # [01] Max X                         #
-    # [02] Min Y                         #
-    # [03] Max Y                         #
-    # [04] Spacing X                     #
-    # [05] Spacing Y                     #
-    # [06] PHI                           #
-    # [07] PSI                           #
-    # [08] offset pathlength             #
-    # [09] mirror z                      #
-    # [10] actual Rates                  #
-    ######################################
+    #######################################
+    #  FILE FORMAT FOR THE .ratexy FILES  #
+    # [00] Min X                          #
+    # [01] Max X                          #
+    # [02] Min Y                          #
+    # [03] Max Y                          #
+    # [04] Spacing X                      #
+    # [05] Spacing Y                      #
+    # [06] PHI                            #
+    # [07] PSI                            #
+    # [08] offset pathlength              #
+    # [09] mirror z                       #
+    # [10] actual Rates                   #
+    #######################################
+    
+    #######################################
+    #  FILE FORMAT FOR THE .ratexz FILES  #
+    # [00] Min X                          #
+    # [01] Max X                          #
+    # [02] Min Z                          #
+    # [03] Max Z                          #
+    # [04] Spacing X                      #
+    # [05] Spacing Z                      #
+    # [06] PHI                            #
+    # [07] PSI                            #
+    # [08] offset pathlength              #
+    # [09] mirror height                  #
+    # [10] actual Rates                   #
+    #######################################
     
     
     def loadRates(self):
-        if self.mode=="angled": 
-            file = filedialog.askopenfile(parent=self.window, initialdir = "../../..", title = "Load Rate Distribution", filetypes = (("angled rate files","*.rate"),("all files","*.*")))
-        elif self.mode=="linear":
-            file = filedialog.askopenfile(parent=self.window, initialdir = "../../..", title = "Load Rate Distribution", filetypes = (("linear rate files","*.ratel"),("all files","*.*")))
+        if self.mode=="psi-phi": 
+            file = filedialog.askopenfile(parent=self.window, initialdir = "../../..", title = "Load Rate Distribution", filetypes = (("PSI-PHI rate files","*.ratepp"),("PSI-PHI rate files old","*.rate"),("all files","*.*")))
+        elif self.mode=="x-y":
+            file = filedialog.askopenfile(parent=self.window, initialdir = "../../..", title = "Load Rate Distribution", filetypes = (("X-Y rate files", ".ratexy"),("X-Y rate files old","*.ratel"),("all files","*.*")))
+        elif self.mode=="x-z":
+            file = filedialog.askopenfile(parent=self.window, initialdir = "../../..", title = "Load Rate Distribution", filetypes = (("X-Y rate files","*.ratexz"),("all files","*.*")))
         else:
             raise RuntimeError("The measuring mode needs to be definied correctly!")  
         if file!=None:
             string=file.read()
             parts=string.split("~")
-            if self.mode=="angled":
-                if ".rate" not in file.name:
+            if self.mode=="psi-phi":
+                if ".rate" not in file.name and ".ratepp" not in file.name:
                     raise RuntimeError("Cannot open this file! The fileformat is not correct. Maybe the Rate Analyzer needs to be in another mode?")
                 self.min_phi=float(parts[0])
                 self.max_phi=float(parts[1])
@@ -886,8 +1097,8 @@ class RATE_ANALYZER():
                     for no_2 in range(0, len(entries), 1):
                         rates[no][no_2]=float(entries[no_2])
                 self.rates=rates
-            elif self.mode=="linear" :
-                if ".ratel" not in file.name:
+            elif self.mode=="x-y" :
+                if ".ratel" not in file.name and ".ratexy" not in file.name:
                     raise RuntimeError("Cannot open this file! The fileformat is not correct. Maybe the Rate Analyzer needs to be in another mode?")
                 self.min_x=float(parts[0])
                 self.max_x=float(parts[1])
@@ -904,8 +1115,8 @@ class RATE_ANALYZER():
                 else:
                     self.psi=float(parts[6])
                     self.phi=float(parts[7])
-                    self.mirror_z=float(parts[8])
-                    self.offset_pathlengtht=float(parts[9])
+                    self.offset_pathlengtht=float(parts[8])
+                    self.mirror_z=float(parts[9])
                     array_data=parts[10]
                 lines=array_data.splitlines()
                 rates=np.empty((self.spacing_y, self.spacing_x))
@@ -918,27 +1129,56 @@ class RATE_ANALYZER():
                     for no_2 in range(0, len(entries), 1):
                         rates[no][no_2]=float(entries[no_2])
                 self.rates=rates
+            elif self.mode=="x-z" :
+                if ".ratexz" not in file.name:
+                    raise RuntimeError("Cannot open this file! The fileformat is not correct. Maybe the Rate Analyzer needs to be in another mode?")
+                self.min_x=float(parts[0])
+                self.max_x=float(parts[1])
+                self.min_z=float(parts[2])
+                self.max_z=float(parts[3])
+                self.spacing_x=int(parts[4])
+                self.spacing_z=int(parts[5])
+                self.psi=float(parts[6])
+                self.phi=float(parts[7])
+                self.offset_pathlengtht=float(parts[8])
+                self.mirror_height=float(parts[9])
+                array_data=parts[10]
+                lines=array_data.splitlines()
+                rates=np.empty((self.spacing_x, self.spacing_z))
+                lines[0]=lines[0].replace("[[", "[")
+                lines[-1]=lines[-1].replace("]]", "]")
+                for no in range(0, len(lines), 1):
+                    lines[no]=lines[no].replace("[","")
+                    lines[no]=lines[no].replace("]","")
+                    entries=lines[no].split()
+                    for no_2 in range(0, len(entries), 1):
+                        rates[no][no_2]=float(entries[no_2])
+                self.rates=rates
             else:
                 raise RuntimeError("The measuring mode needs to be definied correctly!")  
-        self.resetRectangle()
-        self.replotRates()
+            self.resetRectangle()
+            self.replotRates()
 
     def saveRates(self, path=None):
         if path==None:
-            if self.mode=="angled":
-                file = filedialog.asksaveasfile(parent=self.window, initialdir = "../../..", title = "Save Rate Distribution", filetypes = (("angled rate files","*.rate"),("all files","*.*")))
-            elif self.mode=="linear":
-                file = filedialog.asksaveasfile(parent=self.window, initialdir = "../../..", title = "Save Rate Distribution", filetypes = (("linear rate files","*.ratel"),("all files","*.*")))
+            if self.mode=="psi-phi":
+                file = filedialog.asksaveasfile(parent=self.window, initialdir = "../../..", title = "Save Rate Distribution", filetypes = (("PSI-PHI rate files","*.ratepp"),("all files","*.*")))
+            elif self.mode=="x-y":
+                file = filedialog.asksaveasfile(parent=self.window, initialdir = "../../..", title = "Save Rate Distribution", filetypes = (("X-Y rate files","*.ratexy"),("all files","*.*")))
+            elif self.mode=="x-z":
+                file = filedialog.asksaveasfile(parent=self.window, initialdir = "../../..", title = "Save Rate Distribution", filetypes = (("X-Z rate files","*.ratexz"),("all files","*.*")))
             else:
                 raise RuntimeError("The measuring mode needs to be definied correctly!") 
         else:
             file = open(path, "w")
         if file!=None:
             #file=open(filename, "w")
-            if self.mode=="angled":
+            if self.mode=="psi-phi":
                 file.write("{0}~{1}~{2}~{3}~{4}~{5}~{6}~{7}~{8}~{9}~{10}".format(self.min_phi, self.max_phi, self.min_psi, self.max_psi, self.spacing_psi, self.spacing_phi, self.camera_z, self.camera_x, self.mirror_z, self.mirror_height, np.array2string(self.rates, threshold=10e9)).replace("\n ", "").replace("]", "]\n").replace("]\n]", "]]"))
-            elif self.mode=="linear":
+            elif self.mode=="x-y":
                 file.write("{0}~{1}~{2}~{3}~{4}~{5}~{6}~{7}~{8}~{9}~{10}".format(self.min_x, self.max_x, self.min_y, self.max_y, self.spacing_x, self.spacing_y, self.phi, self.psi, self.offset_pathlength, self.mirror_z, np.array2string(self.rates, threshold=10e9)).replace("\n ", "").replace("]", "]\n").replace("]\n]", "]]"))
+            elif self.mode=="x-z":
+                file.write("{0}~{1}~{2}~{3}~{4}~{5}~{6}~{7}~{8}~{9}~{10}".format(self.min_x, self.max_x, self.min_z, self.max_z, self.spacing_x, self.spacing_z, self.phi, self.psi, self.offset_pathlength, self.mirror_height, np.array2string(self.rates, threshold=10e9)).replace("\n ", "").replace("]", "]\n").replace("]\n]", "]]"))
             else:
                 raise RuntimeError("The measuring mode needs to be definied correctly!")    
             file.close()
@@ -1030,18 +1270,22 @@ class RATE_ANALYZER():
         #	                                                                                   #
         ########################################################################################
             
-        if self.mode=="angled": 
+        if self.mode=="psi-phi": 
             file = filedialog.askopenfile(parent=self.window, initialdir = "../../..", title = "Load Rate Distribution", filetypes = (("Angular batch csv","*.csv"),("all files","*.*")))
-        elif self.mode=="linear":
-            file = filedialog.askopenfile(parent=self.window, initialdir = "../../..", title = "Load Rate Distribution", filetypes = (("Linear batch csv","*.csv"),("all files","*.*")))
+        elif self.mode=="x-y":
+            file = filedialog.askopenfile(parent=self.window, initialdir = "../../..", title = "Load Rate Distribution", filetypes = (("X-Y batch csv","*.csv"),("all files","*.*")))
+        elif self.mode=="x-z":
+            file = filedialog.askopenfile(parent=self.window, initialdir = "../../..", title = "Load Rate Distribution", filetypes = (("X-Z batch csv","*.csv"),("all files","*.*")))
         else:
             raise RuntimeError("The measuring mode needs to be definied correctly!")  
         if file!=None:
             first_line=file.read()
             if "position_camera_z" in first_line:
-                file_mode="angled"
+                file_mode="psi-phi"
             elif "PHI" in first_line:
-                file_mode="linear"
+                file_mode="x-y"
+            elif "min_z" in first_line:
+                file_mode="x-z"
             else:
                 raise RuntimeError("The loaded .csv file contains an incorrect header! Please check the file formating!")
             if file_mode is not self.mode:
@@ -1063,7 +1307,7 @@ class RATE_ANALYZER():
             results=np.zeros(shape=(len(measurements), 18))
             no=0
             print(measurements)
-            if self.mode=="linear":
+            if self.mode=="x-y":
                 for m in measurements:
                     self.controller.setBussy(True)
                     print("Next measurement is: Phi: {0:5.2f} ; Psi: {1:5.2f} ; offset_pathlength: {2:5.2f}  ; Mirror Z: {3:5.2f} ; x_min: {4:5.2f} ; x_max: {5:5.2f} ; y_min: {6:5.2f} ; y_max: {7:5.2f} ; spacing_x: {8:5.2f} ; spacing_y: {9:5.2f}".format(m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8], m[9]))
@@ -1150,7 +1394,7 @@ class RATE_ANALYZER():
                     results[no][17]=time.time()
                     np.savetxt("{0}/results.txt".format(path), results, delimiter=',')
                     no+=1
-            elif self.mode=="angled":
+            elif self.mode=="psi-phi":
                 for m in measurements:
                     self.controller.setBussy(True)
                     print("Next measurement is: Pos_Cam_Z: {0:5.2f} ; Pos_Cam_X: {1:5.2f} ; Pos_mirr_Z: {2:5.2f}  ; Pos_mirr_Height: {3:5.2f} ; phi_min: {4:5.2f} ; phi_max: {5:5.2f} ; psi_min: {6:5.2f} ; psi_max: {7:5.2f} ; spacing_psi: {8:5.2f} ; spacing_phi: {9:5.2f}".format(m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8], m[9]))
@@ -1262,10 +1506,11 @@ class initDialog(simpledialog.Dialog):
         self.title('Measurement mode')
         self.mode=IntVar()
         self.label=Label(master, text="Measurement mode", justify = LEFT, padx = 20).pack()
-        self.linear=Radiobutton(master, text="linear", padx = 20, variable=self.mode, value=1).pack(anchor=W)
-        self.angeled=Radiobutton(master, text="angled", padx = 20, variable=self.mode, value=2).pack(anchor=W)
+        self.xy=Radiobutton(master, text="X - Y", padx = 20, variable=self.mode, value=1).pack(anchor=W)
+        self.psi_phi=Radiobutton(master, text="PSI - PHI", padx = 20, variable=self.mode, value=2).pack(anchor=W)
+        self.xz=Radiobutton(master, text="X - Z", padx = 20, variable=self.mode, value=3).pack(anchor=W)
 
-        return self.linear #set focus on the linear option
+        return self.xy #set focus on the X-Y option
 
 
     def apply(self): # override
