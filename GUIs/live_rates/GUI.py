@@ -220,7 +220,7 @@ def qsettings_syncedMeasurement():
 	global copy_mode
 	samples.set("2 GS"); new_samples(0)
 	binning16Button.invoke()
-	channel2Button.invoke()
+	#channel2Button.invoke()
 	voltage200Button.invoke()
 	clockExternButton.invoke()
 	if gl.trigger == False:
