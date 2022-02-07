@@ -836,6 +836,7 @@ def calculate_data(mean_a, mean_b):
 	# Waveform mean
 	mean_a = mean_a - gl.off_a
 	# Rates
+	r_a = None; r_b = None
 	if gl.calc_rate == True:
 		r_a = 1e-6 * mean_a/(gl.avg_charge_a*binRange)
 		gl.rates_a.pop(0)
