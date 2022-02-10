@@ -354,7 +354,7 @@ class RATE_ANALYZER():
             self.label_spacing_z.grid(row=4, column=0, padx=10, pady=3)
             self.label_spacing_x.grid(row=5, column=0, padx=10, pady=3)
             #create sliders
-            self.box_min_z = Scale(self.record_frame, from_=-50, to=50, orient=HORIZONTAL, length=150, resolution=0.1)
+            self.box_min_z = Scale(self.record_frame, from_=-100, to=50, orient=HORIZONTAL, length=150, resolution=0.1)
             self.box_max_z = Scale(self.record_frame, from_=-50, to=50, orient=HORIZONTAL, length=150, resolution=0.1)
             self.box_min_x = Scale(self.record_frame, from_=-50, to=50, orient=HORIZONTAL, length=150, resolution=0.1)
             self.box_max_x = Scale(self.record_frame, from_=-50, to=50, orient=HORIZONTAL, length=150, resolution=0.1)
