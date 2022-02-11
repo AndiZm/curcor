@@ -664,10 +664,7 @@ class RATE_ANALYZER():
             print("Result will be plotted after everything is measured!")
             self.recordRateDistribution(self.box_spacing_phi.get(), self.box_spacing_psi.get(), self.box_min_phi.get(), self.box_max_phi.get(), self.box_min_psi.get(), self.box_max_psi.get())
             self.replotRates()
-            
-         
-    def recordRateDistribution(self, spacing_phi=25, spacing_psi=26, min_phi=-2., max_phi=2, min_psi=-3.80, max_psi=-0.5):
-    
+                
     def recordRateDistributionXY(self, spacing_x, spacing_y, min_cam_x, max_cam_x, min_mir_y, max_mir_y, center_cam_x, center_mir_y, offset_cam_z, mir_z, phi, psi):
     	if self.mode is not "x-y":
             raise RuntimeError("The method 'recordRateDistributionXY' can only be called in x-y mode! The mode currently is set to {}".format(self.mode))
@@ -784,8 +781,9 @@ class RATE_ANALYZER():
                 self.rates=rates
                 self.new_record=True
         	
-    def recordRateDistributionPhiPsi(self, spacing_phi, spacing_psi, min_phi, max_phi, min_psi, max_psi, center_phi, center_psi, offset_cam_z, mir_h, cam_x, mir_z)
-    def recordRateDistributionXZ(self, spacing_x, spacing_z, min_cam_x, max_cam_x, min_mir_z, max_mir_z, center_cam_x, center_mir_z, offset_cam_z, mir_h, psi, phi)
+    def recordRateDistributionPhiPsi(self, spacing_phi, spacing_psi, min_phi, max_phi, min_psi, max_psi, center_phi, center_psi, offset_cam_z, mir_h, cam_x, mir_z):
+    	return
+    def recordRateDistributionXZ(self, spacing_x, spacing_z, min_cam_x, max_cam_x, min_mir_z, max_mir_z, center_cam_x, center_mir_z, offset_cam_z, mir_h, psi, phi):
         self.resetRectangle()
         if self.client==None:
             print("No client connected! Cannot plot Mirrors")
