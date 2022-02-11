@@ -185,6 +185,14 @@ def get_camera_z_position_offset(mirror_phi, mirror_psi, mirror_height, mirror_z
 	if debug: print("proposed position of cam Z={0}".format(camera_z_pos))
 	return camera_z_pos
 	
+#STILL NEEDS TO BE IMPLEMENTED
+def check_position_cam_offset(mirror_phi, mirror_psi, mirror_height, mirror_z, offset_pathlenght, camera_x):
+	return True
+
+#STILL NEEDS TO BE IMPLEMENTED
+def check_position_cam_absolute(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z, camera_x):
+	return True
+	
 #the following stuff is mainly internal for this package
 	
 #returns the point at which a ray pentrates a plane.
