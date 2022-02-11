@@ -83,16 +83,12 @@ class RATE_ANALYZER():
     saveButton=None
     recordButton=None
     crazyBatchButton=None
-    label_min_psi=None
-    label_max_psi=None
-    label_min_phi=None
-    label_max_phi=None
-    label_spacing_phi=None
-    label_spacing_psi=None
-    label_min_x=None
-    label_max_x=None
-    label_min_y=None
-    label_max_y=None
+    label_min_0=None
+    label_max_0=None
+    label_min_1=None
+    label_max_1=None
+    label_spacing_0=None
+    label_spacing_1=None
     label_spacing_x=None
     label_spacing_y=None
     checkbutton_live=None
@@ -340,136 +336,101 @@ class RATE_ANALYZER():
         # RECORD FRAME #
         ################
 
-        #add record elements
-        #initial values of the scales
-        min_phi=-4.4
-        max_phi=4.4
-        min_psi=-4.4
-        max_psi=4.4
-        spacing_phi=10
-        spacing_psi=11
-        
-        min_x=-50
-        max_x=50
-        min_y=121
-        max_y=145
-        spacing_x=10
-        spacing_y=11
-        
-        min_z=-50
-        max_z=50
-        spacing_z=11
-        
-        
+        #add record elements        
+        spacing_0=10
+        spacing_1=11
         if self.mode == "psi-phi":
             #create labels
-            self.label_min_psi = Label(self.record_frame, text='Min PSI:  ')
-            self.label_max_psi = Label(self.record_frame, text='Max PSI:  ')
-            self.label_min_phi = Label(self.record_frame, text='Min PHI:  ')
-            self.label_max_phi = Label(self.record_frame, text='Max PHI:  ')
-            self.label_spacing_phi = Label(self.record_frame, text='Spacing PHI:  ')
-            self.label_spacing_psi = Label(self.record_frame, text='Spacing PSI:  ')
-            #place labels in grid
-            self.label_min_phi.grid(row=0, column=0, padx=10, pady=3)
-            self.label_max_phi.grid(row=1, column=0, padx=10, pady=3)
-            self.label_min_psi.grid(row=2, column=0, padx=10, pady=3)
-            self.label_max_psi.grid(row=3, column=0, padx=10, pady=3)
-            self.label_spacing_phi.grid(row=4, column=0, padx=10, pady=3)
-            self.label_spacing_psi.grid(row=5, column=0, padx=10, pady=3)
+            min_phi=-4.4
+            max_phi=4.4
+            min_psi=-4.4
+            max_psi=4.4
+            self.label_min_0 = Label(self.record_frame, text='Min PHI:  ')
+            self.label_max_0 = Label(self.record_frame, text='Max PHI:  ')
+            self.label_min_1 = Label(self.record_frame, text='Min PSI:  ')
+            self.label_max_1 = Label(self.record_frame, text='Max PSI:  ')
+            self.label_spacing_0 = Label(self.record_frame, text='Spacing PHI:  ')
+            self.label_spacing_1 = Label(self.record_frame, text='Spacing PSI:  ')
             #create sliders
-            self.box_min_phi = Scale(self.record_frame, from_=-4.4, to=4.4, orient=HORIZONTAL, length=150, resolution=0.1)
-            self.box_max_phi = Scale(self.record_frame, from_=-4.4, to=4.4, orient=HORIZONTAL, length=150, resolution=0.1)
-            self.box_min_psi = Scale(self.record_frame, from_=-4.4, to=4.4, orient=HORIZONTAL, length=150, resolution=0.1)
-            self.box_max_psi = Scale(self.record_frame, from_=-4.4, to=4.4, orient=HORIZONTAL, length=150, resolution=0.1)
-            self.box_spacing_phi = Scale(self.record_frame, from_=5, to=50, orient=HORIZONTAL, length=150)
-            self.box_spacing_psi = Scale(self.record_frame, from_=5, to=50, orient=HORIZONTAL, length=150)
-            #place sliders in grid
-            self.box_min_phi.grid(row=0, column=1, padx=10, pady=3)
-            self.box_max_phi.grid(row=1, column=1, padx=10, pady=3)
-            self.box_min_psi.grid(row=2, column=1, padx=10, pady=3)
-            self.box_max_psi.grid(row=3, column=1, padx=10, pady=3)
-            self.box_spacing_phi.grid(row=4, column=1, padx=10, pady=3)
-            self.box_spacing_psi.grid(row=5, column=1, padx=10, pady=3)
+            self.box_min_0 = Scale(self.record_frame, from_=min_phi, to=max_phi, orient=HORIZONTAL, length=150, resolution=0.1)
+            self.box_max_0 = Scale(self.record_frame, from_=min_phi, to=max_phi, orient=HORIZONTAL, length=150, resolution=0.1)
+            self.box_min_1 = Scale(self.record_frame, from_=min_psi, to=max_psi, orient=HORIZONTAL, length=150, resolution=0.1)
+            self.box_max_1 = Scale(self.record_frame, from_=min_psi, to=max_psi, orient=HORIZONTAL, length=150, resolution=0.1)
+            self.box_spacing_0 = Scale(self.record_frame, from_=5, to=50, orient=HORIZONTAL, length=150)
+            self.box_spacing_1 = Scale(self.record_frame, from_=5, to=50, orient=HORIZONTAL, length=150)
             #set initial values
-            self.box_min_phi.set(min_phi)
-            self.box_max_phi.set(max_phi)
-            self.box_min_psi.set(min_psi)
-            self.box_max_psi.set(max_psi)
-            self.box_spacing_phi.set(spacing_phi)
-            self.box_spacing_psi.set(spacing_psi)
+            self.box_min_0.set(min_phi)
+            self.box_max_0.set(max_phi)
+            self.box_min_1.set(min_psi)
+            self.box_max_1.set(max_psi)
         elif self.mode == "x-y":
-            self.label_min_x = Label(self.record_frame, text='Min X:  ')
-            self.label_max_x = Label(self.record_frame, text='Max X:  ')
-            self.label_min_y = Label(self.record_frame, text='Min Y:  ')
-            self.label_max_y = Label(self.record_frame, text='Max Y:  ')
-            self.label_spacing_x = Label(self.record_frame, text='Spacing X:  ')
-            self.label_spacing_y = Label(self.record_frame, text='Spacing Y:  ')
-            #place labels in grid
-            self.label_min_x.grid(row=0, column=0, padx=10, pady=3)
-            self.label_max_x.grid(row=1, column=0, padx=10, pady=3)
-            self.label_min_y.grid(row=2, column=0, padx=10, pady=3)
-            self.label_max_y.grid(row=3, column=0, padx=10, pady=3)
-            self.label_spacing_x.grid(row=4, column=0, padx=10, pady=3)
-            self.label_spacing_y.grid(row=5, column=0, padx=10, pady=3)
+            min_x=-80
+            max_x=80
+            min_y=-25
+            max_y=25
+            #create labels
+            self.label_min_0 = Label(self.record_frame, text='Min X:  ')
+            self.label_max_0 = Label(self.record_frame, text='Max X:  ')
+            self.label_min_1 = Label(self.record_frame, text='Min Y:  ')
+            self.label_max_1 = Label(self.record_frame, text='Max Y:  ')
+            self.label_spacing_0 = Label(self.record_frame, text='Spacing X:  ')
+            self.label_spacing_1 = Label(self.record_frame, text='Spacing Y:  ')
             #create sliders
-            self.box_min_x = Scale(self.record_frame, from_=-50, to=50, orient=HORIZONTAL, length=150, resolution=0.1)
-            self.box_max_x = Scale(self.record_frame, from_=-50, to=50, orient=HORIZONTAL, length=150, resolution=0.1)
-            self.box_min_y = Scale(self.record_frame, from_=121, to=145, orient=HORIZONTAL, length=150, resolution=0.1)
-            self.box_max_y = Scale(self.record_frame, from_=121, to=145, orient=HORIZONTAL, length=150, resolution=0.1)
-            self.box_spacing_x= Scale(self.record_frame, from_=5, to=50, orient=HORIZONTAL, length=150)
-            self.box_spacing_y = Scale(self.record_frame, from_=5, to=50, orient=HORIZONTAL, length=150)
-            #place sliders in grid
-            self.box_min_x.grid(row=0, column=1, padx=10, pady=3)
-            self.box_max_x.grid(row=1, column=1, padx=10, pady=3)
-            self.box_min_y.grid(row=2, column=1, padx=10, pady=3)
-            self.box_max_y.grid(row=3, column=1, padx=10, pady=3)
-            self.box_spacing_x.grid(row=4, column=1, padx=10, pady=3)
-            self.box_spacing_y.grid(row=5, column=1, padx=10, pady=3)
+            self.box_min_0 = Scale(self.record_frame, from_=min_x, to=max_x, orient=HORIZONTAL, length=150, resolution=0.1)
+            self.box_max_0 = Scale(self.record_frame, from_=min_x, to=max_x, orient=HORIZONTAL, length=150, resolution=0.1)
+            self.box_min_1 = Scale(self.record_frame, from_=min_y, to=max_y, orient=HORIZONTAL, length=150, resolution=0.1)
+            self.box_max_1 = Scale(self.record_frame, from_=min_y, to=max_y, orient=HORIZONTAL, length=150, resolution=0.1)
+            self.box_spacing_0= Scale(self.record_frame, from_=5, to=50, orient=HORIZONTAL, length=150)
+            self.box_spacing_1 = Scale(self.record_frame, from_=5, to=50, orient=HORIZONTAL, length=150)
             #set initial values
-            self.box_min_x.set(min_x)
-            self.box_max_x.set(max_x)
-            self.box_min_y.set(min_y)
-            self.box_max_y.set(max_y)
-            self.box_spacing_x.set(spacing_x)
-            self.box_spacing_y.set(spacing_y)
+            self.box_min_0.set(min_x)
+            self.box_max_0.set(max_x)
+            self.box_min_1.set(min_y)
+            self.box_max_1.set(max_y)
         elif self.mode == "x-z":
-            self.label_min_z = Label(self.record_frame, text='Min Z:  ')
-            self.label_max_z = Label(self.record_frame, text='Max Z:  ')
-            self.label_min_x = Label(self.record_frame, text='Min X:  ')
-            self.label_max_x = Label(self.record_frame, text='Max X:  ')
-            self.label_spacing_z = Label(self.record_frame, text='Spacing Z:  ')
-            self.label_spacing_x = Label(self.record_frame, text='Spacing X:  ')
-            #place labels in grid
-            self.label_min_z.grid(row=0, column=0, padx=10, pady=3)
-            self.label_max_z.grid(row=1, column=0, padx=10, pady=3)
-            self.label_min_x.grid(row=2, column=0, padx=10, pady=3)
-            self.label_max_x.grid(row=3, column=0, padx=10, pady=3)
-            self.label_spacing_z.grid(row=4, column=0, padx=10, pady=3)
-            self.label_spacing_x.grid(row=5, column=0, padx=10, pady=3)
+            min_z=-100
+            max_z=100
+            min_x=-120
+            max_x=120
+            #create labels
+            self.label_min_0 = Label(self.record_frame, text='Min Z:  ')
+            self.label_max_0 = Label(self.record_frame, text='Max Z:  ')
+            self.label_min_1 = Label(self.record_frame, text='Min X:  ')
+            self.label_max_1 = Label(self.record_frame, text='Max X:  ')
+            self.label_spacing_0 = Label(self.record_frame, text='Spacing Z:  ')
+            self.label_spacing_1 = Label(self.record_frame, text='Spacing X:  ')
             #create sliders
-            self.box_min_z = Scale(self.record_frame, from_=-100, to=50, orient=HORIZONTAL, length=150, resolution=0.1)
-            self.box_max_z = Scale(self.record_frame, from_=-50, to=50, orient=HORIZONTAL, length=150, resolution=0.1)
-            self.box_min_x = Scale(self.record_frame, from_=-50, to=50, orient=HORIZONTAL, length=150, resolution=0.1)
-            self.box_max_x = Scale(self.record_frame, from_=-50, to=50, orient=HORIZONTAL, length=150, resolution=0.1)
-            self.box_spacing_z= Scale(self.record_frame, from_=5, to=50, orient=HORIZONTAL, length=150)
-            self.box_spacing_x = Scale(self.record_frame, from_=5, to=50, orient=HORIZONTAL, length=150)
-            #place sliders in grid
-            self.box_min_z.grid(row=0, column=1, padx=10, pady=3)
-            self.box_max_z.grid(row=1, column=1, padx=10, pady=3)
-            self.box_min_x.grid(row=2, column=1, padx=10, pady=3)
-            self.box_max_x.grid(row=3, column=1, padx=10, pady=3)
-            self.box_spacing_z.grid(row=4, column=1, padx=10, pady=3)
-            self.box_spacing_x.grid(row=5, column=1, padx=10, pady=3)
+            self.box_min_0 = Scale(self.record_frame, from_=min_z, to=max_z, orient=HORIZONTAL, length=150, resolution=0.1)
+            self.box_max_0 = Scale(self.record_frame, from_=min_z, to=max_z, orient=HORIZONTAL, length=150, resolution=0.1)
+            self.box_min_1 = Scale(self.record_frame, from_=min_x, to=max_x, orient=HORIZONTAL, length=150, resolution=0.1)
+            self.box_max_1 = Scale(self.record_frame, from_=min_x, to=max_x, orient=HORIZONTAL, length=150, resolution=0.1)
+            self.box_spacing_0  = Scale(self.record_frame, from_=5, to=50, orient=HORIZONTAL, length=150)
+            self.box_spacing_1 = Scale(self.record_frame, from_=5, to=50, orient=HORIZONTAL, length=150)
             #set initial values
-            self.box_min_x.set(min_x)
-            self.box_max_x.set(max_x)
-            self.box_min_z.set(min_z)
-            self.box_max_z.set(max_z)
-            self.box_spacing_x.set(spacing_x)
-            self.box_spacing_z.set(spacing_z)
+            self.box_min_0.set(min_z)
+            self.box_max_0.set(max_z)
+            self.box_min_1.set(min_x)
+            self.box_max_1.set(max_x)
         else:
             raise RuntimeError("The measuring mode needs to be definied correctly!")
-
+        #set initial values for spacing
+        self.box_spacing_0.set(spacing_0)
+        self.box_spacing_1.set(spacing_1)
+        #place labels in grid
+        self.label_min_0.grid(row=0, column=0, padx=10, pady=3)
+        self.label_max_0.grid(row=1, column=0, padx=10, pady=3)
+        self.label_min_1.grid(row=2, column=0, padx=10, pady=3)
+        self.label_max_1.grid(row=3, column=0, padx=10, pady=3)
+        self.label_spacing_0.grid(row=4, column=0, padx=10, pady=3)
+        self.label_spacing_1.grid(row=5, column=0, padx=10, pady=3)
+        #place sliders in grid
+        self.box_min_0.grid(row=0, column=1, padx=10, pady=3)
+        self.box_max_0.grid(row=1, column=1, padx=10, pady=3)
+        self.box_min_1.grid(row=2, column=1, padx=10, pady=3)
+        self.box_max_1.grid(row=3, column=1, padx=10, pady=3)
+        self.box_spacing_0.grid(row=4, column=1, padx=10, pady=3)
+        self.box_spacing_1.grid(row=5, column=1, padx=10, pady=3)
+            
         #create and place checkbutton
         self.checkbutton_live = Checkbutton(self.record_frame, text="draw live", onvalue = 1, offvalue = 0, variable=self.checked)
         self.checkbutton_live.select()
@@ -521,7 +482,7 @@ class RATE_ANALYZER():
         
         #create and place checkbutton
         self.checkbutton_offset = Checkbutton(self.variables_frame, text="use offset", command=self.offsetMode, onvalue = 1, offvalue = 0, variable=self.offset_bool)
-        self.checkbutton_offset.select()
+        self.checkbutton_offset.deselect()
         self.checkbutton_offset.grid(row=6, column=0, padx=10, pady=3)
 
         #create and place button for recomended parameter adoption
@@ -650,10 +611,29 @@ class RATE_ANALYZER():
         if self.checked.get()==1:
             self.still_recording=True
             new_record=False
+            #get all the general parmeters
+            cam_x=self.box_starting_cam_x.get()
+            mir_z=self.box_starting_mir_z.get()
+            mir_y=self.box_starting_mir_y.get()
+            mir_psi=self.box_starting_psi.get()
+            mir_phi=self.box_starting_phi.get()
+            if self.offset_bool.get() == 1:
+                offset_cam_z=self.box_starting_cam_z.get()
+                cam_z=geo.get_camera_z_position_offset(mir_phi, mir_psi, mir_y, mir_z, offset_cam_z)
+            else:
+                cam_z=self.box_starting_cam_z.get()
+                offset_cam_z=geo.get_path_length_delta(mir_phi, mir_psi, mir_y, mir_z, cam_z, cam_x)
+            #get variables and spacing
+            min_0=self.box_min_phi.get()
+            max_0=self.box_max_phi.get()
+            min_1=self.box_min_psi.get()
+            max_2=self.box_max_psi.get()
+            spacing_0=self.box_max_phi.get()
+            spacing_1=self.box_max_psi.get()
             if self.mode=="psi-phi":
                 t1 = threading.Thread(target= lambda arg_min_phi=self.box_min_phi.get(), arg_max_phi=self.box_max_phi.get(), arg_min_psi=self.box_min_psi.get(), arg_max_psi=self.box_max_psi.get(), arg_spacing_phi=self.box_spacing_phi.get(), arg_spacing_psi=self.box_spacing_psi.get() : self.recordRateDistribution(spacing_phi=arg_spacing_phi, spacing_psi=arg_spacing_psi, min_phi=arg_min_phi, max_phi=arg_max_phi, min_psi=arg_min_psi, max_psi=arg_max_psi))
             elif self.mode=="x-y":
-                t1 = threading.Thread(target= lambda arg_min_x=self.box_min_x.get(), arg_max_x=self.box_max_x.get(), arg_min_y=self.box_min_y.get(), arg_max_y=self.box_max_y.get(), arg_spacing_x=self.box_spacing_x.get(), arg_spacing_y=self.box_spacing_y.get() : self.recordRateDistribution(spacing_phi=arg_spacing_x, spacing_psi=arg_spacing_y, min_phi=arg_min_x, max_phi=arg_max_x, min_psi=arg_min_y, max_psi=arg_max_y))
+                t1 = threading.Thread(target= lambda arg_spacing_x=spacing_0, arg_spacing_y=spacing_1, arg_min_cam_x=min_0, arg_max_cam_x=max_0, arg_min_mir_y=min_1, arg_max_mir_y=max_1, arg_cam_x=cam_x, arg_mir_y=mir_y, arg_offset_cam_z=offset_cam_z, arg_mir_z=mir_z, arg_phi=mir_phi, arg_psi=mir_psi : recordRateDistributionXY(spacing_x=arg_spacing_x, spacing_y=arg_spacing_y, min_cam_x=arg_min_cam_x, max_cam_x=arg_max_cam_x, min_mir_y=arg_min_mir_y, max_mir_y=arg_max_mir_y, cam_x=arg_cam_x, mir_y=arg_mir_y, offset_cam_z=arg_offset_cam_z, mir_z=arg_mir_z, phi=arg_phi, psi=arg_psi))
             elif self.mode=="x-z":
                 t1 = threading.Thread(target= lambda arg_min_x=self.box_min_x.get(), arg_max_x=self.box_max_x.get(), arg_min_z=self.box_min_z.get(), arg_max_z=self.box_max_z.get(), arg_spacing_x=self.box_spacing_x.get(), arg_spacing_z=self.box_spacing_z.get() : self.recordRateDistribution(spacing_phi=arg_spacing_x, spacing_psi=arg_spacing_z, min_phi=arg_min_x, max_phi=arg_max_x, min_psi=arg_min_z, max_psi=arg_max_z))
             else:
@@ -665,19 +645,19 @@ class RATE_ANALYZER():
             self.recordRateDistribution(self.box_spacing_phi.get(), self.box_spacing_psi.get(), self.box_min_phi.get(), self.box_max_phi.get(), self.box_min_psi.get(), self.box_max_psi.get())
             self.replotRates()
                 
-    def recordRateDistributionXY(self, spacing_x, spacing_y, min_cam_x, max_cam_x, min_mir_y, max_mir_y, center_cam_x, center_mir_y, offset_cam_z, mir_z, phi, psi):
-    	if self.mode is not "x-y":
+    def recordRateDistributionXY(self, spacing_x, spacing_y, min_cam_x, max_cam_x, min_mir_y, max_mir_y, cam_x, mir_y, offset_cam_z, mir_z, phi, psi):
+        if self.mode is not "x-y":
             raise RuntimeError("The method 'recordRateDistributionXY' can only be called in x-y mode! The mode currently is set to {}".format(self.mode))
-    	#FIRST CONTROLL IF THE POSITIONS ARE POSSIBLE BY CHECKING ALL EXTREMAL POINTS!
-    	min_x=center_cam_x+min_cam_x
-    	max_x=center_cam_x+max_cam_x
-    	min_y=center_mir_y+min_cam_y
-    	max_y=center_mir_y+max_cam_y
-    	min_min = geometry.check_position_cam_offset(phi, psi, min_y, mir_z, offset_cam_z, min_x)
-    	min_max = geometry.check_position_cam_offset(phi, psi, min_y, mir_z, offset_cam_z, max_x)
-    	max_min = geometry.check_position_cam_offset(phi, psi, max_y, mir_z, offset_cam_z, min_x)
-    	max_min = geometry.check_position_cam_offset(phi, psi, max_y, mir_z, offset_cam_z, max_x)
-    	if min_min and min_max and max_min and max_max:
+        #FIRST CONTROLL IF THE POSITIONS ARE POSSIBLE BY CHECKING ALL EXTREMAL POINTS!
+        min_x=cam_x+min_cam_x
+        max_x=cam_x+max_cam_x
+        min_y=mir_y+min_cam_y
+        max_y=mir_y+max_cam_y
+        min_min = geometry.check_position_cam_offset(phi, psi, min_y, mir_z, offset_cam_z, min_x)
+        min_max = geometry.check_position_cam_offset(phi, psi, min_y, mir_z, offset_cam_z, max_x)
+        max_min = geometry.check_position_cam_offset(phi, psi, max_y, mir_z, offset_cam_z, min_x)
+        max_min = geometry.check_position_cam_offset(phi, psi, max_y, mir_z, offset_cam_z, max_x)
+        if min_min and min_max and max_min and max_max:
             raise RuntimeError("The rate distrubution can not be recorded because some of the measurement positions are out of range! Min_Min {0}, Min_Max {1}, Max_Min {2}, Max_Max {3}".format(min_min, min_max, max_min, max_max))
         
         #change the global parameters so the plot can be redrawn correctly
@@ -689,15 +669,15 @@ class RATE_ANALYZER():
         self.max_y=max_mirr_y
         
         #set all constant parameters to the correct positions
-    	self.controller.set_position_mirror_phi(phi)
-    	self.controller.set_position_mirror_psi(psi)
-    	self.controller.set_position_mirror_height(mir_h)
+        self.controller.set_position_mirror_phi(phi)
+        self.controller.set_position_mirror_psi(psi)
+        self.controller.set_position_mirror_height(mir_h)
         new_cam_z=geo.get_camera_z_position_offset(self.phi, self.psi, min_y, self.mirror_z, offset_pathlength=self.offset_pathlength, debug=False)
         #This check should be unnessecairy by now!
         if new_cam_z<=max_y-min_y:
             raise RuntimeError("The calulated Camera z is smaller than the y-range that is to be surpassed ({0}<={1}). Is the mirror too close to the camera?".format(new_cam_z, max_y-min_y))
         self.controller.set_position_camera_z(new_cam_z)
-    	
+        
         zeros=geo.get_zero_parameters()
         spacing_x=spacing_phi
         spacing_y=spacing_psi
@@ -780,9 +760,9 @@ class RATE_ANALYZER():
                     rates[spacing_y-i-1][j]=self.client.getRateA()+self.client.getRateB()
                 self.rates=rates
                 self.new_record=True
-        	
+        
     def recordRateDistributionPhiPsi(self, spacing_phi, spacing_psi, min_phi, max_phi, min_psi, max_psi, center_phi, center_psi, offset_cam_z, mir_h, cam_x, mir_z):
-    	return
+        return
     def recordRateDistributionXZ(self, spacing_x, spacing_z, min_cam_x, max_cam_x, min_mir_z, max_mir_z, center_cam_x, center_mir_z, offset_cam_z, mir_h, psi, phi):
         self.resetRectangle()
         if self.client==None:
@@ -865,6 +845,7 @@ class RATE_ANALYZER():
                     self.rates=np.transpose(rates)
                     self.new_record=True
         elif self.mode=="x-y":
+            return
         elif self.mode=="x-z":
             zeros=geo.get_zero_parameters()
             spacing_x=spacing_psi
@@ -1557,12 +1538,12 @@ class RATE_ANALYZER():
             
                     #measure the rate distribution
                     #set the sliders to the borders of the rectangle
-                    self.box_min_x.set(m[4])
-                    self.box_max_x.set(m[5])
-                    self.box_min_y.set(m[6])
-                    self.box_max_y.set(m[7])
-                    self.box_spacing_x.set(m[8])
-                    self.box_spacing_y.set(m[9])
+                    self.box_min_0.set(m[4])
+                    self.box_max_0.set(m[5])
+                    self.box_min_1.set(m[6])
+                    self.box_max_1.set(m[7])
+                    self.box_spacing_0.set(m[8])
+                    self.box_spacing_1.set(m[9])
                     
                     #record the distribution
                     self.recordRateDistributionRead()
