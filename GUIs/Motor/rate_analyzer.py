@@ -75,7 +75,6 @@ class RATE_ANALYZER():
     main_frame=None
     plot_frame=None
     control_frame=None
-    file_frame=None
     fit_frame=None
     results_frame=None
     findAreaButton=None
@@ -105,6 +104,7 @@ class RATE_ANALYZER():
     box_spacing_phi=None
     box_spacing_psi=None
     checked=None
+    offset_bool=None
     resultsHeadLabel=None
     resultsCenterPhiLabel=None
     resultsCenterPsiLabel=None
@@ -116,6 +116,31 @@ class RATE_ANALYZER():
     camXLabel = None
     mirZLabel = None
     mirHLabel = None
+    mirPhiLabel = None
+    mirPsiLabel = None
+    offsetLabel = None
+    label_starting_psi = None
+    label_starting_phi = None
+    label_starting_mir_z = None
+    label_starting_mir_y = None
+    label_starting_cam_z = None
+    label_starting_cam_x = None
+    label_starting_cam_x = None
+    box_starting_psi = None
+    box_starting_phi = None
+    box_starting_mir_z = None
+    box_starting_mir_y = None
+    box_starting_cam_z = None
+    box_starting_cam_x = None
+    box_starting_cam_x = None
+    label_guess_head = None
+    label_guess_psi = None
+    label_guess_phi = None
+    label_guess_mir_z = None
+    label_guess_mir_y = None
+    label_guess_cam_z = None
+    label_guess_cam_x = None
+    do_magic_button =None
     
     #values for (live) recording
     still_recording=False
@@ -158,33 +183,71 @@ class RATE_ANALYZER():
         self.controller.setBussy(False)
         
         #create new window and frames
+        
+        # STRUCTURE
+        # Window
+        # ->Main Frame
+        #   -> Plot Frame
+        #     -> Canvas
+        #     -> Positions Frame
+        #       -> pos line 1 Frame
+        #       -> pos line 2 Frame
+        #   -> Control Frame
+        #     -> Load buttonbox
+        #     -> Save button
+        #     -> Record Frame
+        #     -> Fit Frame
+        #       -> Results Frame
+        #     -> Variables Frame
+        #     -> Current Guess Frame
+        
         self.window = Toplevel(master)
-        self.main_frame = Frame(self.window, width=840, height = 700)
+        self.main_frame = Frame(self.window, width=1180, height = 1000)
         self.main_frame.grid(row=0, column=0)
         self.main_frame.config(background = "#003366")
-        self.plot_frame = Frame(self.main_frame, width=600, height=600)
+        
+        self.plot_frame = Frame(self.main_frame, width=600, height=900)
         self.plot_frame.grid(row=0, column=0, padx=10,pady=10)
         self.plot_frame.config(background = "#003366")
-        self.positions_frame = Frame(self.main_frame, width=600, height=100)
-        self.positions_frame.grid(row=1, column=0, padx=10,pady=2)
-        self.positions_frame.config(background = "#DBDBDB")
-        self.control_frame = Frame(self.main_frame, width=320, height=600)
+        
+        self.positions_frame = Frame(self.plot_frame, width=600, height=100)
+        self.positions_frame.grid(row=1, column=0, padx=10,pady=5)
+        self.positions_frame.config(background = "#FFFFFF")
+        
+        self.pos_line_1_frame = Frame(self.positions_frame, width=600, height=100)
+        self.pos_line_1_frame.grid(row=0, column=0, padx=0,pady=0)
+        self.pos_line_1_frame.config(background = "#FFFFFF")
+        
+        self.pos_line_2_frame = Frame(self.positions_frame, width=600, height=100)
+        self.pos_line_2_frame.grid(row=1, column=0, padx=0,pady=0)
+        self.pos_line_2_frame.config(background = "#FFFFFF")
+        
+        self.control_frame = Frame(self.main_frame, width=320, height=900)
         self.control_frame.grid(row=0, column=1)
         self.control_frame.config(background = "#003366")
-        self.file_frame = Frame(self.control_frame, width=300, height=100)
-        self.file_frame.grid(row=0, column=0, padx=10,pady=10)
-        self.file_frame.config(background = "#003366")
+        
         self.record_frame = Frame(self.control_frame, width=300, height=200)
         self.record_frame.grid(row=1, column=0, padx=10, pady=10)
         self.record_frame.config(background = "#DBDBDB")
+        
         self.fit_frame = Frame(self.control_frame, width=300, height=200)
         self.fit_frame.grid(row=3, column=0, padx=10, pady=10)
         self.fit_frame.config(background = "#003366")
+        
         self.results_frame = Frame(self.fit_frame, width=290, height=120)
         self.results_frame.grid(row=3, column=0, padx=10, pady=10)
         self.results_frame.config(background = "#DBDBDB")
         
+        self.variables_frame  = Frame(self.control_frame, width=320, height=600)
+        self.variables_frame.grid(row=1, column=1, padx=10)
+        self.variables_frame.config(background = "#DBDBDB")
+        
+        self.current_guess_frame  = Frame(self.control_frame, width=320, height=120)
+        self.current_guess_frame.grid(row=3, column=1, padx=10)
+        self.current_guess_frame.config(background = "#DBDBDB")
+        
         self.checked=IntVar()
+        self.offset_bool=IntVar()
         
         ##############
         # PLOT FRAME #
@@ -221,26 +284,56 @@ class RATE_ANALYZER():
         ###################
         
         #create labels
-        self.camZLabel = Label(self.positions_frame, pady=10, text='Camera Z: {0:4.1f}'.format(self.camera_z), width="15")
-        self.camXLabel = Label(self.positions_frame, pady=10, text='Camera X: {0:4.1f}'.format(self.camera_x), width="15")
-        self.mirZLabel = Label(self.positions_frame, pady=10, text='Mirror Z: {0:4.1f}'.format(self.mirror_z), width="15")
-        self.mirHLabel = Label(self.positions_frame, pady=10, text='Mirror Height: {0:4.1f}'.format(self.mirror_height), width="20")
+        self.camZLabel = Label(self.pos_line_1_frame, pady=5, text='Camera Z: {0:4.1f}'.format(self.camera_z), width="15", background ="#FFFFFF")
+        self.camXLabel = Label(self.pos_line_1_frame, pady=5, text='Camera X: {0:4.1f}'.format(self.camera_x), width="15", background ="#FFFFFF")
+        self.mirZLabel = Label(self.pos_line_1_frame, pady=5, text='Mirror Z: {0:4.1f}'.format(self.mirror_z), width="15", background ="#FFFFFF")
+        self.mirHLabel = Label(self.pos_line_1_frame, pady=5, text='Mirror Y: {0:4.1f}'.format(self.mirror_height), width="20", background ="#FFFFFF")
+        self.mirPhiLabel = Label(self.pos_line_2_frame, pady=5, text='Mirror PSI: {0:4.1f}'.format(self.psi), width="18", background ="#FFFFFF")
+        self.mirPsiLabel = Label(self.pos_line_2_frame, pady=5, text='Mirror PHI: {0:4.1f}'.format(self.phi), width="18", background ="#FFFFFF")
+        self.offsetLabel = Label(self.pos_line_2_frame, pady=5, text='Offset: {0:4.1f}'.format(geo.get_path_length_delta(self.phi, self.psi, self.mirror_height, self.mirror_z, self.camera_z, self.camera_x), width="18"), background ="#FFFFFF")
         
         #place labels
         self.camZLabel.grid(row=0, column=0)
         self.camXLabel.grid(row=0, column=1)
         self.mirZLabel.grid(row=0, column=2)
         self.mirHLabel.grid(row=0, column=3)
+        self.mirPhiLabel.grid(row=0, column=0)
+        self.mirPsiLabel.grid(row=0, column=1)
+        self.offsetLabel.grid(row=0, column=2)
         
         ##############
         # FILE FRAME #
         ##############
         
         #add GUI elements
-        self.loadButton = Button(self.file_frame, text="Load Rate Distribution", width=31, pady=3, padx=3, command=self.loadRates)
+        self.loadButton = Button(self.control_frame, text="Load Rate Distribution", width=31, pady=3, padx=3, command=self.loadRates)
         self.loadButton.grid(row=0,column=0)
-        self.saveButton = Button(self.file_frame, text="Save Rate Distribution", width=31, pady=3, padx=3, command=self.saveRates)
-        self.saveButton.grid(row=1,column=0)
+        self.saveButton = Button(self.control_frame, text="Save Rate Distribution", width=31, pady=3, padx=3, command=self.saveRates)
+        self.saveButton.grid(row=0,column=1)
+        
+        #######################
+        # CURRENT GUESS FRAME #
+        #######################
+        
+        #here we just change the text of the labels to keep everything easy with the fit methods!
+        
+        #create labels
+        self.label_guess_head = Label(self.current_guess_frame, text='CURRENT GUESS:', width="15")
+        self.label_guess_psi  = Label(self.current_guess_frame, text='PHI:  ', width="15")
+        self.label_guess_phi = Label(self.current_guess_frame, text='PSI:  ', width="15")
+        self.label_guess_mir_z = Label(self.current_guess_frame, text='Mirror Z:  ', width="15")
+        self.label_guess_mir_y = Label(self.current_guess_frame, text='Mirror Y:  ', width="15")
+        self.label_guess_cam_z = Label(self.current_guess_frame, text='Camera Z:  ', width="15")
+        self.label_guess_cam_x = Label(self.current_guess_frame, text='Camera X:  ', width="15")
+        
+        #place labels
+        self.label_guess_head.grid(row=0)
+        self.label_guess_psi.grid(row=1, column=0)
+        self.label_guess_phi.grid(row=1, column=1)
+        self.label_guess_mir_z.grid(row=2, column=0)
+        self.label_guess_mir_y.grid(row=2, column=1)
+        self.label_guess_cam_z.grid(row=3, column=0)
+        self.label_guess_cam_x.grid(row=3, column=1)
 
 
         ################
@@ -386,6 +479,56 @@ class RATE_ANALYZER():
         self.adoptButton = Button(self.record_frame, text="adopt proposal", command=self.adoptProposal)
         self.adoptButton.grid(row=6, column=1, padx=10, pady=3)
         
+        ###################
+        # VARIABLES FRAME #
+        ###################
+        
+        #create labels
+        self.label_starting_psi = Label(self.variables_frame, text='PSI:  ')
+        self.label_starting_phi = Label(self.variables_frame, text='PSI:  ')
+        self.label_starting_mir_z = Label(self.variables_frame, text='Mirror Z:  ')
+        self.label_starting_mir_y = Label(self.variables_frame, text='Mirror Y:  ')
+        self.label_starting_cam_z = Label(self.variables_frame, text='Camera Z:  ')
+        self.label_starting_cam_x = Label(self.variables_frame, text='Camera X:  ')
+        #place labels in grid
+        self.label_starting_psi.grid(row=0, column=0, padx=10, pady=3)
+        self.label_starting_phi.grid(row=1, column=0, padx=10, pady=3)
+        self.label_starting_mir_z.grid(row=2, column=0, padx=10, pady=3)
+        self.label_starting_mir_y.grid(row=3, column=0, padx=10, pady=3)
+        self.label_starting_cam_z.grid(row=4, column=0, padx=10, pady=3)
+        self.label_starting_cam_x.grid(row=5, column=0, padx=10, pady=3)
+        #create sliders
+        self.box_starting_psi = Scale(self.variables_frame, from_=-4.4, to=4.4, orient=HORIZONTAL, length=150, resolution=0.1)
+        self.box_starting_phi = Scale(self.variables_frame, from_=-4.4, to=4.4, orient=HORIZONTAL, length=150, resolution=0.1)
+        self.box_starting_mir_z = Scale(self.variables_frame, from_=308, to=439, orient=HORIZONTAL, length=150, resolution=0.1)
+        self.box_starting_mir_y = Scale(self.variables_frame, from_=119, to=146, orient=HORIZONTAL, length=150, resolution=0.1)
+        self.box_starting_cam_z = Scale(self.variables_frame, from_=0, to=139, orient=HORIZONTAL, length=150, resolution=0.1)
+        self.box_starting_cam_x = Scale(self.variables_frame, from_=-125, to=125, orient=HORIZONTAL, length=150, resolution=0.1)
+        #place sliders in grid
+        self.box_starting_psi.grid(row=0, column=1, padx=10, pady=3)
+        self.box_starting_phi.grid(row=1, column=1, padx=10, pady=3)
+        self.box_starting_mir_z.grid(row=2, column=1, padx=10, pady=3)
+        self.box_starting_mir_y.grid(row=3, column=1, padx=10, pady=3)
+        self.box_starting_cam_z.grid(row=4, column=1, padx=10, pady=3)
+        self.box_starting_cam_x.grid(row=5, column=1, padx=10, pady=3)
+        #set initial values
+        self.box_starting_psi.set(0)
+        self.box_starting_phi.set(0)
+        self.box_starting_mir_z.set(360)
+        self.box_starting_mir_y.set(120)
+        self.box_starting_cam_z.set(0)
+        self.box_starting_cam_x.set(0)
+        
+        #create and place checkbutton
+        self.checkbutton_offset = Checkbutton(self.variables_frame, text="use offset", command=self.offsetMode, onvalue = 1, offvalue = 0, variable=self.offset_bool)
+        self.checkbutton_offset.select()
+        self.checkbutton_offset.grid(row=6, column=0, padx=10, pady=3)
+
+        #create and place button for recomended parameter adoption
+        self.adoptButton = Button(self.variables_frame, text="adopt current guess", command=self.adoptCurrentGuess)
+        self.adoptButton = Button(self.variables_frame, text="adopt current guess", command=self.adoptCurrentGuess)
+        self.adoptButton.grid(row=6, column=1, padx=10, pady=3)
+        
         
         #############
         # FIT FRAME #
@@ -395,13 +538,13 @@ class RATE_ANALYZER():
         self.findAreaButton.grid(row=0)
         self.fitButton = Button(self.fit_frame, text="Fit Gaussian", width=31, pady=3, padx=3, command=self.fitGaussian)
         self.fitButton.grid(row=1)
-                
+        
         
         #################
         # RESULTS FRAME #
         #################
         
-        #here we just changed the text of the labels to keep everything easy with the fit methods!
+        #here we just change the text of the labels to keep everything easy with the fit methods!
         
         #create labels
         self.resultsHeadLabel = Label(self.results_frame, text='RESULTS:', width="15")
@@ -444,8 +587,13 @@ class RATE_ANALYZER():
         
         #crazy batch button
         self.crazyBatchButton = Button(self.control_frame, text="Crazy Batch", width=31, pady=3, padx=3)
-        self.crazyBatchButton.grid(row=5)
+        self.crazyBatchButton.grid(row=5, column=0)
         self.crazyBatchButton["command"]= self.crazyBatch
+        
+        #DO MAGIC button
+        self.do_magic_button = Button(self.control_frame, text="Do Magic", width=31, pady=3, padx=3)
+        self.do_magic_button.grid(row=5, column=1)
+        self.do_magic_button["command"]= self.crazyBatch
   
     def replotRates(self):
         #update the other parameters
@@ -454,6 +602,10 @@ class RATE_ANALYZER():
         self.camXLabel["text"] ='Camera X: {0:4.1f}'.format(self.camera_x)
         self.mirZLabel["text"] ='Mirror Z: {0:4.1f}'.format(self.mirror_z)
         self.mirHLabel["text"] ='Mirror Height: {0:4.1f}'.format(self.mirror_height)
+        self.mirPhiLabel["text"] ='Mirror PSI: {0:4.1f}'.format(self.psi)
+        self.mirPsiLabel["text"] ='Mirror PHI: {0:4.1f}'.format(self.phi)
+        self.offsetLabel["text"] ='Offset: {0:4.1f}'.format(geo.get_path_length_delta(self.phi, self.psi, self.mirror_height, self.mirror_z, self.camera_z, self.camera_x))
+        
         #make a nice plot
         if self.figure==None:
             self.figure=plt.Figure(figsize=(6,6))
@@ -945,6 +1097,8 @@ class RATE_ANALYZER():
             raise RuntimeError("The measuring mode needs to be definied correctly!")
                 
     def findRectangle(self, contrast_factor=1.5):
+        if self.rates == None:
+            raise RuntimeError("The area of interest can't be found if there are no rates! Please load or record a rate file")
         rates=self.rates
         if self.mode=="psi-phi":
             coordinates_phi=np.linspace(self.min_phi, self.max_phi, num=int(self.spacing_phi))
@@ -1182,6 +1336,25 @@ class RATE_ANALYZER():
             else:
                 raise RuntimeError("The measuring mode needs to be definied correctly!")    
             file.close()
+            
+    def offsetMode(self):
+        if self.offset_bool.get() == 1:
+            self.label_starting_cam_z.config(text="Offset:")
+            self.box_starting_cam_z.config(from_=-10, to=10)
+        elif self.offset_bool.get() == 0:
+            self.label_starting_cam_z.config(text="Camera Z:")
+            self.box_starting_cam_z.config(from_=0, to=139)
+        print("Toggled mode")
+        
+    #THIS SHOULD ACTUALLY GET IT INFORMATION FROM THE GEOMETRY PACKAGE!
+    def adoptCurrentGuess(self):
+        cam_x, cam_z, phi, psi, mir_z, mir_y = 0,0,0,0,0,0  # geo.get_optimal_parameters_current_guess()
+        self.box_starting_cam_x.set(cam_x)
+        self.box_starting_cam_z.set(cam_z)
+        self.box_starting_phi.set(phi)
+        self.box_starting_psi.set(psi)
+        self.box_starting_mir_z.set(mir_z)
+        self.box_starting_mir_y.set(mir_y)
             
     def adoptProposal(self):
         #set the sliders to the borders of the rectangle
