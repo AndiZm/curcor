@@ -33,41 +33,27 @@ class RATE_ANALYZER():
     #measurement mode
     mode=None
     
-    #currently loaded distribution
+    #currently loaded distribution / plot
     rates=None
-    
-    #in case of a psi-phi measurement
-    min_phi=-4.4
-    max_phi=4.4
-    min_psi=-4.4
-    max_psi=4.4
-    spacing_psi=10
-    spacing_phi=10
-    camera_z=np.nan
-    camera_x=np.nan
-    mirror_z=np.nan
-    mirror_height=np.nan
-    #in case of a X-Y measurment
+    spacing_x=np.nan
+    spacing_y=np.nan
     min_x=-10
-    max_x=10
+    max_x=-min_x
     min_y=-10
-    max_y=10
-    spacing_x=10
-    spacing_y=10
-    offset_pathlength=0
-    mirror_z=350
-    phi=0
-    psi=0
-    #in case of a X-Z measurement (additional to the ones from an X-Y measurement)
-    min_z=-10
-    max_z=10
-    spacing_z=10
+    max_y=-min_y
+    camera_z=-1
+    camera_x=-1
+    mirror_z=-1
+    mirror_y=-1
+    mirror_psi=-1
+    mirror_phi=-1
+    offset=-1
     
     #currently set rectangle
-    min_psi_rect=None
-    max_psi_rect=None
-    min_phi_rect=None
-    max_phi_rect=None
+    min_1_rect=None
+    max_1_rect=None
+    min_0_rect=None
+    max_0_rect=None
     
     #Stuff for the GUI
     master=None
@@ -93,12 +79,12 @@ class RATE_ANALYZER():
     label_spacing_y=None
     checkbutton_live=None
     adoptButton=None 
-    box_min_phi=None
-    box_max_phi=None
-    box_min_psi=None
-    box_max_psi=None
-    box_spacing_phi=None
-    box_spacing_psi=None
+    box_min_0=None
+    box_max_0=None
+    box_min_1=None
+    box_max_1=None
+    box_spacing_0=None
+    box_spacing_1=None
     checked=None
     offset_bool=None
     resultsHeadLabel=None
@@ -168,15 +154,6 @@ class RATE_ANALYZER():
             print("Start Rate Analyzer in measuring mode {0}".format(self.mode))
         else:
             raise RuntimeError("Something went wrong with the selection of the measuring mode!")
-            
-        #get positions of the controller
-        self.controller.setBussy(True)
-        sleep(0.1)
-        self.camera_z=controller.get_position_camera_z()
-        self.camera_x=controller.get_position_camera_x()
-        self.mirror_z=controller.get_position_mirror_z()
-        self.mirror_height=controller.get_position_mirror_height()
-        self.controller.setBussy(False)
         
         #create new window and frames
         
@@ -283,10 +260,10 @@ class RATE_ANALYZER():
         self.camZLabel = Label(self.pos_line_1_frame, pady=5, text='Camera Z: {0:4.1f}'.format(self.camera_z), width="15", background ="#FFFFFF")
         self.camXLabel = Label(self.pos_line_1_frame, pady=5, text='Camera X: {0:4.1f}'.format(self.camera_x), width="15", background ="#FFFFFF")
         self.mirZLabel = Label(self.pos_line_1_frame, pady=5, text='Mirror Z: {0:4.1f}'.format(self.mirror_z), width="15", background ="#FFFFFF")
-        self.mirHLabel = Label(self.pos_line_1_frame, pady=5, text='Mirror Y: {0:4.1f}'.format(self.mirror_height), width="20", background ="#FFFFFF")
-        self.mirPhiLabel = Label(self.pos_line_2_frame, pady=5, text='Mirror PSI: {0:4.1f}'.format(self.psi), width="18", background ="#FFFFFF")
-        self.mirPsiLabel = Label(self.pos_line_2_frame, pady=5, text='Mirror PHI: {0:4.1f}'.format(self.phi), width="18", background ="#FFFFFF")
-        self.offsetLabel = Label(self.pos_line_2_frame, pady=5, text='Offset: {0:4.1f}'.format(geo.get_path_length_delta(self.phi, self.psi, self.mirror_height, self.mirror_z, self.camera_z, self.camera_x), width="18"), background ="#FFFFFF")
+        self.mirHLabel = Label(self.pos_line_1_frame, pady=5, text='Mirror Y: {0:4.1f}'.format(self.mirror_y), width="20", background ="#FFFFFF")
+        self.mirPhiLabel = Label(self.pos_line_2_frame, pady=5, text='Mirror PSI: {0:4.1f}'.format(self.mirror_psi), width="18", background ="#FFFFFF")
+        self.mirPsiLabel = Label(self.pos_line_2_frame, pady=5, text='Mirror PHI: {0:4.1f}'.format(self.mirror_phi), width="18", background ="#FFFFFF")
+        self.offsetLabel = Label(self.pos_line_2_frame, pady=5, text='Offset: {0:4.1f}'.format(self.offset, width="18"), background ="#FFFFFF")
         
         #place labels
         self.camZLabel.grid(row=0, column=0)
@@ -437,7 +414,7 @@ class RATE_ANALYZER():
         self.checkbutton_live.grid(row=6, column=0, padx=10, pady=3)
 
         #create and place button for recomended parameter adoption
-        self.adoptButton = Button(self.record_frame, text="adopt proposal", command=self.adoptProposal)
+        self.adoptButton = Button(self.record_frame, text="adopt red box", command=self.adoptProposal)
         self.adoptButton.grid(row=6, column=1, padx=10, pady=3)
         
         ###################
@@ -562,10 +539,10 @@ class RATE_ANALYZER():
         self.camZLabel["text"]='Camera Z: {0:4.1f}'.format(self.camera_z)
         self.camXLabel["text"] ='Camera X: {0:4.1f}'.format(self.camera_x)
         self.mirZLabel["text"] ='Mirror Z: {0:4.1f}'.format(self.mirror_z)
-        self.mirHLabel["text"] ='Mirror Height: {0:4.1f}'.format(self.mirror_height)
-        self.mirPhiLabel["text"] ='Mirror PSI: {0:4.1f}'.format(self.psi)
-        self.mirPsiLabel["text"] ='Mirror PHI: {0:4.1f}'.format(self.phi)
-        self.offsetLabel["text"] ='Offset: {0:4.1f}'.format(geo.get_path_length_delta(self.phi, self.psi, self.mirror_height, self.mirror_z, self.camera_z, self.camera_x))
+        self.mirHLabel["text"] ='Mirror Height: {0:4.1f}'.format(self.mirror_y)
+        self.mirPhiLabel["text"] ='Mirror PSI: {0:4.1f}'.format(self.mirror_psi)
+        self.mirPsiLabel["text"] ='Mirror PHI: {0:4.1f}'.format(self.mirror_phi)
+        self.offsetLabel["text"] ='Offset: {0:4.1f}'.format(geo.get_path_length_delta(self.mirror_phi, self.mirror_psi, self.mirror_y, self.mirror_z, self.camera_z, self.camera_x))
         
         #make a nice plot
         if self.figure==None:
@@ -624,16 +601,16 @@ class RATE_ANALYZER():
                 cam_z=self.box_starting_cam_z.get()
                 offset_cam_z=geo.get_path_length_delta(mir_phi, mir_psi, mir_y, mir_z, cam_z, cam_x)
             #get variables and spacing
-            min_0=self.box_min_phi.get()
-            max_0=self.box_max_phi.get()
-            min_1=self.box_min_psi.get()
-            max_2=self.box_max_psi.get()
-            spacing_0=self.box_max_phi.get()
-            spacing_1=self.box_max_psi.get()
+            min_0=self.box_min_0.get()
+            max_0=self.box_max_0.get()
+            min_1=self.box_min_1.get()
+            max_1=self.box_max_1.get()
+            spacing_0=int(self.box_spacing_0.get())
+            spacing_1=int(self.box_spacing_1.get())
             if self.mode=="psi-phi":
                 t1 = threading.Thread(target= lambda arg_min_phi=self.box_min_phi.get(), arg_max_phi=self.box_max_phi.get(), arg_min_psi=self.box_min_psi.get(), arg_max_psi=self.box_max_psi.get(), arg_spacing_phi=self.box_spacing_phi.get(), arg_spacing_psi=self.box_spacing_psi.get() : self.recordRateDistribution(spacing_phi=arg_spacing_phi, spacing_psi=arg_spacing_psi, min_phi=arg_min_phi, max_phi=arg_max_phi, min_psi=arg_min_psi, max_psi=arg_max_psi))
             elif self.mode=="x-y":
-                t1 = threading.Thread(target= lambda arg_spacing_x=spacing_0, arg_spacing_y=spacing_1, arg_min_cam_x=min_0, arg_max_cam_x=max_0, arg_min_mir_y=min_1, arg_max_mir_y=max_1, arg_cam_x=cam_x, arg_mir_y=mir_y, arg_offset_cam_z=offset_cam_z, arg_mir_z=mir_z, arg_phi=mir_phi, arg_psi=mir_psi : recordRateDistributionXY(spacing_x=arg_spacing_x, spacing_y=arg_spacing_y, min_cam_x=arg_min_cam_x, max_cam_x=arg_max_cam_x, min_mir_y=arg_min_mir_y, max_mir_y=arg_max_mir_y, cam_x=arg_cam_x, mir_y=arg_mir_y, offset_cam_z=arg_offset_cam_z, mir_z=arg_mir_z, phi=arg_phi, psi=arg_psi))
+                t1 = threading.Thread(target= lambda arg_spacing_x=spacing_0, arg_spacing_y=spacing_1, arg_min_cam_x=min_0, arg_max_cam_x=max_0, arg_min_mir_y=min_1, arg_max_mir_y=max_1, arg_cam_x=cam_x, arg_mir_y=mir_y, arg_offset_cam_z=offset_cam_z, arg_mir_z=mir_z, arg_phi=mir_phi, arg_psi=mir_psi : self.recordRateDistributionXY(spacing_x=arg_spacing_x, spacing_y=arg_spacing_y, min_cam_x=arg_min_cam_x, max_cam_x=arg_max_cam_x, min_mir_y=arg_min_mir_y, max_mir_y=arg_max_mir_y, cam_x=arg_cam_x, mir_y=arg_mir_y, offset_cam_z=arg_offset_cam_z, mir_z=arg_mir_z, phi=arg_phi, psi=arg_psi))
             elif self.mode=="x-z":
                 t1 = threading.Thread(target= lambda arg_min_x=self.box_min_x.get(), arg_max_x=self.box_max_x.get(), arg_min_z=self.box_min_z.get(), arg_max_z=self.box_max_z.get(), arg_spacing_x=self.box_spacing_x.get(), arg_spacing_z=self.box_spacing_z.get() : self.recordRateDistribution(spacing_phi=arg_spacing_x, spacing_psi=arg_spacing_z, min_phi=arg_min_x, max_phi=arg_max_x, min_psi=arg_min_z, max_psi=arg_max_z))
             else:
@@ -642,71 +619,73 @@ class RATE_ANALYZER():
             self.replotRatesUpdate()
         else:
             print("Result will be plotted after everything is measured!")
-            self.recordRateDistribution(self.box_spacing_phi.get(), self.box_spacing_psi.get(), self.box_min_phi.get(), self.box_max_phi.get(), self.box_min_psi.get(), self.box_max_psi.get())
+            self.recordRateDistribution(self.box_spacing_0.get(), self.box_spacing_1.get(), self.box_min_phi.get(), self.box_max_phi.get(), self.box_min_psi.get(), self.box_max_psi.get())
             self.replotRates()
-                
+    #Should be finished
     def recordRateDistributionXY(self, spacing_x, spacing_y, min_cam_x, max_cam_x, min_mir_y, max_mir_y, cam_x, mir_y, offset_cam_z, mir_z, phi, psi):
-        if self.mode is not "x-y":
+        if self.mode!="x-y":
             raise RuntimeError("The method 'recordRateDistributionXY' can only be called in x-y mode! The mode currently is set to {}".format(self.mode))
+        if self.client==None:
+            self.still_recording=False
+            raise RuntimeError("Error when trying to record a rate. Cannot record rate without a client connected")
+            
         #FIRST CONTROLL IF THE POSITIONS ARE POSSIBLE BY CHECKING ALL EXTREMAL POINTS!
         min_x=cam_x+min_cam_x
         max_x=cam_x+max_cam_x
-        min_y=mir_y+min_cam_y
-        max_y=mir_y+max_cam_y
-        min_min = geometry.check_position_cam_offset(phi, psi, min_y, mir_z, offset_cam_z, min_x)
-        min_max = geometry.check_position_cam_offset(phi, psi, min_y, mir_z, offset_cam_z, max_x)
-        max_min = geometry.check_position_cam_offset(phi, psi, max_y, mir_z, offset_cam_z, min_x)
-        max_min = geometry.check_position_cam_offset(phi, psi, max_y, mir_z, offset_cam_z, max_x)
-        if min_min and min_max and max_min and max_max:
-            raise RuntimeError("The rate distrubution can not be recorded because some of the measurement positions are out of range! Min_Min {0}, Min_Max {1}, Max_Min {2}, Max_Max {3}".format(min_min, min_max, max_min, max_max))
+        min_y=mir_y+min_mir_y
+        max_y=mir_y+max_mir_y
+        min_min = geo.check_position_cam_offset(phi, psi, min_y, mir_z, offset_cam_z, min_x)
+        min_max = geo.check_position_cam_offset(phi, psi, min_y, mir_z, offset_cam_z, max_x)
+        max_min = geo.check_position_cam_offset(phi, psi, max_y, mir_z, offset_cam_z, min_x)
+        max_max = geo.check_position_cam_offset(phi, psi, max_y, mir_z, offset_cam_z, max_x)
+        if not min_min and min_max and max_min and max_max:
+            raise RuntimeError("The rate distribution can not be recorded because some of the measurement positions are out of range! Min_Min {0}, Min_Max {1}, Max_Min {2}, Max_Max {3}".format(min_min, min_max, max_min, max_max))
+        
         
         #change the global parameters so the plot can be redrawn correctly
+        self.resetRectangle()
         self.spacing_x=spacing_x
         self.spacing_y=spacing_y
         self.min_x=min_cam_x
         self.max_x=max_cam_x
-        self.min_y=min_mirr_y
-        self.max_y=max_mirr_y
+        self.min_y=min_mir_y
+        self.max_y=max_mir_y
+        self.camera_z=get_camera_z_position_offset(phi, psi, mir_y, mir_z)
+        self.camera_x=cam_x
+        self.mirror_z=mir_z
+        self.mirror_y=mir_y
+        self.mirror_psi=psi
+        self.mirror_phi=phi
+        self.offset=geo.offset_cam_z
         
-        #set all constant parameters to the correct positions
+        #set all parameters to the correct positions
+        self.controller.setBussy(True)
+        
         self.controller.set_position_mirror_phi(phi)
         self.controller.set_position_mirror_psi(psi)
-        self.controller.set_position_mirror_height(mir_h)
+        self.controller.set_position_mirror_height(min_y) #start from minimum
+        self.controller.set_position_camera_x(min_x) #start from minimum
         new_cam_z=geo.get_camera_z_position_offset(self.phi, self.psi, min_y, self.mirror_z, offset_pathlength=self.offset_pathlength, debug=False)
+        print("DEBUG 1")
         #This check should be unnessecairy by now!
         if new_cam_z<=max_y-min_y:
             raise RuntimeError("The calulated Camera z is smaller than the y-range that is to be surpassed ({0}<={1}). Is the mirror too close to the camera?".format(new_cam_z, max_y-min_y))
-        self.controller.set_position_camera_z(new_cam_z)
-        
-        zeros=geo.get_zero_parameters()
-        spacing_x=spacing_phi
-        spacing_y=spacing_psi
-        min_x=min_phi
-        max_x=max_phi
-        min_y=min_psi
-        max_y=max_psi
-        rates=np.zeros(shape=(spacing_y, spacing_x))
-        #move x and y simultaneously into the starting position
-        self.controller.set_position_camera_x(min_x)
-        self.controller.set_position_mirror_height(min_y)
-        #while seting camera z to the correct position (also accounting for offset on pathlenght)
-        #print("PHI={0} ; PSI={1} ; Height={2} ; Mirr_Z={3} ; Offset={4}".format(self.phi, self.psi, min_y, self.mirror_z, self.offset_pathlength))
-        #self.controller.set_position_mirror_z(zeros[1]-min_y) #SKETCHY! ONLY TRUE FOR INCIDENCE ANGLE = 0
+        else:       
+            self.controller.set_position_camera_z(new_cam_z)
+        #wait till every motor has reached its starting position
+        print("DEBUG 2")
         moving_all=True
-        try:
-            moving_all=self.controller.get_camera_x_moving() or self.controller.get_mirror_height_moving() or self.controller.get_camera_z_moving()
-        except TrinamicException:
-            print("Trinamic Exception while waiting for camera X and mirror height to stop moving")
-        except:
-            print("Non-Trinamic Exception while waiting for camera X and mirror height to stop moving")
         while moving_all:
             try:
-                moving_all=self.controller.get_camera_x_moving() or self.controller.get_mirror_height_moving() or self.controller.get_camera_z_moving()
+                moving_all=self.controller.get_mirror_phi_moving() or self.controller.get_mirror_psi_moving() or self.controller.get_mirror_height_moving() or self.controller.get_mirror_z_moving() or self.controller.get_camera_x_moving() or self.controller.get_camera_z_moving()
             except TrinamicException:
                 print("Trinamic Exception while waiting for camera X, camera Z, mirror Z and mirror height to stop moving")
             except:
                 print("Non-Trinamic Exception while waiting for camera X, camera Z, mirror Z and mirror height to stop moving")
         print("Succesfully set all Motors to correct starting positions. Now start Scan!")
+        
+        #create array of zeros for the rates
+        rates=np.zeros(shape=(spacing_y, spacing_x))
         #walk through the whole space of different positions
         #the lesser shifted dimension should be Y, as one needs to move two motors (mirror height, mirror z) to correctly adjust this
         for i in range(0, spacing_y, 1):
@@ -715,14 +694,8 @@ class RATE_ANALYZER():
             #move the mirror height accordingly
             self.controller.set_position_mirror_height(pos_y)
             #adjust mirror z so that the pathlength is adjusted for // CURRENTLY ONLY TRUE IF THE INCIDENT ANGLE IS 0!
-            self.controller.set_position_camera_z(self.controller.get_position_camera_z()-(max_y-min_y)/(spacing_y-1))
+            self.controller.set_position_camera_z(new_cam_z+(max_y-min_y)/(spacing_y-1)*i)
             moving_y=True
-            try:
-                moving_y=self.controller.get_camera_z_moving() or self.controller.get_mirror_height_moving()
-            except TrinamicException:
-                print("Trinamic Exception while waiting for camera Z and Mirror Height to stop moving")
-            except:
-                print("Non-Trinamic Exception while waiting for camera Z and Mirror Height to stop moving")
             while moving_y:
                 sleep(0.05)
                 try:
@@ -760,194 +733,226 @@ class RATE_ANALYZER():
                     rates[spacing_y-i-1][j]=self.client.getRateA()+self.client.getRateB()
                 self.rates=rates
                 self.new_record=True
+        sleep(0.1)
+        self.still_recording=False
+        self.controller.setBussy(False)
+        print("Recording of the rate distribution done!")
         
-    def recordRateDistributionPhiPsi(self, spacing_phi, spacing_psi, min_phi, max_phi, min_psi, max_psi, center_phi, center_psi, offset_cam_z, mir_h, cam_x, mir_z):
-        return
-    def recordRateDistributionXZ(self, spacing_x, spacing_z, min_cam_x, max_cam_x, min_mir_z, max_mir_z, center_cam_x, center_mir_z, offset_cam_z, mir_h, psi, phi):
-        self.resetRectangle()
+    def recordRateDistributionPhiPsi(self, spacing_phi, spacing_psi, min_phi, max_phi, min_psi, max_psi, cam_x, mir_y, cam_z, mir_z, phi, psi):
+        if self.mode!="psi-phi":
+            raise RuntimeError("The method 'recordRateDistributionPhiPsi' can only be called in psi-phi mode! The mode currently is set to {}".format(self.mode))
         if self.client==None:
-            print("No client connected! Cannot plot Mirrors")
             self.still_recording=False
-            return
+            raise RuntimeError("Error when trying to record a rate. Cannot record rate without a client connected")
         self.controller.setBussy(True)
-        sleep(0.02)
-        if self.mode=="psi-phi":
-            print("Starting to measure the rate distribution. MinPhi={0:4.2f} ; MaxPhi={1:4.2f} ; MinPsi={2:4.2f} ; MaxPsi={3:4.2f} ; SpacingPhi={4} ; SpacingPsi={5}".format(min_phi, max_phi, min_psi, max_psi, spacing_phi, spacing_psi))
-            #coordinates_phi=np.linspace(min_phi, max_phi, num=spacing_phi)
-            #coordinates_psi=np.linspace(min_psi, max_psi, num=spacing_psi)
-            #x, y=np.meshgrid(coordinates_phi, coordinates_psi)
-            rates=np.zeros(shape=(spacing_phi, spacing_psi))
-            self.rates=np.transpose(rates)
-            self.spacing_psi=spacing_psi
-            self.spacing_phi=spacing_phi
-            self.min_psi=min_psi
-            self.max_psi=max_psi
-            self.min_phi=min_phi
-            self.max_phi=max_phi
-            #move psi and phi simultaneously into the starting position
-            self.controller.set_position_mirror_phi(min_phi)
-            self.controller.set_position_mirror_psi(min_psi)
-            moving_both=True
-            try:
-                moving_both=self.controller.get_mirror_phi_moving() or self.controller.get_mirror_psi_moving() 
-            except TrinamicException:
-                print("Trinamic Exception while waiting for PHI and PSI to stop moving")
-            except:
-                print("Non-Trinamic Exception while waiting for PHI and PSI to stop moving")
+        
+        #FIRST CONTROLL IF THE POSITIONS ARE POSSIBLE BY CHECKING ALL EXTREMAL POINTS!
+        min_x=phi+min_phi
+        max_x=phi+max_phi
+        min_y=psi+min_psi
+        max_y=mir_psi+max_psi
+        min_min = geo.check_position_cam_offset(min_phi, min_psi, mir_y, mir_z, offset_cam_z, mir_x)
+        min_max = geo.check_position_cam_offset(min_phi, max_psi, mir_y, mir_z, offset_cam_z, mir_x)
+        max_min = geo.check_position_cam_offset(max_phi, min_psi, mir_y, mir_z, offset_cam_z, mir_x)
+        max_max = geo.check_position_cam_offset(max_phi, max_psi, mir_y, mir_z, offset_cam_z, max_x)
+        if not min_min and min_max and max_min and max_max:
+            raise RuntimeError("The rate distribution can not be recorded because some of the measurement positions are out of range! Min_Min {0}, Min_Max {1}, Max_Min {2}, Max_Max {3}".format(min_min, min_max, max_min, max_max))
+        
+        #change the global parameters so the plot can be redrawn correctly
+        self.resetRectangle()
+        self.spacing_x=spacing_phi
+        self.spacing_y=spacing_psi
+        self.min_x=min_phi
+        self.max_x=max_phi
+        self.min_y=min_psi
+        self.max_y=max_psi
+        self.camera_z=cam_z
+        self.camera_x=cam_x
+        self.mirror_z=mir_z
+        self.mirror_y=mir_y
+        self.mirror_psi=psi
+        self.mirror_phi=phi
+        self.offset=geo.get_path_length_delta(phi, psi, mir_y, mir_z, cam_z, cam_x)
+        
+        #set all parameters to the correct positions
+        print("Starting to measure the rate distribution. MinPhi={0:4.2f} ; MaxPhi={1:4.2f} ; MinPsi={2:4.2f} ; MaxPsi={3:4.2f} ; SpacingPhi={4} ; SpacingPsi={5}".format(min_phi, max_phi, min_psi, max_psi, spacing_phi, spacing_psi))
 
-            while moving_both:
+        #move psi and phi simultaneously into the starting position
+        self.controller.setBussy(True)
+        self.controller.set_position_mirror_phi(min_phi) #start from minimum
+        self.controller.set_position_mirror_psi(min_psi) #start from minimum
+        self.controller.set_position_mirror_height(mir_y)
+        self.controller.set_position_mirror_z(mir_z)
+        self.controller.set_position_camera_x(cam_x)
+        self.controller.set_position_camera_z(cam_z)
+        
+        #wait till every motor has reached its starting position
+        moving_all=True
+        while moving_all:
+            try:
+                moving_all=self.controller.get_mirror_phi_moving() or self.controller.get_mirror_psi_moving() or self.controller.get_mirror_height_moving() or self.controller.get_mirror_z_moving() or self.controller.get_camera_x_moving() or self.controller.get_camera_z_moving()
+            except TrinamicException:
+                print("Trinamic Exception while waiting for camera X, camera Z, mirror Z and mirror height to stop moving")
+            except:
+                print("Non-Trinamic Exception while waiting for camera X, camera Z, mirror Z and mirror height to stop moving")
+        print("Succesfully set all Motors to correct starting positions. Now start Scan!")
+        #GGGGGGGGGGGGOOOOOOOOOOOOOOOTTTTTTTT TILL HERE
+        rates=np.zeros(shape=(spacing_psi, spacing_phi))
+        #walk through the whole space of different positions
+        for i in range(0, spacing_phi, 1):
+            pos_phi=min_phi+(max_phi-min_phi)/(spacing_phi-1)*i
+            self.controller.set_position_mirror_phi(pos_phi)
+            moving_phi=True
+            while moving_phi:
                 sleep(0.05)
                 try:
-                    moving_both=self.controller.get_mirror_phi_moving() or self.controller.get_mirror_psi_moving() 
+                    moving_phi=self.controller.get_mirror_phi_moving()
                 except TrinamicException:
-                    print("Trinamic Exception while waiting for PHI and PSI to stop moving")
+                    print("Trinamic Exception while waiting for PHI to stop moving")
                 except:
-                    print("Non-Trinamic Exception while waiting for PHI and PSI to stop moving")
-            #walk through the whole space of different positions
-            for i in range(0, spacing_phi, 1):
-                pos_phi=min_phi+(max_phi-min_phi)/(spacing_phi-1)*i
-                self.controller.set_position_mirror_phi(pos_phi)
-                moving_phi=True
-                while moving_phi:
+                    print("Non-Trinamic Exception while waiting for PHI to stop moving")
+            for j in range(0, spacing_psi, 1):
+                if i%2==0:
+                    pos_psi=min_psi+(max_psi-min_psi)/(spacing_psi-1)*j
+                else:
+                    pos_psi=max_psi-(max_psi-min_psi)/(spacing_psi-1)*j
+                #print("PSI: {0} PHI: {1}".format(pos_psi, pos_phi))
+                self.controller.set_position_mirror_psi(pos_psi)
+                moving_psi=True
+                try:
+                    moving_psi=self.controller.get_mirror_psi_moving()
+                except TrinamicException:
+                    print("Trinamic Exception while waiting for PSI to stop moving")
+                except:
+                    print("Non-Trinamic Exception while waiting for PSI to stop moving")
+                while moving_psi:
                     sleep(0.05)
-                    try:
-                        moving_phi=self.controller.get_mirror_phi_moving()
-                    except TrinamicException:
-                        print("Trinamic Exception while waiting for PHI to stop moving")
-                    except:
-                        print("Non-Trinamic Exception while waiting for PHI to stop moving")
-                for j in range(0, spacing_psi, 1):
-                    if i%2==0:
-                        pos_psi=min_psi+(max_psi-min_psi)/(spacing_psi-1)*j
-                    else:
-                        pos_psi=max_psi-(max_psi-min_psi)/(spacing_psi-1)*j
-                    #print("PSI: {0} PHI: {1}".format(pos_psi, pos_phi))
-                    self.controller.set_position_mirror_psi(pos_psi)
-                    moving_psi=True
                     try:
                         moving_psi=self.controller.get_mirror_psi_moving()
                     except TrinamicException:
                         print("Trinamic Exception while waiting for PSI to stop moving")
                     except:
                         print("Non-Trinamic Exception while waiting for PSI to stop moving")
-                    while moving_psi:
-                        sleep(0.05)
-                        try:
-                            moving_psi=self.controller.get_mirror_psi_moving()
-                        except TrinamicException:
-                            print("Trinamic Exception while waiting for PSI to stop moving")
-                        except:
-                            print("Non-Trinamic Exception while waiting for PSI to stop moving")
-                    if i%2==0:
-                        rates[i][spacing_psi-1-j]=self.client.getRateA()+self.client.getRateB()
-                    else:
-                        rates[i][j]=self.client.getRateA()+self.client.getRateB()
-                    self.rates=np.transpose(rates)
-                    self.new_record=True
-        elif self.mode=="x-y":
-            return
-        elif self.mode=="x-z":
-            zeros=geo.get_zero_parameters()
-            spacing_x=spacing_psi
-            spacing_y=spacing_phi
-            #attention! This is only correct if the setup is mounted perfectly! Needs to be adjusted when the mirror arrives and optimal spot is found
-            min_x=min_psi+geo.z_len/2+70
-            max_x=max_psi+geo.z_len/2+70
-            min_y=min_phi
-            max_y=max_phi
-            rates=np.zeros(shape=(spacing_y, spacing_x))
-            #change the global parameters so the plot can be redrawn correctly
-            self.spacing_x=spacing_x
-            self.spacing_y=spacing_y
-            self.min_x=min_y
-            self.max_x=max_y
-            self.min_z=min_x
-            self.max_z=max_x
-            #move mirror and camera simultaneously into the starting position
-            #mirror height and offset stay the same as  set before the start of the measurement
-            self.controller.set_position_mirror_z(min_x)
-            self.controller.set_position_camera_x(min_y)
-            #while seting camera z to the correct position (also accounting for offset on pathlenght)
-            #print("PHI={0} ; PSI={1} ; Height={2} ; Mirr_Z={3} ; Offset={4}".format(self.phi, self.psi, min_y, self.mirror_z, self.offset_pathlength))
-            new_cam_z=geo.get_camera_z_position_offset(self.phi, self.psi, self.mirror_height, min_x, offset_pathlength=self.offset_pathlength, debug=False)
-            if new_cam_z<=0:
-                raise RuntimeError("The calulated Camera z is smaller than the allowed range of the camera z ({0}<=0).".format(new_cam_z))
-            self.controller.set_position_camera_z(new_cam_z)
-            moving_all=True
-            try:
-                moving_all=self.controller.get_camera_x_moving() or self.controller.get_mirror_z_moving() or self.controller.get_camera_z_moving()
-            except TrinamicException:
-                print("Trinamic Exception while waiting for camera and mirror to stop moving")
-            except:
-                print("Non-Trinamic Exception while waiting for camera and mirror to stop moving")
-            while moving_all:
-                try:
-                    moving_all=self.controller.get_camera_x_moving() or self.controller.get_mirror_z_moving() or self.controller.get_camera_z_moving()
-                except TrinamicException:
-                    print("Trinamic Exception while waiting for camera X, camera Z, mirror Z to stop moving")
-                except:
-                    print("Non-Trinamic Exception while waiting for camera X, camera Z, mirror Z to stop moving")
-            print("Succesfully set all Motors to correct starting positions. Now start Scan!")
-            #walk through the whole space of different positions
-            #the lesser shifted dimension should be X (actual coordinates Z), as one needs to move two motors (mirror Z, camera Z) to correctly adjust this
-            #now also move X
-            for j in range(0, spacing_x, 1):
-                #calculate the correct x-position (real coord Z) of the mirror
-                pos_x=min_x+(max_x-min_x)/(spacing_x-1)*j
-                self.controller.set_position_mirror_z(pos_x)
-                #also move the camera z along
-                self.controller.set_position_camera_z(new_cam_z+(max_x-min_x)/(spacing_x-1)*j)
-                moving_x=True
-                while moving_x:
-                    sleep(0.05)
-                    try:
-                        moving_x=self.controller.get_camera_z_moving() or self.controller.get_mirror_z_moving()
-                    except TrinamicException:
-                        print("Trinamic Exception while waiting for camera Z and mirror Z to stop moving")
-                    except:
-                        print("Non-Trinamic Exception while waiting for camera Z and mirror Z to stop moving")
-                for i in range(0, spacing_y, 1):
-                    #calculate the position
-                    if j%2==0:
-                        pos_y=min_y+(max_y-min_y)/(spacing_y-1)*i
-                    else:
-                        pos_y=max_y-(max_y-min_y)/(spacing_y-1)*i
-                    self.controller.set_position_camera_x(pos_y)
-                    moving_y=True
-                    while moving_y:
-                        sleep(0.05)
-                        try:
-                            moving_y=self.controller.get_camera_x_moving()
-                        except TrinamicException:
-                            print("Trinamic Exception while waiting for camera Z to stop moving")
-                        except:
-                            print("Non-Trinamic Exception while waiting for camera Z to stop moving")
-                        if j%2==0:
-                            rates[spacing_y-i-1][j]=self.client.getRateA()+self.client.getRateB()
-                        else:
-                            rates[i][j]=self.client.getRateA()+self.client.getRateB()
-                        self.rates=rates
-                        self.new_record=True
-        else:
-            raise RuntimeError("The measuring mode needs to be definied correctly!")
+                if i%2==0:
+                    rates[i][spacing_psi-1-j]=self.client.getRateA()+self.client.getRateB()
+                else:
+                    rates[i][j]=self.client.getRateA()+self.client.getRateB()
+                self.rates=np.transpose(rates)
+                self.new_record=True
         sleep(0.1)
         self.still_recording=False
         self.controller.setBussy(False)
-        # coordinates_phi=np.linspace(min_phi, max_phi, num=spacing_phi)
-        #coordinates_psi=np.linspace(min_psi, max_psi, num=spacing_psi)
-        #x, y=np.meshgrid(coordinates_phi, coordinates_psi)
+        print("Recording of the rate distribution done!")
+    def recordRateDistributionXZ(self, spacing_x, spacing_z, min_cam_x, max_cam_x, min_mir_z, max_mir_z, center_cam_x, center_mir_z, offset_cam_z, mir_h, psi, phi):
+        if self.mode!="x-z":
+            raise RuntimeError("The method 'recordRateDistributionXZ' can only be called in x-z mode! The mode currently is set to {}".format(self.mode))
+        if self.client==None:
+            self.still_recording=False
+            raise RuntimeError("Error when trying to record a rate. Cannot record rate without a client connected")
+        self.controller.setBussy(True)
+        sleep(0.02)
+        self.resetRectangle()
+        
+        zeros=geo.get_zero_parameters()
+        spacing_x=spacing_psi
+        spacing_y=spacing_phi
+        #attention! This is only correct if the setup is mounted perfectly! Needs to be adjusted when the mirror arrives and optimal spot is found
+        min_x=min_psi+geo.z_len/2+70
+        max_x=max_psi+geo.z_len/2+70
+        min_y=min_phi
+        max_y=max_phi
+        rates=np.zeros(shape=(spacing_y, spacing_x))
+        #change the global parameters so the plot can be redrawn correctly
+        self.spacing_x=spacing_x
+        self.spacing_y=spacing_y
+        self.min_x=min_y
+        self.max_x=max_y
+        self.min_z=min_x
+        self.max_z=max_x
+        #move mirror and camera simultaneously into the starting position
+        #mirror height and offset stay the same as  set before the start of the measurement
+        self.controller.set_position_mirror_z(min_x)
+        self.controller.set_position_camera_x(min_y)
+        #while seting camera z to the correct position (also accounting for offset on pathlenght)
+        #print("PHI={0} ; PSI={1} ; Height={2} ; Mirr_Z={3} ; Offset={4}".format(self.phi, self.psi, min_y, self.mirror_z, self.offset_pathlength))
+        new_cam_z=geo.get_camera_z_position_offset(self.phi, self.psi, self.mirror_y, min_x, offset_pathlength=self.offset_pathlength, debug=False)
+        if new_cam_z<=0:
+            raise RuntimeError("The calulated Camera z is smaller than the allowed range of the camera z ({0}<=0).".format(new_cam_z))
+        self.controller.set_position_camera_z(new_cam_z)
+        moving_all=True
+        try:
+            moving_all=self.controller.get_camera_x_moving() or self.controller.get_mirror_z_moving() or self.controller.get_camera_z_moving()
+        except TrinamicException:
+            print("Trinamic Exception while waiting for camera and mirror to stop moving")
+        except:
+            print("Non-Trinamic Exception while waiting for camera and mirror to stop moving")
+        while moving_all:
+            try:
+                moving_all=self.controller.get_camera_x_moving() or self.controller.get_mirror_z_moving() or self.controller.get_camera_z_moving()
+            except TrinamicException:
+                print("Trinamic Exception while waiting for camera X, camera Z, mirror Z to stop moving")
+            except:
+                print("Non-Trinamic Exception while waiting for camera X, camera Z, mirror Z to stop moving")
+        print("Succesfully set all Motors to correct starting positions. Now start Scan!")
+        #walk through the whole space of different positions
+        #the lesser shifted dimension should be X (actual coordinates Z), as one needs to move two motors (mirror Z, camera Z) to correctly adjust this
+        #now also move X
+        for j in range(0, spacing_x, 1):
+            #calculate the correct x-position (real coord Z) of the mirror
+            pos_x=min_x+(max_x-min_x)/(spacing_x-1)*j
+            self.controller.set_position_mirror_z(pos_x)
+            #also move the camera z along
+            self.controller.set_position_camera_z(new_cam_z+(max_x-min_x)/(spacing_x-1)*j)
+            moving_x=True
+            while moving_x:
+                sleep(0.05)
+                try:
+                    moving_x=self.controller.get_camera_z_moving() or self.controller.get_mirror_z_moving()
+                except TrinamicException:
+                    print("Trinamic Exception while waiting for camera Z and mirror Z to stop moving")
+                except:
+                    print("Non-Trinamic Exception while waiting for camera Z and mirror Z to stop moving")
+            for i in range(0, spacing_y, 1):
+                #calculate the position
+                if j%2==0:
+                    pos_y=min_y+(max_y-min_y)/(spacing_y-1)*i
+                else:
+                    pos_y=max_y-(max_y-min_y)/(spacing_y-1)*i
+                self.controller.set_position_camera_x(pos_y)
+                moving_y=True
+                while moving_y:
+                    sleep(0.05)
+                    try:
+                        moving_y=self.controller.get_camera_x_moving()
+                    except TrinamicException:
+                        print("Trinamic Exception while waiting for camera Z to stop moving")
+                    except:
+                        print("Non-Trinamic Exception while waiting for camera Z to stop moving")
+                if j%2==0:
+                    rates[spacing_y-i-1][j]=self.client.getRateA()+self.client.getRateB()
+                else:
+                    rates[i][j]=self.client.getRateA()+self.client.getRateB()
+                self.rates=rates
+                self.new_record=True
+                print("DEBUG End of inner")
+        print("DEBUG: 41")
+        sleep(0.1)
+        print("DEBUG: 42")
+        self.still_recording=False
+        print("DEBUG: 43")
+        self.controller.setBussy(False)
         print("Recording of the rate distribution done!")
         
     def fitGaussian(self):
         #if not done yet: find the rectangle to get some startingvalues
-        if self.min_psi_rect == None or self.max_psi_rect == None or self.min_phi_rect == None or self.max_phi_rect == None:
+        if self.min_1_rect == None or self.max_1_rect == None or self.min_0_rect == None or self.max_0_rect == None:
             self.findRectangle()
         if self.mode=="psi-phi":
             #calculate starting values for the gaussian
-            center_phi=(self.min_phi_rect+self.max_phi_rect)/2
-            center_psi=(self.min_psi_rect+self.max_psi_rect)/2
-            sigma_phi=np.abs(self.min_phi_rect-self.max_phi_rect)/2
-            sigma_psi=np.abs(self.min_psi_rect-self.max_psi_rect)/2
+            center_phi=(self.min_0_rect+self.max_0_rect)/2
+            center_psi=(self.min_1_rect+self.max_1_rect)/2
+            sigma_phi=np.abs(self.min_0_rect-self.max_0_rect)/2
+            sigma_psi=np.abs(self.min_1_rect-self.max_1_rect)/2
             offset=0
             prefactor=np.max(self.rates)
             p0=(prefactor, center_phi, sigma_phi, center_psi, sigma_psi, offset)
@@ -996,10 +1001,10 @@ class RATE_ANALYZER():
             return popt
         elif self.mode=="x-y":
             #calculate starting values for the gaussian
-            center_phi=(self.min_phi_rect+self.max_phi_rect)/2
-            center_psi=(self.min_psi_rect+self.max_psi_rect)/2
-            sigma_phi=np.abs(self.min_phi_rect-self.max_phi_rect)/2
-            sigma_psi=np.abs(self.min_psi_rect-self.max_psi_rect)/2
+            center_phi=(self.min_0_rect+self.max_0_rect)/2
+            center_psi=(self.min_1_rect+self.max_1_rect)/2
+            sigma_phi=np.abs(self.min_0_rect-self.max_0_rect)/2
+            sigma_psi=np.abs(self.min_1_rect-self.max_1_rect)/2
             offset=0
             prefactor=np.max(self.rates)
             p0=(prefactor, center_phi, sigma_phi, center_psi, sigma_psi, offset)
@@ -1048,10 +1053,10 @@ class RATE_ANALYZER():
             return popt
         elif self.mode=="x-z":
             #calculate starting values for the gaussian
-            center_phi=(self.min_phi_rect+self.max_phi_rect)/2
-            center_psi=(self.min_psi_rect+self.max_psi_rect)/2
-            sigma_phi=np.abs(self.min_phi_rect-self.max_phi_rect)/2
-            sigma_psi=np.abs(self.min_psi_rect-self.max_psi_rect)/2
+            center_phi=(self.min_0_rect+self.max_0_rect)/2
+            center_psi=(self.min_1_rect+self.max_1_rect)/2
+            sigma_phi=np.abs(self.min_0_rect-self.max_0_rect)/2
+            sigma_psi=np.abs(self.min_1_rect-self.max_1_rect)/2
             offset=0
             prefactor=np.max(self.rates)
             p0=(prefactor, center_phi, sigma_phi, center_psi, sigma_psi, offset)
@@ -1161,10 +1166,10 @@ class RATE_ANALYZER():
             print("rect_start_x={0} ; rect_start_y={1} ; rect_width_x={2} ; rect_width_y={3}".format(rect_start_phi, rect_start_psi, rect_width_phi, rect_width_psi ))
         elif self.mode=="x-z":
             print("rect_start_x={0} ; rect_start_z={1} ; rect_width_x={2} ; rect_width_z={3}".format(rect_start_phi, rect_start_psi, rect_width_phi, rect_width_psi ))
-        self.min_phi_rect=rect_start_phi
-        self.max_phi_rect=rect_start_phi+rect_width_phi
-        self.min_psi_rect=rect_start_psi+rect_width_psi
-        self.max_psi_rect=rect_start_psi
+        self.min_0_rect=rect_start_phi
+        self.max_0_rect=rect_start_phi+rect_width_phi
+        self.min_1_rect=rect_start_psi+rect_width_psi
+        self.max_1_rect=rect_start_psi
         
     #######################################
     #  FILE FORMAT FOR THE .ratepp FILES  #
@@ -1237,13 +1242,13 @@ class RATE_ANALYZER():
                     self.camera_z=np.nan
                     self.camera_x=np.nan
                     self.mirror_z=np.nan
-                    self.mirror_height=np.nan
+                    self.mirror_y=np.nan
                     array_data=parts[6]
                 else:
                     self.camera_z=float(parts[6])
                     self.camera_x=float(parts[7])
                     self.mirror_z=float(parts[8])
-                    self.mirror_height=float(parts[9])
+                    self.mirror_y=float(parts[9])
                     array_data=parts[10]
                 lines=array_data.splitlines()
                 rates=np.empty((self.spacing_psi, self.spacing_phi))
@@ -1300,7 +1305,7 @@ class RATE_ANALYZER():
                 self.psi=float(parts[6])
                 self.phi=float(parts[7])
                 self.offset_pathlengtht=float(parts[8])
-                self.mirror_height=float(parts[9])
+                self.mirror_y=float(parts[9])
                 array_data=parts[10]
                 lines=array_data.splitlines()
                 rates=np.empty((self.spacing_x, self.spacing_z))
@@ -1333,11 +1338,11 @@ class RATE_ANALYZER():
         if file!=None:
             #file=open(filename, "w")
             if self.mode=="psi-phi":
-                file.write("{0}~{1}~{2}~{3}~{4}~{5}~{6}~{7}~{8}~{9}~{10}".format(self.min_phi, self.max_phi, self.min_psi, self.max_psi, self.spacing_psi, self.spacing_phi, self.camera_z, self.camera_x, self.mirror_z, self.mirror_height, np.array2string(self.rates, threshold=10e9)).replace("\n ", "").replace("]", "]\n").replace("]\n]", "]]"))
+                file.write("{0}~{1}~{2}~{3}~{4}~{5}~{6}~{7}~{8}~{9}~{10}".format(self.min_phi, self.max_phi, self.min_psi, self.max_psi, self.spacing_psi, self.spacing_phi, self.camera_z, self.camera_x, self.mirror_z, self.mirror_y, np.array2string(self.rates, threshold=10e9)).replace("\n ", "").replace("]", "]\n").replace("]\n]", "]]"))
             elif self.mode=="x-y":
                 file.write("{0}~{1}~{2}~{3}~{4}~{5}~{6}~{7}~{8}~{9}~{10}".format(self.min_x, self.max_x, self.min_y, self.max_y, self.spacing_x, self.spacing_y, self.phi, self.psi, self.offset_pathlength, self.mirror_z, np.array2string(self.rates, threshold=10e9)).replace("\n ", "").replace("]", "]\n").replace("]\n]", "]]"))
             elif self.mode=="x-z":
-                file.write("{0}~{1}~{2}~{3}~{4}~{5}~{6}~{7}~{8}~{9}~{10}".format(self.min_x, self.max_x, self.min_z, self.max_z, self.spacing_x, self.spacing_z, self.phi, self.psi, self.offset_pathlength, self.mirror_height, np.array2string(self.rates, threshold=10e9)).replace("\n ", "").replace("]", "]\n").replace("]\n]", "]]"))
+                file.write("{0}~{1}~{2}~{3}~{4}~{5}~{6}~{7}~{8}~{9}~{10}".format(self.min_x, self.max_x, self.min_z, self.max_z, self.spacing_x, self.spacing_z, self.phi, self.psi, self.offset_pathlength, self.mirror_y, np.array2string(self.rates, threshold=10e9)).replace("\n ", "").replace("]", "]\n").replace("]\n]", "]]"))
             else:
                 raise RuntimeError("The measuring mode needs to be definied correctly!")    
             file.close()
@@ -1363,16 +1368,16 @@ class RATE_ANALYZER():
             
     def adoptProposal(self):
         #set the sliders to the borders of the rectangle
-        self.box_min_phi.set(self.min_phi_rect)
-        self.box_max_phi.set(self.max_phi_rect)
-        self.box_min_psi.set(self.min_psi_rect)
-        self.box_max_psi.set(self.max_psi_rect)
+        self.box_min_phi.set(self.min_0_rect)
+        self.box_max_phi.set(self.max_0_rect)
+        self.box_min_psi.set(self.min_1_rect)
+        self.box_max_psi.set(self.max_1_rect)
         
         #do some more complex approximations for the spacing
         spacing_psi=-1
         spacing_phi=-1
         psi_active=None
-        if (self.max_phi_rect-self.min_phi_rect)>(self.max_psi_rect-self.min_psi_rect):
+        if (self.max_0_rect-self.min_0_rect)>(self.max_1_rect-self.min_1_rect):
             #the phi range is larger than the psi range!
             if spacing_phi/spacing_psi>3:
                 spacing_psi=4 #because width should be at least 4
@@ -1390,19 +1395,19 @@ class RATE_ANALYZER():
                 psi_active=True
         if psi_active:
             #calculate the correct phi for about square pixels
-            spacing_phi=(self.max_phi_rect-self.min_phi_rect)/(self.max_psi_rect-self.min_psi_rect)*spacing_psi
+            spacing_phi=(self.max_0_rect-self.min_0_rect)/(self.max_1_rect-self.min_1_rect)*spacing_psi
         else:
             #calculate the correct psi for about square pixels
-            spacing_psi=(self.max_psi_rect-self.min_psi_rect)/(self.max_phi_rect-self.min_phi_rect)*spacing_phi
+            spacing_psi=(self.max_1_rect-self.min_1_rect)/(self.max_0_rect-self.min_0_rect)*spacing_phi
         #set sliders for the spacing
-        self.box_spacing_phi.set(spacing_phi)
-        self.box_spacing_psi.set(spacing_psi)
+        self.box_spacing_0.set(spacing_phi)
+        self.box_spacing_1.set(spacing_psi)
         
     def resetRectangle(self):
-        min_psi_rect=None
-        max_psi_rect=None
-        min_phi_rect=None
-        max_phi_rect=None
+        min_1_rect=None
+        max_1_rect=None
+        min_0_rect=None
+        max_0_rect=None
         
     def updateResults(self, results):
         self.resultsCenterPhiLabel['text']='Center PHI: {0:3.2f}'.format(results[1])
@@ -1426,7 +1431,7 @@ class RATE_ANALYZER():
         #	     [0] position_camera_z        // PHI                                           #
         #	     [1] position_camera_x        // PSI                                           #
         #	     [2] position_mirror_z        // offset pathlength                             #
-        #	     [3] position_mirror_height   // mirror Z                                      #
+        #	     [3] position_mirror_y        // mirror Z                                      #
         #	     [4] phi_min                  // min X                                         #
         #	     [5] phi_max                  // max X                                         #
         #	     [6] psi_min                  // min Y                                         #
@@ -1581,11 +1586,11 @@ class RATE_ANALYZER():
                     self.camera_z=m[0]
                     self.camera_x=m[1]
                     self.mirror_z=m[2]
-                    self.mirror_height=m[3]
+                    self.mirror_y=m[3]
                     self.controller.set_position_camera_z(self.camera_z, verbose=True)
                     self.controller.set_position_camera_x(self.camera_x, verbose=True)
                     self.controller.set_position_mirror_z(self.mirror_z, verbose=True)
-                    self.controller.set_position_mirror_height(self.mirror_height, verbose=True)
+                    self.controller.set_position_mirror_height(self.mirror_y, verbose=True)
                     
                     #wait till the setup is in the right position
                     moving_all=True
@@ -1607,41 +1612,41 @@ class RATE_ANALYZER():
                         self.camera_z=self.controller.get_position_camera_z()
                         self.camera_x=self.controller.get_position_camera_x()
                         self.mirror_z=self.controller.get_position_mirror_z()
-                        self.mirror_height=self.controller.get_position_mirror_height()
+                        self.mirror_y=self.controller.get_position_mirror_height()
                     except TrinamicException:
                         try:
                             self.camera_z=self.controller.get_position_camera_z()
                             self.camera_x=self.controller.get_position_camera_x()
                             self.mirror_z=self.controller.get_position_mirror_z()
-                            self.mirror_height=self.controller.get_position_mirror_height()
+                            self.mirror_y=self.controller.get_position_mirror_height()
                         except TrinamicException:
                             print("Tried twice to get the Positions but failed both times (Trinamic Exception)! Instead take the ones that were initally set!")
                             self.camera_z=m[0]
                             self.camera_x=m[1]
                             self.mirror_z=m[2]
-                            self.mirror_height=m[3]
+                            self.mirror_y=m[3]
                         except:
                             print("Tried twice to get the Positions but failed both times (But notTrinamic Exception)! Instead take the ones that were initally set!")
                             self.camera_z=m[0]
                             self.camera_x=m[1]
                             self.mirror_z=m[2]
-                            self.mirror_height=m[3]
+                            self.mirror_y=m[3]
                     except:
                         print("Tried to get the Positions but failed both times (No Trinamic Exception)! Instead take the ones that were initally set!")
                         self.camera_z=m[0]
                         self.camera_x=m[1]
                         self.mirror_z=m[2]
-                        self.mirror_height=m[3]
+                        self.mirror_y=m[3]
 
             
                     #measure the rate distribution
                     #set the sliders to the borders of the rectangle
-                    self.box_min_phi.set(m[4])
-                    self.box_max_phi.set(m[5])
-                    self.box_min_psi.set(m[6])
-                    self.box_max_psi.set(m[7])
-                    self.box_spacing_phi.set(m[8])
-                    self.box_spacing_psi.set(m[9])
+                    self.box_min_0.set(m[4])
+                    self.box_max_0.set(m[5])
+                    self.box_min_1.set(m[6])
+                    self.box_max_1.set(m[7])
+                    self.box_spacing_0.set(m[8])
+                    self.box_spacing_1.set(m[9])
                     
                     #record the distribution
                     self.recordRateDistributionRead()
