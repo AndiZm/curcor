@@ -610,7 +610,7 @@ class RATE_ANALYZER():
             elif self.mode=="x-y":
                 t1 = threading.Thread(target= lambda arg_spacing_x=spacing_0, arg_spacing_y=spacing_1, arg_min_cam_x=min_0, arg_max_cam_x=max_0, arg_min_mir_y=min_1, arg_max_mir_y=max_1, arg_cam_x=cam_x, arg_mir_y=mir_y, arg_offset_cam_z=offset_cam_z, arg_mir_z=mir_z, arg_phi=mir_phi, arg_psi=mir_psi : self.recordRateDistributionXY(spacing_x=arg_spacing_x, spacing_y=arg_spacing_y, min_cam_x=arg_min_cam_x, max_cam_x=arg_max_cam_x, min_mir_y=arg_min_mir_y, max_mir_y=arg_max_mir_y, cam_x=arg_cam_x, mir_y=arg_mir_y, offset_cam_z=arg_offset_cam_z, mir_z=arg_mir_z, phi=arg_phi, psi=arg_psi))
             elif self.mode=="x-z":
-                t1 = threading.Thread(target= lambda arg_min_x=self.box_min_x.get(), arg_max_x=self.box_max_x.get(), arg_min_z=self.box_min_z.get(), arg_max_z=self.box_max_z.get(), arg_spacing_x=self.box_spacing_x.get(), arg_spacing_z=self.box_spacing_z.get() : self.recordRateDistribution(spacing_phi=arg_spacing_x, spacing_psi=arg_spacing_z, min_phi=arg_min_x, max_phi=arg_max_x, min_psi=arg_min_z, max_psi=arg_max_z))
+                t1 = threading.Thread(target= lambda arg_spacing_x=spacing_1, arg_spacing_z=spacing_0, arg_min_cam_x=min_1, arg_max_cam_x=max_1, arg_min_mir_z=min_0, arg_max_mir_z=max_0, arg_cam_x=cam_x, arg_mir_y=mir_y, arg_offset_cam_z=offset_cam_z, arg_mir_z=mir_z, arg_phi=mir_phi, arg_psi=mir_psi : self.recordRateDistributionXZ(spacing_x=arg_spacing_x, spacing_z=arg_spacing_z, min_cam_x=arg_min_cam_x, max_cam_x=arg_max_cam_x, min_mir_z=arg_min_mir_z, max_mir_z=arg_max_mir_z, cam_x=arg_cam_x, mir_y=arg_mir_y, offset_cam_z=arg_offset_cam_z, mir_z=arg_mir_z, phi=arg_phi, psi=arg_psi))
             else:
                 raise RuntimeError("The measuring mode needs to be definied correctly!")  
             t1.start()
@@ -666,14 +666,12 @@ class RATE_ANALYZER():
         self.controller.set_position_camera_x(min_cam_x)
         
         new_cam_z=geo.get_camera_z_position_offset(phi, psi, min_y, mir_z, offset_pathlength=offset_cam_z, debug=False)
-        print("DEBUG 1")
         #This check should be unnessecairy by now!
         if new_cam_z<=max_y-min_y:
             raise RuntimeError("The calulated Camera z is smaller than the y-range that is to be surpassed ({0}<={1}). Is the mirror too close to the camera?".format(new_cam_z, max_y-min_y))
         else:       
             self.controller.set_position_camera_z(new_cam_z) #start from minimum
         #wait till every motor has reached its starting position
-        print("DEBUG 2")
         moving_all=True
         while moving_all:
             try:
@@ -744,7 +742,6 @@ class RATE_ANALYZER():
         if self.client==None:
             self.still_recording=False
             raise RuntimeError("Error when trying to record a rate. Cannot record rate without a client connected")
-        self.controller.setBussy(True)
         
         #FIRST CONTROLL IF THE POSITIONS ARE POSSIBLE BY CHECKING ALL EXTREMAL POINTS!
         min_x=phi+min_phi
@@ -796,7 +793,6 @@ class RATE_ANALYZER():
             except:
                 print("Non-Trinamic Exception while waiting for camera X, camera Z, mirror Z and mirror height to stop moving")
         print("Succesfully set all Motors to correct starting positions. Now start Scan!")
-        #GGGGGGGGGGGGOOOOOOOOOOOOOOOTTTTTTTT TILL HERE
         rates=np.zeros(shape=(spacing_phi, spacing_psi))
         #walk through the whole space of different positions
         for i in range(0, spacing_phi, 1):
@@ -844,103 +840,105 @@ class RATE_ANALYZER():
         self.controller.setBussy(False)
         print("Recording of the rate distribution done!")
     
-    def recordRateDistributionXZ(self, spacing_x, spacing_z, min_cam_x, max_cam_x, min_mir_z, max_mir_z, center_cam_x, center_mir_z, offset_cam_z, mir_h, psi, phi):
+    def recordRateDistributionXZ(self, spacing_x, spacing_z, min_cam_x, max_cam_x, min_mir_z, max_mir_z, cam_x, mir_z, offset_cam_z, mir_y, psi, phi):
         if self.mode!="x-z":
             raise RuntimeError("The method 'recordRateDistributionXZ' can only be called in x-z mode! The mode currently is set to {}".format(self.mode))
         if self.client==None:
             self.still_recording=False
             raise RuntimeError("Error when trying to record a rate. Cannot record rate without a client connected")
-        self.controller.setBussy(True)
-        sleep(0.02)
-        self.resetRectangle()
         
-        zeros=geo.get_zero_parameters()
-        spacing_x=spacing_psi
-        spacing_y=spacing_phi
-        #attention! This is only correct if the setup is mounted perfectly! Needs to be adjusted when the mirror arrives and optimal spot is found
-        min_x=min_psi+geo.z_len/2+70
-        max_x=max_psi+geo.z_len/2+70
-        min_y=min_phi
-        max_y=max_phi
-        rates=np.zeros(shape=(spacing_y, spacing_x))
+        
+        #FIRST CONTROLL IF THE POSITIONS ARE POSSIBLE BY CHECKING ALL EXTREMAL POINTS!
+        min_x=cam_x+min_cam_x
+        max_x=cam_x+max_cam_x
+        min_z=mir_z+min_mir_z
+        max_z=mir_z+max_mir_z
+        min_min = geo.check_position_cam_offset(phi, psi, mir_y, min_z, offset_cam_z, min_x)
+        min_max = geo.check_position_cam_offset(phi, psi, mir_y, max_z, offset_cam_z, max_x)
+        max_min = geo.check_position_cam_offset(phi, psi, mir_y, min_z, offset_cam_z, min_x)
+        max_max = geo.check_position_cam_offset(phi, psi, mir_y, max_z, offset_cam_z, max_x)
+        if not min_min and min_max and max_min and max_max:
+            raise RuntimeError("The rate distribution can not be recorded because some of the measurement positions are out of range! Min_Min {0}, Min_Max {1}, Max_Min {2}, Max_Max {3}".format(min_min, min_max, max_min, max_max))
+
         #change the global parameters so the plot can be redrawn correctly
-        self.spacing_0=spacing_x
-        self.spacing_1=spacing_y
-        self.min_0=min_y
-        self.max_0=max_y
-        self.min_1=min_x
-        self.max_1=max_x
-        #move mirror and camera simultaneously into the starting position
-        #mirror height and offset stay the same as  set before the start of the measurement
-        self.controller.set_position_mirror_z(min_x)
-        self.controller.set_position_camera_x(min_y)
-        #while seting camera z to the correct position (also accounting for offset on pathlenght)
-        #print("PHI={0} ; PSI={1} ; Height={2} ; Mirr_Z={3} ; Offset={4}".format(self.phi, self.psi, min_y, self.mirror_z, self.offset_pathlength))
-        new_cam_z=geo.get_camera_z_position_offset(self.phi, self.psi, self.mirror_y, min_x, offset_pathlength=self.offset_pathlength, debug=False)
-        if new_cam_z<=0:
-            raise RuntimeError("The calulated Camera z is smaller than the allowed range of the camera z ({0}<=0).".format(new_cam_z))
-        self.controller.set_position_camera_z(new_cam_z)
+        self.resetRectangle()
+        self.spacing_0=spacing_z
+        self.spacing_1=spacing_x
+        self.min_0=min_mir_z
+        self.max_0=max_mir_z
+        self.min_1=min_cam_x
+        self.max_1=max_cam_x
+        self.camera_z=geo.get_camera_z_position_offset(phi, psi, mir_y, mir_z, offset_pathlength=offset_cam_z)
+        self.camera_x=cam_x
+        self.mirror_z=mir_z
+        self.mirror_y=mir_y
+        self.mirror_psi=psi
+        self.mirror_phi=phi
+        self.offset=offset_cam_z
+        
+        #set all parameters to the correct starting postions
+        self.controller.setBussy(True)
+        
+        self.controller.set_position_mirror_phi(phi)
+        self.controller.set_position_mirror_psi(psi)
+        self.controller.set_position_mirror_height(mir_y)
+        self.controller.set_position_mirror_z(min_z) #start from minimum
+        self.controller.set_position_camera_z(geo.get_camera_z_position_offset(phi, psi, mir_y, min_z, offset_pathlength=offset_cam_z)) # start from minimum
+        self.controller.set_position_camera_x(min_x) # start from minimum
         moving_all=True
-        try:
-            moving_all=self.controller.get_camera_x_moving() or self.controller.get_mirror_z_moving() or self.controller.get_camera_z_moving()
-        except TrinamicException:
-            print("Trinamic Exception while waiting for camera and mirror to stop moving")
-        except:
-            print("Non-Trinamic Exception while waiting for camera and mirror to stop moving")
         while moving_all:
             try:
-                moving_all=self.controller.get_camera_x_moving() or self.controller.get_mirror_z_moving() or self.controller.get_camera_z_moving()
+                moving_all=self.controller.get_mirror_phi_moving() or self.controller.get_mirror_psi_moving() or self.controller.get_mirror_height_moving() or self.controller.get_mirror_z_moving() or self.controller.get_camera_x_moving() or self.controller.get_camera_z_moving()
             except TrinamicException:
-                print("Trinamic Exception while waiting for camera X, camera Z, mirror Z to stop moving")
+                print("Trinamic Exception while waiting for camera X, camera Z, mirror Z and mirror height to stop moving")
             except:
-                print("Non-Trinamic Exception while waiting for camera X, camera Z, mirror Z to stop moving")
+                print("Non-Trinamic Exception while waiting for camera X, camera Z, mirror Z and mirror height to stop moving")
         print("Succesfully set all Motors to correct starting positions. Now start Scan!")
+        
+        #create array of zeros for the rates
+        rates=np.zeros(shape=(spacing_x, spacing_z))
+        
         #walk through the whole space of different positions
-        #the lesser shifted dimension should be X (actual coordinates Z), as one needs to move two motors (mirror Z, camera Z) to correctly adjust this
-        #now also move X
-        for j in range(0, spacing_x, 1):
+        #the lesser shifted dimension should be Z, as one needs to move two motors (mirror Z, camera Z) to correctly adjust this
+        for j in range(0, spacing_z, 1):
             #calculate the correct x-position (real coord Z) of the mirror
-            pos_x=min_x+(max_x-min_x)/(spacing_x-1)*j
-            self.controller.set_position_mirror_z(pos_x)
+            pos_z=min_z+(max_z-min_z)/(spacing_z-1)*j
+            self.controller.set_position_mirror_z(pos_z)
             #also move the camera z along
-            self.controller.set_position_camera_z(new_cam_z+(max_x-min_x)/(spacing_x-1)*j)
-            moving_x=True
-            while moving_x:
+            self.controller.set_position_camera_z(geo.get_camera_z_position_offset(phi, psi, mir_y, pos_z, offset_pathlength=offset_cam_z))
+            moving_z=True
+            while moving_z:
                 sleep(0.05)
                 try:
-                    moving_x=self.controller.get_camera_z_moving() or self.controller.get_mirror_z_moving()
+                    moving_z=self.controller.get_camera_z_moving() or self.controller.get_mirror_z_moving()
                 except TrinamicException:
                     print("Trinamic Exception while waiting for camera Z and mirror Z to stop moving")
                 except:
                     print("Non-Trinamic Exception while waiting for camera Z and mirror Z to stop moving")
-            for i in range(0, spacing_y, 1):
+            for i in range(0, spacing_x, 1):
                 #calculate the position
                 if j%2==0:
-                    pos_y=min_y+(max_y-min_y)/(spacing_y-1)*i
+                    pos_x=min_x+(max_x-min_x)/(spacing_x-1)*i
                 else:
-                    pos_y=max_y-(max_y-min_y)/(spacing_y-1)*i
-                self.controller.set_position_camera_x(pos_y)
-                moving_y=True
-                while moving_y:
+                    pos_x=max_x-(max_x-min_x)/(spacing_x-1)*i
+                self.controller.set_position_camera_x(pos_x)
+                moving_x=True
+                while moving_x:
                     sleep(0.05)
                     try:
-                        moving_y=self.controller.get_camera_x_moving()
+                        moving_x=self.controller.get_camera_x_moving()
                     except TrinamicException:
                         print("Trinamic Exception while waiting for camera Z to stop moving")
                     except:
                         print("Non-Trinamic Exception while waiting for camera Z to stop moving")
                 if j%2==0:
-                    rates[spacing_y-i-1][j]=self.client.getRateA()+self.client.getRateB()
+                    rates[spacing_x-i-1][j]=self.client.getRateA()+self.client.getRateB()
                 else:
                     rates[i][j]=self.client.getRateA()+self.client.getRateB()
                 self.rates=rates
                 self.new_record=True
-                print("DEBUG End of inner")
-        print("DEBUG: 41")
         sleep(0.1)
-        print("DEBUG: 42")
         self.still_recording=False
-        print("DEBUG: 43")
         self.controller.setBussy(False)
         print("Recording of the rate distribution done!")
         
