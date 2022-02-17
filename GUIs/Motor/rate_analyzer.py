@@ -35,12 +35,12 @@ class RATE_ANALYZER():
     
     #currently loaded distribution / plot
     rates=None
-    spacing_x=np.nan
-    spacing_y=np.nan
-    min_x=-10
-    max_x=-min_x
-    min_y=-10
-    max_y=-min_y
+    spacing_0=np.nan
+    spacing_1=np.nan
+    min_0=-10
+    max_0=-min_0
+    min_1=-10
+    max_1=-min_1
     camera_z=-1
     camera_x=-1
     mirror_z=-1
@@ -233,20 +233,18 @@ class RATE_ANALYZER():
         if self.mode == "psi-phi":
             self.subplot.set_xlabel("$\phi$ [°]")
             self.subplot.set_ylabel("$\psi$ [°]")
-            self.subplot.set_xlim((self.min_phi, self.max_phi))
-            self.subplot.set_ylim((self.min_psi, self.max_psi))
         elif self.mode == "x-y":
             self.subplot.set_xlabel("x [mm]")
             self.subplot.set_ylabel("y [mm]")
-            self.subplot.set_xlim((self.min_x, self.max_x))
-            self.subplot.set_ylim((self.min_y, self.max_y))
         elif self.mode == "x-z":
             self.subplot.set_xlabel("z [mm]")
             self.subplot.set_ylabel("x [mm]")
             self.subplot.invert_xaxis()
         else:
             raise RuntimeError("The measuring mode needs to be definied correctly!")
-        
+        #set initial limits on the plot
+        self.subplot.set_xlim((self.min_0, self.max_0))
+        self.subplot.set_ylim((self.min_1, self.max_1))
         self.canvas = FigureCanvasTkAgg(self.figure, master=self.plot_frame)
         self.canvas.get_tk_widget().grid(row=0, column=0)
         self.canvas.draw()
@@ -552,15 +550,15 @@ class RATE_ANALYZER():
         self.subplot = self.figure.add_subplot(111)
         self.subplot.set_title("Heatmap of the mirror positions")
         if self.mode=="psi-phi":
-            self.subplot.imshow(self.rates, cmap='cool', extent=( self.min_phi-(self.max_phi-self.min_phi)/(self.spacing_phi)/2, self.max_phi+(self.max_phi-self.min_phi)/(self.spacing_phi)/2, self.min_psi-(self.max_psi-self.min_psi)/(self.spacing_psi)/2, self.max_psi+(self.max_psi-self.min_psi)/(self.spacing_psi)/2))
+            self.subplot.imshow(self.rates, cmap='cool', extent=( self.min_0-(self.max_0-self.min_0)/(self.spacing_0)/2, self.max_0+(self.max_0-self.min_0)/(self.spacing_0)/2, self.min_1-(self.max_1-self.min_1)/(self.spacing_1)/2, self.max_1+(self.max_1-self.min_1)/(self.spacing_1)/2))
             self.subplot.set_xlabel("$\phi$ [°]")
             self.subplot.set_ylabel("$\psi$ [°]")
         elif self.mode=="x-y":
-            self.subplot.imshow(self.rates, cmap='cool', extent=( self.min_x-(self.max_x-self.min_x)/(self.spacing_x)/2, self.max_x+(self.max_x-self.min_x)/(self.spacing_x)/2, self.min_y-(self.max_y-self.min_y)/(self.spacing_y)/2, self.max_y+(self.max_y-self.min_y)/(self.spacing_y)/2))
+            self.subplot.imshow(self.rates, cmap='cool', extent=( self.min_0-(self.max_0-self.min_0)/(self.spacing_0)/2, self.max_0+(self.max_0-self.min_0)/(self.spacing_0)/2, self.min_1-(self.max_1-self.min_1)/(self.spacing_1)/2, self.max_1+(self.max_1-self.min_1)/(self.spacing_1)/2))
             self.subplot.set_xlabel("X [mm]")
             self.subplot.set_ylabel("Y [mm]")
         elif self.mode=="x-z":
-            self.subplot.imshow(self.rates, cmap='cool', extent=( self.max_z+(self.max_z-self.min_z)/(self.spacing_z)/2, self.min_z-(self.max_z-self.min_z)/(self.spacing_z)/2, self.min_x-(self.max_x-self.min_x)/(self.spacing_x)/2, self.max_x+(self.max_x-self.min_x)/(self.spacing_x)/2))
+            self.subplot.imshow(self.rates, cmap='cool', extent=( self.max_0+(self.max_0-self.min_0)/(self.spacing_0)/2, self.min_0-(self.max_0-self.min_0)/(self.spacing_0)/2, self.min_1-(self.max_1-self.min_1)/(self.spacing_1)/2, self.max_1+(self.max_1-self.min_1)/(self.spacing_1)/2))
             self.subplot.set_xlabel("Z [mm]")
             self.subplot.set_ylabel("X [mm]")
         else:
@@ -608,7 +606,7 @@ class RATE_ANALYZER():
             spacing_0=int(self.box_spacing_0.get())
             spacing_1=int(self.box_spacing_1.get())
             if self.mode=="psi-phi":
-                t1 = threading.Thread(target= lambda arg_min_phi=self.box_min_phi.get(), arg_max_phi=self.box_max_phi.get(), arg_min_psi=self.box_min_psi.get(), arg_max_psi=self.box_max_psi.get(), arg_spacing_phi=self.box_spacing_phi.get(), arg_spacing_psi=self.box_spacing_psi.get() : self.recordRateDistribution(spacing_phi=arg_spacing_phi, spacing_psi=arg_spacing_psi, min_phi=arg_min_phi, max_phi=arg_max_phi, min_psi=arg_min_psi, max_psi=arg_max_psi))
+                t1 = threading.Thread(target= lambda arg_spacing_phi=spacing_0, arg_spacing_psi=spacing_1, arg_min_phi=min_0, arg_max_phi=max_0, arg_min_psi=min_1, arg_max_psi=max_1, arg_cam_x=cam_x, arg_mir_y=mir_y, arg_cam_z=cam_z, arg_mir_z=mir_z, arg_phi=mir_phi, arg_psi=mir_psi : self.recordRateDistributionPhiPsi(spacing_phi=arg_spacing_phi, spacing_psi=arg_spacing_psi, min_phi=arg_min_phi, max_phi=arg_max_phi, min_psi=arg_min_psi, max_psi=arg_max_psi, cam_x=arg_cam_x, mir_y=arg_mir_y, cam_z=arg_cam_z, mir_z=arg_mir_z, phi=arg_phi, psi=arg_psi))
             elif self.mode=="x-y":
                 t1 = threading.Thread(target= lambda arg_spacing_x=spacing_0, arg_spacing_y=spacing_1, arg_min_cam_x=min_0, arg_max_cam_x=max_0, arg_min_mir_y=min_1, arg_max_mir_y=max_1, arg_cam_x=cam_x, arg_mir_y=mir_y, arg_offset_cam_z=offset_cam_z, arg_mir_z=mir_z, arg_phi=mir_phi, arg_psi=mir_psi : self.recordRateDistributionXY(spacing_x=arg_spacing_x, spacing_y=arg_spacing_y, min_cam_x=arg_min_cam_x, max_cam_x=arg_max_cam_x, min_mir_y=arg_min_mir_y, max_mir_y=arg_max_mir_y, cam_x=arg_cam_x, mir_y=arg_mir_y, offset_cam_z=arg_offset_cam_z, mir_z=arg_mir_z, phi=arg_phi, psi=arg_psi))
             elif self.mode=="x-z":
@@ -621,7 +619,7 @@ class RATE_ANALYZER():
             print("Result will be plotted after everything is measured!")
             self.recordRateDistribution(self.box_spacing_0.get(), self.box_spacing_1.get(), self.box_min_phi.get(), self.box_max_phi.get(), self.box_min_psi.get(), self.box_max_psi.get())
             self.replotRates()
-    #Should be finished
+    #STILL NEEDS FINAL DEBUGGING
     def recordRateDistributionXY(self, spacing_x, spacing_y, min_cam_x, max_cam_x, min_mir_y, max_mir_y, cam_x, mir_y, offset_cam_z, mir_z, phi, psi):
         if self.mode!="x-y":
             raise RuntimeError("The method 'recordRateDistributionXY' can only be called in x-y mode! The mode currently is set to {}".format(self.mode))
@@ -644,34 +642,36 @@ class RATE_ANALYZER():
         
         #change the global parameters so the plot can be redrawn correctly
         self.resetRectangle()
-        self.spacing_x=spacing_x
-        self.spacing_y=spacing_y
-        self.min_x=min_cam_x
-        self.max_x=max_cam_x
-        self.min_y=min_mir_y
-        self.max_y=max_mir_y
-        self.camera_z=get_camera_z_position_offset(phi, psi, mir_y, mir_z)
+        self.spacing_0=spacing_x
+        self.spacing_1=spacing_y
+        self.min_0=min_cam_x
+        self.max_0=max_cam_x
+        self.min_1=min_mir_y
+        self.max_1=max_mir_y
+        self.camera_z=geo.get_camera_z_position_offset(phi, psi, mir_y, mir_z)
         self.camera_x=cam_x
         self.mirror_z=mir_z
         self.mirror_y=mir_y
         self.mirror_psi=psi
         self.mirror_phi=phi
-        self.offset=geo.offset_cam_z
+        self.offset=offset_cam_z
         
         #set all parameters to the correct positions
         self.controller.setBussy(True)
         
         self.controller.set_position_mirror_phi(phi)
         self.controller.set_position_mirror_psi(psi)
+        self.controller.set_position_mirror_z(mir_z)
         self.controller.set_position_mirror_height(min_y) #start from minimum
-        self.controller.set_position_camera_x(min_x) #start from minimum
-        new_cam_z=geo.get_camera_z_position_offset(self.phi, self.psi, min_y, self.mirror_z, offset_pathlength=self.offset_pathlength, debug=False)
+        self.controller.set_position_camera_x(min_cam_x)
+        
+        new_cam_z=geo.get_camera_z_position_offset(phi, psi, min_y, mir_z, offset_pathlength=offset_cam_z, debug=False)
         print("DEBUG 1")
         #This check should be unnessecairy by now!
         if new_cam_z<=max_y-min_y:
             raise RuntimeError("The calulated Camera z is smaller than the y-range that is to be surpassed ({0}<={1}). Is the mirror too close to the camera?".format(new_cam_z, max_y-min_y))
         else:       
-            self.controller.set_position_camera_z(new_cam_z)
+            self.controller.set_position_camera_z(new_cam_z) #start from minimum
         #wait till every motor has reached its starting position
         print("DEBUG 2")
         moving_all=True
@@ -737,7 +737,7 @@ class RATE_ANALYZER():
         self.still_recording=False
         self.controller.setBussy(False)
         print("Recording of the rate distribution done!")
-        
+    #STILL NEEDS FINAL DEBUGGING
     def recordRateDistributionPhiPsi(self, spacing_phi, spacing_psi, min_phi, max_phi, min_psi, max_psi, cam_x, mir_y, cam_z, mir_z, phi, psi):
         if self.mode!="psi-phi":
             raise RuntimeError("The method 'recordRateDistributionPhiPsi' can only be called in psi-phi mode! The mode currently is set to {}".format(self.mode))
@@ -750,22 +750,22 @@ class RATE_ANALYZER():
         min_x=phi+min_phi
         max_x=phi+max_phi
         min_y=psi+min_psi
-        max_y=mir_psi+max_psi
-        min_min = geo.check_position_cam_offset(min_phi, min_psi, mir_y, mir_z, offset_cam_z, mir_x)
-        min_max = geo.check_position_cam_offset(min_phi, max_psi, mir_y, mir_z, offset_cam_z, mir_x)
-        max_min = geo.check_position_cam_offset(max_phi, min_psi, mir_y, mir_z, offset_cam_z, mir_x)
-        max_max = geo.check_position_cam_offset(max_phi, max_psi, mir_y, mir_z, offset_cam_z, max_x)
+        max_y=psi+max_psi
+        min_min = geo.check_position_cam_offset(min_phi, min_psi, mir_y, mir_z, cam_z, cam_x)
+        min_max = geo.check_position_cam_offset(min_phi, max_psi, mir_y, mir_z, cam_z, cam_x)
+        max_min = geo.check_position_cam_offset(max_phi, min_psi, mir_y, mir_z, cam_z, cam_x)
+        max_max = geo.check_position_cam_offset(max_phi, max_psi, mir_y, mir_z, cam_z, cam_x)
         if not min_min and min_max and max_min and max_max:
             raise RuntimeError("The rate distribution can not be recorded because some of the measurement positions are out of range! Min_Min {0}, Min_Max {1}, Max_Min {2}, Max_Max {3}".format(min_min, min_max, max_min, max_max))
         
         #change the global parameters so the plot can be redrawn correctly
         self.resetRectangle()
-        self.spacing_x=spacing_phi
-        self.spacing_y=spacing_psi
-        self.min_x=min_phi
-        self.max_x=max_phi
-        self.min_y=min_psi
-        self.max_y=max_psi
+        self.spacing_0=spacing_phi
+        self.spacing_1=spacing_psi
+        self.min_0=min_phi
+        self.max_0=max_phi
+        self.min_1=min_psi
+        self.max_1=max_psi
         self.camera_z=cam_z
         self.camera_x=cam_x
         self.mirror_z=mir_z
@@ -797,7 +797,7 @@ class RATE_ANALYZER():
                 print("Non-Trinamic Exception while waiting for camera X, camera Z, mirror Z and mirror height to stop moving")
         print("Succesfully set all Motors to correct starting positions. Now start Scan!")
         #GGGGGGGGGGGGOOOOOOOOOOOOOOOTTTTTTTT TILL HERE
-        rates=np.zeros(shape=(spacing_psi, spacing_phi))
+        rates=np.zeros(shape=(spacing_phi, spacing_psi))
         #walk through the whole space of different positions
         for i in range(0, spacing_phi, 1):
             pos_phi=min_phi+(max_phi-min_phi)/(spacing_phi-1)*i
@@ -843,6 +843,7 @@ class RATE_ANALYZER():
         self.still_recording=False
         self.controller.setBussy(False)
         print("Recording of the rate distribution done!")
+    
     def recordRateDistributionXZ(self, spacing_x, spacing_z, min_cam_x, max_cam_x, min_mir_z, max_mir_z, center_cam_x, center_mir_z, offset_cam_z, mir_h, psi, phi):
         if self.mode!="x-z":
             raise RuntimeError("The method 'recordRateDistributionXZ' can only be called in x-z mode! The mode currently is set to {}".format(self.mode))
@@ -863,12 +864,12 @@ class RATE_ANALYZER():
         max_y=max_phi
         rates=np.zeros(shape=(spacing_y, spacing_x))
         #change the global parameters so the plot can be redrawn correctly
-        self.spacing_x=spacing_x
-        self.spacing_y=spacing_y
-        self.min_x=min_y
-        self.max_x=max_y
-        self.min_z=min_x
-        self.max_z=max_x
+        self.spacing_0=spacing_x
+        self.spacing_1=spacing_y
+        self.min_0=min_y
+        self.max_0=max_y
+        self.min_1=min_x
+        self.max_1=max_x
         #move mirror and camera simultaneously into the starting position
         #mirror height and offset stay the same as  set before the start of the measurement
         self.controller.set_position_mirror_z(min_x)
@@ -1012,8 +1013,8 @@ class RATE_ANALYZER():
             
             #do the fit
             with warnings.catch_warnings(record=True) as w:
-                coordinates_phi=np.linspace(self.min_x, self.max_x, num=int(self.spacing_x))
-                coordinates_psi=np.linspace(self.min_y, self.max_y, num=int(self.spacing_y))
+                coordinates_phi=np.linspace(self.min_x, self.max_x, num=int(self.spacing_0))
+                coordinates_psi=np.linspace(self.min_y, self.max_y, num=int(self.spacing_1))
                 x, y=np.meshgrid(coordinates_phi, coordinates_psi)
                 #select only the values within the rectangle for the fit
                 #if np.size(self.rates)/4>np.sum(mask):
@@ -1035,7 +1036,7 @@ class RATE_ANALYZER():
             if len(w)==0:
                 data_fitted = gauss2d((x, y), *popt)
                 with warnings.catch_warnings(record=True) as w:
-                    self.subplot.axes.contour(x, y, data_fitted.reshape(self.spacing_y, self.spacing_x), 8, colors='b', label="Gaussian Fit")
+                    self.subplot.axes.contour(x, y, data_fitted.reshape(self.spacing_1, self.spacing_0), 8, colors='b', label="Gaussian Fit")
                     self.subplot.legend()
                 print("Gaussian was fitted and plotted!")
                 print("CENTER: x={0} , y={1} , SIGMA: x={2} , y={3} , CONSTS: prefactor={4} , offset={5}".format(popt[1], popt[3], popt[2], popt[4], popt[0], popt[5]))
@@ -1064,8 +1065,8 @@ class RATE_ANALYZER():
             
             #do the fit
             with warnings.catch_warnings(record=True) as w:
-                coordinates_phi=np.linspace(self.min_y, self.max_y, num=int(self.spacing_x))
-                coordinates_psi=np.linspace(self.min_z, self.max_z, num=int(self.spacing_z))
+                coordinates_phi=np.linspace(self.min_0, self.max_0, num=int(self.spacing_0))
+                coordinates_psi=np.linspace(self.min_1, self.max_1, num=int(self.spacing_1))
                 x, y=np.meshgrid(coordinates_phi, coordinates_psi)
                 #select only the values within the rectangle for the fit
                 #if np.size(self.rates)/4>np.sum(mask):
@@ -1087,7 +1088,7 @@ class RATE_ANALYZER():
             if len(w)==0:
                 data_fitted = gauss2d((x, y), *popt)
                 with warnings.catch_warnings(record=True) as w:
-                    self.subplot.axes.contour(x, y, data_fitted.reshape(self.spacing_y, self.spacing_x), 8, colors='b', label="Gaussian Fit")
+                    self.subplot.axes.contour(x, y, data_fitted.reshape(self.spacing_1, self.spacing_0), 8, colors='b', label="Gaussian Fit")
                     self.subplot.legend()
                 print("Gaussian was fitted and plotted!")
                 print("CENTER: z={0} , x={1} , SIGMA: z={2} , x={3} , CONSTS: prefactor={4} , offset={5}".format(popt[1], popt[3], popt[2], popt[4], popt[0], popt[5]))
@@ -1111,14 +1112,14 @@ class RATE_ANALYZER():
             raise RuntimeError("The area of interest can't be found if there are no rates! Please load or record a rate file")
         rates=self.rates
         if self.mode=="psi-phi":
-            coordinates_phi=np.linspace(self.min_phi, self.max_phi, num=int(self.spacing_phi))
-            coordinates_psi=np.linspace(self.min_psi, self.max_psi, num=int(self.spacing_psi))
+            coordinates_phi=np.linspace(self.min_0, self.max_1, num=int(self.spacing_0))
+            coordinates_psi=np.linspace(self.min_0, self.max_1, num=int(self.spacing_1))
         elif self.mode=="x-y":
-            coordinates_phi=np.linspace(self.min_x, self.max_x, num=int(self.spacing_x))
-            coordinates_psi=np.linspace(self.min_y, self.max_y, num=int(self.spacing_y))
+            coordinates_phi=np.linspace(self.min_0, self.max_0, num=int(self.spacing_0))
+            coordinates_psi=np.linspace(self.min_1, self.max_1, num=int(self.spacing_1))
         elif self.mode=="x-z":
-            coordinates_phi=np.linspace(self.min_x, self.max_x, num=int(self.spacing_x))
-            coordinates_psi=np.linspace(self.min_z, self.max_z, num=int(self.spacing_y))
+            coordinates_phi=np.linspace(self.min_0, self.max_0, num=int(self.spacing_0))
+            coordinates_psi=np.linspace(self.min_1, self.max_1, num=int(self.spacing_1))
         else:
             raise RuntimeError("The measuring mode needs to be definied correctly!")  
         x, y=np.meshgrid(coordinates_phi, coordinates_psi)
@@ -1340,9 +1341,9 @@ class RATE_ANALYZER():
             if self.mode=="psi-phi":
                 file.write("{0}~{1}~{2}~{3}~{4}~{5}~{6}~{7}~{8}~{9}~{10}".format(self.min_phi, self.max_phi, self.min_psi, self.max_psi, self.spacing_psi, self.spacing_phi, self.camera_z, self.camera_x, self.mirror_z, self.mirror_y, np.array2string(self.rates, threshold=10e9)).replace("\n ", "").replace("]", "]\n").replace("]\n]", "]]"))
             elif self.mode=="x-y":
-                file.write("{0}~{1}~{2}~{3}~{4}~{5}~{6}~{7}~{8}~{9}~{10}".format(self.min_x, self.max_x, self.min_y, self.max_y, self.spacing_x, self.spacing_y, self.phi, self.psi, self.offset_pathlength, self.mirror_z, np.array2string(self.rates, threshold=10e9)).replace("\n ", "").replace("]", "]\n").replace("]\n]", "]]"))
+                file.write("{0}~{1}~{2}~{3}~{4}~{5}~{6}~{7}~{8}~{9}~{10}".format(self.min_x, self.max_x, self.min_y, self.max_y, self.spacing_0, self.spacing_y, self.phi, self.psi, self.offset_pathlength, self.mirror_z, np.array2string(self.rates, threshold=10e9)).replace("\n ", "").replace("]", "]\n").replace("]\n]", "]]"))
             elif self.mode=="x-z":
-                file.write("{0}~{1}~{2}~{3}~{4}~{5}~{6}~{7}~{8}~{9}~{10}".format(self.min_x, self.max_x, self.min_z, self.max_z, self.spacing_x, self.spacing_z, self.phi, self.psi, self.offset_pathlength, self.mirror_y, np.array2string(self.rates, threshold=10e9)).replace("\n ", "").replace("]", "]\n").replace("]\n]", "]]"))
+                file.write("{0}~{1}~{2}~{3}~{4}~{5}~{6}~{7}~{8}~{9}~{10}".format(self.min_x, self.max_x, self.min_z, self.max_z, self.spacing_0, self.spacing_z, self.phi, self.psi, self.offset_pathlength, self.mirror_y, np.array2string(self.rates, threshold=10e9)).replace("\n ", "").replace("]", "]\n").replace("]\n]", "]]"))
             else:
                 raise RuntimeError("The measuring mode needs to be definied correctly!")    
             file.close()
