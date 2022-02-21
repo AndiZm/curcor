@@ -163,11 +163,13 @@ def update_rate(self,data):
 		gl.rateA1Label.config(text="{:.1f}".format(r_a))
 		gl.rateB1Label.config(text="-.-")
 		gl.placeRateLineA1(r_a)
+		gl.wait1Canvas.itemconfig(gl.wait1LED, fill="green")
 	if self.pc_ID == 2:
 		gl.lastA2.append(r_a)
 		gl.rateA2Label.config(text="{:.1f}".format(r_a))
 		gl.rateB2Label.config(text="-.-")
 		gl.placeRateLineA2(r_a)
+		gl.wait2Canvas.itemconfig(gl.wait2LED, fill="green")
 # Max rate
 def update_max_rates(self, data):
 	data = data.split("#")
