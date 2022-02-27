@@ -98,7 +98,7 @@ class controller_client:
 		sendText(self, "command # meas_single #{}# {} #".format(name, index))
 		self.awaitR = True
 	def init_meas(self, name):
-		sendText(self, "command # init_meas # {} #".format(name))
+		sendText(self, "command # init_meas # {}#".format(name))
 	def send_start_loop(self):
 		sendText(self, "command # start_loop #")
 	def send_stop_loop(self):
