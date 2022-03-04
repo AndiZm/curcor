@@ -1249,24 +1249,37 @@ class RATE_ANALYZER():
             if ".rateu" in file.name:
                 #open the file using the configparser
                 config = configparser.ConfigParser()
-                config.read(file)
-                print(config)
+                config.read(file.name)
+                print("Opened file {0} --- now reading.".format(file.name))
                 #check if the mode of the file fits the mode of the GUI
-                if self.mode is not config["meta"]["mode"]:
+                if self.mode != config["meta"]["mode"]:
                     raise RuntimeError("Cannot open this file! The fileformat is not correct. Maybe the Rate Analyzer needs to be in another mode? File mode is {0} but GUI mode is {1}".format(config["meta"]["mode"], self.mode))
                 #gather all values from the file
-                self.mirror_phi=config["position"]["phi"]
-                self.mirror_psi=config["position"]["psi"]
-                self.camera_x=config["position"]["camera_x"]
-                self.camera_z=config["position"]["camera_z"]
-                self.offset=config["position"]["offset"]
-                self.mirror_y=config["position"]["mirror_y"]
-                self.mirror_z=config["position"]["mirror_z"]
-                self.min_0=config["range"]["min_0"]
-                self.max_0=config["range"]["max_0"]
-                self.min_1=config["range"]["min_1"]
-                self.max_1=config["range"]["max_1"]
-                self.rates=config["raw"]["rates"]
+                self.mirror_phi=float(config["position"]["phi"])
+                self.mirror_psi=float(config["position"]["psi"])
+                self.camera_x=float(config["position"]["camera_x"])
+                self.camera_z=float(config["position"]["camera_z"])
+                self.offset=float(config["position"]["offset_z"])
+                self.mirror_y=float(config["position"]["mirror_y"])
+                self.mirror_z=float(config["position"]["mirror_z"])
+                self.min_0=float(config["range"]["min_0"])
+                self.max_0=float(config["range"]["max_0"])
+                self.min_1=float(config["range"]["min_1"])
+                self.max_1=float(config["range"]["max_1"])
+                self.spacing_0=int(config["range"]["spacing_0"])
+                self.spacing_1=int(config["range"]["spacing_1"])
+                array_data=config["raw"]["rates"]
+                lines=array_data.splitlines()
+                rates=np.empty((self.spacing_1, self.spacing_0))
+                lines[0]=lines[0].replace("[[", "[")
+                lines[-1]=lines[-1].replace("]]", "]")
+                for no in range(0, len(lines), 1):
+                    lines[no]=lines[no].replace("[","")
+                    lines[no]=lines[no].replace("]","")
+                    entries=lines[no].split()
+                    for no_2 in range(0, len(entries), 1):
+                        rates[no][no_2]=float(entries[no_2])
+                self.rates=rates
             else:
                 string=file.read()
                 parts=string.split("~")
@@ -1395,7 +1408,9 @@ class RATE_ANALYZER():
                 config["range"]={"min_0":self.min_0,
                     "max_0":self.max_0,
                     "min_1":self.min_1,
-                    "max_1":self.max_1}
+                    "max_1":self.max_1,
+                    "spacing_0":self.spacing_0,
+                    "spacing_1":self.spacing_1}
                 config["raw"]={"rates":self.rates}
                 config.write(file)
             elif self.mode=="psi-phi":

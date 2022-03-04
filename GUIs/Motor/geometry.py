@@ -214,14 +214,14 @@ def check_position_cam_absolute(mirror_phi, mirror_psi, mirror_height, mirror_z,
         if mirror_psi<min_mir_psi or mirror_psi>max_mir_psi:
                 answer+="Value for mirror psi of {0} is too small or too big!  ".format(mirror_psi)
         if mirror_height<min_mir_y or mirror_psi>max_mir_y:
-                answer+="Value for mirror y of {0} is too small or too big!  ".format(mirror_height
+                answer+="Value for mirror y of {0} is too small or too big!  ".format(mirror_height)
         if mirror_z<min_mir_z or mirror_z>max_mir_z:
                 answer+="Value for mirror z of {0} is too small or too big!  ".format(mirror_z)
         if camera_z<min_cam_z or camera_z>max_cam_z:
                 answer+="Value for camera z of {0} is too small or too big!  ".format(camera_z)
         if camera_x<min_cam_x or camera_x>max_cam_x:
                 answer+="Value for camera x of {0} is too small or too big!  ".format(camera_x)
-        if answer="":
+        if answer=="":
                 return True
         else:
                 print(answer)
