@@ -632,7 +632,7 @@ class GUI:
         self.controller.refsearch_camera_x()
         self.CameraX.set(140)  
     def refsearch_mirror_z(self):
-        print("Searching for mirror z position 0mm")
+        print("Searching for mirror z position 439 mm")
         self.WarningStatus[2]=0
         self.controller.refsearch_mirror_z()
         self.MirrorZ.set(100000)

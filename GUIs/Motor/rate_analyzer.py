@@ -4,6 +4,7 @@ from numpy import random
 from tkinter import *
 from tkinter import simpledialog
 from tkinter import filedialog
+import configparser
 
 from time import sleep
 import time
@@ -97,7 +98,7 @@ class RATE_ANALYZER():
     camZLabel = None
     camXLabel = None
     mirZLabel = None
-    mirHLabel = None
+    mirYLabel = None
     mirPhiLabel = None
     mirPsiLabel = None
     offsetLabel = None
@@ -179,21 +180,21 @@ class RATE_ANALYZER():
         self.main_frame.grid(row=0, column=0)
         self.main_frame.config(background = "#003366")
         
-        self.plot_frame = Frame(self.main_frame, width=600, height=900)
+        self.plot_frame = Frame(self.main_frame, width=1000, height=900)
         self.plot_frame.grid(row=0, column=0, padx=10,pady=10)
         self.plot_frame.config(background = "#003366")
         
-        self.positions_frame = Frame(self.plot_frame, width=600, height=100)
+        self.positions_frame = Frame(self.plot_frame, width=1000, height=100)
         self.positions_frame.grid(row=1, column=0, padx=10,pady=5)
         self.positions_frame.config(background = "#FFFFFF")
         
-        self.pos_line_1_frame = Frame(self.positions_frame, width=600, height=100)
+        self.pos_line_1_frame = Frame(self.positions_frame, width=1000, height=100)
         self.pos_line_1_frame.grid(row=0, column=0, padx=0,pady=0)
         self.pos_line_1_frame.config(background = "#FFFFFF")
         
-        self.pos_line_2_frame = Frame(self.positions_frame, width=600, height=100)
-        self.pos_line_2_frame.grid(row=1, column=0, padx=0,pady=0)
-        self.pos_line_2_frame.config(background = "#FFFFFF")
+        #self.pos_line_2_frame = Frame(self.positions_frame, width=600, height=100)
+        #self.pos_line_2_frame.grid(row=1, column=0, padx=0,pady=0)
+        #self.pos_line_2_frame.config(background = "#FFFFFF")
         
         self.control_frame = Frame(self.main_frame, width=320, height=900)
         self.control_frame.grid(row=0, column=1)
@@ -255,22 +256,35 @@ class RATE_ANALYZER():
         ###################
         
         #create labels
-        self.camZLabel = Label(self.pos_line_1_frame, pady=5, text='Camera Z: {0:4.1f}'.format(self.camera_z), width="15", background ="#FFFFFF")
-        self.camXLabel = Label(self.pos_line_1_frame, pady=5, text='Camera X: {0:4.1f}'.format(self.camera_x), width="15", background ="#FFFFFF")
-        self.mirZLabel = Label(self.pos_line_1_frame, pady=5, text='Mirror Z: {0:4.1f}'.format(self.mirror_z), width="15", background ="#FFFFFF")
-        self.mirHLabel = Label(self.pos_line_1_frame, pady=5, text='Mirror Y: {0:4.1f}'.format(self.mirror_y), width="20", background ="#FFFFFF")
-        self.mirPhiLabel = Label(self.pos_line_2_frame, pady=5, text='Mirror PSI: {0:4.1f}'.format(self.mirror_psi), width="18", background ="#FFFFFF")
-        self.mirPsiLabel = Label(self.pos_line_2_frame, pady=5, text='Mirror PHI: {0:4.1f}'.format(self.mirror_phi), width="18", background ="#FFFFFF")
-        self.offsetLabel = Label(self.pos_line_2_frame, pady=5, text='Offset: {0:4.1f}'.format(self.offset, width="18"), background ="#FFFFFF")
+        self.camXLabel = Label(self.pos_line_1_frame, pady=5, text='Camera X: {0:4.1f}'.format(self.camera_x), width="18", background ="#FFFFFF")
+        self.mirZLabel = Label(self.pos_line_1_frame, pady=5, text='Mirror Z: {0:4.1f}'.format(self.mirror_z), width="18", background ="#FFFFFF")
+        self.mirYLabel = Label(self.pos_line_1_frame, pady=5, text='Mirror Y: {0:4.1f}'.format(self.mirror_y), width="18", background ="#FFFFFF")
+        self.mirPhiLabel = Label(self.pos_line_1_frame, pady=5, text='Mirror PSI: {0:4.1f}'.format(self.mirror_psi), width="18", background ="#FFFFFF")
+        self.mirPsiLabel = Label(self.pos_line_1_frame, pady=5, text='Mirror PHI: {0:4.1f}'.format(self.mirror_phi), width="18", background ="#FFFFFF")
+        if self.mode == "psi-phi":
+            self.camZLabel = Label(self.pos_line_1_frame, pady=5, text='Camera Z: {0:4.1f}'.format(self.camera_z), width="15", background ="#FFFFFF")
+        elif self.mode == "x-y":
+            self.offsetLabel = Label(self.pos_line_1_frame, pady=5, text='Offset: {0:4.1f}'.format(self.offset, width="18"), background ="#FFFFFF")
+        elif self.mode == "x-z":
+            self.offsetLabel = Label(self.pos_line_1_frame, pady=5, text='Offset: {0:4.1f}'.format(self.offset, width="18"), background ="#FFFFFF")
+        else:
+            raise RuntimeError("The measuring mode needs to be definied correctly!")
+        
         
         #place labels
-        self.camZLabel.grid(row=0, column=0)
-        self.camXLabel.grid(row=0, column=1)
-        self.mirZLabel.grid(row=0, column=2)
-        self.mirHLabel.grid(row=0, column=3)
-        self.mirPhiLabel.grid(row=0, column=0)
-        self.mirPsiLabel.grid(row=0, column=1)
-        self.offsetLabel.grid(row=0, column=2)
+        self.camXLabel.grid(row=0, column=0)
+        self.mirZLabel.grid(row=0, column=1)
+        self.mirYLabel.grid(row=0, column=2)
+        self.mirPhiLabel.grid(row=1, column=0)
+        self.mirPsiLabel.grid(row=1, column=1)
+        if self.mode == "psi-phi":
+            self.camZLabel.grid(row=1, column=2)
+        elif self.mode == "x-y":
+            self.offsetLabel.grid(row=1, column=2)
+        elif self.mode == "x-z":
+            self.offsetLabel.grid(row=1, column=2)
+        else:
+            raise RuntimeError("The measuring mode needs to be definied correctly!")
         
         ##############
         # FILE FRAME #
@@ -456,9 +470,10 @@ class RATE_ANALYZER():
         self.box_starting_cam_x.set(0)
         
         #create and place checkbutton
-        self.checkbutton_offset = Checkbutton(self.variables_frame, text="use offset", command=self.offsetMode, onvalue = 1, offvalue = 0, variable=self.offset_bool)
-        self.checkbutton_offset.deselect()
-        self.checkbutton_offset.grid(row=6, column=0, padx=10, pady=3)
+        if self.mode == "psi-phi":
+            self.checkbutton_offset = Checkbutton(self.variables_frame, text="use offset", command=self.offsetMode, onvalue = 1, offvalue = 0, variable=self.offset_bool)
+            self.checkbutton_offset.deselect()
+            self.checkbutton_offset.grid(row=6, column=0, padx=10, pady=3)        
 
         #create and place button for recomended parameter adoption
         self.adoptButton = Button(self.variables_frame, text="adopt current guess", command=self.adoptCurrentGuess)
@@ -533,15 +548,15 @@ class RATE_ANALYZER():
   
     def replotRates(self):
         #update the other parameters
-        
-        self.camZLabel["text"]='Camera Z: {0:4.1f}'.format(self.camera_z)
         self.camXLabel["text"] ='Camera X: {0:4.1f}'.format(self.camera_x)
+        if self.mode=="psi-phi":
+            self.camZLabel["text"]='Camera Z: {0:4.1f}'.format(self.camera_z)
+        else:
+            self.offsetLabel["text"] ='Offset: {0:4.1f}'.format(self.offset)
         self.mirZLabel["text"] ='Mirror Z: {0:4.1f}'.format(self.mirror_z)
-        self.mirHLabel["text"] ='Mirror Height: {0:4.1f}'.format(self.mirror_y)
+        self.mirYLabel["text"] ='Mirror Height: {0:4.1f}'.format(self.mirror_y)
         self.mirPhiLabel["text"] ='Mirror PSI: {0:4.1f}'.format(self.mirror_psi)
         self.mirPsiLabel["text"] ='Mirror PHI: {0:4.1f}'.format(self.mirror_phi)
-        self.offsetLabel["text"] ='Offset: {0:4.1f}'.format(geo.get_path_length_delta(self.mirror_phi, self.mirror_psi, self.mirror_y, self.mirror_z, self.camera_z, self.camera_x))
-        
         #make a nice plot
         if self.figure==None:
             self.figure=plt.Figure(figsize=(6,6))
@@ -932,9 +947,9 @@ class RATE_ANALYZER():
                     except:
                         print("Non-Trinamic Exception while waiting for camera Z to stop moving")
                 if j%2==0:
-                    rates[spacing_x-i-1][j]=self.client.getRateA()+self.client.getRateB()
+                    rates[spacing_x-i-1][spacing_z-1-j]=self.client.getRateA()+self.client.getRateB()
                 else:
-                    rates[i][j]=self.client.getRateA()+self.client.getRateB()
+                    rates[i][spacing_z-1-j]=self.client.getRateA()+self.client.getRateB()
                 self.rates=rates
                 self.new_record=True
         sleep(0.1)
@@ -1215,99 +1230,47 @@ class RATE_ANALYZER():
     # [10] actual Rates                   #
     #######################################
     
+    ###############################################
+    # FILE FORMAT FOR THE UNIVERSAL .rateu FILES  #
+    # -> Theses Files are somewhat self explaining#
+    ###############################################
+    
     
     def loadRates(self):
         if self.mode=="psi-phi": 
-            file = filedialog.askopenfile(parent=self.window, initialdir = "../../..", title = "Load Rate Distribution", filetypes = (("PSI-PHI rate files","*.ratepp"),("PSI-PHI rate files old","*.rate"),("all files","*.*")))
+            file = filedialog.askopenfile(parent=self.window, initialdir = "../../..", title = "Load Rate Distribution", filetypes = (("universal rate files","*.rateu"),("PSI-PHI rate files","*.ratepp"),("PSI-PHI rate files old","*.rate"),("all files","*.*")))
         elif self.mode=="x-y":
-            file = filedialog.askopenfile(parent=self.window, initialdir = "../../..", title = "Load Rate Distribution", filetypes = (("X-Y rate files", ".ratexy"),("X-Y rate files old","*.ratel"),("all files","*.*")))
+            file = filedialog.askopenfile(parent=self.window, initialdir = "../../..", title = "Load Rate Distribution", filetypes = (("universal rate files","*.rateu"),("X-Y rate files", ".ratexy"),("X-Y rate files old","*.ratel"),("all files","*.*")))
         elif self.mode=="x-z":
-            file = filedialog.askopenfile(parent=self.window, initialdir = "../../..", title = "Load Rate Distribution", filetypes = (("X-Y rate files","*.ratexz"),("all files","*.*")))
+            file = filedialog.askopenfile(parent=self.window, initialdir = "../../..", title = "Load Rate Distribution", filetypes = (("universal rate files","*.rateu"),("X-Y rate files","*.ratexz"),("all files","*.*")))
         else:
             raise RuntimeError("The measuring mode needs to be definied correctly!")  
         if file!=None:
-            string=file.read()
-            parts=string.split("~")
-            if self.mode=="psi-phi":
-                if ".rate" not in file.name and ".ratepp" not in file.name:
-                    raise RuntimeError("Cannot open this file! The fileformat is not correct. Maybe the Rate Analyzer needs to be in another mode?")
-                self.min_phi=float(parts[0])
-                self.max_phi=float(parts[1])
-                self.min_psi=float(parts[2])
-                self.max_psi=float(parts[3])
-                self.spacing_psi=int(parts[4])
-                self.spacing_phi=int(parts[5])
-                if len(parts)==7:
-                    self.camera_z=np.nan
-                    self.camera_x=np.nan
-                    self.mirror_z=np.nan
-                    self.mirror_y=np.nan
-                    array_data=parts[6]
-                else:
-                    self.camera_z=float(parts[6])
-                    self.camera_x=float(parts[7])
-                    self.mirror_z=float(parts[8])
-                    self.mirror_y=float(parts[9])
-                    array_data=parts[10]
+            if ".rateu" in file.name:
+                #open the file using the configparser
+                config = configparser.ConfigParser()
+                config.read(file.name)
+                print("Opened file {0} --- now reading.".format(file.name))
+                #check if the mode of the file fits the mode of the GUI
+                if self.mode != config["meta"]["mode"]:
+                    raise RuntimeError("Cannot open this file! The fileformat is not correct. Maybe the Rate Analyzer needs to be in another mode? File mode is {0} but GUI mode is {1}".format(config["meta"]["mode"], self.mode))
+                #gather all values from the file
+                self.mirror_phi=float(config["position"]["phi"])
+                self.mirror_psi=float(config["position"]["psi"])
+                self.camera_x=float(config["position"]["camera_x"])
+                self.camera_z=float(config["position"]["camera_z"])
+                self.offset=float(config["position"]["offset_z"])
+                self.mirror_y=float(config["position"]["mirror_y"])
+                self.mirror_z=float(config["position"]["mirror_z"])
+                self.min_0=float(config["range"]["min_0"])
+                self.max_0=float(config["range"]["max_0"])
+                self.min_1=float(config["range"]["min_1"])
+                self.max_1=float(config["range"]["max_1"])
+                self.spacing_0=int(config["range"]["spacing_0"])
+                self.spacing_1=int(config["range"]["spacing_1"])
+                array_data=config["raw"]["rates"]
                 lines=array_data.splitlines()
-                rates=np.empty((self.spacing_psi, self.spacing_phi))
-                lines[0]=lines[0].replace("[[", "[")
-                lines[-1]=lines[-1].replace("]]", "]")
-                for no in range(0, len(lines), 1):
-                    lines[no]=lines[no].replace("[","")
-                    lines[no]=lines[no].replace("]","")
-                    entries=lines[no].split()
-                    for no_2 in range(0, len(entries), 1):
-                        rates[no][no_2]=float(entries[no_2])
-                self.rates=rates
-            elif self.mode=="x-y" :
-                if ".ratel" not in file.name and ".ratexy" not in file.name:
-                    raise RuntimeError("Cannot open this file! The fileformat is not correct. Maybe the Rate Analyzer needs to be in another mode?")
-                self.min_x=float(parts[0])
-                self.max_x=float(parts[1])
-                self.min_y=float(parts[2])
-                self.max_y=float(parts[3])
-                self.spacing_x=int(parts[4])
-                self.spacing_y=int(parts[5])
-                if len(parts)==7:
-                    self.psi=np.nan
-                    self.phi=np.nan
-                    self.mirror_z=np.nan
-                    self.offset_pathlength=np.nan
-                    array_data=parts[6]
-                else:
-                    self.psi=float(parts[6])
-                    self.phi=float(parts[7])
-                    self.offset_pathlengtht=float(parts[8])
-                    self.mirror_z=float(parts[9])
-                    array_data=parts[10]
-                lines=array_data.splitlines()
-                rates=np.empty((self.spacing_y, self.spacing_x))
-                lines[0]=lines[0].replace("[[", "[")
-                lines[-1]=lines[-1].replace("]]", "]")
-                for no in range(0, len(lines), 1):
-                    lines[no]=lines[no].replace("[","")
-                    lines[no]=lines[no].replace("]","")
-                    entries=lines[no].split()
-                    for no_2 in range(0, len(entries), 1):
-                        rates[no][no_2]=float(entries[no_2])
-                self.rates=rates
-            elif self.mode=="x-z" :
-                if ".ratexz" not in file.name:
-                    raise RuntimeError("Cannot open this file! The fileformat is not correct. Maybe the Rate Analyzer needs to be in another mode?")
-                self.min_x=float(parts[0])
-                self.max_x=float(parts[1])
-                self.min_z=float(parts[2])
-                self.max_z=float(parts[3])
-                self.spacing_x=int(parts[4])
-                self.spacing_z=int(parts[5])
-                self.psi=float(parts[6])
-                self.phi=float(parts[7])
-                self.offset_pathlengtht=float(parts[8])
-                self.mirror_y=float(parts[9])
-                array_data=parts[10]
-                lines=array_data.splitlines()
-                rates=np.empty((self.spacing_x, self.spacing_z))
+                rates=np.empty((self.spacing_1, self.spacing_0))
                 lines[0]=lines[0].replace("[[", "[")
                 lines[-1]=lines[-1].replace("]]", "]")
                 for no in range(0, len(lines), 1):
@@ -1318,25 +1281,139 @@ class RATE_ANALYZER():
                         rates[no][no_2]=float(entries[no_2])
                 self.rates=rates
             else:
-                raise RuntimeError("The measuring mode needs to be definied correctly!")  
+                string=file.read()
+                parts=string.split("~")
+                if self.mode=="psi-phi":
+                    if ".rate" not in file.name and ".ratepp" not in file.name:
+                        raise RuntimeError("Cannot open this file! The fileformat is not correct. Maybe the Rate Analyzer needs to be in another mode?")
+                    self.min_0=float(parts[0])
+                    self.max_0=float(parts[1])
+                    self.min_1=float(parts[2])
+                    self.max_1=float(parts[3])
+                    self.spacing_1=int(parts[4])
+                    self.spacing_0=int(parts[5])
+                    if len(parts)==7:
+                        self.camera_z=np.nan
+                        self.camera_x=np.nan
+                        self.mirror_z=np.nan
+                        self.mirror_y=np.nan
+                        array_data=parts[6]
+                    else:
+                        self.camera_z=float(parts[6])
+                        self.camera_x=float(parts[7])
+                        self.mirror_z=float(parts[8])
+                        self.mirror_y=float(parts[9])
+                        array_data=parts[10]
+                    lines=array_data.splitlines()
+                    rates=np.empty((self.spacing_1, self.spacing_0))
+                    lines[0]=lines[0].replace("[[", "[")
+                    lines[-1]=lines[-1].replace("]]", "]")
+                    for no in range(0, len(lines), 1):
+                        lines[no]=lines[no].replace("[","")
+                        lines[no]=lines[no].replace("]","")
+                        entries=lines[no].split()
+                        for no_2 in range(0, len(entries), 1):
+                            rates[no][no_2]=float(entries[no_2])
+                    self.rates=rates
+                elif self.mode=="x-y" :
+                    if ".ratel" not in file.name and ".ratexy" not in file.name:
+                        raise RuntimeError("Cannot open this file! The fileformat is not correct. Maybe the Rate Analyzer needs to be in another mode?")
+                    self.min_0=float(parts[0])
+                    self.max_0=float(parts[1])
+                    self.min_1=float(parts[2])
+                    self.max_1=float(parts[3])
+                    self.spacing_0=int(parts[4])
+                    self.spacing_1=int(parts[5])
+                    if len(parts)==7:
+                        self.psi=np.nan
+                        self.phi=np.nan
+                        self.mirror_z=np.nan
+                        self.offset_pathlength=np.nan
+                        array_data=parts[6]
+                    else:
+                        self.psi=float(parts[6])
+                        self.phi=float(parts[7])
+                        self.offset_pathlengtht=float(parts[8])
+                        self.mirror_z=float(parts[9])
+                        array_data=parts[10]
+                    lines=array_data.splitlines()
+                    rates=np.empty((self.spacing_1, self.spacing_0))
+                    lines[0]=lines[0].replace("[[", "[")
+                    lines[-1]=lines[-1].replace("]]", "]")
+                    for no in range(0, len(lines), 1):
+                        lines[no]=lines[no].replace("[","")
+                        lines[no]=lines[no].replace("]","")
+                        entries=lines[no].split()
+                        for no_2 in range(0, len(entries), 1):
+                            rates[no][no_2]=float(entries[no_2])
+                    self.rates=rates
+                elif self.mode=="x-z" :
+                    if ".ratexz" not in file.name:
+                        raise RuntimeError("Cannot open this file! The fileformat is not correct. Maybe the Rate Analyzer needs to be in another mode?")
+                    self.min_0=float(parts[0])
+                    self.max_0=float(parts[1])
+                    self.min_1=float(parts[2])
+                    self.max_1=float(parts[3])
+                    self.spacing_1=int(parts[4])
+                    self.spacing_0=int(parts[5])
+                    self.psi=float(parts[6])
+                    self.phi=float(parts[7])
+                    self.offset_pathlengtht=float(parts[8])
+                    self.mirror_y=float(parts[9])
+                    array_data=parts[10]
+                    lines=array_data.splitlines()
+                    rates=np.empty((self.spacing_0, self.spacing_1))
+                    lines[0]=lines[0].replace("[[", "[")
+                    lines[-1]=lines[-1].replace("]]", "]")
+                    for no in range(0, len(lines), 1):
+                        lines[no]=lines[no].replace("[","")
+                        lines[no]=lines[no].replace("]","")
+                        entries=lines[no].split()
+                        for no_2 in range(0, len(entries), 1):
+                            rates[no][no_2]=float(entries[no_2])
+                    self.rates=rates
+                else:
+                    raise RuntimeError("The measuring mode needs to be definied correctly!")  
             self.resetRectangle()
             self.replotRates()
 
     def saveRates(self, path=None):
         if path==None:
             if self.mode=="psi-phi":
-                file = filedialog.asksaveasfile(parent=self.window, initialdir = "../../..", title = "Save Rate Distribution", filetypes = (("PSI-PHI rate files","*.ratepp"),("all files","*.*")))
+                file = filedialog.asksaveasfile(parent=self.window, initialdir = "../../..", title = "Save Rate Distribution", filetypes = (("universal rate files","*.rateu"),("PSI-PHI rate files","*.ratepp"),("all files","*.*")))
             elif self.mode=="x-y":
-                file = filedialog.asksaveasfile(parent=self.window, initialdir = "../../..", title = "Save Rate Distribution", filetypes = (("X-Y rate files","*.ratexy"),("all files","*.*")))
+                file = filedialog.asksaveasfile(parent=self.window, initialdir = "../../..", title = "Save Rate Distribution", filetypes = (("universal rate files","*.rateu"),("X-Y rate files","*.ratexy"),("all files","*.*")))
             elif self.mode=="x-z":
-                file = filedialog.asksaveasfile(parent=self.window, initialdir = "../../..", title = "Save Rate Distribution", filetypes = (("X-Z rate files","*.ratexz"),("all files","*.*")))
+                file = filedialog.asksaveasfile(parent=self.window, initialdir = "../../..", title = "Save Rate Distribution", filetypes = (("universal rate files","*.rateu"),("X-Z rate files","*.ratexz"),("all files","*.*")))
             else:
                 raise RuntimeError("The measuring mode needs to be definied correctly!") 
         else:
             file = open(path, "w")
         if file!=None:
             #file=open(filename, "w")
-            if self.mode=="psi-phi":
+            if ".rateu" in file.name:
+                #save as .rateu file
+                #create file the configparser
+                config = configparser.ConfigParser()
+                #save all values of the current plot into the file
+                config["meta"]={"mode" : self.mode,
+                    "timestamp saved" : time.time()}
+                config["position"]={"phi" : self.mirror_phi,
+                    "psi" : self.mirror_psi,
+                    "camera_x":self.camera_x,
+                    "camera_z":self.camera_z,
+                    "offset_z":self.offset,
+                    "mirror_y":self.mirror_y,
+                    "mirror_z":self.mirror_z,}
+                config["range"]={"min_0":self.min_0,
+                    "max_0":self.max_0,
+                    "min_1":self.min_1,
+                    "max_1":self.max_1,
+                    "spacing_0":self.spacing_0,
+                    "spacing_1":self.spacing_1}
+                config["raw"]={"rates":self.rates}
+                config.write(file)
+            elif self.mode=="psi-phi":
                 file.write("{0}~{1}~{2}~{3}~{4}~{5}~{6}~{7}~{8}~{9}~{10}".format(self.min_phi, self.max_phi, self.min_psi, self.max_psi, self.spacing_psi, self.spacing_phi, self.camera_z, self.camera_x, self.mirror_z, self.mirror_y, np.array2string(self.rates, threshold=10e9)).replace("\n ", "").replace("]", "]\n").replace("]\n]", "]]"))
             elif self.mode=="x-y":
                 file.write("{0}~{1}~{2}~{3}~{4}~{5}~{6}~{7}~{8}~{9}~{10}".format(self.min_x, self.max_x, self.min_y, self.max_y, self.spacing_0, self.spacing_y, self.phi, self.psi, self.offset_pathlength, self.mirror_z, np.array2string(self.rates, threshold=10e9)).replace("\n ", "").replace("]", "]\n").replace("]\n]", "]]"))
@@ -1345,6 +1422,7 @@ class RATE_ANALYZER():
             else:
                 raise RuntimeError("The measuring mode needs to be definied correctly!")    
             file.close()
+            print("Sucessfully saved the current rates as {0}".format(file.name))
             
     def offsetMode(self):
         if self.offset_bool.get() == 1:
@@ -1353,7 +1431,6 @@ class RATE_ANALYZER():
         elif self.offset_bool.get() == 0:
             self.label_starting_cam_z.config(text="Camera Z:")
             self.box_starting_cam_z.config(from_=0, to=139)
-        print("Toggled mode")
         
     #THIS SHOULD ACTUALLY GET IT INFORMATION FROM THE GEOMETRY PACKAGE!
     def adoptCurrentGuess(self):
