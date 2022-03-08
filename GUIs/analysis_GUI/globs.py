@@ -2,6 +2,10 @@ basicpath_sig = "/mnt/c/Users/andiz/Documents/ii/curcor/measurements"
 basicpath_ref = "/mnt/c/Users/andiz/Documents/ii/curcor/measurements"
 body_sig = ""; body_ref = ""
 
+
+# mode
+theMode = 0
+
 # Boolean initials
 boolSig = False; boolRef = False
 boolLP = False

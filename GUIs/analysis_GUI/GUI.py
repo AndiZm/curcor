@@ -23,11 +23,33 @@ class NavigationToolbar(tkagg.NavigationToolbar2Tk):
 
 root = Tk(); root.wm_title("Correlations")#; root.geometry("+1600+100")
 upperFrame = Frame(root); upperFrame.grid(row=0,column=0)
-selectFrame = Frame(upperFrame); selectFrame.grid(row=0,column=0)
+
+##############
+#### MODE ####
+##############
+# Different modes data acquisition:
+# 0/single: Data has been taken with only one PC, two data channels
+# 1/two   : Data has been taken with two PCs and one active channel per PC
+# 2/four  : Data has been taken with two PCs and two active channels per PC
+modeFrame = Frame(upperFrame); modeFrame.grid(row=0, column=0, padx=5)
+mode = StringVar(root); mode.set("single")
+def selectMode():
+	global mode
+	if mode.get() == "single":
+		gl.theMode = 0
+	if mode.get() == "two":
+		gl.theMode = 1
+	if mode.get() == "four":
+		gl.theMode = 2
+pc1Button    = Radiobutton(modeFrame, text="Single PC",   indicatoron=False, variable=mode, command=selectMode, value="single", bg="#b3ffb3", height=3); pc1Button.grid(row=0,column=0)
+pc2ch1Button = Radiobutton(modeFrame, text="2 PCs, 1 Ch", indicatoron=False, variable=mode, command=selectMode, value="two",    bg="#b3d9ff", height=3); pc2ch1Button.grid(row=0,column=1)
+pc2ch2Button = Radiobutton(modeFrame, text="2 PCs, 2 Ch", indicatoron=False, variable=mode, command=selectMode, value="four",   bg="#b3b3ff", height=3); pc2ch2Button.grid(row=0,column=2)
 
 ####################
 #### SELECTIONS ####
 ####################
+selectFrame = Frame(upperFrame); selectFrame.grid(row=0,column=1)
+
 delSigButton = Button(selectFrame, text="Delete", fg="white", bg="red", command=sel.delSigFiles); delSigButton.grid(row=0,column=0)
 bodySigButton = Button(selectFrame, text="SIG files", command=sel.selectBodyFile_sig); bodySigButton.grid(row=0, column=1)
 gl.bodySigLabel = Label(selectFrame, text="No files selected"); gl.bodySigLabel.grid(row=0,column=2)
@@ -74,7 +96,7 @@ gl.corrCanvas = FigureCanvasTkAgg(corrFig, master=correlationFrame); gl.corrCanv
 naviFrame = Frame(root); naviFrame.grid(row=2,column=0)
 navi = NavigationToolbar(gl.corrCanvas, naviFrame)
 
-updateFrame = Frame(upperFrame); updateFrame.grid(row=0,column=1)
+updateFrame = Frame(upperFrame); updateFrame.grid(row=0,column=2)
 binning = StringVar(root); binning.set("Sampling: 1.6 ns")
 binningoptions = {"Sampling: 0.8 ns": 0.8e-9, "Sampling: 1.6 ns": 1.6e-9, "Sampling: 3.2 ns": 3.2e-9}
 binningDropdown = OptionMenu(updateFrame, binning, *binningoptions); binningDropdown.grid(row=0,column=0)
