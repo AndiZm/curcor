@@ -57,17 +57,32 @@ def delRefFiles():
 
 ### Calibration files ###
 def selectSigCalib():
-	filename = filedialog.askopenfilename(initialdir = gl.basicpath_sig+"/calibs", title = "Load calibration", filetypes = (("calib files",".calib"),("all files",".*")))
-	calibLoad = filename; gl.calibSigLabel.config(text=calibLoad.split("/")[-1])
-	gl.histo_x_sig = np.loadtxt(calibLoad[0:calibLoad.find(".")]+".phd")[:,0]; gl.histo_a_sig = np.loadtxt(calibLoad[0:calibLoad.find(".")]+".phd")[:,1]; gl.histo_b_sig = np.loadtxt(calibLoad[0:calibLoad.find(".")]+".phd")[:,2]
-	gl.ps_x_sig = np.loadtxt(calibLoad[0:calibLoad.find(".")]+".shape")[:,0]; gl.ps_a_sig = np.loadtxt(calibLoad[0:calibLoad.find(".")]+".shape")[:,1]; gl.ps_b_sig = np.loadtxt(calibLoad[0:calibLoad.find(".")]+".shape")[:,2]
-	gl.xplot_sig = np.loadtxt(calibLoad[0:calibLoad.find(".")]+".xplot")
-	gl.pa_sig[0] = np.loadtxt(calibLoad)[0]; gl.pa_sig[1] = np.loadtxt(calibLoad)[1]; gl.pa_sig[2] = np.loadtxt(calibLoad)[2]
-	gl.pb_sig[0] = np.loadtxt(calibLoad)[3]; gl.pb_sig[1] = np.loadtxt(calibLoad)[4]; gl.pb_sig[2] = np.loadtxt(calibLoad)[5]
-	gl.nsum_a_sig = np.loadtxt(calibLoad)[6]; gl.nsum_b_sig = np.loadtxt(calibLoad)[7]
-	gl.ph_a_sig = np.loadtxt(calibLoad)[8]; gl.ph_b_sig = np.loadtxt(calibLoad)[9]
-	gl.avg_charge_a_sig = np.loadtxt(calibLoad)[10]; gl.avg_charge_b_sig = np.loadtxt(calibLoad)[11]
-	gl.avgChargeASigLabel.config(text="{:.3f}".format(gl.avg_charge_a_sig)); gl.avgChargeBSigLabel.config(text="{:.3f}".format(gl.avg_charge_b_sig))
+	# The Choice of calibration files depends on the mode
+	if gl.theMode == 0: # single pc measurement with two channels
+		filename = filedialog.askopenfilename(initialdir = gl.basicpath_sig+"/calibs", title = "Load calibration", filetypes = (("calib files",".calib"),("all files",".*")))
+		calibLoad = filename; gl.calibSigLabel.config(text=calibLoad.split("/")[-1])
+		gl.histo_x_sig = np.loadtxt(calibLoad[0:calibLoad.find(".")]+".phd")[:,0]; gl.histo_a_sig = np.loadtxt(calibLoad[0:calibLoad.find(".")]+".phd")[:,1]; gl.histo_b_sig = np.loadtxt(calibLoad[0:calibLoad.find(".")]+".phd")[:,2]
+		gl.ps_x_sig = np.loadtxt(calibLoad[0:calibLoad.find(".")]+".shape")[:,0]; gl.ps_a_sig = np.loadtxt(calibLoad[0:calibLoad.find(".")]+".shape")[:,1]; gl.ps_b_sig = np.loadtxt(calibLoad[0:calibLoad.find(".")]+".shape")[:,2]
+		gl.xplot_sig = np.loadtxt(calibLoad[0:calibLoad.find(".")]+".xplot")
+		gl.pa_sig[0] = np.loadtxt(calibLoad)[0]; gl.pa_sig[1] = np.loadtxt(calibLoad)[1]; gl.pa_sig[2] = np.loadtxt(calibLoad)[2]
+		gl.pb_sig[0] = np.loadtxt(calibLoad)[3]; gl.pb_sig[1] = np.loadtxt(calibLoad)[4]; gl.pb_sig[2] = np.loadtxt(calibLoad)[5]
+		gl.nsum_a_sig = np.loadtxt(calibLoad)[6]; gl.nsum_b_sig = np.loadtxt(calibLoad)[7]
+		gl.ph_a_sig = np.loadtxt(calibLoad)[8]; gl.ph_b_sig = np.loadtxt(calibLoad)[9]
+		gl.avg_charge_a_sig = np.loadtxt(calibLoad)[10]; gl.avg_charge_b_sig = np.loadtxt(calibLoad)[11]
+		gl.avgChargeASigLabel.config(text="{:.3f}".format(gl.avg_charge_a_sig)); gl.avgChargeBSigLabel.config(text="{:.3f}".format(gl.avg_charge_b_sig))
+	if gl.theMode == 1: # Two pc measurement with one channel each
+		filename1 = filedialog.askopenfilename(initialdir = gl.basicpath_sig+"/calibs_pc1", title = "Load calibration", filetypes = (("calib files",".calib1"),("all files",".*")))
+		calibLoad = filename1; gl.calibSigLabel.config(text=calibLoad.split("/")[-1])
+		gl.histo_x_sig = np.loadtxt(calibLoad[0:calibLoad.find(".")]+".phd")[:,0]; gl.histo_a_sig = np.loadtxt(calibLoad[0:calibLoad.find(".")]+".phd")[:,1]; gl.histo_b_sig = np.loadtxt(calibLoad[0:calibLoad.find(".")]+".phd")[:,2]
+		gl.ps_x_sig = np.loadtxt(calibLoad[0:calibLoad.find(".")]+".shape")[:,0]; gl.ps_a_sig = np.loadtxt(calibLoad[0:calibLoad.find(".")]+".shape")[:,1]; gl.ps_b_sig = np.loadtxt(calibLoad[0:calibLoad.find(".")]+".shape")[:,2]
+		gl.xplot_sig = np.loadtxt(calibLoad[0:calibLoad.find(".")]+".xplot")
+		gl.pa_sig[0] = np.loadtxt(calibLoad)[0]; gl.pa_sig[1] = np.loadtxt(calibLoad)[1]; gl.pa_sig[2] = np.loadtxt(calibLoad)[2]
+		gl.pb_sig[0] = np.loadtxt(calibLoad)[3]; gl.pb_sig[1] = np.loadtxt(calibLoad)[4]; gl.pb_sig[2] = np.loadtxt(calibLoad)[5]
+		gl.nsum_a_sig = np.loadtxt(calibLoad)[6]; gl.nsum_b_sig = np.loadtxt(calibLoad)[7]
+		gl.ph_a_sig = np.loadtxt(calibLoad)[8]; gl.ph_b_sig = np.loadtxt(calibLoad)[9]
+		gl.avg_charge_a_sig = np.loadtxt(calibLoad)[10]; gl.avg_charge_b_sig = np.loadtxt(calibLoad)[11]
+		gl.avgChargeASigLabel.config(text="{:.3f}".format(gl.avg_charge_a_sig)); gl.avgChargeBSigLabel.config(text="{:.3f}".format(gl.avg_charge_b_sig))
+
 def selectSigCalib_concrete(filename):
 	calibLoad = filename; gl.calibSigLabel.config(text=calibLoad.split("/")[-1])
 	gl.histo_x_sig = np.loadtxt(calibLoad[0:calibLoad.find(".")]+".phd")[:,0]; gl.histo_a_sig = np.loadtxt(calibLoad[0:calibLoad.find(".")]+".phd")[:,1]; gl.histo_b_sig = np.loadtxt(calibLoad[0:calibLoad.find(".")]+".phd")[:,2]
