@@ -18,6 +18,7 @@ from PIL import Image
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+import math
 
 import geometry as geo
 
@@ -123,7 +124,7 @@ class RATE_ANALYZER():
     label_guess_mir_y = None
     label_guess_cam_z = None
     label_guess_cam_x = None
-    do_magic_button =None
+    full_optimization_button =None
     
     #values for (live) recording
     still_recording=False
@@ -231,7 +232,7 @@ class RATE_ANALYZER():
         self.figure=plt.Figure(figsize=(6,6))
         self.subplot = self.figure.add_subplot(111)
         self.subplot.set_title("Heatmap of the mirror Positions")
-        if self.mode == "psi-phi":
+        '''if self.mode == "psi-phi":
             self.subplot.set_xlabel("$\phi$ [°]")
             self.subplot.set_ylabel("$\psi$ [°]")
         elif self.mode == "x-y":
@@ -242,7 +243,7 @@ class RATE_ANALYZER():
             self.subplot.set_ylabel("x [mm]")
             self.subplot.invert_xaxis()
         else:
-            raise RuntimeError("The measuring mode needs to be definied correctly!")
+            raise RuntimeError("The measuring mode needs to be definied correctly!")'''
         #set initial limits on the plot
         self.subplot.set_xlim((self.min_0, self.max_0))
         self.subplot.set_ylim((self.min_1, self.max_1))
@@ -261,14 +262,14 @@ class RATE_ANALYZER():
         self.mirYLabel = Label(self.pos_line_1_frame, pady=5, text='Mirror Y: {0:4.1f}'.format(self.mirror_y), width="18", background ="#FFFFFF")
         self.mirPhiLabel = Label(self.pos_line_1_frame, pady=5, text='Mirror PSI: {0:4.1f}'.format(self.mirror_psi), width="18", background ="#FFFFFF")
         self.mirPsiLabel = Label(self.pos_line_1_frame, pady=5, text='Mirror PHI: {0:4.1f}'.format(self.mirror_phi), width="18", background ="#FFFFFF")
-        if self.mode == "psi-phi":
+        '''if self.mode == "psi-phi":
             self.camZLabel = Label(self.pos_line_1_frame, pady=5, text='Camera Z: {0:4.1f}'.format(self.camera_z), width="15", background ="#FFFFFF")
         elif self.mode == "x-y":
             self.offsetLabel = Label(self.pos_line_1_frame, pady=5, text='Offset: {0:4.1f}'.format(self.offset, width="18"), background ="#FFFFFF")
         elif self.mode == "x-z":
             self.offsetLabel = Label(self.pos_line_1_frame, pady=5, text='Offset: {0:4.1f}'.format(self.offset, width="18"), background ="#FFFFFF")
         else:
-            raise RuntimeError("The measuring mode needs to be definied correctly!")
+            raise RuntimeError("The measuring mode needs to be definied correctly!")'''
         
         
         #place labels
@@ -277,14 +278,14 @@ class RATE_ANALYZER():
         self.mirYLabel.grid(row=0, column=2)
         self.mirPhiLabel.grid(row=1, column=0)
         self.mirPsiLabel.grid(row=1, column=1)
-        if self.mode == "psi-phi":
+        '''if self.mode == "psi-phi":
             self.camZLabel.grid(row=1, column=2)
         elif self.mode == "x-y":
             self.offsetLabel.grid(row=1, column=2)
         elif self.mode == "x-z":
             self.offsetLabel.grid(row=1, column=2)
         else:
-            raise RuntimeError("The measuring mode needs to be definied correctly!")
+            raise RuntimeError("The measuring mode needs to be definied correctly!")'''
         
         ##############
         # FILE FRAME #
@@ -506,7 +507,7 @@ class RATE_ANALYZER():
         self.resultsOffsetLabel = Label(self.results_frame, text='Offset:  ', width="15")
         self.resultsPrefactorPhiLabel = Label(self.results_frame, text='Prefactor:  ', width="15")
         
-        if self.mode=="x-y":
+        '''if self.mode=="x-y":
             self.resultsCenterPhiLabel.config(text='Center X:    ')
             self.resultsCenterPsiLabel.config(text='Center Y:    ')
             self.resultsSigmaPhiLabel.config(text='Sigma X:    ')
@@ -516,7 +517,7 @@ class RATE_ANALYZER():
             self.resultsCenterPhiLabel.config(text='Center X:    ')
             self.resultsCenterPsiLabel.config(text='Center Z:    ')
             self.resultsSigmaPhiLabel.config(text='Sigma X:    ')
-            self.resultsSigmaPsiLabel.config(text='Sigma Z:    ')
+            self.resultsSigmaPsiLabel.config(text='Sigma Z:    ')'''
         
         #place labels
         self.resultsHeadLabel.grid(row=0)
@@ -541,10 +542,18 @@ class RATE_ANALYZER():
         self.crazyBatchButton.grid(row=5, column=0)
         self.crazyBatchButton["command"]= self.crazyBatch
         
-        #DO MAGIC button
-        self.do_magic_button = Button(self.control_frame, text="Do Magic", width=31, pady=3, padx=3)
-        self.do_magic_button.grid(row=5, column=1)
-        self.do_magic_button["command"]= self.crazyBatch
+        #Full optimzation button
+        self.full_optimization_button = Button(self.control_frame, text="Full Optimization", width=31, pady=3, padx=3)
+        self.full_optimization_button.grid(row=5, column=1)
+        self.full_optimization_button["command"]= self.runOptimizer
+        
+        #correction button
+        self.correction_button = Button(self.control_frame, text="Correct pointing", width=31, pady=3, padx=3)
+        self.correction_button.grid(row=4, column=1)
+        self.correction_button["command"]= self.correctPointing
+        
+        #customize everything so it works in every mode
+        self.changeMode(self.mode)
   
     def replotRates(self):
         #update the other parameters
@@ -1026,8 +1035,8 @@ class RATE_ANALYZER():
             
             #do the fit
             with warnings.catch_warnings(record=True) as w:
-                coordinates_phi=np.linspace(self.min_x, self.max_x, num=int(self.spacing_0))
-                coordinates_psi=np.linspace(self.min_y, self.max_y, num=int(self.spacing_1))
+                coordinates_phi=np.linspace(self.min_0_rect, self.max_0_rect, num=int(self.spacing_0))
+                coordinates_psi=np.linspace(self.min_1_rect, self.max_1_rect, num=int(self.spacing_1))
                 x, y=np.meshgrid(coordinates_phi, coordinates_psi)
                 #select only the values within the rectangle for the fit
                 #if np.size(self.rates)/4>np.sum(mask):
@@ -1119,22 +1128,16 @@ class RATE_ANALYZER():
             return popt
         else:
             raise RuntimeError("The measuring mode needs to be definied correctly!")
-                
+    
     def findRectangle(self, contrast_factor=1.5):
-        if self.rates == None:
+        try:
+            if len(self.rates)<1:
+                raise RuntimeError("The area of interest can't be found if there are no rates! Please load or record a rate file")
+        except:
             raise RuntimeError("The area of interest can't be found if there are no rates! Please load or record a rate file")
         rates=self.rates
-        if self.mode=="psi-phi":
-            coordinates_phi=np.linspace(self.min_0, self.max_1, num=int(self.spacing_0))
-            coordinates_psi=np.linspace(self.min_0, self.max_1, num=int(self.spacing_1))
-        elif self.mode=="x-y":
-            coordinates_phi=np.linspace(self.min_0, self.max_0, num=int(self.spacing_0))
-            coordinates_psi=np.linspace(self.min_1, self.max_1, num=int(self.spacing_1))
-        elif self.mode=="x-z":
-            coordinates_phi=np.linspace(self.min_0, self.max_0, num=int(self.spacing_0))
-            coordinates_psi=np.linspace(self.min_1, self.max_1, num=int(self.spacing_1))
-        else:
-            raise RuntimeError("The measuring mode needs to be definied correctly!")  
+        coordinates_phi=np.linspace(self.min_0, self.max_0, num=int(self.spacing_0))
+        coordinates_psi=np.linspace(self.min_1, self.max_1, num=int(self.spacing_1))
         x, y=np.meshgrid(coordinates_phi, coordinates_psi)
         max_rate=np.max(rates)
         mask=rates>max_rate/contrast_factor
@@ -1184,57 +1187,129 @@ class RATE_ANALYZER():
         self.max_0_rect=rect_start_phi+rect_width_phi
         self.min_1_rect=rect_start_psi+rect_width_psi
         self.max_1_rect=rect_start_psi
+
+    #STILL NEEDS TO BE DEBUGGED
+    def changeMode(self, new_mode):
+        self.mode=new_mode
+        if self.mode == "psi-phi":
+            #create labels
+            min_phi=-4.4
+            max_phi=4.4
+            min_psi=-4.4
+            max_psi=4.4
+            self.label_min_0 = Label(self.record_frame, text='Min PHI:  ')
+            self.label_max_0 = Label(self.record_frame, text='Max PHI:  ')
+            self.label_min_1 = Label(self.record_frame, text='Min PSI:  ')
+            self.label_max_1 = Label(self.record_frame, text='Max PSI:  ')
+            self.label_spacing_0 = Label(self.record_frame, text='Spacing PHI:  ')
+            self.label_spacing_1 = Label(self.record_frame, text='Spacing PSI:  ')
+            #create sliders
+            self.box_min_0 = Scale(self.record_frame, from_=min_phi, to=max_phi, orient=HORIZONTAL, length=150, resolution=0.1)
+            self.box_max_0 = Scale(self.record_frame, from_=min_phi, to=max_phi, orient=HORIZONTAL, length=150, resolution=0.1)
+            self.box_min_1 = Scale(self.record_frame, from_=min_psi, to=max_psi, orient=HORIZONTAL, length=150, resolution=0.1)
+            self.box_max_1 = Scale(self.record_frame, from_=min_psi, to=max_psi, orient=HORIZONTAL, length=150, resolution=0.1)
+            self.box_spacing_0 = Scale(self.record_frame, from_=5, to=50, orient=HORIZONTAL, length=150)
+            self.box_spacing_1 = Scale(self.record_frame, from_=5, to=50, orient=HORIZONTAL, length=150)
+            #set initial values
+            self.box_min_0.set(min_phi)
+            self.box_max_0.set(max_phi)
+            self.box_min_1.set(min_psi)
+            self.box_max_1.set(max_psi)
+        elif self.mode == "x-y":
+            min_x=-80
+            max_x=80
+            min_y=-25
+            max_y=25
+            #create labels
+            self.label_min_0 = Label(self.record_frame, text='Min X:  ')
+            self.label_max_0 = Label(self.record_frame, text='Max X:  ')
+            self.label_min_1 = Label(self.record_frame, text='Min Y:  ')
+            self.label_max_1 = Label(self.record_frame, text='Max Y:  ')
+            self.label_spacing_0 = Label(self.record_frame, text='Spacing X:  ')
+            self.label_spacing_1 = Label(self.record_frame, text='Spacing Y:  ')
+            #create sliders
+            self.box_min_0 = Scale(self.record_frame, from_=min_x, to=max_x, orient=HORIZONTAL, length=150, resolution=0.1)
+            self.box_max_0 = Scale(self.record_frame, from_=min_x, to=max_x, orient=HORIZONTAL, length=150, resolution=0.1)
+            self.box_min_1 = Scale(self.record_frame, from_=min_y, to=max_y, orient=HORIZONTAL, length=150, resolution=0.1)
+            self.box_max_1 = Scale(self.record_frame, from_=min_y, to=max_y, orient=HORIZONTAL, length=150, resolution=0.1)
+            self.box_spacing_0= Scale(self.record_frame, from_=5, to=50, orient=HORIZONTAL, length=150)
+            self.box_spacing_1 = Scale(self.record_frame, from_=5, to=50, orient=HORIZONTAL, length=150)
+            #set initial values
+            self.box_min_0.set(min_x)
+            self.box_max_0.set(max_x)
+            self.box_min_1.set(min_y)
+            self.box_max_1.set(max_y)
+        elif self.mode == "x-z":
+            min_z=-100
+            max_z=100
+            min_x=-120
+            max_x=120
+            #create labels
+            self.label_min_0 = Label(self.record_frame, text='Min Z:  ')
+            self.label_max_0 = Label(self.record_frame, text='Max Z:  ')
+            self.label_min_1 = Label(self.record_frame, text='Min X:  ')
+            self.label_max_1 = Label(self.record_frame, text='Max X:  ')
+            self.label_spacing_0 = Label(self.record_frame, text='Spacing Z:  ')
+            self.label_spacing_1 = Label(self.record_frame, text='Spacing X:  ')
+            #create sliders
+            self.box_min_0 = Scale(self.record_frame, from_=min_z, to=max_z, orient=HORIZONTAL, length=150, resolution=0.1)
+            self.box_max_0 = Scale(self.record_frame, from_=min_z, to=max_z, orient=HORIZONTAL, length=150, resolution=0.1)
+            self.box_min_1 = Scale(self.record_frame, from_=min_x, to=max_x, orient=HORIZONTAL, length=150, resolution=0.1)
+            self.box_max_1 = Scale(self.record_frame, from_=min_x, to=max_x, orient=HORIZONTAL, length=150, resolution=0.1)
+            self.box_spacing_0  = Scale(self.record_frame, from_=5, to=50, orient=HORIZONTAL, length=150)
+            self.box_spacing_1 = Scale(self.record_frame, from_=5, to=50, orient=HORIZONTAL, length=150)
+            #set initial values
+            self.box_min_0.set(min_z)
+            self.box_max_0.set(max_z)
+            self.box_min_1.set(min_x)
+            self.box_max_1.set(max_x)
+        else:
+            raise RuntimeError("The measuring mode needs to be definied correctly!")
+        if self.mode == "psi-phi":
+            self.subplot.set_xlabel("$\phi$ [°]")
+            self.subplot.set_ylabel("$\psi$ [°]")
+        elif self.mode == "x-y":
+            self.subplot.set_xlabel("x [mm]")
+            self.subplot.set_ylabel("y [mm]")
+        elif self.mode == "x-z":
+            self.subplot.set_xlabel("z [mm]")
+            self.subplot.set_ylabel("x [mm]")
+            self.subplot.invert_xaxis()
+        else:
+            raise RuntimeError("The measuring mode needs to be definied correctly!")
         
-    #######################################
-    #  FILE FORMAT FOR THE .ratepp FILES  #
-    # [00] Min Phi                        #
-    # [01] Max Phi                        #
-    # [02] Min Psi                        #
-    # [03] Max Psi                        #
-    # [04] Spacing Phi                    #
-    # [05] Spacing Psi                    #
-    # [06] Camera Z                       #
-    # [07] Camera X                       #
-    # [08] Mirror Z                       #
-    # [09] Mirror Height                  #
-    # [10] actual Rates                   #
-    #######################################
-    
-    #######################################
-    #  FILE FORMAT FOR THE .ratexy FILES  #
-    # [00] Min X                          #
-    # [01] Max X                          #
-    # [02] Min Y                          #
-    # [03] Max Y                          #
-    # [04] Spacing X                      #
-    # [05] Spacing Y                      #
-    # [06] PHI                            #
-    # [07] PSI                            #
-    # [08] offset pathlength              #
-    # [09] mirror z                       #
-    # [10] actual Rates                   #
-    #######################################
-    
-    #######################################
-    #  FILE FORMAT FOR THE .ratexz FILES  #
-    # [00] Min X                          #
-    # [01] Max X                          #
-    # [02] Min Z                          #
-    # [03] Max Z                          #
-    # [04] Spacing X                      #
-    # [05] Spacing Z                      #
-    # [06] PHI                            #
-    # [07] PSI                            #
-    # [08] offset pathlength              #
-    # [09] mirror height                  #
-    # [10] actual Rates                   #
-    #######################################
-    
-    ###############################################
-    # FILE FORMAT FOR THE UNIVERSAL .rateu FILES  #
-    # -> Theses Files are somewhat self explaining#
-    ###############################################
-    
+        if self.mode == "psi-phi":
+            self.camZLabel = Label(self.pos_line_1_frame, pady=5, text='Camera Z: {0:4.1f}'.format(self.camera_z), width="15", background ="#FFFFFF")
+        elif self.mode == "x-y":
+            self.offsetLabel = Label(self.pos_line_1_frame, pady=5, text='Offset: {0:4.1f}'.format(self.offset, width="18"), background ="#FFFFFF")
+        elif self.mode == "x-z":
+            self.offsetLabel = Label(self.pos_line_1_frame, pady=5, text='Offset: {0:4.1f}'.format(self.offset, width="18"), background ="#FFFFFF")
+        else:
+            raise RuntimeError("The measuring mode needs to be definied correctly!")
+        if self.mode == "psi-phi":
+            self.camZLabel.grid(row=1, column=2)
+        elif self.mode == "x-y":
+            self.offsetLabel.grid(row=1, column=2)
+        elif self.mode == "x-z":
+            self.offsetLabel.grid(row=1, column=2)
+        else:
+            raise RuntimeError("The measuring mode needs to be definied correctly!")
+        if self.mode=="psi-phi":
+            self.resultsCenterPhiLabel.config(text='Center PHI:    ')
+            self.resultsCenterPsiLabel.config(text='Center PSI:    ')
+            self.resultsSigmaPhiLabel.config(text='Sigma PHI:    ')
+            self.resultsSigmaPsiLabel.config(text='Sigma PSI:    ')
+        elif self.mode=="x-y":
+            self.resultsCenterPhiLabel.config(text='Center X:    ')
+            self.resultsCenterPsiLabel.config(text='Center Y:    ')
+            self.resultsSigmaPhiLabel.config(text='Sigma X:    ')
+            self.resultsSigmaPsiLabel.config(text='Sigma Y:    ')
+        elif self.mode=="x-z":
+            self.resultsCenterPhiLabel.config(text='Center X:    ')
+            self.resultsCenterPsiLabel.config(text='Center Z:    ')
+            self.resultsSigmaPhiLabel.config(text='Sigma X:    ')
+            self.resultsSigmaPsiLabel.config(text='Sigma Z:    ')
+        print("Set measurement mode to {0}".format(self.mode))
     
     def loadRates(self):
         if self.mode=="psi-phi": 
@@ -1423,7 +1498,7 @@ class RATE_ANALYZER():
                 raise RuntimeError("The measuring mode needs to be definied correctly!")    
             file.close()
             print("Sucessfully saved the current rates as {0}".format(file.name))
-            
+    
     def offsetMode(self):
         if self.offset_bool.get() == 1:
             self.label_starting_cam_z.config(text="Offset:")
@@ -1431,17 +1506,17 @@ class RATE_ANALYZER():
         elif self.offset_bool.get() == 0:
             self.label_starting_cam_z.config(text="Camera Z:")
             self.box_starting_cam_z.config(from_=0, to=139)
-        
-    #THIS SHOULD ACTUALLY GET IT INFORMATION FROM THE GEOMETRY PACKAGE!
+    
+#THIS NEEDS TO BE TESTED
     def adoptCurrentGuess(self):
-        cam_x, cam_z, phi, psi, mir_z, mir_y = 0,0,0,0,0,0  # geo.get_optimal_parameters_current_guess()
+        cam_x, cam_z, phi, psi, mir_z, mir_y =  geo.get_optimal_parameters_current_guess()
         self.box_starting_cam_x.set(cam_x)
         self.box_starting_cam_z.set(cam_z)
         self.box_starting_phi.set(phi)
         self.box_starting_psi.set(psi)
         self.box_starting_mir_z.set(mir_z)
         self.box_starting_mir_y.set(mir_y)
-            
+    
     def adoptProposal(self):
         #set the sliders to the borders of the rectangle
         self.box_min_phi.set(self.min_0_rect)
@@ -1478,13 +1553,13 @@ class RATE_ANALYZER():
         #set sliders for the spacing
         self.box_spacing_0.set(spacing_phi)
         self.box_spacing_1.set(spacing_psi)
-        
+    
     def resetRectangle(self):
         min_1_rect=None
         max_1_rect=None
         min_0_rect=None
         max_0_rect=None
-        
+    
     def updateResults(self, results):
         self.resultsCenterPhiLabel['text']='Center PHI: {0:3.2f}'.format(results[1])
         self.resultsCenterPsiLabel['text']='Center PSI: {0:3.2f}'.format(results[3])
@@ -1492,7 +1567,7 @@ class RATE_ANALYZER():
         self.resultsSigmaPsiLabel['text']='Sigma PSI:  {0:3.2f}'.format(results[4])
         self.resultsOffsetLabel['text']='Offset:     {0:3.2f}'.format(results[5])
         self.resultsPrefactorPhiLabel['text']='Prefactor:  {0:3.2f}'.format(results[0])
-        
+    
     def crazyBatch(self):
         #this method is used to get a huge batch of data in many different configuarations of the setup.
         
@@ -1756,6 +1831,245 @@ class RATE_ANALYZER():
             self.controller.setBussy(False)
             self.controller.setBatch(False)
             print("The batch is done!")
+    #this is meant to be run in a thread of its own, so it can be terminated if needed. It writes a logfile with all releavent measaurements and safes all distributions
+    def runOptimizer(self, xz_large=True, xz_small=True, xy=True, offset_closer=-2, offset_further=1, optimal_offset=-1.5):
+        
+        #safe the system time
+        start_time=time.time()
+        #create directory to which all information is safed
+        path="../../../LOG"
+        try:
+            #print("{0}/rates".format(path))
+            #print("{0}/{1}".format(path, start_time))
+            os.mkdir("{0}/{1}".format(path, start_time), mode=0o777)
+            #print("{0}/{1}/rates".format(path, start_time))
+            os.mkdir("{0}/{1}/rates".format(path, start_time), mode=0o777)
+            path="{0}/{1}".format(path, start_time)
+        except:
+            raise RuntimeError("Cannot create new directory! Does the directory already exist? Please check and retry!")
+                
+        #get initial guess
+        cam_x, cam_z, phi, psi, mir_z, mir_y =  geo.get_optimal_parameters_current_guess()
+        i_cam_x, i_cam_z, i_phi, i_psi, i_mir_z, i_mir_y = cam_x, cam_z, phi, psi, mir_z, mir_y
+        print("Initial guess: cam_x={0} cam_z={1} phi={2} psi={3} mir_z={4} mir_y={5}".format(cam_x, cam_z, phi, psi, mir_z, mir_y))
+        #ADD WRITING TO LOG HERE AS WELL
+        
+        #run an x-z scan with very low resolution in the range of the expectation (+- 50mm)
+        if xz_large:
+            print("Start X-Z  (large) scan now")
+            #ADD WRITING TO LOG HERE AS WELL
+            #set the correct mode for the GUI
+            self.changeMode("x-z")
+            #input the correct parameters
+            self.box_min_0.set(-50)
+            self.box_max_0.set(50)
+            self.box_min_1.set(-50)
+            self.box_max_1.set(50)
+            self.box_spacing_0.set(6)
+            self.box_spacing_1.set(6)
+            self.box_starting_cam_x.set(cam_x)
+            self.box_starting_cam_z.set(cam_z)
+            self.box_starting_mir_y.set(mir_y)
+            self.box_starting_mir_z.set(mir_z)
+            self.box_starting_phi.set(phi)
+            self.box_starting_psi.set(psi)
+            try:
+                self.recordRateDistributionRead()
+            except:
+                return -1
+            #save the rates
+            save_path="{0}/rates/xz_large.rateu".format(path)
+            self.saveRates(save_path)
+            #do a rectangle "fit" to find the new center
+            self.findRectangle()
+            mir_z=mir_z+(self.min_0_rect+self.max_0_rect)/2
+            cam_x=cam_x+(self.min_1_rect+self.max_1_rect)/2
+            print("Found new center (X-Z large) at X={0} and Z={1}".format(cam_x, mir_z))
+            #ADD WRITING TO LOG HERE AS WELL
+            
+        #run an x-z scan with high resoution in closer to the expected center (+- 20mm)
+        if xz_small:
+            print("Start X-Z  (small) scan now")
+            #ADD WRITING TO LOG HERE AS WELL
+            #set the correct mode for the GUI
+            self.changeMode("x-z")
+            #input the correct parameters
+            self.box_min_0.set(-20)
+            self.box_max_0.set(20)
+            self.box_min_1.set(-20)
+            self.box_max_1.set(20)
+            self.box_spacing_0.set(10)
+            self.box_spacing_1.set(10)
+            self.box_starting_cam_x.set(cam_x)
+            self.box_starting_cam_z.set(cam_z)
+            self.box_starting_mir_y.set(mir_y)
+            self.box_starting_mir_z.set(mir_z)
+            self.box_starting_phi.set(phi)
+            self.box_starting_psi.set(psi)
+            try:
+                self.recordRateDistributionRead()
+            except:
+                return -1
+            #save the rates
+            save_path="{0}/rates/xz_small.rateu".format(path)
+            self.saveRates(save_path)
+            #do a gaussian fit to find the center
+            try:
+                gaussian=self.fitGaussian()
+                #fix mir Z and set new guess for cam x
+                cam_x=cam_x+gaussian[3]
+                mir_z=mir_z+gaussian[1]
+            except:
+                print("No Gaussian could be fitted. This sucks! No clue what to do now.")
+                return -1
+        #run an offset measurement for 2 different distances
+        if xy:
+            #set the correct mode for the GUI
+            self.changeMode("x-y")
+            
+            ################
+            # FIRST OFFSET #
+            ################
+            
+            #the first offset is the closer measurement
+            print("Start X-Y scan (closer) now")
+            #ADD WRITING TO LOG HERE AS WELL
+            
+            #input the correct parameters
+            self.box_min_0.set(-20)
+            self.box_max_0.set(20)
+            self.box_min_1.set(20)
+            self.box_max_1.set(20)
+            self.box_spacing_0.set(10)
+            self.box_spacing_1.set(10)
+            self.box_starting_cam_x.set(cam_x)
+            self.box_starting_cam_z.set(cam_z)
+            self.box_starting_mir_y.set(mir_y)
+            self.box_starting_mir_z.set(mir_z)
+            self.box_starting_phi.set(phi)
+            self.box_starting_psi.set(psi)
+            try:
+                self.recordRateDistributionRead()
+            except:
+                return -1
+            #save the rates
+            save_path="{0}/rates/xy_closer.rateu".format(path)
+            self.saveRates(save_path)
+            #fit a gaussian and safe its parameters
+            try:
+                gaussian_closer=self.fitGaussian()
+            except:
+                print("No Gaussian could be fitted. This sucks! No clue what to do now.")
+                return -1
+            
+            #################
+            # SECOND OFFSET #
+            #################
+            
+            #the second offset is the further measurement
+            print("Start X-Y scan (further) now")
+            #ADD WRITING TO LOG HERE AS WELL
+            
+            #input the correct parameters
+            self.box_min_0.set(-2)
+            self.box_max_0.set(00)
+            self.box_min_1.set(-20)
+            self.box_max_1.set(20)
+            self.box_spacing_0.set(10)
+            self.box_spacing_1.set(10)
+            self.box_starting_cam_x.set(cam_x)
+            self.box_starting_cam_z.set(cam_z)
+            self.box_starting_mir_y.set(mir_y)
+            self.box_starting_mir_z.set(mir_z)
+            self.box_starting_phi.set(phi)
+            self.box_starting_psi.set(psi)
+            try:
+                self.recordRateDistributionRead()
+            except:
+                return -1
+            #save the rates
+            save_path="{0}/rates/xy_further.rateu".format(path)
+            self.saveRates(save_path)
+            #fit a gaussian and safe its parameters
+            try:
+                gaussian_further=self.fitGaussian()
+            except:
+                print("No Gaussian could be fitted. This sucks! No clue what to do now.")
+                return -1
+            
+            ######################
+            # FIX THE PARAMETERS #
+            ######################
+            
+            #from the shift of the center we can learn about the nesscesairy corrections in PSI and PHI
+            #only correct the angles if the divergence is larger than 1mm
+            #first do the phi parameter
+            if math.abs(gaussian_closer[1]-gaussian_further[1])>1:
+                distance=offset_further-offset_closer
+                difference=gaussian_closer[1]-gaussian_further[1]
+                #calculate angle through trigonometry
+                phi=phi+math.arctan(diffence/distance)*180/math.pi
+            #first do the psi parameter
+            if math.abs(gaussian_closer[3]-gaussian_further[3])>1:
+                distance=offset_further-offset_closer
+                difference=gaussian_closer[3]-gaussian_further[3]
+                #calculate angle through trigonometry
+                psi=phi+math.arctan(diffence/distance)*180/math.pi
+            
+            #from the centers of our fits we can now also calculate the correct position of MIR Y and CAM X
+            #MIR Y
+            if math.abs(gaussian_closer[1]-gaussian_further[1])<1:
+                #in case we did not change anything in PSI we will just take the center of the closer scan as our MIR Y
+                mir_y=mir_y+gaussian_closer[1]
+            else:
+                #in this case we have to account for the shift in height due to the change in PSI
+                mir_y=mir_y+gaussian_closer[1]
+                print("WARNING: There is no implementation for this mode yet! Continue as i this was without any change n PSI!")
+            #CAM X
+            if math.abs(gaussian_closer[3]-gaussian_further[3])<1:
+                #in case we did not change anything in PSI we will just take the center of the closer scan as our MIR Y
+                cam_x=cam_x+gaussian_closer[3]
+            else:
+                #in this case we have to account for the shift in height due to the change in PSI
+                cam_x=cam_x+gaussian_closer[3]
+                print("WARNING: There is no implementation for this mode yet! Continue as i this was without any change n PSI!")
+            #CAM Z
+            #The cam z now needs too be adjusted so it uses the correct pathlength
+            #set the correct incoming ray in the geometry package!
+            # ---> This needs to be implemented
+            #calculate the CAM Z given the other parameters
+            cam_z=geo.get_camera_z_position_offset(phi, psi, mir_y, mir_z, offset_pathlength=optimal_offset)
+            if(cam_z<0):
+                print("Warning:  CAM Z should be {0} but this is not possible. We therefore set it to 0".format(cam_z))
+                cam_z=0
+        print("New position: cam_x={0} ({1}) cam_z={2} ({3}) phi={4} ({5}) psi={6} ({7}) mir_z={8} ({9}) mir_y={10} ({11})".format(cam_x, cam_x-i_cam_x, cam_z, cam_z-i_cam_z, phi, phi-i_phi, psi, psi-i_psi, mir_z, mir_z-i_mir_z, mir_y, mir_y-i_mir_y))
+        #set the positions according to the results of the measurements
+        self.controller.setBussy(True)
+        
+        self.controller.set_position_mirror_phi(phi)
+        self.controller.set_position_mirror_psi(psi)
+        self.controller.set_position_mirror_z(mir_z)
+        self.controller.set_position_mirror_height(mir_y)
+        self.controller.set_position_camera_x(cam_x)
+        self.controller.set_position_camera_z(cam_z)
+        #wait till every motor has reached its starting position
+        moving_all=True
+        while moving_all:
+            try:
+                moving_all=self.controller.get_mirror_phi_moving() or self.controller.get_mirror_psi_moving() or self.controller.get_mirror_height_moving() or self.controller.get_mirror_z_moving() or self.controller.get_camera_x_moving() or self.controller.get_camera_z_moving()
+            except TrinamicException:
+                print("Trinamic Exception while waiting for camera X, camera Z, mirror Z, mirror Y, Phi and Psi to stop moving")
+            except:
+                print("Non-Trinamic Exception while waiting for camera X, camera Z, mirror Z, mirror Y, Phi and Psi to stop moving")
+        print("Succesfully set all Motors to correct positions.")
+        #calcuate how long it took
+        duration=time.time()-start_time
+        print("The optimisations routine took {0} seconds.".format(duration)) #check converions!?
+        #Terminate and return time (in seconds) if succesfull. Otherwise -1.
+        return duration
+    
+    def correctPointing(self):
+        return None
 def gauss2d(datapoints, prefactor=1, x_0=0, x_sigma=1, y_0=0, y_sigma=1, offset=0):
     return offset+prefactor*np.exp(-(np.power(datapoints[0]-x_0, 2)/(2*np.power(x_sigma,2)))-(np.power(datapoints[1]-y_0,2)/(2*np.power(y_sigma,2)))).ravel()
     

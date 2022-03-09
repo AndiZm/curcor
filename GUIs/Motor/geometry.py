@@ -71,6 +71,14 @@ if "motor_pc_{}".format(motor_pc_no) in global_config:
                 center_z=z_len/2+offset_center_z
                 center_y=offset_center_y
                 center_x=offset_center_x
+                
+                #load initial guesses fot optimization
+                guess_cam_x=float(global_config["motor_pc_{}".format(motor_pc_no)]["initial_cam_x"])
+                guess_cam_z=float(global_config["motor_pc_{}".format(motor_pc_no)]["initial_cam_z"])
+                guess_mir_y=float(global_config["motor_pc_{}".format(motor_pc_no)]["initial_mir_y"])
+                guess_mir_z=float(global_config["motor_pc_{}".format(motor_pc_no)]["initial_mir_z"])
+                guess_phi=float(global_config["motor_pc_{}".format(motor_pc_no)]["initial_phi"])
+                guess_psi=float(global_config["motor_pc_{}".format(motor_pc_no)]["initial_psi"])
 
                 #constants due to the geometry of the telescope
                 dish_focal_length=15000 #focal length of the dish. Is the same as the distance between the lid and a hypothetical mirror in the middle of the dish
@@ -164,7 +172,6 @@ def get_diff_hit_lens(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z,
         lens_incidence_point = get_lens_incidence_point(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z, camera_x)
         center_of_lens = get_lens_center(camera_z, camera_x)
         return ((lens_incidence_point-center_of_lens)[0], (lens_incidence_point-center_of_lens)[1])
-        #return np.sqrt(np.sum((lens_incidence_point-center_of_lens)**2))
 
 #returns the abolute coordinates of the lens-fronts center
 def get_lens_center(camera_z, camera_x):
@@ -185,6 +192,10 @@ def get_camera_z_position_offset(mirror_phi, mirror_psi, mirror_height, mirror_z
         if debug: print("proposed position of cam Z={0}".format(camera_z_pos))
         return camera_z_pos
         
+#STILL NEEDS TO BE IMPLEMEMTED returns the optimal parameters given the current guess
+def get_optimal_parameters_current_guess():
+        return guess_cam_x, guess_cam_z, guess_phi, guess_psi, guess_mir_z, guess_mir_y
+
 #STILL NEEDS TO BE CHECKED / DEBUGGED
 def check_position_cam_offset(mirror_phi, mirror_psi, mirror_height, mirror_z, offset_pathlenght, camera_x):
         camera_z=get_camera_z_position_offset(mirror_phi, mirror_psi, mirror_height, mirror_z, offset_pathlenght)
@@ -206,7 +217,7 @@ def check_position_cam_absolute(mirror_phi, mirror_psi, mirror_height, mirror_z,
         min_cam_x=-125
         max_cam_x=125
         answer=""
-        if min_dist_mir_cam_z<mirror_z-camera_z:
+        if min_dist_mir_cam_z>mirror_z-camera_z:
                 answer+="A distance between camera z and mirror z of {0} is too small! Needs t be at least {1}.  ".format(mirror_z-camera_z, min_dist_mir_cam_z)
         #check if values are within the range of the motors
         if mirror_phi<min_mirr_phi or mirror_phi>max_mirr_phi:
