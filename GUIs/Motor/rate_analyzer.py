@@ -5,6 +5,7 @@ from tkinter import *
 from tkinter import simpledialog
 from tkinter import filedialog
 import configparser
+import logging
 
 from time import sleep
 import time
@@ -1136,7 +1137,10 @@ class RATE_ANALYZER():
         except:
             raise RuntimeError("The area of interest can't be found if there are no rates! Please load or record a rate file")
         rates=self.rates
-        coordinates_phi=np.linspace(self.min_0, self.max_0, num=int(self.spacing_0))
+        if self.mode != "x-z":
+            coordinates_phi=np.linspace(self.min_0, self.max_0, num=int(self.spacing_0))
+        else:
+            coordinates_phi=np.linspace(self.max_0, self.min_0, num=int(self.spacing_0))
         coordinates_psi=np.linspace(self.min_1, self.max_1, num=int(self.spacing_1))
         x, y=np.meshgrid(coordinates_phi, coordinates_psi)
         max_rate=np.max(rates)
@@ -1833,7 +1837,6 @@ class RATE_ANALYZER():
             print("The batch is done!")
     #this is meant to be run in a thread of its own, so it can be terminated if needed. It writes a logfile with all releavent measaurements and safes all distributions
     def runOptimizer(self, xz_large=True, xz_small=True, xy=True, offset_closer=-2, offset_further=1, optimal_offset=-1.5):
-        
         #safe the system time
         start_time=time.time()
         #create directory to which all information is safed
@@ -1841,23 +1844,28 @@ class RATE_ANALYZER():
         try:
             #print("{0}/rates".format(path))
             #print("{0}/{1}".format(path, start_time))
-            os.mkdir("{0}/{1}".format(path, start_time), mode=0o777)
+            os.mkdir("{0}/{1:10.0f}".format(path, start_time), mode=0o777)
+            path="{0}/{1:10.0f}".format(path, start_time)
             #print("{0}/{1}/rates".format(path, start_time))
-            os.mkdir("{0}/{1}/rates".format(path, start_time), mode=0o777)
-            path="{0}/{1}".format(path, start_time)
+            os.mkdir("{0}/rates".format(path), mode=0o777)
         except:
             raise RuntimeError("Cannot create new directory! Does the directory already exist? Please check and retry!")
-                
+        
+        #setup logfile
+        logging.basicConfig(filename="{0}/log.log".format(path), level=logging.DEBUG, format='%(asctime)s %(message)s', datefmt='%Y-%m-%d-%H:%M:%S')
         #get initial guess
         cam_x, cam_z, phi, psi, mir_z, mir_y =  geo.get_optimal_parameters_current_guess()
         i_cam_x, i_cam_z, i_phi, i_psi, i_mir_z, i_mir_y = cam_x, cam_z, phi, psi, mir_z, mir_y
-        print("Initial guess: cam_x={0} cam_z={1} phi={2} psi={3} mir_z={4} mir_y={5}".format(cam_x, cam_z, phi, psi, mir_z, mir_y))
+        message="Initial guess: cam_x={0} cam_z={1} phi={2} psi={3} mir_z={4} mir_y={5}".format(cam_x, cam_z, phi, psi, mir_z, mir_y)
+        print(message)
+        logging.debug(message)
         #ADD WRITING TO LOG HERE AS WELL
         
         #run an x-z scan with very low resolution in the range of the expectation (+- 50mm)
         if xz_large:
-            print("Start X-Z  (large) scan now")
-            #ADD WRITING TO LOG HERE AS WELL
+            message="Start X-Z  (large) scan now"
+            print(message)
+            logging.debug(message)
             #set the correct mode for the GUI
             self.changeMode("x-z")
             #input the correct parameters
@@ -1882,14 +1890,21 @@ class RATE_ANALYZER():
             self.saveRates(save_path)
             #do a rectangle "fit" to find the new center
             self.findRectangle()
+            #move MIR Z by shifting it to the center of the rectangle
             mir_z=mir_z+(self.min_0_rect+self.max_0_rect)/2
+            #also move the cam_z in accordance with the movement of mir_z so their distance is kept
+            cam_z=cam_z+(self.min_0_rect+self.max_0_rect)/2
+            #lastly move CAM X by shifting it to the center of the rectangle
             cam_x=cam_x+(self.min_1_rect+self.max_1_rect)/2
-            print("Found new center (X-Z large) at X={0} and Z={1}".format(cam_x, mir_z))
-            #ADD WRITING TO LOG HERE AS WELL
+            message="Found new center (X-Z large) at X={0} and Z={1}".format(cam_x, mir_z)
+            print(message)
+            logging.debug(message)
             
         #run an x-z scan with high resoution in closer to the expected center (+- 20mm)
         if xz_small:
-            print("Start X-Z  (small) scan now")
+            message="Start X-Z (small) scan now"
+            print(message)
+            logging.debug(message)
             #ADD WRITING TO LOG HERE AS WELL
             #set the correct mode for the GUI
             self.changeMode("x-z")
@@ -1919,8 +1934,13 @@ class RATE_ANALYZER():
                 #fix mir Z and set new guess for cam x
                 cam_x=cam_x+gaussian[3]
                 mir_z=mir_z+gaussian[1]
+                return_now=False
             except:
-                print("No Gaussian could be fitted. This sucks! No clue what to do now.")
+                message="No Gaussian could be fitted. This sucks! No clue what to do now."
+                print(message)
+                logging.debug(message)
+                return_now=True
+            if return_now:
                 return -1
         #run an offset measurement for 2 different distances
         if xy:
@@ -1932,8 +1952,9 @@ class RATE_ANALYZER():
             ################
             
             #the first offset is the closer measurement
-            print("Start X-Y scan (closer) now")
-            #ADD WRITING TO LOG HERE AS WELL
+            message="Start X-Y scan (closer) now"
+            print(message)
+            logging.debug(message)
             
             #input the correct parameters
             self.box_min_0.set(-20)
@@ -1959,7 +1980,9 @@ class RATE_ANALYZER():
             try:
                 gaussian_closer=self.fitGaussian()
             except:
-                print("No Gaussian could be fitted. This sucks! No clue what to do now.")
+                message="No Gaussian could be fitted. This sucks! No clue what to do now."
+                print(message)
+                logging.debug(message)
                 return -1
             
             #################
@@ -1967,7 +1990,9 @@ class RATE_ANALYZER():
             #################
             
             #the second offset is the further measurement
-            print("Start X-Y scan (further) now")
+            message="Start X-Y scan (further) now"
+            print(message)
+            logging.debug(message)
             #ADD WRITING TO LOG HERE AS WELL
             
             #input the correct parameters
@@ -1994,7 +2019,9 @@ class RATE_ANALYZER():
             try:
                 gaussian_further=self.fitGaussian()
             except:
-                print("No Gaussian could be fitted. This sucks! No clue what to do now.")
+                message="No Gaussian could be fitted. This sucks! No clue what to do now."
+                print(message)
+                logging.debug(message)
                 return -1
             
             ######################
@@ -2024,15 +2051,19 @@ class RATE_ANALYZER():
             else:
                 #in this case we have to account for the shift in height due to the change in PSI
                 mir_y=mir_y+gaussian_closer[1]
-                print("WARNING: There is no implementation for this mode yet! Continue as i this was without any change n PSI!")
+                message="WARNING: There is no implementation for this mode yet! Continue as if this was without any change in PSI!"
+                print(message)
+                logging.debug(message)
             #CAM X
             if math.abs(gaussian_closer[3]-gaussian_further[3])<1:
-                #in case we did not change anything in PSI we will just take the center of the closer scan as our MIR Y
+                #in case we did not change anything in PHI we will just take the center of the closer scan as our CAM X
                 cam_x=cam_x+gaussian_closer[3]
             else:
-                #in this case we have to account for the shift in height due to the change in PSI
+                #in this case we have to account for the shift in height due to the change in PHI
                 cam_x=cam_x+gaussian_closer[3]
-                print("WARNING: There is no implementation for this mode yet! Continue as i this was without any change n PSI!")
+                message="WARNING: There is no implementation for this mode yet! Continue as if this was without any change in PHI!"
+                print(message)
+                logging.debug(message)
             #CAM Z
             #The cam z now needs too be adjusted so it uses the correct pathlength
             #set the correct incoming ray in the geometry package!
@@ -2040,7 +2071,9 @@ class RATE_ANALYZER():
             #calculate the CAM Z given the other parameters
             cam_z=geo.get_camera_z_position_offset(phi, psi, mir_y, mir_z, offset_pathlength=optimal_offset)
             if(cam_z<0):
-                print("Warning:  CAM Z should be {0} but this is not possible. We therefore set it to 0".format(cam_z))
+                message="Warning: CAM Z should be {0} but this is not possible. We therefore set it to 0".format(cam_z)
+                print(message)
+                logging.debug(message)
                 cam_z=0
         print("New position: cam_x={0} ({1}) cam_z={2} ({3}) phi={4} ({5}) psi={6} ({7}) mir_z={8} ({9}) mir_y={10} ({11})".format(cam_x, cam_x-i_cam_x, cam_z, cam_z-i_cam_z, phi, phi-i_phi, psi, psi-i_psi, mir_z, mir_z-i_mir_z, mir_y, mir_y-i_mir_y))
         #set the positions according to the results of the measurements

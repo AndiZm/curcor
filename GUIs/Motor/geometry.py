@@ -204,14 +204,15 @@ def check_position_cam_offset(mirror_phi, mirror_psi, mirror_height, mirror_z, o
 #STILL NEEDS TO BE CHECKED / DEBUGGED
 def check_position_cam_absolute(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z, camera_x):
         #check if distance between mirror and camerais great enough // ALL VALUES ARE ONLY estimated (upper limit)
+        #THIS should be outsourced into the config file!
         min_mirr_phi=-4.5
         max_mirr_phi=4.5
         min_mir_psi=-4.5
         max_mir_psi=4.5
         min_mir_y=118
         max_mir_y=150
-        min_mir_z=300
-        max_mir_z=450
+        min_mir_z=308
+        max_mir_z=439
         min_cam_z=0
         max_cam_z=132
         min_cam_x=-125
@@ -237,8 +238,14 @@ def check_position_cam_absolute(mirror_phi, mirror_psi, mirror_height, mirror_z,
         else:
                 print(answer)
                 return False
-        
-        
+     
+#STILL NEEDS TO BE IMPLEMENTED
+def return_closest_position(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z, camera_x):
+        if check_position_cam_absolute(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z, camera_x):
+                return (mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z, camera_x)
+        else:
+                return (mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z, camera_x)
+
 #the following stuff is mainly internal for this package
 
 #returns the point at which a ray pentrates a plane.
