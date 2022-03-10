@@ -36,3 +36,10 @@ def write_header(name):
 	f.write("UserOffset = {}\n".format(0))
 	f.write("LenL = {}\n".format(gl.o_samples))
 	f.close()
+def write_header2(name):
+	f = open(gl.basicpath2 + "/" + name +".settings","w")
+	f.write("NumAChannels = {}\n".format(gl.o_nchn2))
+	f.write("OrigMaxRange = {}\n".format(gl.o_voltages2))
+	f.write("UserOffset = {}\n".format(0))
+	f.write("LenL = {}\n".format(gl.o_samples2))
+	f.close()
