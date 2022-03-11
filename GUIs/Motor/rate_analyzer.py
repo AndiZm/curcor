@@ -5,6 +5,7 @@ from tkinter import *
 from tkinter import simpledialog
 from tkinter import filedialog
 import configparser
+import logging
 
 from time import sleep
 import time
@@ -1087,7 +1088,7 @@ class RATE_ANALYZER():
             
             #do the fit
             with warnings.catch_warnings(record=True) as w:
-                coordinates_phi=np.linspace(self.min_0, self.max_0, num=int(self.spacing_0))
+                coordinates_phi=np.linspace(self.max_0, self.min_0, num=int(self.spacing_0))
                 coordinates_psi=np.linspace(self.min_1, self.max_1, num=int(self.spacing_1))
                 x, y=np.meshgrid(coordinates_phi, coordinates_psi)
                 #select only the values within the rectangle for the fit
@@ -1136,7 +1137,10 @@ class RATE_ANALYZER():
         except:
             raise RuntimeError("The area of interest can't be found if there are no rates! Please load or record a rate file")
         rates=self.rates
-        coordinates_phi=np.linspace(self.min_0, self.max_0, num=int(self.spacing_0))
+        if self.mode != "x-z":
+            coordinates_phi=np.linspace(self.min_0, self.max_0, num=int(self.spacing_0))
+        else:
+            coordinates_phi=np.linspace(self.max_0, self.min_0, num=int(self.spacing_0))
         coordinates_psi=np.linspace(self.min_1, self.max_1, num=int(self.spacing_1))
         x, y=np.meshgrid(coordinates_phi, coordinates_psi)
         max_rate=np.max(rates)
@@ -1832,8 +1836,7 @@ class RATE_ANALYZER():
             self.controller.setBatch(False)
             print("The batch is done!")
     #this is meant to be run in a thread of its own, so it can be terminated if needed. It writes a logfile with all releavent measaurements and safes all distributions
-    def runOptimizer(self, xz_large=True, xz_small=True, xy=True, offset_closer=-2, offset_further=1, optimal_offset=-1.5):
-        
+    def runOptimizer(self, xz_large=True, xz_small=True, xy=True, offset_closer=0, offset_further=4, optimal_offset=-1.5):
         #safe the system time
         start_time=time.time()
         #create directory to which all information is safed
@@ -1841,23 +1844,27 @@ class RATE_ANALYZER():
         try:
             #print("{0}/rates".format(path))
             #print("{0}/{1}".format(path, start_time))
-            os.mkdir("{0}/{1}".format(path, start_time), mode=0o777)
+            os.mkdir("{0}/{1:10.0f}".format(path, start_time), mode=0o777)
+            path="{0}/{1:10.0f}".format(path, start_time)
             #print("{0}/{1}/rates".format(path, start_time))
-            os.mkdir("{0}/{1}/rates".format(path, start_time), mode=0o777)
-            path="{0}/{1}".format(path, start_time)
+            os.mkdir("{0}/rates".format(path), mode=0o777)
         except:
             raise RuntimeError("Cannot create new directory! Does the directory already exist? Please check and retry!")
-                
+        
+        #setup logfile
+        logging.basicConfig(filename="{0}/log.log".format(path), level=logging.DEBUG, format='%(asctime)s %(message)s', datefmt='%Y-%m-%d-%H:%M:%S')
         #get initial guess
         cam_x, cam_z, phi, psi, mir_z, mir_y =  geo.get_optimal_parameters_current_guess()
         i_cam_x, i_cam_z, i_phi, i_psi, i_mir_z, i_mir_y = cam_x, cam_z, phi, psi, mir_z, mir_y
-        print("Initial guess: cam_x={0} cam_z={1} phi={2} psi={3} mir_z={4} mir_y={5}".format(cam_x, cam_z, phi, psi, mir_z, mir_y))
-        #ADD WRITING TO LOG HERE AS WELL
+        message="Initial guess: cam_x={0} cam_z={1} phi={2} psi={3} mir_z={4} mir_y={5}".format(cam_x, cam_z, phi, psi, mir_z, mir_y)
+        print(message)
+        logging.debug(message)
         
         #run an x-z scan with very low resolution in the range of the expectation (+- 50mm)
         if xz_large:
-            print("Start X-Z  (large) scan now")
-            #ADD WRITING TO LOG HERE AS WELL
+            message="Start X-Z  (large) scan now"
+            print(message)
+            logging.debug(message)
             #set the correct mode for the GUI
             self.changeMode("x-z")
             #input the correct parameters
@@ -1882,22 +1889,74 @@ class RATE_ANALYZER():
             self.saveRates(save_path)
             #do a rectangle "fit" to find the new center
             self.findRectangle()
+            #move MIR Z by shifting it to the center of the rectangle
             mir_z=mir_z+(self.min_0_rect+self.max_0_rect)/2
+            #also move the cam_z in accordance with the movement of mir_z so their distance is kept
+            cam_z=cam_z+(self.min_0_rect+self.max_0_rect)/2
+            #lastly move CAM X by shifting it to the center of the rectangle
             cam_x=cam_x+(self.min_1_rect+self.max_1_rect)/2
-            print("Found new center (X-Z large) at X={0} and Z={1}".format(cam_x, mir_z))
-            #ADD WRITING TO LOG HERE AS WELL
+            message="Found new center (X-Z large) at X={0} and Z={1}".format(cam_x, mir_z)
+            print(message)
+            logging.debug(message)
             
-        #run an x-z scan with high resoution in closer to the expected center (+- 20mm)
+        #run an x-z scan with high resoution in closer to the expected center (1.5 times the area of the red box)
         if xz_small:
-            print("Start X-Z  (small) scan now")
-            #ADD WRITING TO LOG HERE AS WELL
+            message="Start X-Z (small) scan now"
+            print(message)
+            logging.debug(message)
             #set the correct mode for the GUI
             self.changeMode("x-z")
+            #calculate some of the new parameters
+            width=abs(self.max_0_rect-self.min_0_rect)*1.5
+            height=abs(self.max_1_rect-self.min_1_rect)*1.5
+            #check if the size of the red rectangle restricts the next measurement to something meaningful
+            if width>(geo.max_cam_z-geo.min_cam_z)*1.1 or width>(geo.max_mir_z-geo.min_mir_z)*1.1:
+                message="After the large X-Z scan the rectangle was too large to produce a meaningfull next measurement. Terminated!"
+                print(message)
+                logging.debug(message)
+                return -1
+            message="Straight forward calulation of the width resulted in CAM Z: {0} +- {1} and MIR Z {2} +- {3} and CAM X {4} +- {5}".format(cam_x, width/2, mir_z, width/2, cam_x, height/2)
+            print(message)
+            logging.debug(message)
+            #check if the scan exceeds any boarders of the paramters and in this cas adjust accordingly
+            if cam_z-width/2<geo.min_cam_z:
+                old_cam_z=cam_z
+                old_mir_z=mir_z
+                cam_z+=geo.min_cam_z-(old_cam_z-width/2)+1
+                mir_z+=geo.min_cam_z-(old_cam_z-width/2)+1
+                message="The next scan would have been to close to the minimum of CAM Z (proposed: CAM Z={0} MIR Z={1}. The scan range was therefore adjusted accordingly (new: CAM Z={2} MIR Z={3}).".format(old_cam_z, old_mir_z, cam_z, mir_z)
+                print(message)
+                logging.debug(message)
+            if mir_z-width/2<geo.min_mir_z:
+                old_cam_z=cam_z
+                old_mir_z=mir_z
+                mir_z+=geo.min_mir_z-(old_mir_z-width/2)+1
+                cam_z+=geo.min_mir_z-(old_mir_z-width/2)+1
+                message="The next scan would have been to close to the minimum of MIR Z (proposed: CAM Z={0} MIR Z={1}. The scan range was therefore adjusted accordingly (new: CAM Z={2} MIR Z={3}).".format(old_cam_z, old_mir_z, cam_z, mir_z)
+                print(message)
+                logging.debug(message)
+            if cam_z+width/2>geo.max_cam_z:
+                old_cam_z=cam_z
+                old_mir_z=mir_z
+                cam_z+=geo.max_cam_z-(old_cam_z+width/2)-1
+                mir_z+=geo.max_cam_z-(old_cam_z+width/2)-1
+                message="The next scan would have been to close to the maximum of CAM Z (proposed: CAM Z={0} MIR Z={1}. The scan range was therefore adjusted accordingly (new: CAM Z={2} MIR Z={3}).".format(old_cam_z, old_mir_z, cam_z, mir_z)
+                print(message)
+                logging.debug(message)
+            if mir_z+width/2>geo.max_mir_z:
+                old_cam_z=cam_z
+                old_mir_z=mir_z
+                mir_z+=geo.max_mir_z-(old_mir_z+width/2)-1
+                cam_z+=geo.max_mir_z-(old_mir_z+width/2)-1
+                message="The next scan would have been to close to the maximum of MIR Z (proposed: CAM Z={0} MIR Z={1}. The scan range was therefore adjusted accordingly (new: CAM Z={2} MIR Z={3}).".format(old_cam_z, old_mir_z, cam_z, mir_z)
+                print(message)
+                logging.debug(message)
+
             #input the correct parameters
-            self.box_min_0.set(-20)
-            self.box_max_0.set(20)
-            self.box_min_1.set(-20)
-            self.box_max_1.set(20)
+            self.box_min_0.set(-width/2)
+            self.box_max_0.set(width/2)
+            self.box_min_1.set(-height/2)
+            self.box_max_1.set(height/2)
             self.box_spacing_0.set(10)
             self.box_spacing_1.set(10)
             self.box_starting_cam_x.set(cam_x)
@@ -1915,12 +1974,18 @@ class RATE_ANALYZER():
             self.saveRates(save_path)
             #do a gaussian fit to find the center
             try:
+                self.findRectangle()
                 gaussian=self.fitGaussian()
                 #fix mir Z and set new guess for cam x
                 cam_x=cam_x+gaussian[3]
                 mir_z=mir_z+gaussian[1]
+                return_now=False
             except:
-                print("No Gaussian could be fitted. This sucks! No clue what to do now.")
+                message="No Gaussian could be fitted. This sucks! No clue what to do now."
+                print(message)
+                logging.debug(message)
+                return_now=True
+            if return_now:
                 return -1
         #run an offset measurement for 2 different distances
         if xy:
@@ -1932,14 +1997,15 @@ class RATE_ANALYZER():
             ################
             
             #the first offset is the closer measurement
-            print("Start X-Y scan (closer) now")
-            #ADD WRITING TO LOG HERE AS WELL
+            message="Start X-Y scan (closer) now"
+            print(message)
+            logging.debug(message)
             
             #input the correct parameters
             self.box_min_0.set(-20)
             self.box_max_0.set(20)
-            self.box_min_1.set(20)
-            self.box_max_1.set(20)
+            self.box_min_1.set(geo.min_mir_y-mir_y+1)
+            self.box_max_1.set(geo.max_mir_y-mir_y-1)
             self.box_spacing_0.set(10)
             self.box_spacing_1.set(10)
             self.box_starting_cam_x.set(cam_x)
@@ -1957,9 +2023,12 @@ class RATE_ANALYZER():
             self.saveRates(save_path)
             #fit a gaussian and safe its parameters
             try:
+                self.findRectangle()
                 gaussian_closer=self.fitGaussian()
             except:
-                print("No Gaussian could be fitted. This sucks! No clue what to do now.")
+                message="No Gaussian could be fitted. This sucks! No clue what to do now."
+                print(message)
+                logging.debug(message)
                 return -1
             
             #################
@@ -1967,14 +2036,15 @@ class RATE_ANALYZER():
             #################
             
             #the second offset is the further measurement
-            print("Start X-Y scan (further) now")
-            #ADD WRITING TO LOG HERE AS WELL
+            message="Start X-Y scan (further) now"
+            print(message)
+            logging.debug(message)
             
             #input the correct parameters
-            self.box_min_0.set(-2)
-            self.box_max_0.set(00)
-            self.box_min_1.set(-20)
-            self.box_max_1.set(20)
+            self.box_min_0.set(-20)
+            self.box_max_0.set(20)
+            self.box_min_1.set(geo.min_mir_y-mir_y+1)
+            self.box_max_1.set(geo.max_mir_y-mir_y-1)
             self.box_spacing_0.set(10)
             self.box_spacing_1.set(10)
             self.box_starting_cam_x.set(cam_x)
@@ -1992,9 +2062,12 @@ class RATE_ANALYZER():
             self.saveRates(save_path)
             #fit a gaussian and safe its parameters
             try:
+                self.findRectangle()
                 gaussian_further=self.fitGaussian()
             except:
-                print("No Gaussian could be fitted. This sucks! No clue what to do now.")
+                message="No Gaussian could be fitted. This sucks! No clue what to do now."
+                print(message)
+                logging.debug(message)
                 return -1
             
             ######################
@@ -2004,13 +2077,13 @@ class RATE_ANALYZER():
             #from the shift of the center we can learn about the nesscesairy corrections in PSI and PHI
             #only correct the angles if the divergence is larger than 1mm
             #first do the phi parameter
-            if math.abs(gaussian_closer[1]-gaussian_further[1])>1:
+            if abs(gaussian_closer[1]-gaussian_further[1])>1:
                 distance=offset_further-offset_closer
                 difference=gaussian_closer[1]-gaussian_further[1]
                 #calculate angle through trigonometry
                 phi=phi+math.arctan(diffence/distance)*180/math.pi
             #first do the psi parameter
-            if math.abs(gaussian_closer[3]-gaussian_further[3])>1:
+            if abs(gaussian_closer[3]-gaussian_further[3])>1:
                 distance=offset_further-offset_closer
                 difference=gaussian_closer[3]-gaussian_further[3]
                 #calculate angle through trigonometry
@@ -2018,21 +2091,25 @@ class RATE_ANALYZER():
             
             #from the centers of our fits we can now also calculate the correct position of MIR Y and CAM X
             #MIR Y
-            if math.abs(gaussian_closer[1]-gaussian_further[1])<1:
+            if abs(gaussian_closer[1]-gaussian_further[1])<1:
                 #in case we did not change anything in PSI we will just take the center of the closer scan as our MIR Y
                 mir_y=mir_y+gaussian_closer[1]
             else:
                 #in this case we have to account for the shift in height due to the change in PSI
                 mir_y=mir_y+gaussian_closer[1]
-                print("WARNING: There is no implementation for this mode yet! Continue as i this was without any change n PSI!")
+                message="WARNING: There is no implementation for this mode yet! Continue as if this was without any change in PSI!"
+                print(message)
+                logging.debug(message)
             #CAM X
-            if math.abs(gaussian_closer[3]-gaussian_further[3])<1:
-                #in case we did not change anything in PSI we will just take the center of the closer scan as our MIR Y
+            if abs(gaussian_closer[3]-gaussian_further[3])<1:
+                #in case we did not change anything in PHI we will just take the center of the closer scan as our CAM X
                 cam_x=cam_x+gaussian_closer[3]
             else:
-                #in this case we have to account for the shift in height due to the change in PSI
+                #in this case we have to account for the shift in height due to the change in PHI
                 cam_x=cam_x+gaussian_closer[3]
-                print("WARNING: There is no implementation for this mode yet! Continue as i this was without any change n PSI!")
+                message="WARNING: There is no implementation for this mode yet! Continue as if this was without any change in PHI!"
+                print(message)
+                logging.debug(message)
             #CAM Z
             #The cam z now needs too be adjusted so it uses the correct pathlength
             #set the correct incoming ray in the geometry package!
@@ -2040,7 +2117,9 @@ class RATE_ANALYZER():
             #calculate the CAM Z given the other parameters
             cam_z=geo.get_camera_z_position_offset(phi, psi, mir_y, mir_z, offset_pathlength=optimal_offset)
             if(cam_z<0):
-                print("Warning:  CAM Z should be {0} but this is not possible. We therefore set it to 0".format(cam_z))
+                message="Warning: CAM Z should be {0} but this is not possible. We therefore set it to 0".format(cam_z)
+                print(message)
+                logging.debug(message)
                 cam_z=0
         print("New position: cam_x={0} ({1}) cam_z={2} ({3}) phi={4} ({5}) psi={6} ({7}) mir_z={8} ({9}) mir_y={10} ({11})".format(cam_x, cam_x-i_cam_x, cam_z, cam_z-i_cam_z, phi, phi-i_phi, psi, psi-i_psi, mir_z, mir_z-i_mir_z, mir_y, mir_y-i_mir_y))
         #set the positions according to the results of the measurements

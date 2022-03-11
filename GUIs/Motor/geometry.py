@@ -72,7 +72,7 @@ if "motor_pc_{}".format(motor_pc_no) in global_config:
                 center_y=offset_center_y
                 center_x=offset_center_x
                 
-                #load initial guesses fot optimization
+                #load initial guesses for optimization
                 guess_cam_x=float(global_config["motor_pc_{}".format(motor_pc_no)]["initial_cam_x"])
                 guess_cam_z=float(global_config["motor_pc_{}".format(motor_pc_no)]["initial_cam_z"])
                 guess_mir_y=float(global_config["motor_pc_{}".format(motor_pc_no)]["initial_mir_y"])
@@ -80,6 +80,20 @@ if "motor_pc_{}".format(motor_pc_no) in global_config:
                 guess_phi=float(global_config["motor_pc_{}".format(motor_pc_no)]["initial_phi"])
                 guess_psi=float(global_config["motor_pc_{}".format(motor_pc_no)]["initial_psi"])
 
+                #load ranges of the different parameters 
+                min_mirr_phi=float(global_config["motor_pc_{}".format(motor_pc_no)]["min_mirr_phi"])
+                max_mirr_phi=float(global_config["motor_pc_{}".format(motor_pc_no)]["max_mirr_phi"])
+                min_mir_psi=float(global_config["motor_pc_{}".format(motor_pc_no)]["min_mir_psi"])
+                max_mir_psi=float(global_config["motor_pc_{}".format(motor_pc_no)]["max_mir_psi"])
+                min_mir_y=float(global_config["motor_pc_{}".format(motor_pc_no)]["min_mir_y"])
+                max_mir_y=float(global_config["motor_pc_{}".format(motor_pc_no)]["max_mir_y"])
+                min_mir_z=float(global_config["motor_pc_{}".format(motor_pc_no)]["min_mir_z"])
+                max_mir_z=float(global_config["motor_pc_{}".format(motor_pc_no)]["max_mir_z"])
+                min_cam_z=float(global_config["motor_pc_{}".format(motor_pc_no)]["min_cam_z"])
+                max_cam_z=float(global_config["motor_pc_{}".format(motor_pc_no)]["max_cam_z"])
+                min_cam_x=float(global_config["motor_pc_{}".format(motor_pc_no)]["min_cam_x"])
+                max_cam_x=float(global_config["motor_pc_{}".format(motor_pc_no)]["max_cam_x"])
+                
                 #constants due to the geometry of the telescope
                 dish_focal_length=15000 #focal length of the dish. Is the same as the distance between the lid and a hypothetical mirror in the middle of the dish
                 dish_diameter=13000 # diamter of the dish
@@ -204,18 +218,7 @@ def check_position_cam_offset(mirror_phi, mirror_psi, mirror_height, mirror_z, o
 #STILL NEEDS TO BE CHECKED / DEBUGGED
 def check_position_cam_absolute(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z, camera_x):
         #check if distance between mirror and camerais great enough // ALL VALUES ARE ONLY estimated (upper limit)
-        min_mirr_phi=-4.5
-        max_mirr_phi=4.5
-        min_mir_psi=-4.5
-        max_mir_psi=4.5
-        min_mir_y=118
-        max_mir_y=150
-        min_mir_z=300
-        max_mir_z=450
-        min_cam_z=0
-        max_cam_z=132
-        min_cam_x=-125
-        max_cam_x=125
+        #THIS should be outsourced into the config file!
         answer=""
         if min_dist_mir_cam_z>mirror_z-camera_z:
                 answer+="A distance between camera z and mirror z of {0} is too small! Needs t be at least {1}.  ".format(mirror_z-camera_z, min_dist_mir_cam_z)
@@ -237,8 +240,14 @@ def check_position_cam_absolute(mirror_phi, mirror_psi, mirror_height, mirror_z,
         else:
                 print(answer)
                 return False
-        
-        
+     
+#STILL NEEDS TO BE IMPLEMENTED
+def return_closest_position(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z, camera_x):
+        if check_position_cam_absolute(mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z, camera_x):
+                return (mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z, camera_x)
+        else:
+                return (mirror_phi, mirror_psi, mirror_height, mirror_z, camera_z, camera_x)
+
 #the following stuff is mainly internal for this package
 
 #returns the point at which a ray pentrates a plane.
