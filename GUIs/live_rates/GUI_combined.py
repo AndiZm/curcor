@@ -32,8 +32,6 @@ import hv_commands as com
 import hv_commands2 as com2
 
 
-
-
 ############################
 ## SOME GENERAL FUNCTIONS ##
 ############################
@@ -56,7 +54,6 @@ def to_bin(file):
 	for i in range (1,len(fileparts)):
 		filebuild += "/" + fileparts[i]
 	return filebuild
-
 
 root = Tk(); root.wm_title("DAQ Control"); root.geometry("+200+10")
 
@@ -94,9 +91,6 @@ def open_project():
 	root.directoryname = filedialog.askdirectory(initialdir = disk_card1+":/", title = "Select any project directory")
 	gl.basicpath  = root.directoryname; gl.calibpath = gl.basicpath+"/calibs"	
 	gl.basicpath2 = disk_card2 + root.directoryname[1:]; gl.calibpath2 = gl.basicpath2+"/calibs"
-	print ("Open project:")
-	print (gl.basicpath)
-	print (gl.calibpath)
 	name = gl.basicpath.split("/")[-1]
 	projectShowLabel.config(text=name)
 	create_project(name,None)
@@ -110,11 +104,136 @@ newProjectButton  = Button(projectFrame, text="New Project", command=newProject)
 openProjectButton = Button(projectFrame, text="Open Project Folder", command=open_project); openProjectButton.grid(row=0,column=2)
 projectShowLabel  = Label(projectFrame, text="no project selected", bg="#f7df72", width=15); projectShowLabel.grid(row=0,column=3,padx=5)
 
+#------------#
+# Sync frame #
+#------------#
+syncFrame = Frame(root); syncFrame.grid(row=1, column=0)
+
+# Last rates
+lastA1 = []; lastB1 = []
+lastA2 = []; lastB2 = []
+
+measurement = False
+def toggle_measure():
+	global measurement, tdiffs, timestamps_between, t_stamps
+	if measurement == False: # Start measurement
+		measurement = True
+		singles()
+		startStopMeasButton.config(text="Stop Measurement", bg="#f2b4a0")
+	elif measurement == True: # Stop measurement
+		measurement = False
+		startStopMeasButton.config(text="Start Measurement", bg="#92f0eb")
+		wait1Canvas.itemconfig(wait1LED, fill="black")
+		wait2Canvas.itemconfig(wait2LED, fill="black")
+		tdiffs = []; timestamps_between = []; t_stamps = []
+		lastA1 = []; lastB1 = []; lastA2 = []; lastB2 = []
+def init_measurement():
+	gl.syncedMeasButton.invoke()
+	gl.syncedMeasButton2.invoke()
+
+measButtonFrame = Frame(syncFrame); measButtonFrame.grid(row=0,column=0)
+startStopMeasButton = Button(measButtonFrame, text="Start Measurement", bg="#92f0eb", width=20, height=3, command=toggle_measure)
+startStopMeasButton.grid(row=0,column=0)
+initMeasButton = Button(measButtonFrame, text="Init new \nmeasurement", height=3, command=init_measurement)
+initMeasButton.grid(row=0,column=1)
+def enable_buttons():
+	initMeasButton.config(state="normal")
+	measNameEntry.config(state="normal")
+	indexButton.config(state="normal")
+def disable_buttons():
+	initMeasButton.config(state="disabled")
+	measNameEntry.config(state="disabled")
+	indexButton.config(state="disabled")
+
+measNameFrame = Frame(measButtonFrame); measNameFrame.grid(row=0,column=2)
+measNameEntry = Entry(measNameFrame, width=20); measNameEntry.grid(row=0,column=0, padx=5); measNameEntry.insert(0,"measurement")
+indexFrame = Frame(measNameFrame); indexFrame.grid(row=1,column=0)
+indexEntry = Entry(indexFrame, width=7); indexEntry.grid(row=0,column=1); indexEntry.insert(0,"0")
+def change_index(index):
+	indexEntry.delete(0,"end")
+	indexEntry.insert(0,"{}".format(index))
+def index_up():
+	old = int(indexEntry.get())
+	change_index(old+1)
+def reset_index():
+	indexEntry.delete(0,"end")
+	indexEntry.insert(0,"0")
+indexButton = Button(indexFrame, text="Reset", command=reset_index); indexButton.grid(row=0,column=0)
+
+
+# Measurement procedure
+tdiffs = []; timestamps_between = []; t_stamps = []
+awaitR1 = False; awaitR2 = False
+def singles():
+	theThread = Thread(target=singlesT, args=[])
+	theThread.start()
+def singlesT():
+	global measurement, tdiffs, timestamps_between, t_stamps, awaitR1, awaitR2
+	gl.statusLabel.config(text="Remote Measurement", bg="#ff867d")
+	gl.statusLabel2.config(text="Remote Measurement", bg="#ff867d")
+	disable_buttons()
+	time.sleep(0.1)
+	
+	while measurement == True:
+		# Status LEDs to orange
+		wait1Canvas.itemconfig(wait1LED, fill="orange")
+		wait2Canvas.itemconfig(wait2LED, fill="orange")
+		awaitR1 = True; awaitR2 = True
+		
+		# Send measurement command
+		pc1Thread = Thread(target=remote_measurement,  args=(measNameEntry.get(), int(indexEntry.get())))
+		pc2Thread = Thread(target=remote_measurement2, args=(measNameEntry.get(), int(indexEntry.get())))
+
+		pc1Thread.start(); pc2Thread.start()
+		pc1Thread.join(); pc2Thread.join()
+
+		## Time investigations
+		timestamps_between.append(time.time())
+		time.sleep(0.1)
+
+		if len(timestamps_between) > 1:
+			t_stamps.append(timestamps_between[-1]-timestamps_between[-2])
+		else:
+			t_stamps.append(4)
+		#tdiff = gl.client_PC2.timeR - gl.client_PC1.timeR
+		#tdiffs.append(tdiff)
+		# Plot
+		plot_times.cla(); plot_times.set_xticks([])
+		#plot_times.plot(tdiffs, color="blue")
+		plot_times2.cla(); plot_times2.set_xticks([])
+		plot_times2.plot(t_stamps, color="red")
+		if len(tdiffs) > 100:
+			#plot_times.set_xlim(len(tdiffs)-99,len(tdiffs))
+			plot_times2.set_xlim(len(tdiffs)-99,len(tdiffs))
+		plotCanvas.draw()
+
+		index_up()
+		
+	idle(); idle2()
+	enable_buttons()
+	
+
+# Plot window
+class NavigationToolbar(tkagg.NavigationToolbar2Tk):
+	toolitems = [t for t in tkagg.NavigationToolbar2Tk.toolitems if t[0] in ('Home','Pan','Zoom','Save')]
+
+
+fig = Figure(figsize=(4,0.5))
+plot_times = fig.add_subplot(121); plot_times.set_xticks([])
+plot_times2 = fig.add_subplot(122); plot_times2.set_xticks([])
+
+plotCanvas = FigureCanvasTkAgg(fig, master=syncFrame)
+plotCanvas.get_tk_widget().grid(row=0,column=2)
+plotCanvas.draw()
+
+naviFrame = Frame(syncFrame); naviFrame.grid(row=0,column=3)
+navi = NavigationToolbar(plotCanvas, naviFrame)
+
 
 #-------------#
 # Cards frame #
 #-------------#
-cardsFrame = Frame(root, bg="#003366"); cardsFrame.grid(row=1,column=0)
+cardsFrame = Frame(root, bg="#003366"); cardsFrame.grid(row=2,column=0)
 card1Frame = Frame(cardsFrame); card1Frame.grid(row=0, column=0, padx=10, pady=10)
 card2Frame = Frame(cardsFrame); card2Frame.grid(row=0, column=1, padx=10, pady=10)
 
@@ -175,8 +294,8 @@ rmaxbText2 = rateBCanvas2.create_text(r_width/2,0.2*r_height, fill="white", text
 leftFrame = Frame(card1Frame); leftFrame.grid(row=0,column=0)
 leftFrame2 = Frame(card2Frame); leftFrame2.grid(row=0,column=0)
 
-optionLabel = Label(leftFrame, text="Settings", font=("Helvetica 12 bold")); optionLabel.grid(row=2,column=0)
-optionLabel2 = Label(leftFrame2, text="Settings", font=("Helvetica 12 bold")); optionLabel2.grid(row=2,column=0)
+optionLabel = Label(leftFrame, text="{0} sn {1:05d}\n".format(cc.sCardName,cc.lSerialNumber.value), font=("Helvetica 12 bold")); optionLabel.grid(row=2,column=0)
+optionLabel2 = Label(leftFrame2, text="{0} sn {1:05d}\n".format(cc2.sCardName,cc2.lSerialNumber.value), font=("Helvetica 12 bold")); optionLabel2.grid(row=2,column=0)
 # Card option Frame #
 coptionFrame = Frame(leftFrame); coptionFrame.grid(row=4,column=0)
 coptionFrame2 = Frame(leftFrame2); coptionFrame2.grid(row=4,column=0)
@@ -271,8 +390,6 @@ def new_nchn():
 	if ch_new != ch_old:
 		gl.o_nchn = ch_new
 		gl.calc_rate = False
-		gl.startstopButton.config(state="disabled")
-		singleFileButton.config(state="disabled")
 		cc.set_channels(gl.o_nchn)
 channel1Button = Radiobutton(channelFrame, width=5, text="1", indicatoron=False, variable=channels, value=1, command=new_nchn); channel1Button.grid(row=0,column=1)
 channel2Button = Radiobutton(channelFrame, width=5, text="2", indicatoron=False, variable=channels, value=2, command=new_nchn); channel2Button.grid(row=0,column=2)
@@ -286,8 +403,6 @@ def new_nchn2():
 	if ch_new != ch_old:
 		gl.o_nchn2 = ch_new
 		gl.calc_rate2 = False
-		gl.startstopButton2.config(state="disabled")
-		singleFileButton2.config(state="disabled")
 		cc2.set_channels(gl.o_nchn2)
 channel1Button2 = Radiobutton(channelFrame2, width=5, text="1", indicatoron=False, variable=channels2, value=1, command=new_nchn2); channel1Button2.grid(row=0,column=1)
 channel2Button2 = Radiobutton(channelFrame2, width=5, text="2", indicatoron=False, variable=channels2, value=2, command=new_nchn2); channel2Button2.grid(row=0,column=2)
@@ -338,26 +453,21 @@ qsettingsFrame = Frame(leftFrame); qsettingsFrame.grid(row=3,column=0)
 def qsettings_checkWaveform():
 	samples.set("8 MS"); new_samples(0)
 	binning16Button.invoke()
-	channel2Button.invoke()
 	voltage200Button.invoke()
 	if gl.trigger == True:
 		toggle_trigger()
 	cc.init_display()
 def qsettings_syncedMeasurement():
-	global copy_mode
 	samples.set("2 GS"); new_samples(0)
 	binning16Button.invoke()
 	voltage200Button.invoke()
 	clockExternButton.invoke()
 	if gl.trigger == False:
 		toggle_trigger()
-	copy_mode = True
-	packButton.config(text="Copy Mode  On")
 	cc.init_storage()
 def qsettings_calibrations():
 	samples.set("2 GS"); new_samples(0)
 	binning16Button.invoke()
-	channel2Button.invoke()
 	voltage200Button.invoke()
 	clockExternButton.invoke()
 	if gl.trigger == True:
@@ -372,26 +482,21 @@ qsettingsFrame2 = Frame(leftFrame2); qsettingsFrame2.grid(row=3,column=0)
 def qsettings_checkWaveform2():
 	samples2.set("8 MS"); new_samples2(0)
 	binning16Button2.invoke()
-	channel2Button2.invoke()
 	voltage200Button2.invoke()
 	if gl.trigger2 == True:
 		toggle_trigger2()
 	cc2.init_display()
 def qsettings_syncedMeasurement2():
-	global copy_mode2
 	samples2.set("2 GS"); new_samples2(0)
 	binning16Button2.invoke()
 	voltage200Button2.invoke()
 	clockExternButton2.invoke()
 	if gl.trigger2 == False:
 		toggle_trigger2()
-	copy_mode2 = True
-	packButton2.config(text="Copy Mode  On")
 	cc2.init_storage()
 def qsettings_calibrations2():
 	samples2.set("2 GS"); new_samples2(0)
 	binning16Button2.invoke()
-	channel2Button2.invoke()
 	voltage200Button2.invoke()
 	clockExternButton2.invoke()
 	if gl.trigger2 == True:
@@ -414,13 +519,6 @@ def takeMeasurement():
 	cc.init_display()
 singleMeasurementButton = Button(measurementFrame, text="Single Measurement", command=takeMeasurement); singleMeasurementButton.grid(row=0,column=0)
 measloop = False
-writeid = 0
-def change_id():
-    global writeid
-    if writeid == 0:
-        writeid = 1
-    elif writeid == 1:
-        writeid = 0
 def loopMeasurement():
 	global measloop
 	if measloop == False:
@@ -432,54 +530,25 @@ def loopMeasurement():
 		measloop = False
 		loopMeasurementButton.config(text="Start loop", bg="#e8fcae")
 def doLoopMeasurement():
-	global measloop, writeid, copy_mode
+	global measloop
 	cc.init_storage()
 	header.write_header(name=measFileNameEntry.get())
 	fileindex = 0
-	files_to_copy = []
-	packageSize = int(packEntry.get())
 	while measloop == True:
-		filename = copypaths[writeid] + "/" + measFileNameEntry.get() + "_" + tf.numberstring(fileindex) + ".bin"
+		filename = gl.basicpath + "/" + measFileNameEntry.get() + "_" + tf.numberstring(fileindex) + ".bin"
 		ma, mb = cc.measurement(filename)
 		calculate_data(ma, mb)
-		if copy_mode == True:
-			files_to_copy.append(filename)
-			if (fileindex+1) % packageSize == 0:
-				gl.copythread = Thread(target=tf.transfer_files, args=(files_to_copy,"Z:\\"+gl.projectName))
-				gl.copythread.start()	
-				change_id()
-				files_to_copy = []
-		fileindex += 1
-	if copy_mode == True:
-		gl.copythread = Thread(target=tf.transfer_files, args=(files_to_copy,"Z:\\"+gl.projectName))
-		gl.copythread.start()	
+		fileindex += 1	
 	cc.init_display()
 loopMeasurementButton = Button(measurementFrame, text="Start Loop", width=10, bg="#e8fcae", command=loopMeasurement); loopMeasurementButton.grid(row=0,column=1)
 measFileNameEntry = Entry(measurementFrame, width=15); measFileNameEntry.grid(row=0,column=2,padx=5); measFileNameEntry.insert(0,"data")
-copy_mode = False
-def copyMode():
-	global copy_mode
-	if copy_mode == False:
-		copy_mode = True
-		packButton.config(text="Copy Mode  On")
-	elif copy_mode == True:
-		copy_mode = False
-		packButton.config(text="Copy Mode Off")
-packButton = Button(measurementFrame, text="Copy Mode Off", width=15, command=copyMode); packButton.grid(row=0,column=3)
-packEntry = Entry(measurementFrame, width=5); packEntry.grid(row=0,column=4,padx=5); packEntry.insert(0,"10")
-def remote_measurement():
-	global writeid
-	filename = copypaths[writeid] + "/" + gl.remoteMeasName + "_" + tf.numberstring(gl.remoteMeasIndex) + ".bin"
-	gl.remoteFiles.append(filename)
+def remote_measurement(name, index):
+	global awaitR1
+	filename = gl.basicpath + "/" + name + "_" + tf.numberstring(index) + ".bin"
 	ma, mb = cc.measurement(filename)
 	calculate_data(ma, mb)
-	if len(gl.remoteFiles) % int(packEntry.get()) == 0:
-		gl.copythread = Thread(target=tf.transfer_files, args=(gl.remoteFiles,"Z:\\"+gl.projectName))
-		gl.copythread.start()
-		change_id()
-		gl.remoteFiles = []
-# Dummy button which needs to exist, because the client orders to click it
-gl.remoteMeasButton = Button(measurementFrame, text="R", state="disabled", command=remote_measurement)
+	awaitR1 = False; wait1Canvas.itemconfig(wait1LED, fill="green"); root.update()
+
 #-2-#
 measurementLabel2 = Label(leftFrame2, text="Measurement Control", font=("Helvetica 12 bold")); measurementLabel2.grid(row=5,column=0)
 measurementFrame2 = Frame(leftFrame2); measurementFrame2.grid(row=6,column=0)
@@ -491,13 +560,6 @@ def takeMeasurement2():
 	cc2.init_display()
 singleMeasurementButton2 = Button(measurementFrame2, text="Single Measurement", command=takeMeasurement2); singleMeasurementButton2.grid(row=0,column=0)
 measloop2 = False
-writeid2 = 0
-def change_id2():
-    global writeid2
-    if writeid2 == 0:
-        writeid2 = 1
-    elif writeid2 == 1:
-        writeid2 = 0
 def loopMeasurement2():
 	global measloop2
 	if measloop2 == False:
@@ -509,54 +571,23 @@ def loopMeasurement2():
 		measloop2 = False
 		loopMeasurementButton2.config(text="Start loop", bg="#e8fcae")
 def doLoopMeasurement2():
-	global measloop2, writeid2, copy_mode2
+	global measloop2
 	cc2.init_storage()
 	header.write_header2(name=measFileNameEntry2.get())
 	fileindex2 = 0
-	files_to_copy2 = []
-	packageSize2 = int(packEntry2.get())
 	while measloop2 == True:
-		filename2 = copypaths2[writeid2] + "/" + measFileNameEntry2.get() + "_" + tf.numberstring(fileindex2) + ".bin"
+		filename2 = gl.basicpath2 + "/" + measFileNameEntry2.get() + "_" + tf.numberstring(fileindex2) + ".bin"
 		ma2, mb2 = cc2.measurement(filename2)
 		calculate_data2(ma2, mb2)
-		if copy_mode2 == True:
-			files_to_copy2.append(filename2)
-			if (fileindex2+1) % packageSize2 == 0:
-				gl.copythread2 = Thread(target=tf.transfer_files2, args=(files_to_copy2,"Z:\\"+gl.projectName))
-				gl.copythread2.start()	
-				change_id2()
-				files_to_copy2 = []
 		fileindex2 += 1
-	if copy_mode2 == True:
-		gl.copythread2 = Thread(target=tf.transfer_files2, args=(files_to_copy2,"Z:\\"+gl.projectName))
-		gl.copythread2.start()	
 	cc2.init_display()
 loopMeasurementButton2 = Button(measurementFrame2, text="Start Loop", width=10, bg="#e8fcae", command=loopMeasurement2); loopMeasurementButton2.grid(row=0,column=1)
 measFileNameEntry2 = Entry(measurementFrame2, width=15); measFileNameEntry2.grid(row=0,column=2,padx=5); measFileNameEntry2.insert(0,"data")
-copy_mode2 = False
-def copyMode2():
-	global copy_mode2
-	if copy_mode2 == False:
-		copy_mode2 = True
-		packButton2.config(text="Copy Mode  On")
-	elif copy_mode2 == True:
-		copy_mode2 = False
-		packButton2.config(text="Copy Mode Off")
-packButton2 = Button(measurementFrame2, text="Copy Mode Off", width=15, command=copyMode2); packButton2.grid(row=0,column=3)
-packEntry2 = Entry(measurementFrame2, width=5); packEntry2.grid(row=0,column=4,padx=5); packEntry2.insert(0,"10")
-def remote_measurement2():
-	global writeid2
-	filename2 = copypaths2[writeid2] + "/" + gl.remoteMeasName2 + "_" + tf.numberstring(gl.remoteMeasIndex2) + ".bin"
-	gl.remoteFiles2.append(filename2)
+def remote_measurement2(name, index):
+	filename2 = gl.basicpath2 + "/" + name + "_" + tf.numberstring(index) + ".bin"
 	ma2, mb2 = cc2.measurement(filename2)
-	calculate_data(ma2, mb2)
-	if len(gl.remoteFiles2) % int(packEntry2.get()) == 0:
-		gl.copythread2 = Thread(target=tf.transfer_files2, args=(gl.remoteFiles2,"Z:\\"+gl.projectName))
-		gl.copythread2.start()
-		change_id2()
-		gl.remoteFiles2 = []
-# Dummy button which needs to exist, because the client orders to click it
-gl.remoteMeasButton2 = Button(measurementFrame2, text="R", state="disabled", command=remote_measurement2)
+	calculate_data2(ma2, mb2)
+	awaitR2 = False; wait2Canvas.itemconfig(wait2LED, fill="green"); root.update()
 
 # Display Frame #
 #-1-#
@@ -602,6 +633,8 @@ def update_rate_plot2():
 ## HV FRAME ##
 ##############
 #-1-#
+hvaddress_1 = global_config["controller"]["hv_address_card1"]
+
 hvFrame = Frame(leftFrame, bg="#003366"); hvFrame.grid(row=8, column=0)
 hvMainFrame = Frame(hvFrame, bg="#003366"); hvMainFrame.grid(row=0,column=1)
 
@@ -623,7 +656,7 @@ def disableElements(frame):
 def connect_hv():
 	hvConnectButton.config(state="disabled")
 	time.sleep(1)
-	com.init()
+	com.init(mode=1)
 	gl.vset = [com.get_vset(0),com.get_vset(1),com.get_vset(2),com.get_vset(3)]
 	com.apply_ratio_0(); com.apply_ratio_2()
 	gl.vmon = [com.get_vmon(0),com.get_vmon(1),com.get_vmon(2),com.get_vmon(3)]
@@ -709,13 +742,16 @@ def exit():
 	gl.scheck = 0; gl.failed_check= 0
 	hvConnectButton.config(state="normal")
 
-	
+
 hvHeaderLabel = Label(rootExitFrame, text="HV", font=("Helvetica 20 bold"), fg="white", bg="#003366"); hvHeaderLabel.grid(row=0,column=0)
-hvConnectButton = Button(rootExitFrame, text="Connect", width=8, bg="#003366", fg="white", command=connect_hv); hvConnectButton.grid(row=1,column=0)
-exitButton = Button(rootExitFrame, text="Close", width=8, command=exit, bg="#003366", fg="white", state="disabled"); exitButton.grid(row=2,column=0)
-gl.frameLabel = Label(rootExitFrame, text=str(gl.scheck)); gl.frameLabel.grid(row=3, column=0)
+hvAddressLabel = Label(rootExitFrame, text=hvaddress_1, fg="white", bg="#003366"); hvAddressLabel.grid(row=1,column=0)
+hvConnectButton = Button(rootExitFrame, text="Connect", width=8, bg="#003366", fg="white", command=connect_hv); hvConnectButton.grid(row=2,column=0)
+exitButton = Button(rootExitFrame, text="Close", width=8, command=exit, bg="#003366", fg="white", state="disabled"); exitButton.grid(row=3,column=0)
+gl.frameLabel = Label(rootExitFrame, text=str(gl.scheck)); gl.frameLabel.grid(row=4, column=0)
 
 #-2-#
+hvaddress_2 = global_config["controller"]["hv_address_card2"]
+
 hvFrame2 = Frame(leftFrame2, bg="#003366"); hvFrame2.grid(row=8, column=0)
 hvMainFrame2 = Frame(hvFrame2, bg="#003366"); hvMainFrame2.grid(row=0,column=1)
 
@@ -727,7 +763,7 @@ gl.hv3Label2 = Label(hvMainFrame2, text="HV 3", font=("Helvetica 8 italic"), bg=
 def connect_hv2():
 	hvConnectButton2.config(state="disabled")
 	time.sleep(1)
-	com2.init()
+	com2.init(mode=1)
 	gl.vset2 = [com2.get_vset(0),com2.get_vset(1),com2.get_vset(2),com2.get_vset(3)]
 	com2.apply_ratio_0(); com2.apply_ratio_2()
 	gl.vmon2 = [com2.get_vmon(0),com2.get_vmon(1),com2.get_vmon(2),com2.get_vmon(3)]
@@ -815,9 +851,10 @@ def exit2():
 
 	
 hvHeaderLabel2 = Label(rootExitFrame2, text="HV", font=("Helvetica 20 bold"), fg="white", bg="#003366"); hvHeaderLabel2.grid(row=0,column=0)
-hvConnectButton2 = Button(rootExitFrame2, text="Connect", width=8, bg="#003366", fg="white", command=connect_hv2); hvConnectButton2.grid(row=1,column=0)
-exitButton2 = Button(rootExitFrame2, text="Close", width=8, command=exit2, bg="#003366", fg="white", state="disabled"); exitButton2.grid(row=2,column=0)
-gl.frameLabel2 = Label(rootExitFrame2, text=str(gl.scheck2)); gl.frameLabel2.grid(row=3, column=0)
+hvAddressLabel2 = Label(rootExitFrame2, text=hvaddress_2, fg="white", bg="#003366"); hvAddressLabel2.grid(row=1,column=0)
+hvConnectButton2 = Button(rootExitFrame2, text="Connect", width=8, bg="#003366", fg="white", command=connect_hv2); hvConnectButton2.grid(row=2,column=0)
+exitButton2 = Button(rootExitFrame2, text="Close", width=8, command=exit2, bg="#003366", fg="white", state="disabled"); exitButton2.grid(row=3,column=0)
+gl.frameLabel2 = Label(rootExitFrame2, text=str(gl.scheck2)); gl.frameLabel2.grid(row=4, column=0)
 
 
 #####################
@@ -825,6 +862,14 @@ gl.frameLabel2 = Label(rootExitFrame2, text=str(gl.scheck2)); gl.frameLabel2.gri
 #####################
 rootMainFrame = Frame(card1Frame); rootMainFrame.grid(row=0,column=2)
 rootMainFrame2 = Frame(card2Frame); rootMainFrame2.grid(row=0,column=2)
+
+led1Frame = Frame(rootMainFrame); led1Frame.grid(row=0,column=0)
+wait1Canvas = Canvas(led1Frame, width=20,height=20); wait1Canvas.grid(row=0,column=1)
+wait1LED = wait1Canvas.create_rectangle(1,1,20,20, fill="black", width=0)
+
+led2Frame = Frame(rootMainFrame2); led2Frame.grid(row=0,column=0)
+wait2Canvas = Canvas(led2Frame, width=20,height=20); wait2Canvas.grid(row=0,column=0)
+wait2LED = wait2Canvas.create_rectangle(1,1,20,20, fill="black", width=0)
 ##################
 ## OFFSET FRAME ##
 ##################
@@ -915,20 +960,6 @@ def start_offset_thread():
 def stop_offset_thread():
 	gl.stop_offset_thread = True
 	gl.stop_wait_for_file_thread = True
-def quickOffset():
-	gl.statusLabel.config(text="Offset - wait for file", bg="#edda45")
-	gl.offsetFile = wff.execute()
-	offsetFileLabel.config(text=gl.offsetFile.split("/")[-1])
-	idle()
-	if gl.stop_wait_for_file_thread == False:
-		start_offset_thread()
-def start_quick_offset_thread():
-	gl.stop_wait_for_file_thread = False
-	gl.stop_offset_thread = False
-	quick_offset_thread = Thread(target=quickOffset, args=())
-	quick_offset_thread.start()
-def stop_quick_offset_thread():
-	gl.stop_wait_for_file_thread = True
 
 # Offset parameters
 offsetParamFrame = Frame(offsetFrame, background="#e8fcae"); offsetParamFrame.grid(row=2,column=0)
@@ -943,8 +974,6 @@ parOffsetLabelB = Label(offsetParamFrame, text="{:.2f}".format(gl.off_b), backgr
 offsetDoFrame = Frame(offsetFrame, background="#e8fcae"); offsetDoFrame.grid(row=3,column=0)
 offsetButton = Button(offsetDoFrame, text="Calc Offset", background="#e8fcae", command=start_offset_thread); offsetButton.grid(row=0,column=0)
 stopOffsetButton = Button(offsetDoFrame, text="Abort", background="#fa857a", command=stop_offset_thread); stopOffsetButton.grid(row=0,column=1)
-quickOffsetButton = Button(offsetDoFrame, text="Wait for file", background="#e8fcae", command=start_quick_offset_thread, state="disabled"); quickOffsetButton.grid(row=0,column=2)
-
 
 #-2-#
 offsetFrame2 = Frame(rootMainFrame2, background="#e8fcae"); offsetFrame2.grid(row=1,column=0)
@@ -1033,21 +1062,6 @@ def start_offset_thread2():
 def stop_offset_thread2():
 	gl.stop_offset_thread2 = True
 	gl.stop_wait_for_file_thread2 = True
-def quickOffset2():
-	gl.statusLabel2.config(text="Offset - wait for file", bg="#edda45")
-	gl.offsetFile2 = wff.execute()
-	offsetFileLabel2.config(text=gl.offsetFile2.split("/")[-1])
-	idle2()
-	if gl.stop_wait_for_file_thread2 == False:
-		start_offset_thread2()
-def start_quick_offset_thread2():
-	gl.stop_wait_for_file_thread2 = False
-	gl.stop_offset_thread2 = False
-	quick_offset_thread2 = Thread(target=quickOffset2, args=())
-	quick_offset_thread2.start()
-def stop_quick_offset_thread2():
-	gl.stop_wait_for_file_thread2 = True
-
 
 # Offset parameters
 offsetParamFrame2 = Frame(offsetFrame2, background="#e8fcae"); offsetParamFrame2.grid(row=2,column=0)
@@ -1062,8 +1076,6 @@ parOffsetLabelB2 = Label(offsetParamFrame2, text="{:.2f}".format(gl.off_b2), bac
 offsetDoFrame2 = Frame(offsetFrame2, background="#e8fcae"); offsetDoFrame2.grid(row=3,column=0)
 offsetButton2 = Button(offsetDoFrame2, text="Calc Offset", background="#e8fcae", command=start_offset_thread2); offsetButton2.grid(row=0,column=0)
 stopOffsetButton2 = Button(offsetDoFrame2, text="Abort", background="#fa857a", command=stop_offset_thread2); stopOffsetButton2.grid(row=0,column=1)
-quickOffsetButton2 = Button(offsetDoFrame2, text="Wait for file", background="#e8fcae", command=start_quick_offset_thread2, state="disabled"); quickOffsetButton2.grid(row=0,column=2)
-
 
 #######################
 ## CALIBRATION FRAME ##
@@ -1112,8 +1124,6 @@ def calibrate():
 		finish_calibration()
 	# Activate Rate Buttons
 	gl.calc_rate = True
-	gl.startstopButton.config(state="normal")
-	singleFileButton.config(state="normal")
 
 	idle()
 def finish_calibration(): # Execute after pulse height distribution and pulse shape calculation are finished
@@ -1200,8 +1210,6 @@ def loadCalibration():
 	gl.calibFile = to_bin(gl.calibLoad); calibFileLabel.config(text=gl.calibFile.split("/")[-1])
 	# Activate Rate Buttons
 	gl.calc_rate = True
-	gl.startstopButton.config(state="normal")
-	singleFileButton.config(state="normal")
 
 
 calibGeneralFrame = Frame(calibFrame, background="#ccf2ff"); calibGeneralFrame.grid(row=1,column=0)
@@ -1307,8 +1315,6 @@ def calibrate2():
 		finish_calibration2()
 	# Activate Rate Buttons
 	gl.calc_rate2 = True
-	gl.startstopButton2.config(state="normal")
-	singleFileButton2.config(state="normal")
 
 	idle2()
 def finish_calibration2(): # Execute after pulse height distribution and pulse shape calculation are finished
@@ -1395,8 +1401,6 @@ def loadCalibration2():
 	gl.calibFile2 = to_bin(gl.calibLoad2); calibFileLabel2.config(text=gl.calibFile2.split("/")[-1])
 	# Activate Rate Buttons
 	gl.calc_rate2 = True
-	gl.startstopButton2.config(state="normal")
-	singleFileButton2.config(state="normal")
 
 
 calibGeneralFrame2 = Frame(calibFrame2, background="#ccf2ff"); calibGeneralFrame2.grid(row=1,column=0)
@@ -1835,30 +1839,6 @@ def analyze_files():
 			gl.statusLabel.config(text="Scanning files for Rates..." ); root.update()	
 			#time.sleep(0.2)
 
-def startstop():
-	global running, stop_thread
-	if running == False:
-		running = True
-		gl.act_start_file = True
-		if server_controller != None:
-			server_controller.sendActionInformation()
-
-		gl.startstopButton.config(text="Stop!", bg="#fa857a")
-		stop_thread = False; gl.stop_wait_for_file_thread = False
-		gl.statusLabel.config(text="Scanning files for Rates..." , bg="#edda45"); root.update()
-		the_thread = Thread(target=analyze_files, args=())
-		the_thread.start()		
-	else:
-		running = False
-		gl.act_start_file = False
-		if server_controller != None:
-			server_controller.sendActionInformation()
-
-		stop_thread = True
-		gl.stop_wait_for_file_thread = True
-		gl.startstopButton.config(text="Start!", bg="#e8fcae")
-		idle()
-
 running_quick = False
 def startstop_quick():
 	global running_quick, stop_thread
@@ -1896,7 +1876,6 @@ def singleFileRate():
 		running = False
 		stop_thread = True
 		gl.stop_wait_for_file_thread = True
-		gl.startstopButton.config(text="Start!", bg="#e8fcae")
 	idle()
 	root.filename = filedialog.askopenfilename(initialdir = gl.basicpath, title = "Select file for rate", filetypes = (("binary files","*.bin"),("all files","*.*")))
 	analyze_file(root.filename)
@@ -1980,7 +1959,7 @@ def calculate_data2(mean_a, mean_b):
 		placeRateLineA2(r_a)
 	# mV
 	mean_a_mV = ADC_to_mV(adc=mean_a, range=vRange)
-	CHa_Label_mean.config(text="{:.2f}".format(mean_a_mV))
+	CHa_Label_mean2.config(text="{:.2f}".format(mean_a_mV))
 	# PMT current
 	curr_a_microamp = 1e3 * mean_a_mV/float(ampAEntry2.get())/50
 	if curr_a_microamp > -100:      
@@ -2223,29 +2202,6 @@ def analyze_files2():
 			gl.statusLabel2.config(text="Scanning files for Rates..." ); root.update()	
 			#time.sleep(0.2)
 
-def startstop2():
-	global running2, stop_thread2
-	if running2 == False:
-		running2 = True
-		gl.act_start_file2 = True
-		if server_controller2 != None:
-			server_controller2.sendActionInformation()
-
-		gl.startstopButton2.config(text="Stop!", bg="#fa857a")
-		stop_thread2 = False; gl.stop_wait_for_file_thread2 = False
-		gl.statusLabel2.config(text="Scanning files for Rates..." , bg="#edda45"); root.update()
-		the_thread2 = Thread(target=analyze_files2, args=())
-		the_thread2.start()		
-	else:
-		running2 = False
-		gl.act_start_file2 = False
-		if server_controller2 != None:
-			server_controller2.sendActionInformation()
-
-		stop_thread2 = True
-		gl.stop_wait_for_file_thread2 = True
-		gl.startstopButton2.config(text="Start!", bg="#e8fcae")
-		idle2()
 
 running_quick2 = False
 def startstop_quick2():
@@ -2284,7 +2240,6 @@ def singleFileRate2():
 		running2 = False
 		stop_thread2 = True
 		gl.stop_wait_for_file_thread2 = True
-		gl.startstopButton2.config(text="Start!", bg="#e8fcae")
 	idle2()
 	root.filename = filedialog.askopenfilename(initialdir = gl.basicpath2, title = "Select file for rate", filetypes = (("binary files","*.bin"),("all files","*.*")))
 	analyze_file2(root.filename)

@@ -184,6 +184,7 @@ def take_data():
         if dwError != ERR_OK:
             if dwError == ERR_TIMEOUT:
                 sys.stdout.write ("... Timeout\n")
+                spcm_vClose (hCard); exit ()
             else:
                 sys.stdout.write ("... Error: {0:d}\n".format(dwError))
     # ... now create array of data
@@ -213,7 +214,7 @@ def take_data():
 def init_storage():
     global qwBufferSize, lNotifySize, pvBuffer, qwContBufLen, hCard, lBitsPerSample, lNumSamples
     # settings for the FIFO mode buffer handling
-    qwBufferSize = uint64 (MEGA_B(512))
+    qwBufferSize = uint64 (MEGA_B(128))
     lNotifySize = int32 (KILO_B(256))
 
     # define the data buffer
@@ -249,6 +250,7 @@ def measurement(filename):
             if dwError != ERR_OK:
                 if dwError == ERR_TIMEOUT:
                     sys.stdout.write ("... Timeout\n")
+                    spcm_vClose (hCard); exit ()
                 else:
                     sys.stdout.write ("... Error: {0:d}\n".format(dwError))
                     break;
@@ -274,7 +276,8 @@ def measurement(filename):
     
     t2 = time.time()
     newFile.close()
-    print ("Finished in {:.2f} seconds".format(t2-t1))
+    #sys.stdout.write("{1:05d} - Finished in {:.2f} seconds".format(lSerialNumber.value, t2-t1))
+    print("sn {} - Finished in {:.2f} seconds".format(lSerialNumber.value, t2-t1))
 
     # The last part of the data will be used for plotting and rate calculations
     data = np.array(np_data)

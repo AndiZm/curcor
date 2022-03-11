@@ -202,19 +202,19 @@ def take_data():
                 a_np = np.array(data[:,0]); b_np = np.array(data[:,1])
                 mean_a = np.mean(a_np)
                 mean_b = np.mean(b_np)
-                gl.update_waveform(a_np[0:1000],b_np[0:1000])
+                #gl.update_waveform(a_np[0:1000],b_np[0:1000])
             else:
                 data = np.array(data)
                 mean_a = np.mean(data)
                 mean_b = 0 
-                gl.update_waveform(data[0:1000],[])                
+                #gl.update_waveform(data[0:1000],[])                
             return mean_a, mean_b
     
 
 def init_storage():
     global qwBufferSize, lNotifySize, pvBuffer, qwContBufLen, hCard, lBitsPerSample, lNumSamples
     # settings for the FIFO mode buffer handling
-    qwBufferSize = uint64 (MEGA_B(512))
+    qwBufferSize = uint64 (MEGA_B(128))
     lNotifySize = int32 (KILO_B(256))
 
     # define the data buffer
@@ -234,7 +234,6 @@ def measurement(filename):
     newFile = open(filename,"ab")
     t1 = time.time()
     dwError = spcm_dwSetParam_i32 (hCard, SPC_M2CMD, M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER | M2CMD_DATA_STARTDMA)
-    
     # check for error
     if dwError != 0: # != ERR_OK
         spcm_dwGetErrorInfo_i32 (hCard, None, None, szErrorTextBuffer)
@@ -250,6 +249,7 @@ def measurement(filename):
             if dwError != ERR_OK:
                 if dwError == ERR_TIMEOUT:
                     sys.stdout.write ("... Timeout\n")
+                    spcm_vClose (hCard); exit ()
                 else:
                     sys.stdout.write ("... Error: {0:d}\n".format(dwError))
                     break;
@@ -258,6 +258,7 @@ def measurement(filename):
                 # Wait until the new available Data exceeds the defined chunk size
                 spcm_dwGetParam_i32 (hCard, SPC_DATA_AVAIL_USER_LEN, byref (lAvailUser))
                 spcm_dwGetParam_i32 (hCard, SPC_DATA_AVAIL_USER_POS, byref (lPCPos))
+
                 #poss.append(lPCPos.value)
                 if lAvailUser.value >= lNotifySize.value:
                     qwTotalMem.value += lNotifySize.value
@@ -269,13 +270,12 @@ def measurement(filename):
                     newFile.write(np_data)
 
                     spcm_dwSetParam_i32 (hCard, SPC_DATA_AVAIL_CARD_LEN,  lNotifySize)
-
     # send the stop command
     dwError = spcm_dwSetParam_i32 (hCard, SPC_M2CMD, M2CMD_CARD_STOP | M2CMD_DATA_STOPDMA)
-    
+
     t2 = time.time()
     newFile.close()
-    print ("Finished in {:.2f} seconds".format(t2-t1))
+    print("sn {} - Finished in {:.2f} seconds".format(lSerialNumber.value, t2-t1))
 
     # The last part of the data will be used for plotting and rate calculations
     data = np.array(np_data)
