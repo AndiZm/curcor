@@ -2011,7 +2011,8 @@ class RATE_ANALYZER():
             self.box_starting_cam_x.set(cam_x)
             self.box_starting_cam_z.set(cam_z)
             self.box_starting_mir_y.set(mir_y)
-            self.box_starting_mir_z.set(mir_z)
+            self.box_starting_mir_z.set(offset_closer)
+            self.offset_bool.set(1)
             self.box_starting_phi.set(phi)
             self.box_starting_psi.set(psi)
             try:
@@ -2050,7 +2051,8 @@ class RATE_ANALYZER():
             self.box_starting_cam_x.set(cam_x)
             self.box_starting_cam_z.set(cam_z)
             self.box_starting_mir_y.set(mir_y)
-            self.box_starting_mir_z.set(mir_z)
+            self.box_starting_mir_z.set(offset_further)
+            self.offset_bool.set(1)
             self.box_starting_phi.set(phi)
             self.box_starting_psi.set(psi)
             try:
