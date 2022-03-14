@@ -682,19 +682,19 @@ class RATE_ANALYZER():
         self.offset=offset_cam_z
         
         #set all parameters to the correct positions
-        self.controller.setBussy(True)
         
-        self.controller.set_position_mirror_phi(phi)
-        self.controller.set_position_mirror_psi(psi)
-        self.controller.set_position_mirror_z(mir_z)
-        self.controller.set_position_mirror_height(min_y) #start from minimum
-        self.controller.set_position_camera_x(min_cam_x)
         
         new_cam_z=geo.get_camera_z_position_offset(phi, psi, min_y, mir_z, offset_pathlength=offset_cam_z, debug=False)
         #This check should be unnessecairy by now!
         if new_cam_z<=max_y-min_y:
             raise RuntimeError("The calulated Camera z is smaller than the y-range that is to be surpassed ({0}<={1}). Is the mirror too close to the camera?".format(new_cam_z, max_y-min_y))
-        else:       
+        else:     
+            self.controller.setBussy(True)
+            self.controller.set_position_mirror_phi(phi)
+            self.controller.set_position_mirror_psi(psi)
+            self.controller.set_position_mirror_z(mir_z)
+            self.controller.set_position_mirror_height(min_y) #start from minimum
+            self.controller.set_position_camera_x(min_cam_x)
             self.controller.set_position_camera_z(new_cam_z) #start from minimum
         #wait till every motor has reached its starting position
         moving_all=True
@@ -1836,7 +1836,7 @@ class RATE_ANALYZER():
             self.controller.setBatch(False)
             print("The batch is done!")
     #this is meant to be run in a thread of its own, so it can be terminated if needed. It writes a logfile with all releavent measaurements and safes all distributions
-    def runOptimizer(self, xz_large=True, xz_small=True, xy=True, offset_closer=0, offset_further=4, optimal_offset=-1.5):
+    def runOptimizer(self, xz_large=True, xz_small=True, xy=True, offset_closer=3, offset_further=4, optimal_offset=4):
         #safe the system time
         start_time=time.time()
         #create directory to which all information is safed
@@ -1918,7 +1918,7 @@ class RATE_ANALYZER():
             message="Straight forward calulation of the width resulted in CAM Z: {0} +- {1} and MIR Z {2} +- {3} and CAM X {4} +- {5}".format(cam_x, width/2, mir_z, width/2, cam_x, height/2)
             print(message)
             logging.debug(message)
-            #check if the scan exceeds any boarders of the paramters and in this cas adjust accordingly
+            #check if the scan exceeds any boarders of the paramters and in this case adjust accordingly
             if cam_z-width/2<geo.min_cam_z:
                 old_cam_z=cam_z
                 old_mir_z=mir_z
@@ -2001,6 +2001,13 @@ class RATE_ANALYZER():
             print(message)
             logging.debug(message)
             
+            message="Current guess: cam_x={0} cam_z={1} phi={2} psi={3} mir_z={4} mir_y={5}".format(cam_x, cam_z, phi, psi, mir_z, mir_y)
+            print(message)
+            logging.debug(message)
+            
+            #check if the scan exceeds any boarders of the paramters and in this case adjust accordingly
+            
+            
             #input the correct parameters
             self.box_min_0.set(-20)
             self.box_max_0.set(20)
@@ -2011,10 +2018,11 @@ class RATE_ANALYZER():
             self.box_starting_cam_x.set(cam_x)
             self.box_starting_cam_z.set(cam_z)
             self.box_starting_mir_y.set(mir_y)
-            self.box_starting_mir_z.set(offset_closer)
             self.offset_bool.set(1)
+            self.box_starting_mir_z.set(offset_closer)
             self.box_starting_phi.set(phi)
             self.box_starting_psi.set(psi)
+            
             try:
                 self.recordRateDistributionRead()
             except:
