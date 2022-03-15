@@ -12,7 +12,6 @@ import globals as gl
 # main 
 # **************************************************************************
 #
-
 szErrorTextBuffer = create_string_buffer (ERRORTEXTLEN)
 dwError = uint32 ();
 lStatus = int32 ()
@@ -202,19 +201,19 @@ def take_data():
                 a_np = np.array(data[:,0]); b_np = np.array(data[:,1])
                 mean_a = np.mean(a_np)
                 mean_b = np.mean(b_np)
-                #gl.update_waveform(a_np[0:1000],b_np[0:1000])
+                gl.update_waveform(a_np[0:1000],b_np[0:1000])
             else:
                 data = np.array(data)
                 mean_a = np.mean(data)
                 mean_b = 0 
-                #gl.update_waveform(data[0:1000],[])                
+                gl.update_waveform(data[0:1000],[])                
             return mean_a, mean_b
     
 
 def init_storage():
     global qwBufferSize, lNotifySize, pvBuffer, qwContBufLen, hCard, lBitsPerSample, lNumSamples
     # settings for the FIFO mode buffer handling
-    qwBufferSize = uint64 (MEGA_B(128))
+    qwBufferSize = uint64 (MEGA_B(256))
     lNotifySize = int32 (KILO_B(256))
 
     # define the data buffer

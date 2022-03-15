@@ -1887,7 +1887,7 @@ def startStopServerMotor():
 	#check if server is running
 	if server == None :	
 		#start server
-		server=svr.server()
+		server=svr.server(no=1)
 		try:
 			server.start()
 			#change button label
@@ -1903,27 +1903,6 @@ def startStopServerMotor():
 		gl.motorServerButton.config(text="Start Server (Motor)", bg="#cdcfd1")
 
 		server = None
-
-def startStopServerController():
-	global server_controller
-	#check if server is running
-	if server_controller == None :	
-		#start server
-		server_controller=svr.server_controller()
-		try:
-			server_controller.start()
-			#change button label
-			gl.controllerServerButton.config(text="Stop Server (Controller)", bg="#ffc47d")
-		except OSError as err:
-			print("The OS did not allow start the server on {0}:{1} . Are address and port correct? Maybe an old instance is still blocking this resource?".format(server.address, server.port))
-			print(err)
-			server_controller = None
-	else:
-		#shutdown server
-		server_controller.stop()
-		#change button label
-		gl.controllerServerButton.config(text="Start Server (Controller)", bg="#cdcfd1")
-		server_controller = None
 
 quickFrame = Frame(rootMainFrame); quickFrame.grid(row=6,column=0)
 gl.quickRatesButton = Button(quickFrame, text="Start quick", bg="#e8fcae", width=9, command=startstop_quick); gl.quickRatesButton.grid(row=0, column=0)
@@ -2251,7 +2230,7 @@ def startStopServerMotor2():
 	#check if server is running
 	if server2 == None :	
 		#start server
-		server2=svr.server()
+		server2=svr.server(no=2)
 		try:
 			server2.start()
 			#change button label
@@ -2268,27 +2247,6 @@ def startStopServerMotor2():
 
 		server2 = None
 
-def startStopServerController2():
-	global server_controller2
-	#check if server is running
-	if server_controller2 == None :	
-		#start server
-		server_controller2=svr.server_controller()
-		try:
-			server_controller2.start()
-			#change button label
-			gl.controllerServerButton2.config(text="Stop Server (Controller)", bg="#ffc47d")
-		except OSError as err:
-			print("The OS did not allow start the server on {0}:{1} . Are address and port correct? Maybe an old instance is still blocking this resource?".format(server2.address, server2.port))
-			print(err)
-			server_controller2 = None
-	else:
-		#shutdown server
-		server_controller2.stop()
-		#change button label
-		gl.controllerServerButton2.config(text="Start Server (Controller)", bg="#cdcfd1")
-		server_controller2 = None
-
 quickFrame2 = Frame(rootMainFrame2); quickFrame2.grid(row=6,column=0)
 gl.quickRatesButton2 = Button(quickFrame2, text="Start quick", bg="#e8fcae", width=9, command=startstop_quick2); gl.quickRatesButton2.grid(row=0, column=0)
 def single2():
@@ -2303,13 +2261,11 @@ gl.singleRatesButton2 = Button(quickFrame2, text="Single", width=5, command=sing
 #-1-#
 socketFrame = Frame(rootMainFrame, bg="#f7df72"); socketFrame.grid(row=7,column=0)
 socketHeaderLabel = Label(socketFrame, text="Network", font=("Helvetica 12 bold"), bg="#f7df72"); socketHeaderLabel.grid(row=0,column=0)
-gl.motorServerButton  = Button(socketFrame, text="Start Server (Motor)",      bg="#cdcfd1", command=startStopServerMotor,      width=20); gl.motorServerButton.grid(row=1,column=0)
-gl.controllerServerButton = Button(socketFrame, text="Start Server (Controller)", bg="#cdcfd1", command=startStopServerController, width=20); gl.controllerServerButton.grid(row=2,column=0)
+gl.motorServerButton  = Button(socketFrame, text="Start Server (Motor)",      bg="#cdcfd1", command=startStopServerMotor, width=20); gl.motorServerButton.grid(row=1,column=0)
 #-2-#
 socketFrame2 = Frame(rootMainFrame2, bg="#f7df72"); socketFrame2.grid(row=7,column=0)
 socketHeaderLabel2 = Label(socketFrame2, text="Network", font=("Helvetica 12 bold"), bg="#f7df72"); socketHeaderLabel2.grid(row=0,column=0)
-gl.motorServerButton2  = Button(socketFrame2, text="Start Server (Motor)",      bg="#cdcfd1", command=startStopServerMotor2,      width=20); gl.motorServerButton2.grid(row=1,column=0)
-gl.controllerServerButton2 = Button(socketFrame2, text="Start Server (Controller)", bg="#cdcfd1", command=startStopServerController2, width=20); gl.controllerServerButton2.grid(row=2,column=0)
+gl.motorServerButton2  = Button(socketFrame2, text="Start Server (Motor)",      bg="#cdcfd1", command=startStopServerMotor2, width=20); gl.motorServerButton2.grid(row=1,column=0)
 
 #############################
 ## STATUS FRAME AND BUTTON ##

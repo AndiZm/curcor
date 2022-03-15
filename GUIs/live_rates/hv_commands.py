@@ -9,7 +9,7 @@ port = 23
 timeout = 100
 tn = None
 
-waittime = 0.03 # between commands in seconds
+waittime = 0.2#0.03 # between commands in seconds
 def wait():
 	time.sleep(waittime)
 
