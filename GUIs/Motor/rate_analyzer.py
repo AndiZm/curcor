@@ -1836,7 +1836,7 @@ class RATE_ANALYZER():
             self.controller.setBatch(False)
             print("The batch is done!")
     #this is meant to be run in a thread of its own, so it can be terminated if needed. It writes a logfile with all releavent measaurements and safes all distributions
-    def runOptimizer(self, xz_large=True, xz_small=True, xy=True, offset_closer=3, offset_further=4, optimal_offset=4):
+    def runOptimizer(self, xz_large=True, xz_small=True, xy=True, xy_dist_closer=0, xy_dist_further=0, optimal_offset=4):
         #safe the system time
         start_time=time.time()
         #create directory to which all information is safed
@@ -2005,21 +2005,28 @@ class RATE_ANALYZER():
             print(message)
             logging.debug(message)
             
-            #check if the scan exceeds any boarders of the paramters and in this case adjust accordingly
-            
+            #calculate the positions of the first scan
+            min_0=-20
+            max_0=20
+            min_1=geo.min_mir_y-mir_y+1
+            max_1=geo.max_mir_y-mir_y-1
+            spacing_0=10
+            spacing_1=10
+            cam_z=mir_z-geo.min_dist_mir_cam_z+min_1-xy_dist_closer-1
+            cam_z_closer=cam_z
             
             #input the correct parameters
-            self.box_min_0.set(-20)
-            self.box_max_0.set(20)
-            self.box_min_1.set(geo.min_mir_y-mir_y+1)
-            self.box_max_1.set(geo.max_mir_y-mir_y-1)
-            self.box_spacing_0.set(10)
-            self.box_spacing_1.set(10)
+            self.box_min_0.set(min_0)
+            self.box_max_0.set(max_0)
+            self.box_min_1.set(min_1)
+            self.box_max_1.set(max_1)
+            self.box_spacing_0.set(spacing_0)
+            self.box_spacing_1.set(spacing_1)
             self.box_starting_cam_x.set(cam_x)
             self.box_starting_cam_z.set(cam_z)
             self.box_starting_mir_y.set(mir_y)
-            self.offset_bool.set(1)
-            self.box_starting_mir_z.set(offset_closer)
+            self.offset_bool.set(0)
+            self.box_starting_mir_z.set(mir_z)
             self.box_starting_phi.set(phi)
             self.box_starting_psi.set(psi)
             
@@ -2049,20 +2056,33 @@ class RATE_ANALYZER():
             print(message)
             logging.debug(message)
             
+            
+            #calculate the positions of the second scan
+            min_0=-20
+            max_0=20
+            min_1=geo.min_mir_y-mir_y+1
+            max_1=geo.max_mir_y-mir_y-1
+            spacing_0=10
+            spacing_1=10
+            cam_z=0+xy_dist_further+max_1+1
+            if cam_z<=0:
+                cam_z=1
+            cam_z_further=cam_z
             #input the correct parameters
-            self.box_min_0.set(-20)
-            self.box_max_0.set(20)
-            self.box_min_1.set(geo.min_mir_y-mir_y+1)
-            self.box_max_1.set(geo.max_mir_y-mir_y-1)
-            self.box_spacing_0.set(10)
-            self.box_spacing_1.set(10)
+            self.box_min_0.set(min_0)
+            self.box_max_0.set(max_0)
+            self.box_min_1.set(min_1)
+            self.box_max_1.set(max_1)
+            self.box_spacing_0.set(spacing_0)
+            self.box_spacing_1.set(spacing_1)
             self.box_starting_cam_x.set(cam_x)
             self.box_starting_cam_z.set(cam_z)
             self.box_starting_mir_y.set(mir_y)
-            self.box_starting_mir_z.set(offset_further)
-            self.offset_bool.set(1)
+            self.offset_bool.set(0)
+            self.box_starting_mir_z.set(mir_z)
             self.box_starting_phi.set(phi)
             self.box_starting_psi.set(psi)
+            
             try:
                 self.recordRateDistributionRead()
             except:
@@ -2088,13 +2108,13 @@ class RATE_ANALYZER():
             #only correct the angles if the divergence is larger than 1mm
             #first do the phi parameter
             if abs(gaussian_closer[1]-gaussian_further[1])>1:
-                distance=offset_further-offset_closer
+                distance=cam_z_closer-cam_z_further
                 difference=gaussian_closer[1]-gaussian_further[1]
                 #calculate angle through trigonometry
                 phi=phi+math.arctan(diffence/distance)*180/math.pi
             #first do the psi parameter
             if abs(gaussian_closer[3]-gaussian_further[3])>1:
-                distance=offset_further-offset_closer
+                distance=cam_z_closer-cam_z_further
                 difference=gaussian_closer[3]-gaussian_further[3]
                 #calculate angle through trigonometry
                 psi=phi+math.arctan(diffence/distance)*180/math.pi
