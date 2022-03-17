@@ -606,7 +606,7 @@ class GUI:
         self.CameraZ.set(0)
         self.moveto_camera_z(event=None)    
     def center_mirror_pos(self):
-        self.MirrorHeight.set(140)
+        self.MirrorHeight.set(133)
         self.moveto_mirror_height(event=None)
         self.MirrorZ.set(370)    
         self.moveto_mirror_z(event=None)

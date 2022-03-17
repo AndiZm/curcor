@@ -633,7 +633,7 @@ class RATE_ANALYZER():
             if self.mode=="psi-phi":
                 t1 = threading.Thread(target= lambda arg_spacing_phi=spacing_0, arg_spacing_psi=spacing_1, arg_min_phi=min_0, arg_max_phi=max_0, arg_min_psi=min_1, arg_max_psi=max_1, arg_cam_x=cam_x, arg_mir_y=mir_y, arg_cam_z=cam_z, arg_mir_z=mir_z, arg_phi=mir_phi, arg_psi=mir_psi : self.recordRateDistributionPhiPsi(spacing_phi=arg_spacing_phi, spacing_psi=arg_spacing_psi, min_phi=arg_min_phi, max_phi=arg_max_phi, min_psi=arg_min_psi, max_psi=arg_max_psi, cam_x=arg_cam_x, mir_y=arg_mir_y, cam_z=arg_cam_z, mir_z=arg_mir_z, phi=arg_phi, psi=arg_psi))
             elif self.mode=="x-y":
-                t1 = threading.Thread(target= lambda arg_spacing_x=spacing_0, arg_spacing_y=spacing_1, arg_min_cam_x=min_0, arg_max_cam_x=max_0, arg_min_mir_y=min_1, arg_max_mir_y=max_1, arg_cam_x=cam_x, arg_mir_y=mir_y, arg_offset_cam_z=offset_cam_z, arg_mir_z=mir_z, arg_phi=mir_phi, arg_psi=mir_psi : self.recordRateDistributionXY(spacing_x=arg_spacing_x, spacing_y=arg_spacing_y, min_cam_x=arg_min_cam_x, max_cam_x=arg_max_cam_x, min_mir_y=arg_min_mir_y, max_mir_y=arg_max_mir_y, cam_x=arg_cam_x, mir_y=arg_mir_y, offset_cam_z=arg_offset_cam_z, mir_z=arg_mir_z, phi=arg_phi, psi=arg_psi))
+                t1 = threading.Thread(target= lambda arg_spacing_x=spacing_0, arg_spacing_y=spacing_1, arg_min_cam_x=min_0, arg_max_cam_x=max_0, arg_min_mir_y=min_1, arg_max_mir_y=max_1, arg_cam_x=cam_x, arg_mir_y=mir_y, arg_cam_z=cam_z, arg_mir_z=mir_z, arg_phi=mir_phi, arg_psi=mir_psi : self.recordRateDistributionXY(spacing_x=arg_spacing_x, spacing_y=arg_spacing_y, min_cam_x=arg_min_cam_x, max_cam_x=arg_max_cam_x, min_mir_y=arg_min_mir_y, max_mir_y=arg_max_mir_y, cam_x=arg_cam_x, mir_y=arg_mir_y, cam_z=arg_cam_z, mir_z=arg_mir_z, phi=arg_phi, psi=arg_psi))
             elif self.mode=="x-z":
                 t1 = threading.Thread(target= lambda arg_spacing_x=spacing_1, arg_spacing_z=spacing_0, arg_min_cam_x=min_1, arg_max_cam_x=max_1, arg_min_mir_z=min_0, arg_max_mir_z=max_0, arg_cam_x=cam_x, arg_mir_y=mir_y, arg_offset_cam_z=offset_cam_z, arg_mir_z=mir_z, arg_phi=mir_phi, arg_psi=mir_psi : self.recordRateDistributionXZ(spacing_x=arg_spacing_x, spacing_z=arg_spacing_z, min_cam_x=arg_min_cam_x, max_cam_x=arg_max_cam_x, min_mir_z=arg_min_mir_z, max_mir_z=arg_max_mir_z, cam_x=arg_cam_x, mir_y=arg_mir_y, offset_cam_z=arg_offset_cam_z, mir_z=arg_mir_z, phi=arg_phi, psi=arg_psi))
             else:
@@ -645,7 +645,7 @@ class RATE_ANALYZER():
             self.recordRateDistribution(self.box_spacing_0.get(), self.box_spacing_1.get(), self.box_min_phi.get(), self.box_max_phi.get(), self.box_min_psi.get(), self.box_max_psi.get())
             self.replotRates()
     #STILL NEEDS FINAL DEBUGGING
-    def recordRateDistributionXY(self, spacing_x, spacing_y, min_cam_x, max_cam_x, min_mir_y, max_mir_y, cam_x, mir_y, offset_cam_z, mir_z, phi, psi):
+    def recordRateDistributionXY(self, spacing_x, spacing_y, min_cam_x, max_cam_x, min_mir_y, max_mir_y, cam_x, mir_y, cam_z, mir_z, phi, psi):
         if self.mode!="x-y":
             raise RuntimeError("The method 'recordRateDistributionXY' can only be called in x-y mode! The mode currently is set to {}".format(self.mode))
         if self.client==None:
@@ -657,10 +657,10 @@ class RATE_ANALYZER():
         max_x=cam_x+max_cam_x
         min_y=mir_y+min_mir_y
         max_y=mir_y+max_mir_y
-        min_min = geo.check_position_cam_offset(phi, psi, min_y, mir_z, offset_cam_z, min_x)
-        min_max = geo.check_position_cam_offset(phi, psi, min_y, mir_z, offset_cam_z, max_x)
-        max_min = geo.check_position_cam_offset(phi, psi, max_y, mir_z, offset_cam_z, min_x)
-        max_max = geo.check_position_cam_offset(phi, psi, max_y, mir_z, offset_cam_z, max_x)
+        min_min = geo.check_position_cam_absolute(phi, psi, min_y, mir_z, cam_z, min_x)
+        min_max = geo.check_position_cam_absolute(phi, psi, min_y, mir_z, cam_z, max_x)
+        max_min = geo.check_position_cam_absolute(phi, psi, max_y, mir_z, cam_z, min_x)
+        max_max = geo.check_position_cam_absolute(phi, psi, max_y, mir_z, cam_z, max_x)
         if not min_min and min_max and max_min and max_max:
             raise RuntimeError("The rate distribution can not be recorded because some of the measurement positions are out of range! Min_Min {0}, Min_Max {1}, Max_Min {2}, Max_Max {3}".format(min_min, min_max, max_min, max_max))
         
@@ -673,29 +673,23 @@ class RATE_ANALYZER():
         self.max_0=max_cam_x
         self.min_1=min_mir_y
         self.max_1=max_mir_y
-        self.camera_z=geo.get_camera_z_position_offset(phi, psi, mir_y, mir_z)
+        self.camera_z=cam_z
         self.camera_x=cam_x
         self.mirror_z=mir_z
         self.mirror_y=mir_y
         self.mirror_psi=psi
         self.mirror_phi=phi
-        self.offset=offset_cam_z
         
-        #set all parameters to the correct positions
-        
-        
-        new_cam_z=geo.get_camera_z_position_offset(phi, psi, min_y, mir_z, offset_pathlength=offset_cam_z, debug=False)
-        #This check should be unnessecairy by now!
-        if new_cam_z<=max_y-min_y:
-            raise RuntimeError("The calulated Camera z is smaller than the y-range that is to be surpassed ({0}<={1}). Is the mirror too close to the camera?".format(new_cam_z, max_y-min_y))
-        else:     
+        if cam_z<=max_mir_y:
+            raise RuntimeError("The calulated Camera z is smaller than the y-range that is to be surpassed ({0}<={1}). Is the mirror too close to the camera?".format(cam_z, max_mir_y))
+        else:
             self.controller.setBussy(True)
             self.controller.set_position_mirror_phi(phi)
             self.controller.set_position_mirror_psi(psi)
             self.controller.set_position_mirror_z(mir_z)
             self.controller.set_position_mirror_height(min_y) #start from minimum
             self.controller.set_position_camera_x(min_cam_x)
-            self.controller.set_position_camera_z(new_cam_z) #start from minimum
+            self.controller.set_position_camera_z(cam_z+min_mir_y) #start from minimum
         #wait till every motor has reached its starting position
         moving_all=True
         while moving_all:
@@ -717,7 +711,7 @@ class RATE_ANALYZER():
             #move the mirror height accordingly
             self.controller.set_position_mirror_height(pos_y)
             #adjust mirror z so that the pathlength is adjusted for // CURRENTLY ONLY TRUE IF THE INCIDENT ANGLE IS 0!
-            self.controller.set_position_camera_z(new_cam_z+(max_y-min_y)/(spacing_y-1)*i)
+            self.controller.set_position_camera_z(cam_z+min_mir_y+(max_y-min_y)/(spacing_y-1)*i)
             moving_y=True
             while moving_y:
                 sleep(0.05)
@@ -1836,7 +1830,7 @@ class RATE_ANALYZER():
             self.controller.setBatch(False)
             print("The batch is done!")
     #this is meant to be run in a thread of its own, so it can be terminated if needed. It writes a logfile with all releavent measaurements and safes all distributions
-    def runOptimizer(self, xz_large=True, xz_small=True, xy=True, xy_dist_closer=0, xy_dist_further=0, optimal_offset=4):
+    def runOptimizer(self, xz_large=False, xz_small=False, xy=True, xy_dist_closer=0, xy_dist_further=0, optimal_offset=4):
         #safe the system time
         start_time=time.time()
         #create directory to which all information is safed
@@ -1977,16 +1971,19 @@ class RATE_ANALYZER():
                 self.findRectangle()
                 gaussian=self.fitGaussian()
                 #fix mir Z and set new guess for cam x
-                cam_x=cam_x+gaussian[3]
-                mir_z=mir_z+gaussian[1]
-                return_now=False
+                if gaussian == [-1, -1, -1, -1, -1, -1]:
+                    message="No gaussian could be fitted. Instead use center of the box."
+                    print(message)
+                    logging.debug(message)
+                    cam_x=cam_x+(self.max_1_rect-self.min_1_rect)/2
+                    mir_z=mir_z+(self.max_1_rect-self.min_1_rect)/2
+                else:
+                    cam_x=cam_x+gaussian[3]
+                    mir_z=mir_z+gaussian[1]
             except:
-                message="No Gaussian could be fitted. This sucks! No clue what to do now."
+                message="Error while fitting the gaussian. This sucks! No clue what to do now."
                 print(message)
                 logging.debug(message)
-                return_now=True
-            if return_now:
-                return -1
         #run an offset measurement for 2 different distances
         if xy:
             #set the correct mode for the GUI
@@ -2012,7 +2009,8 @@ class RATE_ANALYZER():
             max_1=geo.max_mir_y-mir_y-1
             spacing_0=10
             spacing_1=10
-            cam_z=mir_z-geo.min_dist_mir_cam_z+min_1-xy_dist_closer-1
+            cam_z=mir_z-geo.min_dist_mir_cam_z-max_1-xy_dist_closer-1
+            print("cam_z=mir_z-geo.min_dist_mir_cam_z-max_1-xy_dist_closer-1_dist_closer-1 equals {0}={1}-{2}-{3}-{4}-1".format(cam_z,mir_z,geo.min_dist_mir_cam_z,max_1,xy_dist_closer))
             cam_z_closer=cam_z
             
             #input the correct parameters
@@ -2030,6 +2028,10 @@ class RATE_ANALYZER():
             self.box_starting_phi.set(phi)
             self.box_starting_psi.set(psi)
             
+            message="Start XY closer with: cam_x={0} cam_z={1} phi={2} psi={3} mir_z={4} mir_y={5}".format(cam_x, cam_z, phi, psi, mir_z, mir_y)
+            print(message)
+            logging.debug(message)
+            
             try:
                 self.recordRateDistributionRead()
             except:
@@ -2038,14 +2040,16 @@ class RATE_ANALYZER():
             save_path="{0}/rates/xy_closer.rateu".format(path)
             self.saveRates(save_path)
             #fit a gaussian and safe its parameters
-            try:
-                self.findRectangle()
-                gaussian_closer=self.fitGaussian()
-            except:
-                message="No Gaussian could be fitted. This sucks! No clue what to do now."
+            self.findRectangle()
+            gaussian_closer=self.fitGaussian()
+            if gaussian_closer==[-1, -1, -1, -1, -1, -1] :
+                message="No gaussian could be fitted to the XY closer. Instead use the brightest pixel as center."
                 print(message)
                 logging.debug(message)
-                return -1
+                brightest=np.max(self.rates)
+                mask=self.rates==brightest
+                print(mask)
+                #need to implement finding of coordinates here
             
             #################
             # SECOND OFFSET #
@@ -2083,6 +2087,9 @@ class RATE_ANALYZER():
             self.box_starting_phi.set(phi)
             self.box_starting_psi.set(psi)
             
+            message="Start XY further with: cam_x={0} cam_z={1} phi={2} psi={3} mir_z={4} mir_y={5}".format(cam_x, cam_z, phi, psi, mir_z, mir_y)
+            print(message)
+            logging.debug(message)
             try:
                 self.recordRateDistributionRead()
             except:
@@ -2111,7 +2118,7 @@ class RATE_ANALYZER():
                 distance=cam_z_closer-cam_z_further
                 difference=gaussian_closer[1]-gaussian_further[1]
                 #calculate angle through trigonometry
-                phi=phi+math.arctan(diffence/distance)*180/math.pi
+                phi=phi+math.atan(diffence/distance)*180/math.pi
             #first do the psi parameter
             if abs(gaussian_closer[3]-gaussian_further[3])>1:
                 distance=cam_z_closer-cam_z_further
