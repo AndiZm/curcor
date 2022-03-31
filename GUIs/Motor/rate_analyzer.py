@@ -22,6 +22,9 @@ import matplotlib.patches as patches
 import math
 
 import geometry as geo
+import log as gloab_log
+import position as pos
+import pointing
 
 #updating=False
 
@@ -30,6 +33,8 @@ class RATE_ANALYZER():
     
     client=None
     controller=None
+    log=None
+    position=None
     change_mirror_psi=False
     change_mirror_phi=False
     
@@ -126,6 +131,11 @@ class RATE_ANALYZER():
     label_guess_cam_z = None
     label_guess_cam_x = None
     full_optimization_button =None
+    deviation_desc_Label_alt = None
+    deviation_desc_Label_az = None
+    deviation_alt_Label_pos = None
+    deviation_az_Label_pos = None
+
     
     #values for (live) recording
     still_recording=False
@@ -135,11 +145,13 @@ class RATE_ANALYZER():
     subplot=None
     legend=None
     
-    def __init__(self, master, controller=None, client=None):
+    def __init__(self, master, controller=None, client=None, log=None, position=None):
         #copy stuff
         self.controller=controller
         self.client=client
         self.master=master
+        self.log=log
+        self.position=position
         
         #ask which measurement mode should be used
         mode_dialog = initDialog(master)
@@ -214,12 +226,24 @@ class RATE_ANALYZER():
         self.results_frame.grid(row=3, column=0, padx=10, pady=10)
         self.results_frame.config(background = "#DBDBDB")
         
+        self.deviation_frame = Frame(self.control_frame, width=290, height=100)
+        self.deviation_frame.grid(row=2, column=1, padx=10, pady=10)
+        self.deviation_frame.config(background = "#DBDBDB")
+        
+        self.deviation_head_frame = Frame(self.deviation_frame, width=290, height=50)
+        self.deviation_head_frame.grid(row=0, padx=0, pady=0)
+        self.deviation_head_frame.config(background = "#DBDBDB")
+        
+        self.deviation_base_frame = Frame(self.deviation_frame, width=290, height=50)
+        self.deviation_base_frame.grid(row=1, padx=0, pady=0)
+        self.deviation_base_frame.config(background = "#DBDBDB")
+        
         self.variables_frame  = Frame(self.control_frame, width=320, height=600)
         self.variables_frame.grid(row=1, column=1, padx=10)
         self.variables_frame.config(background = "#DBDBDB")
         
         self.current_guess_frame  = Frame(self.control_frame, width=320, height=120)
-        self.current_guess_frame.grid(row=3, column=1, padx=10)
+        self.current_guess_frame.grid(row=3, column=1, padx=10, pady=10)
         self.current_guess_frame.config(background = "#DBDBDB")
         
         self.checked=IntVar()
@@ -297,6 +321,35 @@ class RATE_ANALYZER():
         self.loadButton.grid(row=0,column=0)
         self.saveButton = Button(self.control_frame, text="Save Rate Distribution", width=31, pady=3, padx=3, command=self.saveRates)
         self.saveButton.grid(row=0,column=1)
+        
+        
+        ###################
+        # DEVIATION FRAME #
+        ###################
+        
+        #create labels
+        self.label_deviation_head = Label(self.deviation_head_frame, text='DEVIATION ACC. TO TRACKING [mm]:', width="31")
+        self.deviation_desc_Label_alt = Label(self.deviation_base_frame, text="Alt:")
+        self.deviation_desc_Label_az = Label(self.deviation_base_frame, text="Az:")
+        self.deviation_alt_Label_pos = Label(self.deviation_base_frame, text="0.0", fg="orange", bg="black", font=("Helvetica 15 bold"), width=5)
+        self.deviation_az_Label_pos = Label(self.deviation_base_frame, text="0.0", fg="orange", bg="black", font=("Helvetica 15 bold"), width=6)
+
+        #place labels
+        self.label_deviation_head.grid(row=0)
+        self.deviation_desc_Label_alt.grid(row=0, column=0, padx=3, pady=3)
+        self.deviation_alt_Label_pos.grid(row=0, column=1, padx=3, pady=3)
+        self.deviation_desc_Label_az.grid(row=0, column=2, padx=3, pady=3)
+        self.deviation_az_Label_pos.grid(row=0, column=3, padx=3, pady=3)
+        
+        #create thread that updates the deviations
+        if self.position!=None:
+            t_deviation = threading.Thread(target= self.updateDeviation)
+            t_deviation.start()
+        else:
+            print("No position object was passed on. Therefore no deviation can be calculated!")
+            self.deviation_alt_Label_pos.config( fg="red")
+            self.deviation_az_Label_pos.config( fg="red")
+        
         
         #######################
         # CURRENT GUESS FRAME #
@@ -478,7 +531,6 @@ class RATE_ANALYZER():
             self.checkbutton_offset.grid(row=6, column=0, padx=10, pady=3)        
 
         #create and place button for recomended parameter adoption
-        self.adoptButton = Button(self.variables_frame, text="adopt current guess", command=self.adoptCurrentGuess)
         self.adoptButton = Button(self.variables_frame, text="adopt current guess", command=self.adoptCurrentGuess)
         self.adoptButton.grid(row=6, column=1, padx=10, pady=3)
         
@@ -1505,6 +1557,14 @@ class RATE_ANALYZER():
             self.label_starting_cam_z.config(text="Camera Z:")
             self.box_starting_cam_z.config(from_=0, to=139)
     
+    def updateDeviation(self):
+        while(True):
+            sleep(0.1)
+            delta_correction=self.getCurrentPointingOffset()
+            self.deviation_alt_Label_pos.config(text="{0:4.2f}".format(delta_correction[1]))
+            self.deviation_az_Label_pos.config(text="{0:4.2f}".format(delta_correction[0]))
+        
+        
 #THIS NEEDS TO BE TESTED
     def adoptCurrentGuess(self):
         cam_x, cam_z, phi, psi, mir_z, mir_y =  geo.get_optimal_parameters_current_guess()
@@ -1566,6 +1626,7 @@ class RATE_ANALYZER():
         self.resultsOffsetLabel['text']='Offset:     {0:3.2f}'.format(results[5])
         self.resultsPrefactorPhiLabel['text']='Prefactor:  {0:3.2f}'.format(results[0])
     
+    #NEEDS makeover. Records a batch of measurements that are specified in a file and safes the measured rates.
     def crazyBatch(self):
         #this method is used to get a huge batch of data in many different configuarations of the setup.
         
@@ -1831,6 +1892,7 @@ class RATE_ANALYZER():
             print("The batch is done!")
     #this is meant to be run in a thread of its own, so it can be terminated if needed. It writes a logfile with all releavent measaurements and safes all distributions
     def runOptimizer(self, xz_large=False, xz_small=False, xy=True, xy_dist_closer=0, xy_dist_further=0, optimal_offset=4):
+        self.log.log("Start a run of runOptimzier.")
         #safe the system time
         start_time=time.time()
         #create directory to which all information is safed
@@ -2180,12 +2242,67 @@ class RATE_ANALYZER():
         print("Succesfully set all Motors to correct positions.")
         #calcuate how long it took
         duration=time.time()-start_time
-        print("The optimisations routine took {0} seconds.".format(duration)) #check converions!?
+        message="The optimisations routine took {0} seconds.".format(duration) #check converions!?
+        print(message)
+        logging.debug(message)
+        self.log.log("Succesfully finished a run of runOptimzier.")
+        self.log.log(message)
+        self.log.log("The final parameters are: cam_x={0} cam_z={1} phi={2} psi={3} mir_z={4} mir_y={5}".format(cam_x, cam_z, phi, psi, mir_z, mir_y))
+        az, alt= position.get_az_alt()
+        self.log.set_experimental(cam_x, cam_z, mir_z, az, alt,  time.time())
         #Terminate and return time (in seconds) if succesfull. Otherwise -1.
         return duration
-    
+
+    #tells you how much the system would be shifted in order to correct the pointing according to the pointing model
+    def getCurrentPointingOffset(self):
+    #get current az alt position
+        current_az, current_alt = self.position.get_az_alt()
+        #load the former az alt position and the corresponding time and setup positions from the log
+        last_cam_x, last_cam_z, last_mir_z, last_az, last_alt, last_time = self.log.get_last()
+        if last_az==None or last_alt==None:
+            return (float('NaN'), float('NaN'))
+        #find out which pointing file we use by reading the config file
+        #first find out which machine this is
+        motor_pc_no = None
+        this_config = configparser.ConfigParser()
+        this_config.read('../../../this_pc.conf')
+        if "who_am_i" in this_config:
+            if this_config["who_am_i"]["type"]!="motor_pc":
+                print("According to the 'this_pc.config'-file this pc is not meant as a motor pc! Please fix that!")
+                exit()
+            motor_pc_no = int(this_config["who_am_i"]["no"])
+        else:
+            print("There is no config file on this computer which specifies the computer function! Please fix that!")
+            exit()
+        this_config = configparser.ConfigParser()
+        this_config.read('../global.conf')
+        filepath=this_config["motor_pc_{}".format(motor_pc_no)]["pointing_file"]
+        #now load the pointing model
+        p=pointing.PointingModel()
+        print(filepath)
+        p.load_from_file(filepath)
+        last_correction = p.get_correction(last_az, last_alt)
+        current_correction = p.get_correction(current_az, current_alt)
+        #calculate from angular values to lateral (rad to mm)
+        last_correction*=geo.dish_focal_length
+        current_correction*=geo.dish_focal_length
+        delta_correction=current_correction-last_correction
+        return delta_correction
+        
+    #corrects the position of cam x, cam z and mir z according to the pointing model
     def correctPointing(self):
-        return None
+        delta_correction=self.getCurrentPointingOffset()
+        self.controller.setBussy(True)
+        cam_x=self.controller.get_position_camera_x()
+        cam_z=self.controller.get_position_camera_z()
+        mir_z=self.controller.get_position_mirror_z()
+        self.controller.set_position_camera_x(cam_x+delta_correction[0])
+        self.controller.set_position_camera_z(cam_z+delta_correction[1])
+        self.controller.set_position_mirror_z(mir_z+delta_correction[1])
+        self.controller.setBussy(False)
+        log.log("Corrected the pointing according to the pointingmodel.")       
+        log.log("    Moved cam x = {0} to {1} ({2}) ; cam z = {3} to {4} ({5}) ; mir_z = {6} to {7} ({8})".format(cam_x, cam_x+delta_correction[0], delta_correction[0], cam_z, cam_z+delta_correction[1], delta_correction[1], mir_z, mir_z+delta_correction[1], delta_correction[1]))        
+
 def gauss2d(datapoints, prefactor=1, x_0=0, x_sigma=1, y_0=0, y_sigma=1, offset=0):
     return offset+prefactor*np.exp(-(np.power(datapoints[0]-x_0, 2)/(2*np.power(x_sigma,2)))-(np.power(datapoints[1]-y_0,2)/(2*np.power(y_sigma,2)))).ravel()
     

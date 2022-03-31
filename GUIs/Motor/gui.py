@@ -10,6 +10,7 @@ from rate_analyzer import *
 import numpy as np
 import geometry as geo
 import position as position
+import log as global_log
 
 
 import warnings
@@ -62,16 +63,20 @@ class GUI:
     change_acceleration_mirror_height=False
     change_acceleration_camera_x=False
     change_acceleration_camera_z=False
-
     
-    def __init__(self, master, controller, position=None, client=None):
+    log=None
+    
+    def __init__(self, master, controller, position=None, client=None, log=None):
         self.master=master
         self.controller=controller
         self.client=client
         self.stop_thread=False
         self.position=position
         self.master.wm_title("II Motor Control")
-        self.master.config(background = "#003366")        
+        self.master.config(background = "#003366")
+        self.log=log
+        if log==None:
+            self.log=global_log.log()
         
         #read positions from last time
         lastpositions=[]
@@ -703,7 +708,7 @@ class GUI:
         self.openNewDialogue()
         
     def optimize(self):
-        rate_analyzer=RATE_ANALYZER(self.master, self.controller, self.client)
+        rate_analyzer=RATE_ANALYZER(self.master, self.controller, self.client, self.log, self.position)
         
     
     def showRateDistribution(self):
