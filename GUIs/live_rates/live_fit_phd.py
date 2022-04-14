@@ -124,8 +124,9 @@ def execute2(packet_length, npackets, range_a, range_b):
 
     if gl.o_nchn2 == 2:
         data_b = np.histogram(peak_height_b, binsx)
-        b_x = data_b[1][:-1]; gl.histo_b = data_b[0]
-        xfit_b = gl.histo_x2[(gl.histo_x2>range_b[0]) & (gl.histo_x2<range_b[1])]; byfit = gl.histo_b2[(gl.histo_x2>range_b[0]) & (gl.histo_x2<range_b[1])]
+        b_x = data_b[1][:-1]; gl.histo_b2 = data_b[0]
+        xfit_b = gl.histo_x2[(gl.histo_x2>range_b[0]) & (gl.histo_x2<range_b[1])]
+        byfit = gl.histo_b2[(gl.histo_x2>range_b[0]) & (gl.histo_x2<range_b[1])]
         gl.pb2,cb = curve_fit(gauss, xfit_b, byfit, p0=[byfit[int(len(xfit_b)/2)],-15,5])
         gl.ph_b2 = phd(gl.pb2[1],gl.pb2[2]) # Average height
     gl.xplot2 = np.arange(-128,0,0.1)

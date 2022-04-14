@@ -117,7 +117,7 @@ def execute(min_pulses, height, cleanheight):
 
 def execute2(min_pulses, height, cleanheight):
 
-	file = gl.calibFile
+	file = gl.calibFile2
 	packet_length = 1000000
 
 	# Define the length of the average peak 

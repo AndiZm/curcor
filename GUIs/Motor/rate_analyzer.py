@@ -22,6 +22,9 @@ import matplotlib.patches as patches
 import math
 
 import geometry as geo
+import log as gloab_log
+import position as pos
+import pointing
 
 #updating=False
 
@@ -30,6 +33,8 @@ class RATE_ANALYZER():
     
     client=None
     controller=None
+    log=None
+    position=None
     change_mirror_psi=False
     change_mirror_phi=False
     
@@ -126,6 +131,11 @@ class RATE_ANALYZER():
     label_guess_cam_z = None
     label_guess_cam_x = None
     full_optimization_button =None
+    deviation_desc_Label_alt = None
+    deviation_desc_Label_az = None
+    deviation_alt_Label_pos = None
+    deviation_az_Label_pos = None
+
     
     #values for (live) recording
     still_recording=False
@@ -135,11 +145,13 @@ class RATE_ANALYZER():
     subplot=None
     legend=None
     
-    def __init__(self, master, controller=None, client=None):
+    def __init__(self, master, controller=None, client=None, log=None, position=None):
         #copy stuff
         self.controller=controller
         self.client=client
         self.master=master
+        self.log=log
+        self.position=position
         
         #ask which measurement mode should be used
         mode_dialog = initDialog(master)
@@ -214,12 +226,24 @@ class RATE_ANALYZER():
         self.results_frame.grid(row=3, column=0, padx=10, pady=10)
         self.results_frame.config(background = "#DBDBDB")
         
+        self.deviation_frame = Frame(self.control_frame, width=290, height=100)
+        self.deviation_frame.grid(row=2, column=1, padx=10, pady=10)
+        self.deviation_frame.config(background = "#DBDBDB")
+        
+        self.deviation_head_frame = Frame(self.deviation_frame, width=290, height=50)
+        self.deviation_head_frame.grid(row=0, padx=0, pady=0)
+        self.deviation_head_frame.config(background = "#DBDBDB")
+        
+        self.deviation_base_frame = Frame(self.deviation_frame, width=290, height=50)
+        self.deviation_base_frame.grid(row=1, padx=0, pady=0)
+        self.deviation_base_frame.config(background = "#DBDBDB")
+        
         self.variables_frame  = Frame(self.control_frame, width=320, height=600)
         self.variables_frame.grid(row=1, column=1, padx=10)
         self.variables_frame.config(background = "#DBDBDB")
         
         self.current_guess_frame  = Frame(self.control_frame, width=320, height=120)
-        self.current_guess_frame.grid(row=3, column=1, padx=10)
+        self.current_guess_frame.grid(row=3, column=1, padx=10, pady=10)
         self.current_guess_frame.config(background = "#DBDBDB")
         
         self.checked=IntVar()
@@ -297,6 +321,35 @@ class RATE_ANALYZER():
         self.loadButton.grid(row=0,column=0)
         self.saveButton = Button(self.control_frame, text="Save Rate Distribution", width=31, pady=3, padx=3, command=self.saveRates)
         self.saveButton.grid(row=0,column=1)
+        
+        
+        ###################
+        # DEVIATION FRAME #
+        ###################
+        
+        #create labels
+        self.label_deviation_head = Label(self.deviation_head_frame, text='DEVIATION ACC. TO TRACKING [mm]:', width="31")
+        self.deviation_desc_Label_alt = Label(self.deviation_base_frame, text="Alt:")
+        self.deviation_desc_Label_az = Label(self.deviation_base_frame, text="Az:")
+        self.deviation_alt_Label_pos = Label(self.deviation_base_frame, text="0.0", fg="orange", bg="black", font=("Helvetica 15 bold"), width=5)
+        self.deviation_az_Label_pos = Label(self.deviation_base_frame, text="0.0", fg="orange", bg="black", font=("Helvetica 15 bold"), width=6)
+
+        #place labels
+        self.label_deviation_head.grid(row=0)
+        self.deviation_desc_Label_alt.grid(row=0, column=0, padx=3, pady=3)
+        self.deviation_alt_Label_pos.grid(row=0, column=1, padx=3, pady=3)
+        self.deviation_desc_Label_az.grid(row=0, column=2, padx=3, pady=3)
+        self.deviation_az_Label_pos.grid(row=0, column=3, padx=3, pady=3)
+        
+        #create thread that updates the deviations
+        if self.position!=None:
+            t_deviation = threading.Thread(target= self.updateDeviation)
+            t_deviation.start()
+        else:
+            print("No position object was passed on. Therefore no deviation can be calculated!")
+            self.deviation_alt_Label_pos.config( fg="red")
+            self.deviation_az_Label_pos.config( fg="red")
+        
         
         #######################
         # CURRENT GUESS FRAME #
@@ -479,7 +532,6 @@ class RATE_ANALYZER():
 
         #create and place button for recomended parameter adoption
         self.adoptButton = Button(self.variables_frame, text="adopt current guess", command=self.adoptCurrentGuess)
-        self.adoptButton = Button(self.variables_frame, text="adopt current guess", command=self.adoptCurrentGuess)
         self.adoptButton.grid(row=6, column=1, padx=10, pady=3)
         
         
@@ -633,7 +685,7 @@ class RATE_ANALYZER():
             if self.mode=="psi-phi":
                 t1 = threading.Thread(target= lambda arg_spacing_phi=spacing_0, arg_spacing_psi=spacing_1, arg_min_phi=min_0, arg_max_phi=max_0, arg_min_psi=min_1, arg_max_psi=max_1, arg_cam_x=cam_x, arg_mir_y=mir_y, arg_cam_z=cam_z, arg_mir_z=mir_z, arg_phi=mir_phi, arg_psi=mir_psi : self.recordRateDistributionPhiPsi(spacing_phi=arg_spacing_phi, spacing_psi=arg_spacing_psi, min_phi=arg_min_phi, max_phi=arg_max_phi, min_psi=arg_min_psi, max_psi=arg_max_psi, cam_x=arg_cam_x, mir_y=arg_mir_y, cam_z=arg_cam_z, mir_z=arg_mir_z, phi=arg_phi, psi=arg_psi))
             elif self.mode=="x-y":
-                t1 = threading.Thread(target= lambda arg_spacing_x=spacing_0, arg_spacing_y=spacing_1, arg_min_cam_x=min_0, arg_max_cam_x=max_0, arg_min_mir_y=min_1, arg_max_mir_y=max_1, arg_cam_x=cam_x, arg_mir_y=mir_y, arg_offset_cam_z=offset_cam_z, arg_mir_z=mir_z, arg_phi=mir_phi, arg_psi=mir_psi : self.recordRateDistributionXY(spacing_x=arg_spacing_x, spacing_y=arg_spacing_y, min_cam_x=arg_min_cam_x, max_cam_x=arg_max_cam_x, min_mir_y=arg_min_mir_y, max_mir_y=arg_max_mir_y, cam_x=arg_cam_x, mir_y=arg_mir_y, offset_cam_z=arg_offset_cam_z, mir_z=arg_mir_z, phi=arg_phi, psi=arg_psi))
+                t1 = threading.Thread(target= lambda arg_spacing_x=spacing_0, arg_spacing_y=spacing_1, arg_min_cam_x=min_0, arg_max_cam_x=max_0, arg_min_mir_y=min_1, arg_max_mir_y=max_1, arg_cam_x=cam_x, arg_mir_y=mir_y, arg_cam_z=cam_z, arg_mir_z=mir_z, arg_phi=mir_phi, arg_psi=mir_psi : self.recordRateDistributionXY(spacing_x=arg_spacing_x, spacing_y=arg_spacing_y, min_cam_x=arg_min_cam_x, max_cam_x=arg_max_cam_x, min_mir_y=arg_min_mir_y, max_mir_y=arg_max_mir_y, cam_x=arg_cam_x, mir_y=arg_mir_y, cam_z=arg_cam_z, mir_z=arg_mir_z, phi=arg_phi, psi=arg_psi))
             elif self.mode=="x-z":
                 t1 = threading.Thread(target= lambda arg_spacing_x=spacing_1, arg_spacing_z=spacing_0, arg_min_cam_x=min_1, arg_max_cam_x=max_1, arg_min_mir_z=min_0, arg_max_mir_z=max_0, arg_cam_x=cam_x, arg_mir_y=mir_y, arg_offset_cam_z=offset_cam_z, arg_mir_z=mir_z, arg_phi=mir_phi, arg_psi=mir_psi : self.recordRateDistributionXZ(spacing_x=arg_spacing_x, spacing_z=arg_spacing_z, min_cam_x=arg_min_cam_x, max_cam_x=arg_max_cam_x, min_mir_z=arg_min_mir_z, max_mir_z=arg_max_mir_z, cam_x=arg_cam_x, mir_y=arg_mir_y, offset_cam_z=arg_offset_cam_z, mir_z=arg_mir_z, phi=arg_phi, psi=arg_psi))
             else:
@@ -645,7 +697,7 @@ class RATE_ANALYZER():
             self.recordRateDistribution(self.box_spacing_0.get(), self.box_spacing_1.get(), self.box_min_phi.get(), self.box_max_phi.get(), self.box_min_psi.get(), self.box_max_psi.get())
             self.replotRates()
     #STILL NEEDS FINAL DEBUGGING
-    def recordRateDistributionXY(self, spacing_x, spacing_y, min_cam_x, max_cam_x, min_mir_y, max_mir_y, cam_x, mir_y, offset_cam_z, mir_z, phi, psi):
+    def recordRateDistributionXY(self, spacing_x, spacing_y, min_cam_x, max_cam_x, min_mir_y, max_mir_y, cam_x, mir_y, cam_z, mir_z, phi, psi):
         if self.mode!="x-y":
             raise RuntimeError("The method 'recordRateDistributionXY' can only be called in x-y mode! The mode currently is set to {}".format(self.mode))
         if self.client==None:
@@ -657,10 +709,10 @@ class RATE_ANALYZER():
         max_x=cam_x+max_cam_x
         min_y=mir_y+min_mir_y
         max_y=mir_y+max_mir_y
-        min_min = geo.check_position_cam_offset(phi, psi, min_y, mir_z, offset_cam_z, min_x)
-        min_max = geo.check_position_cam_offset(phi, psi, min_y, mir_z, offset_cam_z, max_x)
-        max_min = geo.check_position_cam_offset(phi, psi, max_y, mir_z, offset_cam_z, min_x)
-        max_max = geo.check_position_cam_offset(phi, psi, max_y, mir_z, offset_cam_z, max_x)
+        min_min = geo.check_position_cam_absolute(phi, psi, min_y, mir_z, cam_z, min_x)
+        min_max = geo.check_position_cam_absolute(phi, psi, min_y, mir_z, cam_z, max_x)
+        max_min = geo.check_position_cam_absolute(phi, psi, max_y, mir_z, cam_z, min_x)
+        max_max = geo.check_position_cam_absolute(phi, psi, max_y, mir_z, cam_z, max_x)
         if not min_min and min_max and max_min and max_max:
             raise RuntimeError("The rate distribution can not be recorded because some of the measurement positions are out of range! Min_Min {0}, Min_Max {1}, Max_Min {2}, Max_Max {3}".format(min_min, min_max, max_min, max_max))
         
@@ -673,29 +725,23 @@ class RATE_ANALYZER():
         self.max_0=max_cam_x
         self.min_1=min_mir_y
         self.max_1=max_mir_y
-        self.camera_z=geo.get_camera_z_position_offset(phi, psi, mir_y, mir_z)
+        self.camera_z=cam_z
         self.camera_x=cam_x
         self.mirror_z=mir_z
         self.mirror_y=mir_y
         self.mirror_psi=psi
         self.mirror_phi=phi
-        self.offset=offset_cam_z
         
-        #set all parameters to the correct positions
-        
-        
-        new_cam_z=geo.get_camera_z_position_offset(phi, psi, min_y, mir_z, offset_pathlength=offset_cam_z, debug=False)
-        #This check should be unnessecairy by now!
-        if new_cam_z<=max_y-min_y:
-            raise RuntimeError("The calulated Camera z is smaller than the y-range that is to be surpassed ({0}<={1}). Is the mirror too close to the camera?".format(new_cam_z, max_y-min_y))
-        else:     
+        if cam_z<=max_mir_y:
+            raise RuntimeError("The calulated Camera z is smaller than the y-range that is to be surpassed ({0}<={1}). Is the mirror too close to the camera?".format(cam_z, max_mir_y))
+        else:
             self.controller.setBussy(True)
             self.controller.set_position_mirror_phi(phi)
             self.controller.set_position_mirror_psi(psi)
             self.controller.set_position_mirror_z(mir_z)
             self.controller.set_position_mirror_height(min_y) #start from minimum
             self.controller.set_position_camera_x(min_cam_x)
-            self.controller.set_position_camera_z(new_cam_z) #start from minimum
+            self.controller.set_position_camera_z(cam_z+min_mir_y) #start from minimum
         #wait till every motor has reached its starting position
         moving_all=True
         while moving_all:
@@ -717,7 +763,7 @@ class RATE_ANALYZER():
             #move the mirror height accordingly
             self.controller.set_position_mirror_height(pos_y)
             #adjust mirror z so that the pathlength is adjusted for // CURRENTLY ONLY TRUE IF THE INCIDENT ANGLE IS 0!
-            self.controller.set_position_camera_z(new_cam_z+(max_y-min_y)/(spacing_y-1)*i)
+            self.controller.set_position_camera_z(cam_z+min_mir_y+(max_y-min_y)/(spacing_y-1)*i)
             moving_y=True
             while moving_y:
                 sleep(0.05)
@@ -1511,6 +1557,14 @@ class RATE_ANALYZER():
             self.label_starting_cam_z.config(text="Camera Z:")
             self.box_starting_cam_z.config(from_=0, to=139)
     
+    def updateDeviation(self):
+        while(True):
+            sleep(0.1)
+            delta_correction=self.getCurrentPointingOffset()
+            self.deviation_alt_Label_pos.config(text="{0:4.2f}".format(delta_correction[1]))
+            self.deviation_az_Label_pos.config(text="{0:4.2f}".format(delta_correction[0]))
+        
+        
 #THIS NEEDS TO BE TESTED
     def adoptCurrentGuess(self):
         cam_x, cam_z, phi, psi, mir_z, mir_y =  geo.get_optimal_parameters_current_guess()
@@ -1572,6 +1626,7 @@ class RATE_ANALYZER():
         self.resultsOffsetLabel['text']='Offset:     {0:3.2f}'.format(results[5])
         self.resultsPrefactorPhiLabel['text']='Prefactor:  {0:3.2f}'.format(results[0])
     
+    #NEEDS makeover. Records a batch of measurements that are specified in a file and safes the measured rates.
     def crazyBatch(self):
         #this method is used to get a huge batch of data in many different configuarations of the setup.
         
@@ -1836,7 +1891,8 @@ class RATE_ANALYZER():
             self.controller.setBatch(False)
             print("The batch is done!")
     #this is meant to be run in a thread of its own, so it can be terminated if needed. It writes a logfile with all releavent measaurements and safes all distributions
-    def runOptimizer(self, xz_large=True, xz_small=True, xy=True, offset_closer=3, offset_further=4, optimal_offset=4):
+    def runOptimizer(self, xz_large=False, xz_small=False, xy=True, xy_dist_closer=0, xy_dist_further=0, optimal_offset=4):
+        self.log.log("Start a run of runOptimzier.")
         #safe the system time
         start_time=time.time()
         #create directory to which all information is safed
@@ -1977,16 +2033,19 @@ class RATE_ANALYZER():
                 self.findRectangle()
                 gaussian=self.fitGaussian()
                 #fix mir Z and set new guess for cam x
-                cam_x=cam_x+gaussian[3]
-                mir_z=mir_z+gaussian[1]
-                return_now=False
+                if gaussian == [-1, -1, -1, -1, -1, -1]:
+                    message="No gaussian could be fitted. Instead use center of the box."
+                    print(message)
+                    logging.debug(message)
+                    cam_x=cam_x+(self.max_1_rect-self.min_1_rect)/2
+                    mir_z=mir_z+(self.max_1_rect-self.min_1_rect)/2
+                else:
+                    cam_x=cam_x+gaussian[3]
+                    mir_z=mir_z+gaussian[1]
             except:
-                message="No Gaussian could be fitted. This sucks! No clue what to do now."
+                message="Error while fitting the gaussian. This sucks! No clue what to do now."
                 print(message)
                 logging.debug(message)
-                return_now=True
-            if return_now:
-                return -1
         #run an offset measurement for 2 different distances
         if xy:
             #set the correct mode for the GUI
@@ -2005,23 +2064,35 @@ class RATE_ANALYZER():
             print(message)
             logging.debug(message)
             
-            #check if the scan exceeds any boarders of the paramters and in this case adjust accordingly
-            
+            #calculate the positions of the first scan
+            min_0=-20
+            max_0=20
+            min_1=geo.min_mir_y-mir_y+1
+            max_1=geo.max_mir_y-mir_y-1
+            spacing_0=10
+            spacing_1=10
+            cam_z=mir_z-geo.min_dist_mir_cam_z-max_1-xy_dist_closer-1
+            print("cam_z=mir_z-geo.min_dist_mir_cam_z-max_1-xy_dist_closer-1_dist_closer-1 equals {0}={1}-{2}-{3}-{4}-1".format(cam_z,mir_z,geo.min_dist_mir_cam_z,max_1,xy_dist_closer))
+            cam_z_closer=cam_z
             
             #input the correct parameters
-            self.box_min_0.set(-20)
-            self.box_max_0.set(20)
-            self.box_min_1.set(geo.min_mir_y-mir_y+1)
-            self.box_max_1.set(geo.max_mir_y-mir_y-1)
-            self.box_spacing_0.set(10)
-            self.box_spacing_1.set(10)
+            self.box_min_0.set(min_0)
+            self.box_max_0.set(max_0)
+            self.box_min_1.set(min_1)
+            self.box_max_1.set(max_1)
+            self.box_spacing_0.set(spacing_0)
+            self.box_spacing_1.set(spacing_1)
             self.box_starting_cam_x.set(cam_x)
             self.box_starting_cam_z.set(cam_z)
             self.box_starting_mir_y.set(mir_y)
-            self.offset_bool.set(1)
-            self.box_starting_mir_z.set(offset_closer)
+            self.offset_bool.set(0)
+            self.box_starting_mir_z.set(mir_z)
             self.box_starting_phi.set(phi)
             self.box_starting_psi.set(psi)
+            
+            message="Start XY closer with: cam_x={0} cam_z={1} phi={2} psi={3} mir_z={4} mir_y={5}".format(cam_x, cam_z, phi, psi, mir_z, mir_y)
+            print(message)
+            logging.debug(message)
             
             try:
                 self.recordRateDistributionRead()
@@ -2031,14 +2102,16 @@ class RATE_ANALYZER():
             save_path="{0}/rates/xy_closer.rateu".format(path)
             self.saveRates(save_path)
             #fit a gaussian and safe its parameters
-            try:
-                self.findRectangle()
-                gaussian_closer=self.fitGaussian()
-            except:
-                message="No Gaussian could be fitted. This sucks! No clue what to do now."
+            self.findRectangle()
+            gaussian_closer=self.fitGaussian()
+            if gaussian_closer==[-1, -1, -1, -1, -1, -1] :
+                message="No gaussian could be fitted to the XY closer. Instead use the brightest pixel as center."
                 print(message)
                 logging.debug(message)
-                return -1
+                brightest=np.max(self.rates)
+                mask=self.rates==brightest
+                print(mask)
+                #need to implement finding of coordinates here
             
             #################
             # SECOND OFFSET #
@@ -2049,20 +2122,36 @@ class RATE_ANALYZER():
             print(message)
             logging.debug(message)
             
+            
+            #calculate the positions of the second scan
+            min_0=-20
+            max_0=20
+            min_1=geo.min_mir_y-mir_y+1
+            max_1=geo.max_mir_y-mir_y-1
+            spacing_0=10
+            spacing_1=10
+            cam_z=0+xy_dist_further+max_1+1
+            if cam_z<=0:
+                cam_z=1
+            cam_z_further=cam_z
             #input the correct parameters
-            self.box_min_0.set(-20)
-            self.box_max_0.set(20)
-            self.box_min_1.set(geo.min_mir_y-mir_y+1)
-            self.box_max_1.set(geo.max_mir_y-mir_y-1)
-            self.box_spacing_0.set(10)
-            self.box_spacing_1.set(10)
+            self.box_min_0.set(min_0)
+            self.box_max_0.set(max_0)
+            self.box_min_1.set(min_1)
+            self.box_max_1.set(max_1)
+            self.box_spacing_0.set(spacing_0)
+            self.box_spacing_1.set(spacing_1)
             self.box_starting_cam_x.set(cam_x)
             self.box_starting_cam_z.set(cam_z)
             self.box_starting_mir_y.set(mir_y)
-            self.box_starting_mir_z.set(offset_further)
-            self.offset_bool.set(1)
+            self.offset_bool.set(0)
+            self.box_starting_mir_z.set(mir_z)
             self.box_starting_phi.set(phi)
             self.box_starting_psi.set(psi)
+            
+            message="Start XY further with: cam_x={0} cam_z={1} phi={2} psi={3} mir_z={4} mir_y={5}".format(cam_x, cam_z, phi, psi, mir_z, mir_y)
+            print(message)
+            logging.debug(message)
             try:
                 self.recordRateDistributionRead()
             except:
@@ -2088,13 +2177,13 @@ class RATE_ANALYZER():
             #only correct the angles if the divergence is larger than 1mm
             #first do the phi parameter
             if abs(gaussian_closer[1]-gaussian_further[1])>1:
-                distance=offset_further-offset_closer
+                distance=cam_z_closer-cam_z_further
                 difference=gaussian_closer[1]-gaussian_further[1]
                 #calculate angle through trigonometry
-                phi=phi+math.arctan(diffence/distance)*180/math.pi
+                phi=phi+math.atan(diffence/distance)*180/math.pi
             #first do the psi parameter
             if abs(gaussian_closer[3]-gaussian_further[3])>1:
-                distance=offset_further-offset_closer
+                distance=cam_z_closer-cam_z_further
                 difference=gaussian_closer[3]-gaussian_further[3]
                 #calculate angle through trigonometry
                 psi=phi+math.arctan(diffence/distance)*180/math.pi
@@ -2153,12 +2242,67 @@ class RATE_ANALYZER():
         print("Succesfully set all Motors to correct positions.")
         #calcuate how long it took
         duration=time.time()-start_time
-        print("The optimisations routine took {0} seconds.".format(duration)) #check converions!?
+        message="The optimisations routine took {0} seconds.".format(duration) #check converions!?
+        print(message)
+        logging.debug(message)
+        self.log.log("Succesfully finished a run of runOptimzier.")
+        self.log.log(message)
+        self.log.log("The final parameters are: cam_x={0} cam_z={1} phi={2} psi={3} mir_z={4} mir_y={5}".format(cam_x, cam_z, phi, psi, mir_z, mir_y))
+        az, alt= position.get_az_alt()
+        self.log.set_experimental(cam_x, cam_z, mir_z, az, alt,  time.time())
         #Terminate and return time (in seconds) if succesfull. Otherwise -1.
         return duration
-    
+
+    #tells you how much the system would be shifted in order to correct the pointing according to the pointing model
+    def getCurrentPointingOffset(self):
+    #get current az alt position
+        current_az, current_alt = self.position.get_az_alt()
+        #load the former az alt position and the corresponding time and setup positions from the log
+        last_cam_x, last_cam_z, last_mir_z, last_az, last_alt, last_time = self.log.get_last()
+        if last_az==None or last_alt==None:
+            return (float('NaN'), float('NaN'))
+        #find out which pointing file we use by reading the config file
+        #first find out which machine this is
+        motor_pc_no = None
+        this_config = configparser.ConfigParser()
+        this_config.read('../../../this_pc.conf')
+        if "who_am_i" in this_config:
+            if this_config["who_am_i"]["type"]!="motor_pc":
+                print("According to the 'this_pc.config'-file this pc is not meant as a motor pc! Please fix that!")
+                exit()
+            motor_pc_no = int(this_config["who_am_i"]["no"])
+        else:
+            print("There is no config file on this computer which specifies the computer function! Please fix that!")
+            exit()
+        this_config = configparser.ConfigParser()
+        this_config.read('../global.conf')
+        filepath=this_config["motor_pc_{}".format(motor_pc_no)]["pointing_file"]
+        #now load the pointing model
+        p=pointing.PointingModel()
+        print(filepath)
+        p.load_from_file(filepath)
+        last_correction = p.get_correction(last_az, last_alt)
+        current_correction = p.get_correction(current_az, current_alt)
+        #calculate from angular values to lateral (rad to mm)
+        last_correction*=geo.dish_focal_length
+        current_correction*=geo.dish_focal_length
+        delta_correction=current_correction-last_correction
+        return delta_correction
+        
+    #corrects the position of cam x, cam z and mir z according to the pointing model
     def correctPointing(self):
-        return None
+        delta_correction=self.getCurrentPointingOffset()
+        self.controller.setBussy(True)
+        cam_x=self.controller.get_position_camera_x()
+        cam_z=self.controller.get_position_camera_z()
+        mir_z=self.controller.get_position_mirror_z()
+        self.controller.set_position_camera_x(cam_x+delta_correction[0])
+        self.controller.set_position_camera_z(cam_z+delta_correction[1])
+        self.controller.set_position_mirror_z(mir_z+delta_correction[1])
+        self.controller.setBussy(False)
+        log.log("Corrected the pointing according to the pointingmodel.")       
+        log.log("    Moved cam x = {0} to {1} ({2}) ; cam z = {3} to {4} ({5}) ; mir_z = {6} to {7} ({8})".format(cam_x, cam_x+delta_correction[0], delta_correction[0], cam_z, cam_z+delta_correction[1], delta_correction[1], mir_z, mir_z+delta_correction[1], delta_correction[1]))        
+
 def gauss2d(datapoints, prefactor=1, x_0=0, x_sigma=1, y_0=0, y_sigma=1, offset=0):
     return offset+prefactor*np.exp(-(np.power(datapoints[0]-x_0, 2)/(2*np.power(x_sigma,2)))-(np.power(datapoints[1]-y_0,2)/(2*np.power(y_sigma,2)))).ravel()
     

@@ -214,7 +214,7 @@ def take_data():
 def init_storage():
     global qwBufferSize, lNotifySize, pvBuffer, qwContBufLen, hCard, lBitsPerSample, lNumSamples
     # settings for the FIFO mode buffer handling
-    qwBufferSize = uint64 (MEGA_B(128))
+    qwBufferSize = uint64 (MEGA_B(256))
     lNotifySize = int32 (KILO_B(256))
 
     # define the data buffer
