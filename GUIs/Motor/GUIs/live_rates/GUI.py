@@ -10,6 +10,7 @@ from os import listdir
 from os.path import isfile, join
 from tkinter import *
 from tkinter import filedialog
+import sys
 
 import live_offset_meas as off
 import live_fit_phd as fphd
@@ -19,6 +20,10 @@ import live_wait_for_file as wff
 import globals as gl
 import rate_server as svr
 import card_commands as cc
+import transfer_files as tf
+import live_header as header
+import hv_commands as com
+
 
 from threading import Thread
 
@@ -53,7 +58,7 @@ root = Tk(); root.wm_title("Almost live measures"); root.geometry("+200+10")
 #------------#
 r_width  = 20
 r_height = 850
-rateFrame = Frame(root); rateFrame.grid(row=0,column=0)
+rateFrame = Frame(root); rateFrame.grid(row=0,column=1)
 rateACanvas = Canvas(rateFrame, width=r_width, height=r_height, bg="gray"); rateACanvas.grid(row=0,column=0)
 rateBCanvas = Canvas(rateFrame, width=r_width, height=r_height, bg="gray"); rateBCanvas.grid(row=0,column=1)
 # Forbidden rate area is 20% of rate bar
@@ -76,65 +81,381 @@ def placeRateLineB(rate):
 rmaxaText = rateACanvas.create_text(r_width/2,0.2*r_height, fill="white", text="--")
 rmaxbText = rateBCanvas.create_text(r_width/2,0.2*r_height, fill="white", text="--")
 
+rootMainFrame = Frame(root); rootMainFrame.grid(row=0,column=2)
 
-rootMainFrame = Frame(root); rootMainFrame.grid(row=0,column=1)
+################
+## LEFT FRAME ##
+################
+leftFrame = Frame(root); leftFrame.grid(row=0,column=0)
 
-##################
-## COMMON FRAME ##
-##################
-# The common frame contains the dropdown menu of measurement options
-commonFrame = Frame(rootMainFrame); commonFrame.grid(row=0,column=0)
+projectLabel = Label(leftFrame, text="Project", font=("Helvetica 12 bold")); projectLabel.grid(row=0,column=0)
+pbuttonFrame = Frame(leftFrame); pbuttonFrame.grid(row=1,column=0)
+copypaths = []
+def create_project(name,window):
+	global copypaths
+	if not os.path.exists("D:/"+name):
+		os.mkdir("D:/"+name)
+	if not os.path.exists("E:/"+name):
+		os.mkdir("E:/"+name)
+	copypaths = ["D:/"+name,"E:/"+name]
+	gl.projectName = name
+	try:
+		if not os.path.exists("Z:/"+name):
+			os.mkdir("Z:/"+name)
+	except:
+		print ("Workstation not accessible")
+	gl.basicpath = "D:/"+name
+	if not os.path.exists(gl.basicpath+"/calibs"):
+		os.mkdir(gl.basicpath+"/calibs")
+	gl.calibpath = gl.basicpath+"/calibs"
+	if window != None:
+		window.destroy()
+	projectShowLabel.config(text=name)
+def open_project():
+	root.directoryname = filedialog.askdirectory(initialdir = "D:/", title = "Select any project directory")
+	gl.basicpath = root.directoryname; gl.calibpath = gl.basicpath+"/calibs"
+	name = gl.basicpath.split("/")[-1]
+	projectShowLabel.config(text=name)
+	create_project(name,None)
+def newProject():
+	np_dialog = Tk()
+	projectNameEntry = Entry(np_dialog); projectNameEntry.grid(row=0,column=0); projectNameEntry.insert(0,"new_project")
+	createButton = Button(np_dialog, text="Create", command=lambda:create_project(name=projectNameEntry.get(),window=np_dialog)); createButton.grid(row=0,column=1)
+	cancelButton = Button(np_dialog, text="Cancel", command=np_dialog.destroy); cancelButton.grid(row=0,column=2)
+	np_dialog.mainloop()
+newProjectButton = Button(pbuttonFrame, text="New Project", command=newProject); newProjectButton.grid(row=0,column=0)
+openProjectButton = Button(pbuttonFrame, text="Open Project Folder", command=open_project); openProjectButton.grid(row=0,column=1)
+projectShowLabel = Label(pbuttonFrame, text="no project selected", bg="#f7df72", width=15); projectShowLabel.grid(row=0,column=2,padx=5)
+
+optionLabel = Label(leftFrame, text="Settings", font=("Helvetica 12 bold")); optionLabel.grid(row=2,column=0)
+# Card option Frame #
+coptionFrame = Frame(leftFrame); coptionFrame.grid(row=4,column=0)
 
 # Samples for each measurement
-samples = StringVar(root); samples.set("128 MS")
+sampleFrame = Frame(coptionFrame); sampleFrame.grid(row=1,column=0)
+samples = StringVar(root); samples.set("8 MS")
 sampleoptions = {
-	"64 S": 64, "128 S": 128, "256 S": 256, "512 S": 512,
-	"1 kS": 1024, "2 kS": 2048, "4 kS": 4096, "8 kS": 8192, "16 kS": 16384, "32 kS": 32768, "64 kS": 65536,
-	"128 kS": 131072, "256 kS": 262144, "512 kS": 524288,
 	"1 MS": 1048576, "2 MS": 2097152, "4 MS": 4194304, "8 MS": 8388608, "16 MS": 16777216, "32 MS": 33554432, "64 MS": 67108864,
 	"128 MS": 134217728, "256 MS": 268435456, "512 MS": 536870912,
-	"1 GS": 1073741824, "2 GS": 2147483648, "4 GS": 4294967296
+	"1 GS": 1073741824, "2 GS": 2147483648
 }
 def new_samples(val):
 	gl.o_samples = int((sampleoptions[samples.get()]))
-samplesDropdownLabel = Label(commonFrame, text="File Sample Size"); samplesDropdownLabel.grid(row=0,column=0)
-samplesDropdown = OptionMenu(commonFrame, samples, *sampleoptions, command=new_samples)
+	cc.set_sample_size(gl.o_samples)
+samplesDropdownLabel = Label(sampleFrame, text="File Sample Size"); samplesDropdownLabel.grid(row=0,column=0)
+samplesDropdown = OptionMenu(sampleFrame, samples, *sampleoptions, command=new_samples)
 samplesDropdown.grid(row=0, column=1)
-# Time binning
-binning = StringVar(root); binning.set("1.6 ns")
-binningoptions = {"0.8 ns": 0.8e-9, "1.6 ns": 1.6e-9, "3.2 ns": 3.2e-9, "6.4 ns": 6.4e-9}
-def new_binning(val):
-	gl.o_binning = float((binningoptions[binning.get()]))
-binningDropdownLabel = Label(commonFrame, text="Time sampling"); binningDropdownLabel.grid(row=1,column=0)
-binningDropdown = OptionMenu(commonFrame, binning, *binningoptions, command=new_binning)
-binningDropdown.grid(row=1, column=1)
+
+# Sampling
+binningFrame = Frame(coptionFrame); binningFrame.grid(row=1,column=1)
+binningLabel = Label(binningFrame, text="Time sampling", width=12); binningLabel.grid(row=0,column=0)
+binning = DoubleVar(root); binning.set(1.6e-9)
+def new_binning():
+	gl.o_binning = binning.get()
+	cc.set_sampling(gl.o_binning)
+binning08Button = Radiobutton(binningFrame, width=6, text="0.8 ns", indicatoron=False, variable=binning, value=0.8e-9, command=new_binning); binning08Button.grid(row=0,column=1)
+binning16Button = Radiobutton(binningFrame, width=6, text="1.6 ns", indicatoron=False, variable=binning, value=1.6e-9, command=new_binning); binning16Button.grid(row=0,column=2)
+binning32Button = Radiobutton(binningFrame, width=6, text="3.2 ns", indicatoron=False, variable=binning, value=3.2e-9, command=new_binning); binning32Button.grid(row=0,column=3)
+binning64Button = Radiobutton(binningFrame, width=6, text="6.4 ns", indicatoron=False, variable=binning, value=6.4e-9, command=new_binning); binning64Button.grid(row=0,column=4)
+
 # Voltage range
-voltages = StringVar(root); voltages.set("200 mV")
-voltageoptions = {"40 mV": 40, "100 mV": 100, "200 mV": 200, "500 mV": 500}
-def new_voltages(val):
-	gl.o_voltages = int((voltageoptions[voltages.get()]))
-voltageDropdownLabel = Label(commonFrame, text="Voltage range"); voltageDropdownLabel.grid(row=2,column=0)
-voltageDropdown = OptionMenu(commonFrame, voltages, *voltageoptions, command=new_voltages)
-voltageDropdown.grid(row=2, column=1)
-# Number of channels used for measurement
-channels = StringVar(root); channels.set("2")
-channeloptions = {"1": 1, "2": 2}
-def new_nchn(val):
-	gl.o_nchn = int((channeloptions[channels.get()]))
-channelDropdownLabel = Label(commonFrame, text="Channels"); channelDropdownLabel.grid(row=3,column=0)
-channelDropdown = OptionMenu(commonFrame, channels, *channeloptions, command=new_nchn)
-channelDropdown.grid(row=3, column=1)
+voltageFrame = Frame(coptionFrame); voltageFrame.grid(row=2,column=1)
+voltageLabel = Label(voltageFrame, text="Voltage range", width=12); voltageLabel.grid(row=0,column=0)
+voltages = IntVar(root); voltages.set(200)
+def new_voltages():
+	gl.o_voltages = voltages.get()
+	cc.set_voltage_range(gl.o_voltages)
+voltage040Button = Radiobutton(voltageFrame, width=6, text=" 40 mV", indicatoron=False, variable=voltages, value= 40, command=new_voltages); voltage040Button.grid(row=0,column=1)
+voltage100Button = Radiobutton(voltageFrame, width=6, text="100 mV", indicatoron=False, variable=voltages, value=100, command=new_voltages); voltage100Button.grid(row=0,column=2)
+voltage200Button = Radiobutton(voltageFrame, width=6, text="200 mV", indicatoron=False, variable=voltages, value=200, command=new_voltages); voltage200Button.grid(row=0,column=3)
+voltage500Button = Radiobutton(voltageFrame, width=6, text="500 mV", indicatoron=False, variable=voltages, value=500, command=new_voltages); voltage500Button.grid(row=0,column=4)
 
-# Directory
-def selectDirectory():
-	root.directoryname = filedialog.askdirectory(initialdir = gl.basicpath, title = "Select any data directory")
-	gl.basicpath = root.directoryname; gl.calibpath = gl.basicpath+"/calibs"
-	pathLabel.config(text=gl.basicpath.split("/")[1])
-	if not os.path.exists(gl.calibpath):
-		os.mkdir(gl.calibpath)
-pathButton = Button(commonFrame, text="Files directory", command=selectDirectory); pathButton.grid(row=4, column=0)
-pathLabel = Label(commonFrame, text=gl.basicpath.split("/")[1]); pathLabel.grid(row=4,column=1)
+# Channels
+channelFrame = Frame(coptionFrame); channelFrame.grid(row=2,column=0)
+channelLabel = Label(channelFrame, text="Channels"); channelLabel.grid(row=0,column=0)
+channels = IntVar(root); channels.set(2)
+def new_nchn():
+	ch_old = gl.o_nchn
+	ch_new = channels.get()
+	if ch_new != ch_old:
+		gl.o_nchn = ch_new
+		gl.calc_rate = False
+		gl.startstopButton.config(state="disabled")
+		singleFileButton.config(state="disabled")
+		cc.set_channels(gl.o_nchn)
+channel1Button = Radiobutton(channelFrame, width=5, text="1", indicatoron=False, variable=channels, value=1, command=new_nchn); channel1Button.grid(row=0,column=1)
+channel2Button = Radiobutton(channelFrame, width=5, text="2", indicatoron=False, variable=channels, value=2, command=new_nchn); channel2Button.grid(row=0,column=2)
 
+# Clock
+clockFrame = Frame(coptionFrame); clockFrame.grid(row=3,column=0)
+clockmodeLabel = Label(clockFrame, text="Clock"); clockmodeLabel.grid(row=0,column=0)
+gl.clockmode = IntVar(); gl.clockmode.set(2)
+clockInternButton = Radiobutton(clockFrame, width=8, text="Internal", indicatoron=False, variable=gl.clockmode, value=1, command=cc.set_clockmode); clockInternButton.grid(row=0,column=1)
+clockExternButton = Radiobutton(clockFrame, width=8, text="External", indicatoron=False, variable=gl.clockmode, value=2, command=cc.set_clockmode); clockExternButton.grid(row=0,column=2)
+
+# Trigger
+triggerFrame = Frame(coptionFrame); triggerFrame.grid(row=3,column=1)
+triggerLabel = Label(triggerFrame, text="External Trigger"); triggerLabel.grid(row=0,column=0)
+def toggle_trigger():
+	if gl.trigger == False:
+		gl.trigger = True
+		triggerButton.config(text="On")
+	elif gl.trigger == True:
+		gl.trigger = False
+		triggerButton.config(text="Off")
+	cc.set_triggermode()
+triggerButton = Button(triggerFrame, text="Off", width=5, command=toggle_trigger); triggerButton.grid(row=0,column=1)
+
+# Quick settings
+qsettingsFrame = Frame(leftFrame); qsettingsFrame.grid(row=3,column=0)
+def qsettings_checkWaveform():
+	samples.set("8 MS"); new_samples(0)
+	binning16Button.invoke()
+	channel2Button.invoke()
+	voltage200Button.invoke()
+	if gl.trigger == True:
+		toggle_trigger()
+	cc.init_display()
+def qsettings_syncedMeasurement():
+	global copy_mode
+	samples.set("2 GS"); new_samples(0)
+	binning16Button.invoke()
+	#channel2Button.invoke()
+	voltage200Button.invoke()
+	clockExternButton.invoke()
+	if gl.trigger == False:
+		toggle_trigger()
+	copy_mode = True
+	packButton.config(text="Copy Mode  On")
+	cc.init_storage()
+def qsettings_calibrations():
+	samples.set("2 GS"); new_samples(0)
+	binning16Button.invoke()
+	channel2Button.invoke()
+	voltage200Button.invoke()
+	clockExternButton.invoke()
+	if gl.trigger == True:
+		toggle_trigger()
+	cc.init_storage()
+quickSettingsLabel = Label(qsettingsFrame, text="Quick Settings", bg="#f5dbff"); quickSettingsLabel.grid(row=1,column=0)
+checkWaveformsButton = Button(qsettingsFrame, bg="#f5dbff", width=18, text="Standard Observe",   command=qsettings_checkWaveform); checkWaveformsButton.grid(row=1,column=1)
+calibrationsButton   = Button(qsettingsFrame, bg="#f5dbff", width=12, text="Calibrations",       command=qsettings_calibrations); calibrationsButton.grid(row=1,column=2)
+gl.syncedMeasButton     = Button(qsettingsFrame, bg="#f5dbff", width=20, text="Synced Measurement", command=qsettings_syncedMeasurement); gl.syncedMeasButton.grid(row=1,column=3)
+
+# Measurement Frame
+measurementLabel = Label(leftFrame, text="Measurement Control", font=("Helvetica 12 bold")); measurementLabel.grid(row=5,column=0)
+measurementFrame = Frame(leftFrame); measurementFrame.grid(row=6,column=0)
+def takeMeasurement():
+	cc.init_storage()
+	filename = gl.basicpath + "/" + measFileNameEntry.get() + ".bin"
+	ma, mb = cc.measurement(filename)
+	calculate_data(ma, mb)
+	cc.init_display()
+singleMeasurementButton = Button(measurementFrame, text="Single Measurement", command=takeMeasurement); singleMeasurementButton.grid(row=0,column=0)
+measloop = False
+writeid = 0
+def change_id():
+    global writeid
+    if writeid == 0:
+        writeid = 1
+    elif writeid == 1:
+        writeid = 0
+def loopMeasurement():
+	global measloop
+	if measloop == False:
+		measloop = True
+		loopMeasurementButton.config(text="Stop loop", bg="#fa857a")
+		loopThread = Thread(target=doLoopMeasurement)
+		loopThread.start()
+	elif measloop == True:
+		measloop = False
+		loopMeasurementButton.config(text="Start loop", bg="#e8fcae")
+def doLoopMeasurement():
+	global measloop, writeid, copy_mode
+	cc.init_storage()
+	header.write_header(name=measFileNameEntry.get())
+	fileindex = 0
+	files_to_copy = []
+	packageSize = int(packEntry.get())
+	while measloop == True:
+		filename = copypaths[writeid] + "/" + measFileNameEntry.get() + "_" + tf.numberstring(fileindex) + ".bin"
+		ma, mb = cc.measurement(filename)
+		calculate_data(ma, mb)
+		if copy_mode == True:
+			files_to_copy.append(filename)
+			if (fileindex+1) % packageSize == 0:
+				gl.copythread = Thread(target=tf.transfer_files, args=(files_to_copy,"Z:\\"+gl.projectName))
+				gl.copythread.start()	
+				change_id()
+				files_to_copy = []
+		fileindex += 1
+	if copy_mode == True:
+		gl.copythread = Thread(target=tf.transfer_files, args=(files_to_copy,"Z:\\"+gl.projectName))
+		gl.copythread.start()	
+	cc.init_display()
+loopMeasurementButton = Button(measurementFrame, text="Start Loop", width=10, bg="#e8fcae", command=loopMeasurement); loopMeasurementButton.grid(row=0,column=1)
+measFileNameEntry = Entry(measurementFrame, width=15); measFileNameEntry.grid(row=0,column=2,padx=5); measFileNameEntry.insert(0,"data")
+copy_mode = False
+def copyMode():
+	global copy_mode
+	if copy_mode == False:
+		copy_mode = True
+		packButton.config(text="Copy Mode  On")
+	elif copy_mode == True:
+		copy_mode = False
+		packButton.config(text="Copy Mode Off")
+packButton = Button(measurementFrame, text="Copy Mode Off", width=15, command=copyMode); packButton.grid(row=0,column=3)
+packEntry = Entry(measurementFrame, width=5); packEntry.grid(row=0,column=4,padx=5); packEntry.insert(0,"10")
+def remote_measurement():
+	global writeid
+	filename = copypaths[writeid] + "/" + gl.remoteMeasName + "_" + tf.numberstring(gl.remoteMeasIndex) + ".bin"
+	gl.remoteFiles.append(filename)
+	ma, mb = cc.measurement(filename)
+	calculate_data(ma, mb)
+	if len(gl.remoteFiles) % int(packEntry.get()) == 0:
+		gl.copythread = Thread(target=tf.transfer_files, args=(gl.remoteFiles,"Z:\\"+gl.projectName))
+		gl.copythread.start()
+		change_id()
+		gl.remoteFiles = []
+# Dummy button which needs to exist, because the client orders to click it
+gl.remoteMeasButton = Button(measurementFrame, text="R", state="disabled", command=remote_measurement)
+#gl.remoteMeasButton.grid(row=0,column=5)
+
+# Display Frame #
+displayFrame = Frame(leftFrame); displayFrame.grid(row=7,column=0)
+wf_fig = Figure(figsize=(5,5))
+# Plot waveforms
+wf_a = []; wf_b = []
+wf_sub = wf_fig.add_subplot(211); wf_sub.grid()
+gl.wf_a_line, = wf_sub.plot(wf_a); gl.wf_b_line, = wf_sub.plot(wf_b)
+wf_sub.set_xlim(0,1000); wf_sub.set_ylim(-127,10)
+# Plot rates
+rates_a = []; rates_b = []
+rates_sub = wf_fig.add_subplot(212); rates_sub.grid()
+gl.rates_a_line, = rates_sub.plot(gl.rates_a); gl.rates_b_line, = rates_sub.plot(gl.rates_b)
+rates_sub.set_xlim(-99,0)
+gl.wf_canvas = FigureCanvasTkAgg(wf_fig, master=displayFrame)
+gl.wf_canvas.get_tk_widget().grid(row=0,column=0)
+gl.wf_canvas.draw()
+def update_rate_plot():
+	gl.update_rate_plot()
+	rates_sub.set_ylim( np.min( [np.min(gl.rates_a),np.min(gl.rates_b)] ), np.max( [np.max(gl.rates_a),np.max(gl.rates_b)]) )
+
+##############
+## HV FRAME ##
+##############
+hvFrame = Frame(leftFrame, bg="#003366"); hvFrame.grid(row=8, column=0)
+hvMainFrame = Frame(hvFrame, bg="#003366"); hvMainFrame.grid(row=0,column=1)
+
+gl.hv0Button = Button(hvMainFrame, text="HV 0", font=("Helvetica 12 bold"), bg="grey", command=com.toggle_0); gl.hv0Button.grid(row=0,column=2)
+gl.hv1Label = Label(hvMainFrame, text="HV 1", font=("Helvetica 8 italic"), bg="grey"); gl.hv1Label.grid(row=0,column=3)
+gl.hv2Button = Button(hvMainFrame, text="HV 2", font=("Helvetica 12 bold"), bg="grey", command=com.toggle_2); gl.hv2Button.grid(row=0,column=4)
+gl.hv3Label = Label(hvMainFrame, text="HV 3", font=("Helvetica 8 italic"), bg="grey"); gl.hv3Label.grid(row=0,column=5)
+def enableElements(frame):
+	frame.config(bg="#003366")
+	for child in frame.winfo_children():
+		if child.winfo_class() not in ("Frame","Labelframe"):
+			child.configure(state="normal")
+def disableElements(frame):
+	frame.config(bg="grey")
+	for child in frame.winfo_children():
+		if child.winfo_class() not in ("Frame","Labelframe"):
+			child.configure(state="disabled")
+
+def connect_hv():
+	hvConnectButton.config(state="disabled")
+	time.sleep(1)
+	com.init()
+	gl.vset = [com.get_vset(0),com.get_vset(1),com.get_vset(2),com.get_vset(3)]
+	com.apply_ratio_0(); com.apply_ratio_2()
+	gl.vmon = [com.get_vmon(0),com.get_vmon(1),com.get_vmon(2),com.get_vmon(3)]
+	# Initially on or off
+	if com.get_status(0) == 1:
+		gl.hv0Button.config(bg="orange")
+		gl.hv1Label.config(bg="orange")
+		gl.status0 = True
+	if com.get_status(2) == 1:
+		gl.hv2Button.config(bg="orange")
+		gl.hv3Label.config(bg="orange")
+		gl.status2 = True
+	com.start_monitor()
+	enableElements(hvMainFrame); enableElements(quickChange0Frame); enableElements(quickChange2Frame)
+	exitButton.config(state="normal")
+
+# Ratio between HV and Booster
+def change_ratio():
+	cr = Tk()
+	cr_label01 = Label(cr, text="Ratio 0/1"); cr_label01.grid(row=0,column=0)
+	cr_label23 = Label(cr, text="Ratio 2/3"); cr_label23.grid(row=0,column=1)
+	cr_entry01 = Entry(cr, width=5); cr_entry01.grid(row=1,column=0); cr_entry01.insert(0,str(gl.ratio01))
+	cr_entry23 = Entry(cr, width=5); cr_entry23.grid(row=1,column=1); cr_entry23.insert(0,str(gl.ratio23))
+	def apply_ratio():
+		gl.ratio01 = float(cr_entry01.get()); gl.ratio23 = float(cr_entry23.get())
+		com.apply_ratio_0(); com.apply_ratio_2()
+		cr.destroy()
+	cr_Button = Button(cr, text="Apply", command=apply_ratio); cr_Button.grid(row=1,column=2)
+ratioButton = Button(hvMainFrame, text="Ratio",command=change_ratio); ratioButton.grid(row=0,column=0)
+
+# Set Voltage
+def change_vSet():
+	cvset = Tk()
+	cvset_label0 = Label(cvset, text="HV 0"); cvset_label0.grid(row=0,column=0)
+	cvset_label2 = Label(cvset, text="HV 2"); cvset_label2.grid(row=0,column=1)
+	cvset_entry0 = Entry(cvset, width=5); cvset_entry0.grid(row=1,column=0); cvset_entry0.insert(0,str(gl.vset[0]))
+	cvset_entry2 = Entry(cvset, width=5); cvset_entry2.grid(row=1,column=1); cvset_entry2.insert(0,str(gl.vset[2]))
+	def apply_vSet():
+		com.safe_vset_0(float(cvset_entry0.get())); com.safe_vset_2(float(cvset_entry2.get()))
+		cvset.destroy()
+	cvset_Button = Button(cvset, text="Apply", command=apply_vSet); cvset_Button.grid(row=1,column=2)
+vSetButton = Button(hvMainFrame, text="V-Set",command=change_vSet); vSetButton.grid(row=1,column=0)
+gl.vSet0Label = Label(hvMainFrame, width=7, text=str(gl.vset[0]), bg="black", fg="orange"); gl.vSet0Label.grid(row=1,column=2)
+gl.vSet1Label = Label(hvMainFrame, width=4, text=str(gl.vset[1]), font=("Helvetica 7"), bg="light grey", fg="black"); gl.vSet1Label.grid(row=1,column=3)
+gl.vSet2Label = Label(hvMainFrame, width=7, text=str(gl.vset[2]), bg="black", fg="orange"); gl.vSet2Label.grid(row=1,column=4)
+gl.vSet3Label = Label(hvMainFrame, width=4, text=str(gl.vset[3]), font=("Helvetica 7"), bg="light grey", fg="black"); gl.vSet3Label.grid(row=1,column=5)
+
+# Quick Change
+quickChange0Frame = Frame(hvMainFrame, bg="#003366"); quickChange0Frame.grid(row=2,column=2)
+q0_up10Button   = Button(quickChange0Frame, text="+10", font=("Helvetica 7"), width=3, command=lambda:com.safe_vset_0(gl.vset[0]+10)); q0_up10Button.grid(row=0,column=0)
+q0_up50Button   = Button(quickChange0Frame, text="+50", font=("Helvetica 7"), width=3, command=lambda:com.safe_vset_0(gl.vset[0]+50)); q0_up50Button.grid(row=0,column=1)
+q0_down10Button = Button(quickChange0Frame, text="-10", font=("Helvetica 7"), width=3, command=lambda:com.safe_vset_0(gl.vset[0]-10)); q0_down10Button.grid(row=1,column=0)
+q0_down50Button = Button(quickChange0Frame, text="-50", font=("Helvetica 7"), width=3, command=lambda:com.safe_vset_0(gl.vset[0]-50)); q0_down50Button.grid(row=1,column=1)
+
+quickChange2Frame = Frame(hvMainFrame, bg="#003366"); quickChange2Frame.grid(row=2,column=4)
+q2_up10Button   = Button(quickChange2Frame, text="+10", font=("Helvetica 7"), width=3, command=lambda:com.safe_vset_2(gl.vset[0]+10)); q2_up10Button.grid(row=0,column=0)
+q2_up50Button   = Button(quickChange2Frame, text="+50", font=("Helvetica 7"), width=3, command=lambda:com.safe_vset_2(gl.vset[0]+50)); q2_up50Button.grid(row=0,column=1)
+q2_down10Button = Button(quickChange2Frame, text="-10", font=("Helvetica 7"), width=3, command=lambda:com.safe_vset_2(gl.vset[0]-10)); q2_down10Button.grid(row=1,column=0)
+q2_down50Button = Button(quickChange2Frame, text="-50", font=("Helvetica 7"), width=3, command=lambda:com.safe_vset_2(gl.vset[0]-50)); q2_down50Button.grid(row=1,column=1)
+
+# MON Voltage
+vMonLabel = Label(hvMainFrame, text ="V-Mon", width=10); vMonLabel.grid(row=3,column=0)
+gl.vMon0Label = Label(hvMainFrame, width=5, text=str(gl.vmon0), bg="black", fg="red"); gl.vMon0Label.grid(row=3,column=2)
+gl.vMon1Label = Label(hvMainFrame, width=4, text=str(gl.vmon1), font=("Helvetica 7"), bg="light grey", fg="red"); gl.vMon1Label.grid(row=3,column=3)
+gl.vMon2Label = Label(hvMainFrame, width=5, text=str(gl.vmon2), bg="black", fg="red"); gl.vMon2Label.grid(row=3,column=4)
+gl.vMon3Label = Label(hvMainFrame, width=4, text=str(gl.vmon3), font=("Helvetica 7"), bg="light grey", fg="red"); gl.vMon3Label.grid(row=3,column=5)
+
+# MON Current
+iMonLabel = Label(hvMainFrame, text ="I-Mon (mA)", width=10); iMonLabel.grid(row=4,column=0)
+gl.iMon0Label = Label(hvMainFrame, width=5, text="0", font=("Helvetica 7"), bg="light grey", fg="red"); gl.iMon0Label.grid(row=4,column=2)
+gl.iMon1Label = Label(hvMainFrame, width=4, text="0", font=("Helvetica 7"), bg="light grey", fg="red"); gl.iMon1Label.grid(row=4,column=3)
+gl.iMon2Label = Label(hvMainFrame, width=5, text="0", font=("Helvetica 7"), bg="light grey", fg="red"); gl.iMon2Label.grid(row=4,column=4)
+gl.iMon3Label = Label(hvMainFrame, width=4, text="0", font=("Helvetica 7"), bg="light grey", fg="red"); gl.iMon3Label.grid(row=4,column=5)
+
+disableElements(hvMainFrame); disableElements(quickChange0Frame); disableElements(quickChange2Frame)
+
+
+rootExitFrame=Frame(hvFrame, bg="#003366"); rootExitFrame.grid(row=0,column=0)
+def exit():
+	exitButton.config(state="disabled")
+	gl.mon_thread = False
+	disableElements(hvMainFrame); disableElements(quickChange0Frame); disableElements(quickChange2Frame)
+	gl.scheck = 0; gl.failed_check= 0
+	hvConnectButton.config(state="normal")
+
+	
+hvHeaderLabel = Label(rootExitFrame, text="HV", font=("Helvetica 20 bold"), fg="white", bg="#003366"); hvHeaderLabel.grid(row=0,column=0)
+hvConnectButton = Button(rootExitFrame, text="Connect", width=8, bg="#003366", fg="white", command=connect_hv); hvConnectButton.grid(row=1,column=0)
+exitButton = Button(rootExitFrame, text="Close", width=8, command=exit, bg="#003366", fg="white", state="disabled"); exitButton.grid(row=2,column=0)
+gl.frameLabel = Label(rootExitFrame, text=str(gl.scheck)); gl.frameLabel.grid(row=3, column=0)
 
 ##################
 ## OFFSET FRAME ##
@@ -148,11 +469,22 @@ offsetPLabel = Label(offsetHeader, text="p", background="#e8fcae"); offsetPLabel
 offsetPEntry = Entry(offsetHeader, width=5); offsetPEntry.grid(row=0,column=4); offsetPEntry.insert(0,"2000")
 
 offsetBasicFrame = Frame(offsetFrame, background="#e8fcae"); offsetBasicFrame.grid(row=1,column=0)
+# Take offset measurement
+def takeOffsetMeasurement():
+	qsettings_calibrations()
+	filename = gl.basicpath + "/" + offsetNameEntry.get()
+	ma, mb = cc.measurement(filename)
+	calculate_data(ma, mb)
+	qsettings_checkWaveform()
+	gl.offsetFile = filename; offsetFileLabel.config(text=gl.offsetFile.split("/")[-1])
+takeOffsetButton = Button(offsetBasicFrame, text="Measure", background="#e8fcae", width=15, command=takeOffsetMeasurement); takeOffsetButton.grid(row=0,column=0)
+offsetNameEntry = Entry(offsetBasicFrame, width=15); offsetNameEntry.grid(row=0,column=1); offsetNameEntry.insert(0,"off.bin")
+
 # Select offset binary file for offset investigations
 def selectOffsetFile():
 	root.filename = filedialog.askopenfilename(initialdir = gl.basicpath, title = "Select offset file", filetypes = (("binary files","*.bin"),("all files","*.*")))
 	gl.offsetFile = root.filename; offsetFileLabel.config(text=gl.offsetFile.split("/")[-1])
-selectOffsetFileButton = Button(offsetBasicFrame, text="Select Offset Binary", background="#e8fcae", command=selectOffsetFile); selectOffsetFileButton.grid(row=1,column=0)
+selectOffsetFileButton = Button(offsetBasicFrame, text="Select Offset Binary", width=15, background="#e8fcae", command=selectOffsetFile); selectOffsetFileButton.grid(row=1,column=0)
 offsetFileLabel = Label(offsetBasicFrame, text="no file selected", background="#e8fcae"); offsetFileLabel.grid(row=1,column=1)
 # Load already existing .off or .off1 file
 def loadOffset():
@@ -167,7 +499,7 @@ def loadOffset():
 		gl.off_a = np.loadtxt(gl.offsetLoad); parOffsetLabelA.config(text="{:.2f}".format(gl.off_a))
 		parOffsetLabelB.config(text="--")
 	gl.offsetFile = to_bin(gl.offsetLoad); offsetFileLabel.config(text=gl.offsetFile.split("/")[-1])
-loadOffsetButton = Button(offsetBasicFrame, text="Load Offset", background="#e8fcae", command=loadOffset); loadOffsetButton.grid(row=2,column=0)
+loadOffsetButton = Button(offsetBasicFrame, text="Load Offset", width=15, background="#e8fcae", command=loadOffset); loadOffsetButton.grid(row=2,column=0)
 loadOffsetLabel = Label(offsetBasicFrame, text="no file selected", background="#e8fcae"); loadOffsetLabel.grid(row=2,column=1)
 # Display part of the waveform and horizontal offset lines
 def displayOffset():
@@ -177,7 +509,7 @@ def displayOffset():
 	if gl.o_nchn == 2:
 		plt.plot(wv_off_b, label="Channel B", color="red" , alpha=0.4); plt.axhline(y=gl.off_b, color="red")
 	plt.xlabel("Time bins"); plt.ylabel("ADC"); plt.legend(); plt.title(gl.offsetFile); plt.show()
-displayOffsetButton = Button(offsetBasicFrame, text="Display Offset", background="#e8fcae", command=displayOffset); displayOffsetButton.grid(row=3, column=0)
+displayOffsetButton = Button(offsetBasicFrame, text="Display Offset", width=15, background="#e8fcae", command=displayOffset); displayOffsetButton.grid(row=3, column=0)
 # Simply display part of the waveform
 def displayWaveformOffset():
 	if gl.o_nchn == 2:
@@ -245,6 +577,7 @@ offsetButton = Button(offsetDoFrame, text="Calc Offset", background="#e8fcae", c
 stopOffsetButton = Button(offsetDoFrame, text="Abort", background="#fa857a", command=stop_offset_thread); stopOffsetButton.grid(row=0,column=1)
 quickOffsetButton = Button(offsetDoFrame, text="Wait for file", background="#e8fcae", command=start_quick_offset_thread, state="disabled"); quickOffsetButton.grid(row=0,column=2)
 
+
 #######################
 ## CALIBRATION FRAME ##
 #######################
@@ -289,6 +622,11 @@ def calibrate():
 		ps.execute(min_pulses = [int(minPulsesEntryA.get()),int(minPulsesEntryB.get())], height=[-1*int(minHeightEntryA.get()),-1*int(minHeightEntryB.get())], cleanheight=[-1*int(cleanHeightEntryA.get()),-1*int(cleanHeightEntryB.get())])
 	if gl.stop_calib_thread == False:
 		finish_calibration()
+	# Activate Rate Buttons
+	gl.calc_rate = True
+	gl.startstopButton.config(state="normal")
+	singleFileButton.config(state="normal")
+
 	idle()
 def finish_calibration(): # Execute after pulse height distribution and pulse shape calculation are finished
 	# Combine pulse height distribution and pulse shape to calculate avg charge
@@ -372,12 +710,27 @@ def loadCalibration():
 	gl.rmax_a = maxRate(gl.avg_charge_a) # Maximum rates
 	rateACanvas.itemconfig(rmaxaText, text="{:.0f}".format(gl.rmax_a)) # Show in rate bar
 	gl.calibFile = to_bin(gl.calibLoad); calibFileLabel.config(text=gl.calibFile.split("/")[-1])
+	# Activate Rate Buttons
+	gl.calc_rate = True
+	gl.startstopButton.config(state="normal")
+	singleFileButton.config(state="normal")
+
 
 calibGeneralFrame = Frame(calibFrame, background="#ccf2ff"); calibGeneralFrame.grid(row=1,column=0)
-selectCalibFileButton = Button(calibGeneralFrame, text="Select Calib Binary", command=selectCalibFile, background="#ccf2ff"); selectCalibFileButton.grid(row=0, column=0)
-calibFileLabel = Label(calibGeneralFrame, text="no file selected", background="#ccf2ff"); calibFileLabel.grid(row=0, column=1)
-loadCalibButton = Button(calibGeneralFrame, text="Load calibration", command=loadCalibration, background="#ccf2ff"); loadCalibButton.grid(row=1,column=0)
-loadCalibLabel = Label(calibGeneralFrame, text="no file selected", background="#ccf2ff"); loadCalibLabel.grid(row=1,column=1)
+# Take calib measurement
+def takeCalibMeasurement():
+	qsettings_calibrations()
+	filename = gl.basicpath + "/" + calibNameEntry.get()
+	ma, mb = cc.measurement(filename)
+	calculate_data(ma, mb)
+	qsettings_checkWaveform()
+	gl.calibFile = filename; calibFileLabel.config(text=gl.calibFile.split("/")[-1])
+measureCalibButton = Button(calibGeneralFrame, text="Measure", width=15, bg="#ccf2ff", command=takeCalibMeasurement); measureCalibButton.grid(row=0,column=0)
+calibNameEntry = Entry(calibGeneralFrame, width=15); calibNameEntry.grid(row=0,column=1); calibNameEntry.insert(0,"calib.bin")
+selectCalibFileButton = Button(calibGeneralFrame, text="Select Calib Binary", width=15, command=selectCalibFile, background="#ccf2ff"); selectCalibFileButton.grid(row=1, column=0)
+calibFileLabel = Label(calibGeneralFrame, text="no file selected", background="#ccf2ff"); calibFileLabel.grid(row=1, column=1)
+loadCalibButton = Button(calibGeneralFrame, text="Load calibration", width=15, command=loadCalibration, background="#ccf2ff"); loadCalibButton.grid(row=2,column=0)
+loadCalibLabel = Label(calibGeneralFrame, text="no file selected", background="#ccf2ff"); loadCalibLabel.grid(row=2,column=1)
 
 # Other commands
 def displayWaveform():
@@ -387,8 +740,8 @@ def displayWaveform():
 	if gl.o_nchn == 2:
 		plt.plot(wv_b, label="Channel B", color="red")
 	plt.xlabel("Time bins"); plt.ylabel("ADC"); plt.legend(); plt.title(gl.calibFile); plt.show()
-displayCalibrationButton = Button(calibGeneralFrame, text="Display calib", background="#ccf2ff", command=displayCalibration); displayCalibrationButton.grid(row=2,column=0)
-displayWaveformButton = Button(calibGeneralFrame, text="Display waveform", background="#ccf2ff", command=displayWaveform); displayWaveformButton.grid(row=2, column=1)
+displayCalibrationButton = Button(calibGeneralFrame, text="Display calib", background="#ccf2ff", width=15, command=displayCalibration); displayCalibrationButton.grid(row=3,column=0)
+displayWaveformButton = Button(calibGeneralFrame, text="Display waveform", background="#ccf2ff", width=15, command=displayWaveform); displayWaveformButton.grid(row=3, column=1)
 
 # Calibration parameters
 calibParamFrame = Frame(calibFrame, background="#ccf2ff"); calibParamFrame.grid(row=2,column=0)
@@ -452,16 +805,19 @@ ampBEntry = Entry(abFrame, width=5); ampBEntry.grid(row=1, column=2); ampBEntry.
 desc_Label_mean = Label(abFrame, text="Voltage [mV]"); desc_Label_mean.grid(row=2, column=0)
 desc_Label_curr = Label(abFrame, text="PMT current [µA]"); desc_Label_curr.grid(row=3, column=0)
 desc_Label_rate = Label(abFrame, text="Photon rate [MHz]");	desc_Label_rate.grid(row=4, column=0)
+desc_Label_avgrate = Label(abFrame, text="100-Avg rate");	desc_Label_avgrate.grid(row=5, column=0)
 
-CHa_Label_mean = Label(abFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 10 bold")); CHa_Label_mean.grid(row=2, column=1)
-CHb_Label_mean = Label(abFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 10 bold")); CHb_Label_mean.grid(row=2, column=2)
+CHa_Label_mean = Label(abFrame, text="0.0", fg="orange", bg="black", width=5, font=("Helvetica 10 bold")); CHa_Label_mean.grid(row=2, column=1)
+CHb_Label_mean = Label(abFrame, text="0.0", fg="orange", bg="black", width=5, font=("Helvetica 10 bold")); CHb_Label_mean.grid(row=2, column=2)
 
-CHa_Label_curr = Label(abFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 10 bold")); CHa_Label_curr.grid(row=3, column=1, pady=2)
-CHb_Label_curr = Label(abFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 10 bold")); CHb_Label_curr.grid(row=3, column=2, pady=2)
+CHa_Label_curr = Label(abFrame, text="0.0", fg="orange", bg="black", width=5, font=("Helvetica 10 bold")); CHa_Label_curr.grid(row=3, column=1, pady=2)
+CHb_Label_curr = Label(abFrame, text="0.0", fg="orange", bg="black", width=5, font=("Helvetica 10 bold")); CHb_Label_curr.grid(row=3, column=2, pady=2)
 
-CHa_Label_rate = Label(abFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 12 bold"));	CHa_Label_rate.grid(row=4, column=1, padx=3)
-CHb_Label_rate = Label(abFrame, text="0.0", fg="orange", bg="black", font=("Helvetica 12 bold"));	CHb_Label_rate.grid(row=4, column=2)
+CHa_Label_rate = Label(abFrame, text="0.0", fg="orange", bg="black", width=5, font=("Helvetica 12 bold"));	CHa_Label_rate.grid(row=4, column=1, padx=3)
+CHb_Label_rate = Label(abFrame, text="0.0", fg="orange", bg="black", width=5, font=("Helvetica 12 bold"));	CHb_Label_rate.grid(row=4, column=2)
 
+CHa_Label_avgrate = Label(abFrame, text="0.0", fg="orange", bg="grey", width=5, font=("Helvetica 10 bold")); CHa_Label_avgrate.grid(row=5, column=1, padx=3)
+CHb_Label_avgrate = Label(abFrame, text="0.0", fg="orange", bg="grey", width=5, font=("Helvetica 10 bold")); CHb_Label_avgrate.grid(row=5, column=2)
 
 #################
 ## START FRAME ##
@@ -473,54 +829,173 @@ rates_a = []; rates_b = []
 plotFig = []; rate_a_plot = []; rate_b_plot = []
 wav_a = []; wav_b = []
 
+def calculate_data(mean_a, mean_b):
+	vRange   = gl.o_voltages
+	binRange = gl.o_binning
+	#-- Channel A calculations --#
+	# Waveform mean
+	mean_a = mean_a - gl.off_a
+	# Rates
+	r_a = None; r_b = None
+	if gl.calc_rate == True:
+		r_a = 1e-6 * mean_a/(gl.avg_charge_a*binRange)
+		gl.rates_a.pop(0)
+		gl.rates_a.append(r_a)
+		CHa_Label_rate.config(text="{:.1f}".format(r_a))
+		CHa_Label_avgrate.config(text="{:.0f}".format(np.mean(gl.rates_a)))
+		placeRateLineA(r_a)
+	# mV
+	mean_a_mV = ADC_to_mV(adc=mean_a, range=vRange)
+	CHa_Label_mean.config(text="{:.2f}".format(mean_a_mV))
+	# PMT current
+	curr_a_microamp = 1e3 * mean_a_mV/float(ampAEntry.get())/50
+	if curr_a_microamp > -100:      
+		CHa_Label_curr.config(text="{:.1f}".format(curr_a_microamp), bg="black", fg="orange")
+	else:
+		CHa_Label_curr.config(text="{:.1f}".format(curr_a_microamp), bg="#edd266", fg="red")
 
+	#-- Channel B calculations --#
+	if gl.o_nchn == 2:
+		# Waveform mean	
+		mean_b = mean_b - gl.off_b
+		# Rates
+		if gl.calc_rate == True:
+			r_b = 1e-6 * mean_b/(gl.avg_charge_b*binRange)
+			gl.rates_b.pop(0)
+			gl.rates_b.append(r_b)
+			CHb_Label_rate.config(text="{:.1f}".format(r_b))
+			CHb_Label_avgrate.config(text="{:.0f}".format(np.mean(gl.rates_b)))
+			placeRateLineB(r_b)
+		# mV	
+		mean_b_mV = ADC_to_mV(adc=mean_b, range=vRange)	
+		CHb_Label_mean.config(text="{:.2f}".format(mean_b_mV))
+		# PMT current	
+		curr_b_microamp = 1e3 * mean_b_mV/float(ampBEntry.get())/50
+		if curr_b_microamp > -100:
+			CHb_Label_curr.config(text="{:.1f}".format(curr_b_microamp), bg="black", fg="orange")
+		else:
+			CHb_Label_curr.config(text="{:.1f}".format(curr_b_microamp), bg="#edd266", fg="red")
+
+	if server != None:
+		server.sendRate(r_a, r_b)
+	if server_controller != None:
+		if gl.o_nchn == 1:
+			server_controller.sendRate(r_a)
+		else:
+			server_controller.sendRates(r_a,r_b)
+	update_rate_plot()
+	root.update()
+
+
+def analysis():
+	vRange   = gl.o_voltages
+	binRange = gl.o_binning
+	mean_a_ADC, mean_b_ADC = cc.take_data()
+	#-- Channel A calculations --#
+	# Waveform mean
+	mean_a_ADC = mean_a_ADC - gl.off_a
+	# Rates
+	r_a = 1e-6 * mean_a_ADC/(gl.avg_charge_a*binRange)
+	gl.rates_a.pop(0)
+	gl.rates_a.append(r_a)
+	CHa_Label_rate.config(text="{:.1f}".format(r_a))
+	CHa_Label_avgrate.config(text="{:.0f}".format(np.mean(gl.rates_a)))
+	placeRateLineA(r_a)
+	# mV
+	mean_a_mV = ADC_to_mV(adc=mean_a_ADC, range=vRange)
+	CHa_Label_mean.config(text="{:.2f}".format(mean_a_mV))
+	# PMT current
+	curr_a_microamp = 1e3 * mean_a_mV/float(ampAEntry.get())/50
+	if curr_a_microamp > -100:      
+		CHa_Label_curr.config(text="{:.1f}".format(curr_a_microamp), bg="black", fg="orange")
+	else:
+		CHa_Label_curr.config(text="{:.1f}".format(curr_a_microamp), bg="#edd266", fg="red")
+
+	#-- Channel B calculations --#
+	if gl.o_nchn == 2:
+		# Waveform mean	
+		mean_b_ADC = mean_b_ADC - gl.off_b
+		# Rates	
+		r_b = 1e-6 * mean_b_ADC/(gl.avg_charge_b*binRange)
+		gl.rates_b.pop(0)
+		gl.rates_b.append(r_b)	
+		CHb_Label_rate.config(text="{:.1f}".format(r_b))
+		CHb_Label_avgrate.config(text="{:.0f}".format(np.mean(gl.rates_b)))
+		placeRateLineB(r_b)
+		# mV	
+		mean_b_mV = ADC_to_mV(adc=mean_b_ADC, range=vRange)	
+		CHb_Label_mean.config(text="{:.2f}".format(mean_b_mV))
+		# PMT current	
+		curr_b_microamp = 1e3 * mean_b_mV/float(ampBEntry.get())/50
+		if curr_b_microamp > -100:
+			CHb_Label_curr.config(text="{:.1f}".format(curr_b_microamp), bg="black", fg="orange")
+		else:
+			CHb_Label_curr.config(text="{:.1f}".format(curr_b_microamp), bg="#edd266", fg="red")
+
+	if server != None:
+		server.sendRate(r_a, r_b)
+	if server_controller != None:
+		if gl.o_nchn == 1:
+			server_controller.sendRate(r_a)
+		else:
+			server_controller.sendRates(r_a,r_b)
+	update_rate_plot()
+	root.update()
 def quick_analysis():
 	global stop_thread
-	cc.init()
-	while stop_thread == False:
-		vRange   = gl.o_voltages
-		binRange = gl.o_binning
-		mean_a_ADC, mean_b_ADC = cc.take_data()
-		#-- Channel A calculations --#
-		# Waveform mean
-		mean_a_ADC = mean_a_ADC - gl.off_a
-		# Rates
-		r_a = 1e-6 * mean_a_ADC/(gl.avg_charge_a*binRange)
-		CHa_Label_rate.config(text="{:.1f}".format(r_a))
-		placeRateLineA(r_a)
-		# mV
-		mean_a_mV = ADC_to_mV(adc=mean_a_ADC, range=vRange)
-		CHa_Label_mean.config(text="{:.2f}".format(mean_a_mV))
-		# PMT current
-		curr_a_microamp = 1e3 * mean_a_mV/float(ampAEntry.get())/50
-		if curr_a_microamp > -100:      
-			CHa_Label_curr.config(text="{:.1f}".format(curr_a_microamp), bg="black", fg="orange")
+	if server_controller != None:
+		if gl.o_nchn == 1:
+			server_controller.sendMaxRate(gl.rmax_a)
 		else:
-			CHa_Label_curr.config(text="{:.1f}".format(curr_a_microamp), bg="#edd266", fg="red")
-	
-		#-- Channel B calculations --#
-		if gl.o_nchn == 2:
-			# Waveform mean	
-			mean_b_ADC = mean_b_ADC - gl.off_b
-			# Rates	
-			r_b = 1e-6 * mean_b_ADC/(gl.avg_charge_b*binRange)	
-			CHb_Label_rate.config(text="{:.1f}".format(r_b))
-			placeRateLineB(r_b)
-			# mV	
-			mean_b_mV = ADC_to_mV(adc=mean_b_ADC, range=vRange)	
-			CHb_Label_mean.config(text="{:.2f}".format(mean_b_mV))
-			# PMT current	
-			curr_b_microamp = 1e3 * mean_b_mV/float(ampBEntry.get())/50
-			if curr_b_microamp > -100:
-				CHb_Label_curr.config(text="{:.1f}".format(curr_b_microamp), bg="black", fg="orange")
-			else:
-				CHb_Label_curr.config(text="{:.1f}".format(curr_b_microamp), bg="#edd266", fg="red")
-	
-		if server != None:
-			server.sendRate(r_a, r_b)	
-		root.update()
-		
-	cc.close()
+			server_controller.sendMaxRates(gl.rmax_a, gl.rmax_b)
+	while stop_thread == False:
+		analysis()
+def single_analysis():
+	if server_controller != None:
+		if gl.o_nchn == 1:
+			server_controller.sendMaxRate(gl.rmax_a)
+		else:
+			server_controller.sendMaxRates(gl.rmax_a, gl.rmax_b)
+	analysis()
+
+def analysis_no_rate():
+	vRange   = gl.o_voltages
+	binRange = gl.o_binning
+	mean_a_ADC, mean_b_ADC = cc.take_data()
+	#-- Channel A calculations --#
+	# Waveform mean
+	mean_a_ADC = mean_a_ADC - gl.off_a
+	# mV
+	mean_a_mV = ADC_to_mV(adc=mean_a_ADC, range=vRange)
+	CHa_Label_mean.config(text="{:.2f}".format(mean_a_mV))
+	# PMT current
+	curr_a_microamp = 1e3 * mean_a_mV/float(ampAEntry.get())/50
+	if curr_a_microamp > -100:      
+		CHa_Label_curr.config(text="{:.1f}".format(curr_a_microamp), bg="black", fg="orange")
+	else:
+		CHa_Label_curr.config(text="{:.1f}".format(curr_a_microamp), bg="#edd266", fg="red")
+
+	#-- Channel B calculations --#
+	if gl.o_nchn == 2:
+		# Waveform mean	
+		mean_b_ADC = mean_b_ADC - gl.off_b
+		# mV	
+		mean_b_mV = ADC_to_mV(adc=mean_b_ADC, range=vRange)	
+		CHb_Label_mean.config(text="{:.2f}".format(mean_b_mV))
+		# PMT current	
+		curr_b_microamp = 1e3 * mean_b_mV/float(ampBEntry.get())/50
+		if curr_b_microamp > -100:
+			CHb_Label_curr.config(text="{:.1f}".format(curr_b_microamp), bg="black", fg="orange")
+		else:
+			CHb_Label_curr.config(text="{:.1f}".format(curr_b_microamp), bg="#edd266", fg="red")
+	root.update()
+def quick_analysis_no_rate():
+	global stop_thread
+	while stop_thread == False:
+		analysis_no_rate()		
+def single_analysis_no_rate():
+	analysis_no_rate()
+
 
 def analyze_file(newest_file):
 	global stop_thread, plotting, rates_a, rates_b, wav_a, wav_b
@@ -586,6 +1061,11 @@ def analyze_file(newest_file):
 
 	if server != None:
 		server.sendRate(r_a, r_b)
+	if server_controller != None:
+			if gl.o_nchn == 1:
+				server_controller.sendRate(r_a)
+			else:
+				server_controller.sendRates(r_a,r_b)
 	
 	
 	root.update()
@@ -614,8 +1094,14 @@ def analyze_files():
 	global stop_thread, plotting, rates_a, rates_b, wav_a, wav_b
 	if gl.o_nchn == 1:
 		CHb_Label_rate.config(text="-.-")
+		CHb_Label_avgrate.config(text="-.-")
 		CHb_Label_mean.config(text="-.-")
 		CHb_Label_curr.config(text="-.-")
+	if server_controller != None:
+		if gl.o_nchn == 1:
+			server_controller.sendMaxRate(gl.rmax_a)
+		else:
+			server_controller.sendMaxRates(gl.rmax_a, gl.rmax_b)
 
 	while(stop_thread == False):
 		gl.statusLabel.config(text="Scanning files for Rates..." ); root.update()
@@ -629,17 +1115,24 @@ def startstop():
 	global running, stop_thread
 	if running == False:
 		running = True
+		gl.act_start_file = True
+		if server_controller != None:
+			server_controller.sendActionInformation()
 
-		startstopButton.config(text="Stop!", bg="#fa857a")
+		gl.startstopButton.config(text="Stop!", bg="#fa857a")
 		stop_thread = False; gl.stop_wait_for_file_thread = False
 		gl.statusLabel.config(text="Scanning files for Rates..." , bg="#edda45"); root.update()
 		the_thread = Thread(target=analyze_files, args=())
 		the_thread.start()		
 	else:
 		running = False
+		gl.act_start_file = False
+		if server_controller != None:
+			server_controller.sendActionInformation()
+
 		stop_thread = True
 		gl.stop_wait_for_file_thread = True
-		startstopButton.config(text="Start!", bg="#e8fcae")
+		gl.startstopButton.config(text="Start!", bg="#e8fcae")
 		idle()
 
 running_quick = False
@@ -647,16 +1140,25 @@ def startstop_quick():
 	global running_quick, stop_thread
 	if running_quick == False:
 		running_quick = True
+		gl.act_start_quick = True
+		if server_controller != None:
+			server_controller.sendActionInformation()
 
-		quickRatesButton.config(text="Stop quick", bg="#fa857a")
+		gl.quickRatesButton.config(text="Stop quick", bg="#fa857a")
 		stop_thread = False
 		gl.statusLabel.config(text="Quick Rate Mode" , bg="#edda45"); root.update()
-		the_thread = Thread(target=quick_analysis, args=())
-		the_thread.start()		
+		if gl.calc_rate == True:
+			the_thread = Thread(target=quick_analysis, args=())
+		else:
+			the_thread = Thread(target=quick_analysis_no_rate, args=())
+		the_thread.start()
 	else:
 		running_quick = False
+		gl.act_start_quick = False
+		if server_controller != None:
+			server_controller.sendActionInformation()
 		stop_thread = True
-		quickRatesButton.config(text="Start quick", bg="#e8fcae")
+		gl.quickRatesButton.config(text="Start quick", bg="#e8fcae")
 		idle()
 
 
@@ -686,13 +1188,14 @@ def singleFileRate():
 	global stop_thread, running
 	if gl.o_nchn == 1:
 		CHb_Label_rate.config(text="-.-")
+		CHb_Label_avgrate.config(text="-.-")
 		CHb_Label_mean.config(text="-.-")
 		CHb_Label_curr.config(text="-.-")
 	if running == True:
 		running = False
 		stop_thread = True
 		gl.stop_wait_for_file_thread = True
-		startstopButton.config(text="Start!", bg="#e8fcae")
+		gl.startstopButton.config(text="Start!", bg="#e8fcae")
 	idle()
 	root.filename = filedialog.askopenfilename(initialdir = gl.basicpath, title = "Select file for rate", filetypes = (("binary files","*.bin"),("all files","*.*")))
 	analyze_file(root.filename)
@@ -746,24 +1249,21 @@ def startStopServerController():
 clearPlotButon = Button(startFrame, text="Clear", bg="#ccf2ff", command=clearPlot, width=12); clearPlotButon.grid(row=0,column=0)
 plotButton = Button(startFrame, text="Plotting off", bg="#cdcfd1", command=switchplot, width=12); plotButton.grid(row=0,column=1)
 
-startstopButton = Button(startFrame, text="Start!", bg="#e8fcae", command=startstop, width=12); startstopButton.grid(row=1,column=0)
-singleFileButton = Button(startFrame, text="Single", bg = "#e8fcae", command=singleFileRate, width=12); singleFileButton.grid(row=1, column=1)
+gl.startstopButton = Button(startFrame, text="Start!", bg="#e8fcae", command=startstop, width=12, state="disabled"); gl.startstopButton.grid(row=1,column=0)
+singleFileButton = Button(startFrame, text="Single", bg = "#e8fcae", command=singleFileRate, width=12, state="disabled"); singleFileButton.grid(row=1, column=1)
 
-quickRatesButton = Button(startFrame, text="Start quick", bg="#e8fcae", width=12, command=startstop_quick); quickRatesButton.grid(row=2, column=0)
-# Samples for quick measurement
-samples_quick = StringVar(root); samples_quick.set("256 kS")
-sample_quick_options = {
-	"4 kS": 4096, "8 kS": 8192, "16 kS": 16384, "32 kS": 32768, "64 kS": 65536,
-	"128 kS": 131072, "256 kS": 262144, "512 kS": 524288, "1 MS": 1048576
-}
-def new_samples_quick(val):
-	gl.o_samples_quick = int((sample_quick_options[samples_quick.get()]))
-samples_quick_Dropdown = OptionMenu(startFrame, samples_quick, *sample_quick_options, command=new_samples_quick)
-samples_quick_Dropdown.grid(row=2, column=1)
+quickFrame = Frame(rootMainFrame); quickFrame.grid(row=6,column=0)
+gl.quickRatesButton = Button(quickFrame, text="Loop quick", bg="#e8fcae", width=9, command=startstop_quick); gl.quickRatesButton.grid(row=0, column=0)
+def single():
+	if gl.calc_rate == True:
+		single_analysis()
+	else:
+		single_analysis_no_rate()
+gl.singleRatesButton = Button(quickFrame, text="Single", width=5, command=single); gl.singleRatesButton.grid(row=0,column=1)
 ##################
 ## Server Stuff ##
 ##################
-socketFrame = Frame(rootMainFrame, bg="#f7df72"); socketFrame.grid(row=6,column=0)
+socketFrame = Frame(rootMainFrame, bg="#f7df72"); socketFrame.grid(row=7,column=0)
 socketHeaderLabel = Label(socketFrame, text="Network", font=("Helvetica 12 bold"), bg="#f7df72"); socketHeaderLabel.grid(row=0,column=0)
 gl.motorServerButton  = Button(socketFrame, text="Start Server (Motor)",      bg="#cdcfd1", command=startStopServerMotor,      width=20); gl.motorServerButton.grid(row=1,column=0)
 gl.controllerServerButton = Button(socketFrame, text="Start Server (Controller)", bg="#cdcfd1", command=startStopServerController, width=20); gl.controllerServerButton.grid(row=2,column=0)
@@ -771,14 +1271,12 @@ gl.controllerServerButton = Button(socketFrame, text="Start Server (Controller)"
 #############################
 ## STATUS FRAME AND BUTTON ##
 #############################
-statusFrame = Frame (rootMainFrame); statusFrame.grid(row=7, column=0)
+statusFrame = Frame (rootMainFrame); statusFrame.grid(row=8, column=0)
 gl.statusLabel = Label(statusFrame, text="Starting ...", font=("Helvetica 12 bold"), bg="#ffffff"); gl.statusLabel.grid(row=0, column=0)
 def idle():
 	gl.statusLabel.config(text="Idle", bg="#ffffff"); root.update()
 
-
-
-selectDirectory()
+cc.init()
 idle()
 
 root.mainloop()

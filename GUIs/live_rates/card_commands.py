@@ -50,7 +50,7 @@ if lFncType.value == SPCM_TYPE_AI:
     sys.stdout.write("Found: {0} sn {1:05d}\n".format(sCardName,lSerialNumber.value))
 else:
     sys.stdout.write("This is an example for A/D cards.\nCard: {0} sn {1:05d} not supported by example\n".format(sCardName,lSerialNumber.value))
-    exit ()
+    #exit ()
 
 def init():
     global hCard, pvBuffer, qwContBufLen, lNotifySize, qwBufferSize, dataSize

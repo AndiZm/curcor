@@ -32,7 +32,7 @@ pvBuffer = c_void_p ()
 qwContBufLen = uint64 (0)
 
 # open card
-hCard = spcm_hOpen (create_string_buffer (b'/dev/spcm1'))
+hCard = spcm_hOpen (create_string_buffer (b'/dev/spcm0'))
 if hCard == None:
     sys.stdout.write("no card found...\n")
     exit ()
@@ -50,16 +50,16 @@ if lFncType.value == SPCM_TYPE_AI:
     sys.stdout.write("Found: {0} sn {1:05d}\n".format(sCardName,lSerialNumber.value))
 else:
     sys.stdout.write("This is an example for A/D cards.\nCard: {0} sn {1:05d} not supported by example\n".format(sCardName,lSerialNumber.value))
-    #exit ()
+    exit ()
 
 def init():
     global hCard, pvBuffer, qwContBufLen, lNotifySize, qwBufferSize, dataSize
 
-    dataSize = gl.o_samples2
+    dataSize = gl.o_samples 
     qwBufferSize = uint64 (dataSize * 2 * 1); # in bytes. Enough memory for 16384 samples with 2 bytes each, only one channel active    
 
     # Number of enabled channels:
-    if gl.o_nchn2 == 1:
+    if gl.o_nchn == 1:
         spcm_dwSetParam_i32 (hCard, SPC_CHENABLE,       1)                  # just 1 channel enabled
     else:
         spcm_dwSetParam_i32 (hCard, SPC_CHENABLE,       3)                  # Both channels enabled
@@ -124,30 +124,30 @@ def set_sampling(x):
     if x == 6.4e-9:
         spcm_dwSetParam_i64 (hCard, SPC_SAMPLERATE, KILO(156250))
 def set_clockmode():
-    if gl.clockmode2.get() == 1:
+    if gl.clockmode.get() == 1:
         spcm_dwSetParam_i32 (hCard, SPC_CLOCKMODE, SPC_CM_INTPLL)
-    if gl.clockmode2.get() == 2:
+    if gl.clockmode.get() == 2:
         spcm_dwSetParam_i32 (hCard, SPC_CLOCKMODE, SPC_CM_EXTREFCLOCK)
         spcm_dwSetParam_i32 (hCard, SPC_REFERENCECLOCK, 10000000)
 def set_triggermode():
-    if gl.trigger2 == True:
+    if gl.trigger == True:
         spcm_dwSetParam_i32 (hCard, SPC_TRIG_ORMASK,    SPC_TMASK_EXT0)         # trigger set to extern
         spcm_dwSetParam_i32 (hCard, SPC_TRIG_TERM,      1)                      # 50 Ohm termination active
         spcm_dwSetParam_i32 (hCard, SPC_TRIG_EXT0_ACDC, 0)                      # DC coupling
         spcm_dwSetParam_i32 (hCard, SPC_TRIG_EXT0_LEVEL0, 700)                  # Trigger level 700 mV
         spcm_dwSetParam_i32 (hCard, SPC_TRIG_EXT0_MODE, SPC_TM_POS)             # Trigger set on positive edge
         spcm_dwSetParam_i32 (hCard, SPC_TRIG_ANDMASK,   0) 
-    if gl.trigger2 == False:
+    if gl.trigger == False:
         spcm_dwSetParam_i32 (hCard, SPC_TRIG_ORMASK,    SPC_TMASK_SOFTWARE)     # trigger set to software
         spcm_dwSetParam_i32 (hCard, SPC_TRIG_ANDMASK,   0)                      # ...
 
 def init_display():
     global qwBufferSize, lNotifySize, pvBuffer, qwContBufLen, hCard, lBitsPerSample, lNumSamples
     # settings for the FIFO mode buffer handling
-    dataSize = gl.o_samples2
+    dataSize = gl.o_samples 
     qwBufferSize = uint64 (dataSize * 2 * 1); # in bytes. Enough memory for 16384 samples with 2 bytes each, only one channel active
     # Number of enabled channels:
-    if gl.o_nchn2 == 1:
+    if gl.o_nchn == 1:
         spcm_dwSetParam_i32 (hCard, SPC_CHENABLE,       1)                  # just 1 channel enabled
     else:
         spcm_dwSetParam_i32 (hCard, SPC_CHENABLE,       3)                  # Both channels enabled
@@ -184,7 +184,6 @@ def take_data():
         if dwError != ERR_OK:
             if dwError == ERR_TIMEOUT:
                 sys.stdout.write ("... Timeout\n")
-                spcm_vClose (hCard); exit ()
             else:
                 sys.stdout.write ("... Error: {0:d}\n".format(dwError))
     # ... now create array of data
@@ -196,18 +195,18 @@ def take_data():
             #    data.append(int(pbyData[i]))
             data = np.ctypeslib.as_array(pbyData, shape=(dataSize, 1)) 
 
-            if gl.o_nchn2 == 2:
+            if gl.o_nchn == 2:
                 data = np.array(data)
                 data = data.reshape(int((dataSize)/2), 2)
                 a_np = np.array(data[:,0]); b_np = np.array(data[:,1])
                 mean_a = np.mean(a_np)
                 mean_b = np.mean(b_np)
-                gl.update_waveform2(a_np[0:1000],b_np[0:1000])
+                gl.update_waveform(a_np[0:1000],b_np[0:1000])
             else:
                 data = np.array(data)
                 mean_a = np.mean(data)
                 mean_b = 0 
-                gl.update_waveform2(data[0:1000],[])                
+                gl.update_waveform(data[0:1000],[])                
             return mean_a, mean_b
     
 
@@ -229,12 +228,11 @@ def init_storage():
 def measurement(filename):
     spcm_dwDefTransfer_i64 (hCard, SPCM_BUF_DATA, SPCM_DIR_CARDTOPC, lNotifySize, pvBuffer, uint64 (0), qwBufferSize)
     qwTotalMem = uint64 (0)
-    qwToTransfer = uint64 (gl.o_nchn2 * gl.o_samples2)
+    qwToTransfer = uint64 (gl.o_nchn * gl.o_samples)
 
     newFile = open(filename,"ab")
     t1 = time.time()
     dwError = spcm_dwSetParam_i32 (hCard, SPC_M2CMD, M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER | M2CMD_DATA_STARTDMA)
-    
     # check for error
     if dwError != 0: # != ERR_OK
         spcm_dwGetErrorInfo_i32 (hCard, None, None, szErrorTextBuffer)
@@ -259,6 +257,7 @@ def measurement(filename):
                 # Wait until the new available Data exceeds the defined chunk size
                 spcm_dwGetParam_i32 (hCard, SPC_DATA_AVAIL_USER_LEN, byref (lAvailUser))
                 spcm_dwGetParam_i32 (hCard, SPC_DATA_AVAIL_USER_POS, byref (lPCPos))
+
                 #poss.append(lPCPos.value)
                 if lAvailUser.value >= lNotifySize.value:
                     qwTotalMem.value += lNotifySize.value
@@ -270,26 +269,24 @@ def measurement(filename):
                     newFile.write(np_data)
 
                     spcm_dwSetParam_i32 (hCard, SPC_DATA_AVAIL_CARD_LEN,  lNotifySize)
-
     # send the stop command
     dwError = spcm_dwSetParam_i32 (hCard, SPC_M2CMD, M2CMD_CARD_STOP | M2CMD_DATA_STOPDMA)
-    
+
     t2 = time.time()
     newFile.close()
-    #sys.stdout.write("{1:05d} - Finished in {:.2f} seconds".format(lSerialNumber.value, t2-t1))
     print("sn {} - Finished in {:.2f} seconds".format(lSerialNumber.value, t2-t1))
 
     # The last part of the data will be used for plotting and rate calculations
     data = np.array(np_data)
-    if gl.o_nchn2 == 2:
+    if gl.o_nchn == 2:
         data = data.reshape(int((lNotifySize.value)/2), 2)
         a_np = np.array(data[:,0]); b_np = np.array(data[:,1])
         mean_a = np.mean(a_np); mean_b = np.mean(b_np)
-        gl.update_waveform2(a_np[0:1000],b_np[0:1000])
+        gl.update_waveform(a_np[0:1000],b_np[0:1000])
     else:
         data = data.reshape(lNotifySize.value,1)
         mean_a = np.mean(data); mean_b = 0 
-        gl.update_waveform2(data[0:1000],[])
+        gl.update_waveform(data[0:1000],[])
     return mean_a, mean_b
 
 # clean up

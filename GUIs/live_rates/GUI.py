@@ -93,18 +93,18 @@ pbuttonFrame = Frame(leftFrame); pbuttonFrame.grid(row=1,column=0)
 copypaths = []
 def create_project(name,window):
 	global copypaths
-	if not os.path.exists("D:/"+name):
-		os.mkdir("D:/"+name)
-	if not os.path.exists("E:/"+name):
-		os.mkdir("E:/"+name)
-	copypaths = ["D:/"+name,"E:/"+name]
+	if not os.path.exists("G:/"+name):
+		os.mkdir("G:/"+name)
+	if not os.path.exists("H:/"+name):
+		os.mkdir("H:/"+name)
+	copypaths = ["G:/"+name,"H:/"+name]
 	gl.projectName = name
 	try:
 		if not os.path.exists("Z:/"+name):
 			os.mkdir("Z:/"+name)
 	except:
 		print ("Workstation not accessible")
-	gl.basicpath = "D:/"+name
+	gl.basicpath = "G:/"+name
 	if not os.path.exists(gl.basicpath+"/calibs"):
 		os.mkdir(gl.basicpath+"/calibs")
 	gl.calibpath = gl.basicpath+"/calibs"
@@ -112,7 +112,7 @@ def create_project(name,window):
 		window.destroy()
 	projectShowLabel.config(text=name)
 def open_project():
-	root.directoryname = filedialog.askdirectory(initialdir = "D:/", title = "Select any project directory")
+	root.directoryname = filedialog.askdirectory(initialdir = "G:/", title = "Select any project directory")
 	gl.basicpath = root.directoryname; gl.calibpath = gl.basicpath+"/calibs"
 	name = gl.basicpath.split("/")[-1]
 	projectShowLabel.config(text=name)
