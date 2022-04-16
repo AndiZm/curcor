@@ -13,6 +13,8 @@ class CONTROLLER():
     bussy=False
     batch=False
     
+    motor=None
+    
     dist_max_mirr_cam=439 #mm maximum distance between the "left" edge of the mirror sled and the cam sled 
     dist_min_mirr_cam=308.5 #mm minumum distance that has to be kept between the mirror sled and the cam sled
     offset_camera_x=0 # is replaced with value from config during init 
@@ -33,7 +35,12 @@ class CONTROLLER():
     mirror_height_shift_turns=mirror_height_total_turns-mirror_height_upper_limit_turns
 
     def __init__(self):
-        self.a, self.serial_port=sd.init()  #stepper_drive
+    
+    	##############################
+    	#  initalize the motorboard  #
+    	##############################
+    	
+        port, self.serial_port=sd.init()  #stepper_drive
         ms.init()
         ms.motor_on()
         self.motoron = True
@@ -41,28 +48,38 @@ class CONTROLLER():
         #initalize maximum positioning speed of the motors
         self.velocities = []
         for i in range (0,6):
-            self.velocities.append(self.a[i].axis.max_positioning_speed)
+            self.velocities.append(self.motor[i].axis.max_positioning_speed)
         #initalize maximum acceleration
         self.acceleration = []
         for i in range (0,6):
-            self.acceleration.append(self.a[i].get_axis_parameter(5))
+            self.acceleration.append(self.motor[i].get_axis_parameter(5))
         #initalize current  
         self.current = [] 
         for i in range (0, 6):
-            self.current.append(self.n_to_i(self.a[i].get_axis_parameter(6)))
+            self.current.append(self.n_to_i(self.motor[i].get_axis_parameter(6)))
             
         #Umrechnung zwischen motor parametern und python
         self.microsteps_nano = 32
         self.microsteps_standa = 16
         self.offset_standa = 512000
         
-        self.halogen = psupp.powerSupply()
-        #self.halogen.connect()
+        ###############################
+        #  initalize the halogen box  #
+        ###############################        
         
-        #check if config file exists and load it, otherwise standard parameters are kept
+        self.halogen = psupp.powerSupply()
+        
+        ###########################
+        #  load config from file  #
+        ###########################
+        
+        #check if config file exists and load it, otherwise programm exits!
+        
+        #get number of the motor pc
         motor_pc_no = None
         this_config = configparser.ConfigParser()
         this_config.read('../../../this_pc.conf')
+       
         if "who_am_i" in this_config:
             if this_config["who_am_i"]["type"]!="motor_pc":
                 print("According to the 'this_pc.config'-file this pc is not meant as a motor pc! Please fix that!")
@@ -72,17 +89,31 @@ class CONTROLLER():
         else:
             print("There is no config file on this computer which specifies the computer function! Please fix that!")
             exit()
+      
+      	#get all nessecairy parameters from the global.conf
         global_config = configparser.ConfigParser()
         global_config.read('../global.conf')
+       
         if "motor_pc_{}".format(motor_pc_no) in global_config:
             if motor_pc_no==1 or motor_pc_no==2:
+            	#set gear ratio
                 self.gear_ratio_mirror_height=float(global_config["motor_pc_{}".format(motor_pc_no)]["gear_ratio"])
+                #set cam x offset
                 self.offset_camera_x=float(global_config["motor_pc_{}".format(motor_pc_no)]["offset_camera_x"])
+                #map the ports of the board to the correct motors
+                motort0=int(global_config["motor_pc_{}".format(motor_pc_no)]["motor0_port"])
+                motor1=int(global_config["motor_pc_{}".format(motor_pc_no)]["motor1_port"])
+                motor2=int(global_config["motor_pc_{}".format(motor_pc_no)]["motor2_port"])
+                motor3=int(global_config["motor_pc_{}".format(motor_pc_no)]["motor3_port"])
+                motor4=int(global_config["motor_pc_{}".format(motor_pc_no)]["motor4_port"])
+                motor5=int(global_config["motor_pc_{}".format(motor_pc_no)]["motor5_port"])
+                order=[motor0, motor1, motor3, motor4, motor5]
+                self.motor=[port[i] for i in order]
             else:
                 print("Error in the 'this_pc.config'-file. The number of the Motor PC is neither 1 nor 2. Please correct!")
                 exit()
         else:
-            print("Error in the 'this_pc.config'-file. Section the Motor PC is missing!")
+            print("Error in the 'this_pc.config'-file. Section for this Motor PC is missing!")
             exit()
         print("Initalized controller with gear ratio {}".format(self.gear_ratio_mirror_height))
         
@@ -175,7 +206,7 @@ class CONTROLLER():
     
     #red stop button
     def stop_all(self):
-        for motor in self.a:
+        for motor in self.motor:
             motor.stop()
         print("Stop all motors!")
         
@@ -203,17 +234,17 @@ class CONTROLLER():
         
         
     def refsearch_camera_z(self):
-        self.a[0].reference_search(0)
+        self.motor[0].reference_search(0)
     def refsearch_camera_x(self):
-        self.a[1].reference_search(0)
+        self.motor[1].reference_search(0)
     def refsearch_mirror_z(self):
-        self.a[2].reference_search(0)
+        self.motor[2].reference_search(0)
     def refsearch_mirror_height(self):
-        self.a[3].reference_search(0)
+        self.motor[3].reference_search(0)
     def refsearch_mirror_psi(self):
-        self.a[4].reference_search(0)
+        self.motor[4].reference_search(0)
     def refsearch_mirror_phi(self):
-        self.a[5].reference_search(0)
+        self.motor[5].reference_search(0)
     def refsearch_all(self):
         self.refsearch_mirror_height()
         self.refsearch_mirror_z()
@@ -224,27 +255,27 @@ class CONTROLLER():
             
     def set_max_current_camera_z(self, value, verbose=False):
         self.current[0]=value
-        self.a[0].set_axis_parameter(6,self.i_to_n(self.current[0]))
+        self.motor[0].set_axis_parameter(6,self.i_to_n(self.current[0]))
         if verbose==False: print ("Set Camera Z current limit to {}".format(self.current[0]))
     def set_max_current_camera_x(self, value, verbose=False):
         self.current[1]=value
-        self.a[1].set_axis_parameter(6,self.i_to_n(self.current[1]))
+        self.motor[1].set_axis_parameter(6,self.i_to_n(self.current[1]))
         if verbose==False: print ("Set Camera X current limit to {}".format(self.current[1]))
     def set_max_current_mirror_z(self, value, verbose=False):
         self.current[2]=value
-        self.a[2].set_axis_parameter(6,self.i_to_n(self.current[2]))
+        self.motor[2].set_axis_parameter(6,self.i_to_n(self.current[2]))
         if verbose==False: print ("Set Mirror Z current limit to {}".format(self.current[2]))
     def set_max_current_mirror_height(self, value, verbose=False):
         self.current[3]=value
-        self.a[3].set_axis_parameter(6,self.i_to_n(self.current[3]))
+        self.motor[3].set_axis_parameter(6,self.i_to_n(self.current[3]))
         if verbose==False: print ("Set Mirror Height current limit to {}".format(self.current[3]))
     def set_max_current_mirror_psi(self, value, verbose=False):
         self.current[4]=value
-        self.a[4].set_axis_parameter(6,self.i_to_n(self.current[4]))
+        self.motor[4].set_axis_parameter(6,self.i_to_n(self.current[4]))
         if verbose==False: print ("Set Mirror Psi current limit to {}".format(self.current[4]))
     def set_max_current_mirror_phi(self, value, verbose=False):
         self.current[5]=value
-        self.a[5].set_axis_parameter(6,self.i_to_n(self.current[5]))
+        self.motor[5].set_axis_parameter(6,self.i_to_n(self.current[5]))
         if verbose==False: print ("Set Mirror Phi current limit to {}".format(self.current[5]))
         
     def get_max_current_camera_z(self):
@@ -261,41 +292,41 @@ class CONTROLLER():
         return self.current[5]
     
     def get_camera_z_moving(self):
-        return sd.ismoving(self.a[0])
+        return sd.ismoving(self.motor[0])
     def get_camera_x_moving(self):
-        return sd.ismoving(self.a[1])
+        return sd.ismoving(self.motor[1])
     def get_mirror_z_moving(self):
-        return sd.ismoving(self.a[2])
+        return sd.ismoving(self.motor[2])
     def get_mirror_height_moving(self):
-        return sd.ismoving(self.a[3])
+        return sd.ismoving(self.motor[3])
     def get_mirror_psi_moving(self):
-        return sd.ismoving(self.a[4])
+        return sd.ismoving(self.motor[4])
     def get_mirror_phi_moving(self):
-        return sd.ismoving(self.a[5])
+        return sd.ismoving(self.motor[5])
 
     def set_max_acceleration_camera_z(self, value, verbose=False):
         self.acceleration[0]=value
-        self.a[0].set_axis_parameter(5,self.acceleration[0])
+        self.motor[0].set_axis_parameter(5,self.acceleration[0])
         if verbose==False: print ("Set Camera Z acceleration limit to {}".format(self.acceleration[0]))
     def set_max_acceleration_camera_x(self, value, verbose=False):
         self.acceleration[1]=value
-        self.a[1].set_axis_parameter(5,self.acceleration[1])
+        self.motor[1].set_axis_parameter(5,self.acceleration[1])
         if verbose==False: print ("Set Camera X acceleration limit to {}".format(self.acceleration[1]))
     def set_max_acceleration_mirror_z(self, value, verbose=False):
         self.acceleration[2]=value
-        self.a[2].set_axis_parameter(5,self.acceleration[2])
+        self.motor[2].set_axis_parameter(5,self.acceleration[2])
         if verbose==False: print ("Set Mirror Z acceleration limit to {}".format(self.acceleration[2]))
     def set_max_acceleration_mirror_height(self, value, verbose=False):
         self.acceleration[3]=value
-        self.a[3].set_axis_parameter(5,self.acceleration[3])
+        self.motor[3].set_axis_parameter(5,self.acceleration[3])
         if verbose==False: print ("Set Mirror Height acceleration limit to {}".format(self.acceleration[3]))
     def set_max_acceleration_mirror_psi(self, value, verbose=False):
         self.acceleration[4]=value
-        self.a[4].set_axis_parameter(5,self.acceleration[4])
+        self.motor[4].set_axis_parameter(5,self.acceleration[4])
         if verbose==False: print ("Set Mirror Psi acceleration limit to {}".format(self.acceleration[4]))
     def set_max_acceleration_mirror_phi(self, value, verbose=False):
         self.acceleration[5]=value
-        self.a[5].set_axis_parameter(5,self.acceleration[5])
+        self.motor[5].set_axis_parameter(5,self.acceleration[5])
         if verbose==False: print ("Set Mirror Phi acceleration limit to {}".format(self.acceleration[5]))
         
     def get_max_acc_camera_z(self):
@@ -313,28 +344,28 @@ class CONTROLLER():
                 
     def set_max_speed_camera_z(self, value, verbose=False):
         self.velocities[0]=value
-        self.a[0].axis.max_positioning_speed = self.velocities[0]
-        if verbose==False: print ("Set Camera Z speed limit to {}".format(self.a[0].axis.max_positioning_speed))
+        self.motor[0].axis.max_positioning_speed = self.velocities[0]
+        if verbose==False: print ("Set Camera Z speed limit to {}".format(self.motor[0].axis.max_positioning_speed))
     def set_max_speed_camera_x(self, value, verbose=False):
         self.velocities[1]=value
-        self.a[1].axis.max_positioning_speed = self.velocities[1]
-        if verbose==False: print ("Set Camera X speed limit to {}".format(self.a[1].axis.max_positioning_speed))
+        self.motor[1].axis.max_positioning_speed = self.velocities[1]
+        if verbose==False: print ("Set Camera X speed limit to {}".format(self.motor[1].axis.max_positioning_speed))
     def set_max_speed_mirror_z(self, value, verbose=False):
         self.velocities[2]=value
-        self.a[2].axis.max_positioning_speed = self.velocities[2]
-        if verbose==False: print ("Set Mirror Z speed limit to {}".format(self.a[2].axis.max_positioning_speed))
+        self.motor[2].axis.max_positioning_speed = self.velocities[2]
+        if verbose==False: print ("Set Mirror Z speed limit to {}".format(self.motor[2].axis.max_positioning_speed))
     def set_max_speed_mirror_height(self, value, verbose=False):
         self.velocities[3]=value
-        self.a[3].axis.max_positioning_speed = self.velocities[3]
-        if verbose==False: print ("Set Mirror Height speed limit to {}".format(self.a[3].axis.max_positioning_speed))
+        self.motor[3].axis.max_positioning_speed = self.velocities[3]
+        if verbose==False: print ("Set Mirror Height speed limit to {}".format(self.motor[3].axis.max_positioning_speed))
     def set_max_speed_mirror_psi(self, value, verbose=False):
         self.velocities[4]=value
-        self.a[4].axis.max_positioning_speed = self.velocities[4]
-        if verbose==False: print ("Set Mirror Psi speed limit to {}".format(self.a[4].axis.max_positioning_speed))
+        self.motor[4].axis.max_positioning_speed = self.velocities[4]
+        if verbose==False: print ("Set Mirror Psi speed limit to {}".format(self.motor[4].axis.max_positioning_speed))
     def set_max_speed_mirror_phi(self, value, verbose=False):
         self.velocities[5]=value
-        self.a[5].axis.max_positioning_speed = self.velocities[5]
-        if verbose==False: print ("Set Mirror Phi speed limit to {}".format(self.a[5].axis.max_positioning_speed))
+        self.motor[5].axis.max_positioning_speed = self.velocities[5]
+        if verbose==False: print ("Set Mirror Phi speed limit to {}".format(self.motor[5].axis.max_positioning_speed))
         
     def get_max_speed_camera_z(self):
         return self.velocities[0]
@@ -362,35 +393,35 @@ class CONTROLLER():
     
     def set_position_camera_z(self, position, verbose=False):
         if verbose==False: print("Move camera z to {0:4.2f}".format(position))
-        self.a[0].move_absolute(self.mm_absolute_to_steps_camera_z(position))
+        self.motor[0].move_absolute(self.mm_absolute_to_steps_camera_z(position))
     def set_position_camera_x(self, position, verbose=False):
         if verbose==False: print("Move camera x to {0:4.2f}".format(position))
-        self.a[1].move_absolute(self.mm_absolute_to_steps_camera_x(position))  
+        self.motor[1].move_absolute(self.mm_absolute_to_steps_camera_x(position))  
     def set_position_mirror_z(self, position, verbose=False):
         if verbose==False: print("Move mirror z to {0:4.2f}".format(position))
-        self.a[2].move_absolute(self.mm_absolute_to_steps_mirror_z(position))  
+        self.motor[2].move_absolute(self.mm_absolute_to_steps_mirror_z(position))  
     def set_position_mirror_height(self, position, verbose=False):
         if verbose==False: print("Move mirror height to {0:4.2f}".format(position))
-        self.a[3].move_absolute(self.mm_absolute_to_steps_mirror_height(position))  
+        self.motor[3].move_absolute(self.mm_absolute_to_steps_mirror_height(position))  
     def set_position_mirror_psi(self, position, verbose=False):
         if verbose==False: print("Move mirror psi to {0:4.2f}".format(position))
-        self.a[4].move_absolute(self.degree_to_steps(position))
+        self.motor[4].move_absolute(self.degree_to_steps(position))
     def set_position_mirror_phi(self, position, verbose=False):
         if verbose==False: print("Move mirror phi to {0:4.2f}".format(position))
-        self.a[5].move_absolute(self.degree_to_steps(position))
+        self.motor[5].move_absolute(self.degree_to_steps(position))
         
     def get_position_camera_z(self):
-        return self.steps_to_mm_absolute_camera_z(sd.position(self.a[0]))
+        return self.steps_to_mm_absolute_camera_z(sd.position(self.motor[0]))
     def get_position_camera_x(self):
-        return self.steps_to_mm_absolute_camera_x(sd.position(self.a[1]))
+        return self.steps_to_mm_absolute_camera_x(sd.position(self.motor[1]))
     def get_position_mirror_z(self):
-        return self.steps_to_mm_absolute_mirror_z(sd.position(self.a[2]))
+        return self.steps_to_mm_absolute_mirror_z(sd.position(self.motor[2]))
     def get_position_mirror_height(self):
-        return self.steps_to_mm_absolute_mirror_height(sd.position(self.a[3]))
+        return self.steps_to_mm_absolute_mirror_height(sd.position(self.motor[3]))
     def get_position_mirror_psi(self):
-        return self.steps_to_degree(sd.position(self.a[4]))
+        return self.steps_to_degree(sd.position(self.motor[4]))
     def get_position_mirror_phi(self):
-        return self.steps_to_degree(sd.position(self.a[5]))
+        return self.steps_to_degree(sd.position(self.motor[5]))
     
     #dummy till now
     def get_position_servo(self):
@@ -398,30 +429,30 @@ class CONTROLLER():
     
     #returns the status of the endswith. Meaning: 
     def get_endswitch_upper_camera_z(self):
-        return self.a[0].axis.get(10)
+        return self.motor[0].axis.get(10)
     def get_endswitch_upper_camera_x(self):
-        return self.a[1].axis.get(10)
+        return self.motor[1].axis.get(10)
     def get_endswitch_upper_mirror_z(self):
-        return self.a[2].axis.get(10)
+        return self.motor[2].axis.get(10)
     def get_endswitch_upper_mirror_height(self):
-        return self.a[3].axis.get(10)
+        return self.motor[3].axis.get(10)
     def get_endswitch_upper_mirror_psi(self):
-        return self.a[4].axis.get(10)
+        return self.motor[4].axis.get(10)
     def get_endswitch_upper_mirror_phi(self):
-        return self.a[5].axis.get(10)
+        return self.motor[5].axis.get(10)
     
     def get_endswitch_lower_camera_z(self):
-        return self.a[0].axis.get(11)
+        return self.motor[0].axis.get(11)
     def get_endswitch_lower_camera_x(self):
-        return self.a[1].axis.get(11)
+        return self.motor[1].axis.get(11)
     def get_endswitch_lower_mirror_z(self):
-        return self.a[2].axis.get(11)
+        return self.motor[2].axis.get(11)
     def get_endswitch_lower_mirror_height(self):
-        return self.a[3].axis.get(11)
+        return self.motor[3].axis.get(11)
     def get_endswitch_lower_mirror_psi(self):
-        return self.a[4].axis.get(11)
+        return self.motor[4].axis.get(11)
     def get_endswitch_lower_mirror_phi(self):
-        return self.a[5].axis.get(11)
+        return self.motor[5].axis.get(11)
     
     
     def open_shutter(self):
