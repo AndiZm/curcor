@@ -116,7 +116,8 @@ class server:
 			print("Server started!")	
 			
 			#routine to start a client thread as soon as a connection is requested (in own thread)
-			self.listen_thread = threading.Thread(target=listen, args=[self])
+			#self.listen_thread = threading.Thread(target=listen, args=[self])
+			self.listen_thread = threading.Thread(target=self.listen, args=[])
 			self.still_listening=True
 			self.listen_thread.start()
 			if self.listen_thread != None:
@@ -146,6 +147,7 @@ class server:
 			return
 		rate=rate.encode('utf8');
 		for i in self.clientsockets:
+			#print (i)
 			try:
 				sent = i.send(rate)
 				if sent == 0:
@@ -163,6 +165,26 @@ class server:
 #				i.shutdown(soc.SHUT_RDWR)
 				i.close()
 				self.clientsockets.remove(i)
+
+	def listen(self):
+		while self.still_listening:
+			# accept connections from outside. The OSError exception ist thrown, when the server is shutdown, becaus the accept routine can't handle well that the socket is closed by another thread.
+			try:
+				#get new clientsocket from the listening server socket
+				(clientsocket, address) = self.serversocket.accept()
+				
+				# create a new thread for each client and put it in the list of clientsockets
+				ct = clientsocket
+				self.clientsockets=[]
+				self.clientsockets.append(ct)
+				print (self)
+				print (self.clientsockets)
+				print("Created new client socket for new client which connected to the rate server!")
+			except OSError:
+				if self.still_listening :
+					print("There was an error in the accept() statement of the server while listening for incoming connections. How could that be?")
+				else:
+					print("Successfully ended the server-listening thread!")
 
 class server_controller:
 	
@@ -356,19 +378,21 @@ def listen_msg(self, button):
 				gl.copythread.start()
 				gl.remoteFiles = []
 
-def listen(self):
-	while self.still_listening:
-		# accept connections from outside. The OSError exception ist thrown, when the server is shutdown, becaus the accept routine can't handle well that the socket is closed by another thread.
-		try:
-			#get new clientsocket from the listening server socket
-			(clientsocket, address) = self.serversocket.accept()
-			
-			# create a new thread for each client and put it in the list of clientsockets
-			ct = clientsocket
-			self.clientsockets.append(ct)
-			print("Created new client socket for new client which connected to the rate server!")
-		except OSError:
-			if self.still_listening :
-				print("There was an error in the accept() statement of the server while listening for incoming connections. How could that be?")
-			else:
-				print("Successfully ended the server-listening thread!")
+#def listen(self):
+#	while self.still_listening:
+#		# accept connections from outside. The OSError exception ist thrown, when the server is shutdown, becaus the accept routine can't handle well that the socket is closed by another thread.
+#		try:
+#			#get new clientsocket from the listening server socket
+#			(clientsocket, address) = self.serversocket.accept()
+#			
+#			# create a new thread for each client and put it in the list of clientsockets
+#			ct = clientsocket
+#			self.clientsockets.append(ct)
+#			print (self)
+#			print (self.clientsockets)
+#			print("Created new client socket for new client which connected to the rate server!")
+#		except OSError:
+#			if self.still_listening :
+#				print("There was an error in the accept() statement of the server while listening for incoming connections. How could that be?")
+#			else:
+#				print("Successfully ended the server-listening thread!")
