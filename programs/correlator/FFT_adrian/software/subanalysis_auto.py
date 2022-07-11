@@ -46,8 +46,8 @@ def calculate_rate (filenumber):
 ## MAIN ##
 ##########
 # Analyzing path
-pc_body = "H:/20220415_HESS/"
-filepath = "halogen_old_calib_"
+pc_body = "G:/20220416_halogentest/"
+filepath = "halogen_no_ndfilter_"
 
 # Number of parallel file runs
 n_parallel = int(5)
@@ -68,7 +68,7 @@ def readfile():
     global pc_filename, readfiles, stime, analyzefiles, totalfiles
 
     this_pc_filename = pc_filename
-    resultfilename = "../results/acrux/" + this_pc_filename.split("/")[-1].split(".")[0] + ".fcorr"
+    resultfilename = "../results/20220416_halogen/" + this_pc_filename.split("/")[-1].split(".")[0] + ".fcorr"
 
     data = np.fromfile(this_pc_filename,dtype=np.int8)
     endtime = time.time(); dtime = endtime - stime

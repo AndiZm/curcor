@@ -11,10 +11,10 @@ class log:
     
     def __init__(self, path="../../../LOG"):
         self.path=path
-        logging.basicConfig(filename="{0}/log.log".format(path), level=logging.DEBUG, format='%(asctime)s %(message)s', datefmt='%Y-%m-%d-%H:%M:%S')
+        logging.basicConfig(filename="{0}/log.log".format(path), level=logging.DEBUG, format='%(asctime)s [%(levelname)s] %(message)s', datefmt='%Y-%m-%d-%H:%M:%S')
     def log(self, message):
         print(message)
-        logging.debug(message)
+        logging.log(logging.INFO, message)
     def set_experimental(self, last_cam_x, last_cam_z, last_mir_z, last_az, last_alt, last_time):
         self.last_cam_x=last_cam_x
         self.last_cam_z=last_cam_z

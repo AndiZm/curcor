@@ -38,8 +38,20 @@ def init():
     module = bus.get_module(0)
 
     a=[]
-    for i in range (6):
+    
+    #map the ports of the board to the correct motors
+    motor0=int(global_config["motor_pc_{}".format(motor_pc_no)]["motor0_port"])
+    motor1=int(global_config["motor_pc_{}".format(motor_pc_no)]["motor1_port"])
+    motor2=int(global_config["motor_pc_{}".format(motor_pc_no)]["motor2_port"])
+    motor3=int(global_config["motor_pc_{}".format(motor_pc_no)]["motor3_port"])
+    motor4=int(global_config["motor_pc_{}".format(motor_pc_no)]["motor4_port"])
+    motor5=int(global_config["motor_pc_{}".format(motor_pc_no)]["motor5_port"])
+    
+    order=[motor0, motor1, motor2, motor3, motor4, motor5]
+    for i in order:
         a.append(module.get_motor(i)) # 6 motoren eingefuegt
+    print(order)
+    for i in order:
         if i>=4:
             a[i].set_axis_parameter(5,1000)  # acceleration einstellen
         else:
