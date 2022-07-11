@@ -57,9 +57,9 @@ def calculate_rate (filenumber):
 ## MAIN ##
 ##########
 # Analyzing path
-pc1_body = "H:/Shared/"
-pc2_body = "E:/"
-filepath = "2022_Sirius/20220303_roof/sirius_"
+pc1_body = "G:/20220416_HESS/"
+pc2_body = "H:/20220416_HESS/"
+filepath = "acrux_combined_"
 
 # Number of parallel file runs
 n_parallel = int(5)
@@ -81,15 +81,23 @@ def readfile():
 
     this_pc1_filename = pc1_filename
     this_pc2_filename = pc2_filename
-    resultfilename = "../results/20220303_roof/" + this_pc1_filename.split("/")[-1].split(".")[0] + ".fcorr"
+    resultfilename = "../results/20220416_HESS/" + this_pc1_filename.split("/")[-1].split(".")[0] + ".fcorr"
 
     data_pc1 = np.fromfile(this_pc1_filename,dtype=np.int8)
     data_pc2 = np.fromfile(this_pc2_filename,dtype=np.int8)
     endtime = time.time(); dtime = endtime - stime
 
+    data_pc1 = data_pc1.reshape(int(len(data_pc1)/2),2)
+    data_pc1A = data_pc1[:,0]; data_pc1B = data_pc1[:,1]
+
+    data_pc2 = data_pc2.reshape(int(len(data_pc2)/2),2)
+    data_pc2A = data_pc2[:,0]; data_pc2B = data_pc2[:,1]
+
     # Calculate means
-    mean_pc1 = np.mean(data_pc1)
-    mean_pc2 = np.mean(data_pc2)
+    mean_pc1A = np.mean(data_pc1A)
+    mean_pc1B = np.mean(data_pc1B)
+    mean_pc2A = np.mean(data_pc2A)
+    mean_pc2B = np.mean(data_pc2B)
     # Get file creation time
     ctime = file_time(this_pc1_filename, this_pc2_filename)
 
@@ -97,18 +105,41 @@ def readfile():
     print ("\tReading {} files in {:.2f} seconds : {:.2f} s per file".format(readfiles, dtime, dtime/readfiles))
 
     iterations=int(len(data_pc2)/length)-1
-    this_cor = cupy.zeros((acorlen))
-    for i in range(iterations):
-        data_pc2_cu=cupy.array(data_pc2[int(corlen/2)+(length*i):(-1)*int(corlen/2)+(length*(i+1))]).astype(np.float32)
-        data_pc1_cu=cupy.array(data_pc1[length*i:length*(i+1)]).astype(np.float32)
-        # Correlate
-        this_cor+=cupy.correlate(data_pc2_cu,data_pc1_cu,"valid")
+    this_cor1 = cupy.zeros((acorlen))
+    this_cor2 = cupy.zeros((acorlen))
+    this_corA = cupy.zeros((acorlen))
+    this_corB = cupy.zeros((acorlen))    
 
-    this_cor = cupy.asnumpy(this_cor)
-    np.savetxt(resultfilename, this_cor, header="{} {} {}".format(ctime, mean_pc1, mean_pc2))
+    # Do the correlation
+    for i in range(iterations):
+        # Auto correlation PC1A X PC1B
+        data_pc1B_cu = cupy.array(data_pc1B[int(corlen/2)+(length*i):(-1)*int(corlen/2)+(length*(i+1))]).astype(np.float32)
+        data_pc1A_cu = cupy.array(data_pc1A[length*i:length*(i+1)]).astype(np.float32)
+        this_cor1 += cupy.correlate(data_pc1B_cu, data_pc1A_cu, "valid")
+        # Auto correlation PC2A X PC2B
+        data_pc2B_cu = cupy.array(data_pc2B[int(corlen/2)+(length*i):(-1)*int(corlen/2)+(length*(i+1))]).astype(np.float32)
+        data_pc2A_cu = cupy.array(data_pc2A[length*i:length*(i+1)]).astype(np.float32)
+        this_cor2 += cupy.correlate(data_pc2B_cu, data_pc2A_cu, "valid")
+        # Cross correlation PC1A X PC2A
+        data_pc2A_cu = cupy.array(data_pc2A[int(corlen/2)+(length*i):(-1)*int(corlen/2)+(length*(i+1))]).astype(np.float32)
+        data_pc1A_cu = cupy.array(data_pc1A[length*i:length*(i+1)]).astype(np.float32)
+        this_corA += cupy.correlate(data_pc2A_cu, data_pc1A_cu, "valid")
+        # Cross correlation PC1B X PC2B
+        data_pc2B_cu = cupy.array(data_pc2B[int(corlen/2)+(length*i):(-1)*int(corlen/2)+(length*(i+1))]).astype(np.float32)
+        data_pc1B_cu = cupy.array(data_pc1B[length*i:length*(i+1)]).astype(np.float32)
+        this_corB += cupy.correlate(data_pc2B_cu, data_pc1B_cu, "valid")    
+
+    this_cor1 = cupy.asnumpy(this_cor1)
+    this_cor2 = cupy.asnumpy(this_cor2)
+    this_corA = cupy.asnumpy(this_corA)
+    this_corB = cupy.asnumpy(this_corB)    
+
+    np.savetxt(resultfilename, np.c_[this_cor1, this_cor2, this_corA, this_corB], header="{} {} {} {} {}".format(ctime, mean_pc1A, mean_pc1B, mean_pc2A, mean_pc2B))
     endtime = time.time(); dtime = endtime - stime
     analyzefiles += 1; totalfiles += 1
-    del this_cor; del data_pc1_cu; del data_pc2_cu; del data_pc1; del data_pc2
+    del this_corA; del this_corB; del this_cor1; del this_cor2
+    del data_pc1A_cu; data_pc1B_cu; del data_pc2A_cu; del data_pc2B_cu
+    del data_pc1; del data_pc2; del data_pc1A; del data_pc1B; del data_pc2A; del data_pc2B
     print ("\tAnalyzing {} files in {:.2f} seconds : {:.2f} s per file. Total files: {}".format(analyzefiles, dtime, dtime/analyzefiles, totalfiles))
 
 

@@ -2,7 +2,7 @@ import subprocess
 from tqdm import tqdm
 
 start = 0
-end   = 627
+end   = 2691
 step  = 20
 
 commands = []
@@ -12,7 +12,7 @@ while index < end+1:
     index += step
     end_send   = min(index, end+1)
 
-    commands.append( "python3.9 subanalysis_auto.py -s {} -e {}".format(start_send, end_send) )
+    commands.append( "python3.9 subanalysis.py -s {} -e {}".format(start_send, end_send) )
     #commands.append( "python3.9 subanalysis_auto_acrux_motoron.py -s {} -e {}".format(start_send, end_send) )
     #commands.append( "python3.9 subanalysis_auto_halogen.py -s {} -e {}".format(start_send, end_send) )
 for i in tqdm(range(len(commands))):
