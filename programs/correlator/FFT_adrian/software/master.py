@@ -1,8 +1,12 @@
 import subprocess
 from tqdm import tqdm
 
-start = 0
-end   = 2691
+ct3_disk = "D"
+ct4_disk = "H"
+datapath = "20220418_HESS/regor"
+
+start = 125
+end   = 1391
 step  = 20
 
 commands = []
@@ -12,8 +16,6 @@ while index < end+1:
     index += step
     end_send   = min(index, end+1)
 
-    commands.append( "python3.9 subanalysis.py -s {} -e {}".format(start_send, end_send) )
-    #commands.append( "python3.9 subanalysis_auto_acrux_motoron.py -s {} -e {}".format(start_send, end_send) )
-    #commands.append( "python3.9 subanalysis_auto_halogen.py -s {} -e {}".format(start_send, end_send) )
+    commands.append( "python3.9 subanalysis.py -s {} -e {} --t3 {} --t4 {} -d {}".format(start_send, end_send, ct3_disk, ct4_disk, datapath) )
 for i in tqdm(range(len(commands))):
     subprocess.run(commands[i], shell=True)

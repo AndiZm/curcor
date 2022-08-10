@@ -13,10 +13,20 @@ from optparse import OptionParser
 parser = OptionParser()
 parser.add_option("-s", "--start", dest="start")
 parser.add_option("-e", "--end",   dest="end")
+parser.add_option("--t3", dest="ct3_disk")
+parser.add_option("--t4", dest="ct4_disk")
+parser.add_option("-d", "--datapath", dest="datapath")
 (options, args) = parser.parse_args()
 
 start = int(options.start)
 end   = int(options.end)
+ct3_disk = str(options.ct3_disk)
+ct4_disk = str(options.ct4_disk)
+datapath = str(options.datapath)
+
+# Combine data paths for both telescopes
+ct3_path = ct3_disk + ":/" + datapath
+ct4_path = ct4_disk + ":/" + datapath
 
 # File creation time
 def file_time(file1, file2):
@@ -30,44 +40,21 @@ def file_time(file1, file2):
         return pc1time
     else:
         print ("There is a problem with the synchronization of files:")
-        print (pc1_file)
-        print (pc2_file)
+        print (file1, pc1time)
+        print (file2, pc2time)
         print (diff)
-        return np.mean(pc1time, pc2time)
-
-# Rate calculations
-off_1   = -3.603750420000000343e-01
-off_2   = 1.352422540000000062e-01
-calib_1 = -65.2418293569126
-calib_2 = -70.77924338810277
-def calculate_rate (filenumber):
-    pc1_file = pc1_body + filepath + "{:05d}.bin".format(filenumber)
-    pc2_file = pc2_body + filepath + "{:05d}.bin".format(filenumber)
-
-    data_pc1 = np.fromfile(pc1_file,dtype=np.int8)
-    data_pc2 = np.fromfile(pc2_file,dtype=np.int8)
-
-    mean_1 = np.mean(data_pc1); mean_2 = np.mean(data_pc2)
-    rate_1 = 1e-6 * mean_1/(calib_1 * 1.6e-9)
-    rate_2 = 1e-6 * mean_2/(calib_2 * 1.6e-9)
-
-    return rate_1, rate_2
+        return np.mean([pc1time, pc2time])
 
 ##########
 ## MAIN ##
 ##########
-# Analyzing path
-pc1_body = "G:/20220416_HESS/"
-pc2_body = "H:/20220416_HESS/"
-filepath = "acrux_combined_"
-
 # Number of parallel file runs
 n_parallel = int(5)
 
 startfull=time.time()
 
 corlen=50000
-files = 10
+#files = 10
 length=int(2**22)
 
 acorlen=corlen+1
@@ -77,11 +64,12 @@ totalfiles = 0
 bunchtimes = []
 
 def readfile():
-    global pc1_filename, pc2_filename, readfiles, stime, analyzefiles, totalfiles
+    global ct3_filename, ct4_filename, readfiles, stime, analyzefiles, totalfiles
 
-    this_pc1_filename = pc1_filename
-    this_pc2_filename = pc2_filename
-    resultfilename = "../results/20220416_HESS/" + this_pc1_filename.split("/")[-1].split(".")[0] + ".fcorr"
+    this_pc1_filename = ct3_filename
+    this_pc2_filename = ct4_filename
+
+    resultfilename = "C:/Users/ii/Documents/curcor/corr_results/results/" + datapath + "_" + this_pc1_filename.split("_")[-1].split(".")[0] + ".fcorr"
 
     data_pc1 = np.fromfile(this_pc1_filename,dtype=np.int8)
     data_pc2 = np.fromfile(this_pc2_filename,dtype=np.int8)
@@ -122,10 +110,10 @@ def readfile():
         this_cor2 += cupy.correlate(data_pc2B_cu, data_pc2A_cu, "valid")
         # Cross correlation PC1A X PC2A
         data_pc2A_cu = cupy.array(data_pc2A[int(corlen/2)+(length*i):(-1)*int(corlen/2)+(length*(i+1))]).astype(np.float32)
-        data_pc1A_cu = cupy.array(data_pc1A[length*i:length*(i+1)]).astype(np.float32)
+        ###data_pc1A_cu = cupy.array(data_pc1A[length*i:length*(i+1)]).astype(np.float32)
         this_corA += cupy.correlate(data_pc2A_cu, data_pc1A_cu, "valid")
         # Cross correlation PC1B X PC2B
-        data_pc2B_cu = cupy.array(data_pc2B[int(corlen/2)+(length*i):(-1)*int(corlen/2)+(length*(i+1))]).astype(np.float32)
+        ###data_pc2B_cu = cupy.array(data_pc2B[int(corlen/2)+(length*i):(-1)*int(corlen/2)+(length*(i+1))]).astype(np.float32)
         data_pc1B_cu = cupy.array(data_pc1B[length*i:length*(i+1)]).astype(np.float32)
         this_corB += cupy.correlate(data_pc2B_cu, data_pc1B_cu, "valid")    
 
@@ -155,10 +143,11 @@ while fileindex <= end:
     
     threads = []
     stime = time.time()
-    print ("New parallel computing of {} files".format(n_parallel))
+    print ("\nNew parallel computing of {} files".format(n_parallel))
     for run in range(fileindex,min(fileindex+n_parallel,end)):
-        pc1_filename = pc1_body + filepath + "{:05d}.bin".format(run)
-        pc2_filename = pc2_body + filepath + "{:05d}.bin".format(run)
+
+        ct3_filename = ct3_path + "_{:05d}.bin".format(run)
+        ct4_filename = ct4_path + "_{:05d}.bin".format(run)
         
         threads.append(Thread(target=readfile, args=()))
         threads[-1].start()
