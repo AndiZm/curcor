@@ -15,17 +15,17 @@ star = "Shaula"
 print("Final Analysis of {}".format(star))
 
 # Read in the data (g2 functions and time/baseline parameters)
-chAs  = np.loadtxt("../g2_functions/Cross/txt_new/{}/ChA.txt".format(star))
-chBs  = np.loadtxt("../g2_functions/Cross/txt_new/{}/ChB.txt".format(star))
-ct3s  = np.loadtxt("../g2_functions/Cross/txt_new/{}/CT3.txt".format(star))
-ct4s  = np.loadtxt("../g2_functions/Cross/txt_new/{}/CT4.txt".format(star))
-data  = np.loadtxt("../g2_functions/Cross/txt_new/{}/baseline.txt".format(star))
+chAs  = np.loadtxt("g2_functions/{}/ChA.txt".format(star))
+chBs  = np.loadtxt("g2_functions/{}/ChB.txt".format(star))
+ct3s  = np.loadtxt("g2_functions/{}/CT3.txt".format(star))
+ct4s  = np.loadtxt("g2_functions/{}/CT4.txt".format(star))
+data  = np.loadtxt("g2_functions/{}/baseline.txt".format(star))
 
 # Demo function for initializing x axis and some stuff
 demo = chAs[0]
 x = np.arange(-1.6*len(demo)//2,+1.6*len(demo)//2,1.6)
 
-# Combine all data for initial parameter estimation and fixing
+# Combine all data for channel A and B each for initial parameter estimation and fixing
 g2_allA = np.zeros(len(x)); g2_allB = np.zeros(len(x))
 for i in range (0,len(chAs)):
     g2_allA += chAs[i]/len(chAs)
@@ -59,7 +59,7 @@ intsB = []; dintsB = []
 ct3_sum = np.zeros(len(ct3s[0]))
 ct4_sum = np.zeros(len(ct4s[0]))
 
-# loop over every summarized g2 function
+# loop over every g2 function chunks
 for i in range(0,len(chAs)):
     chA = chAs[i]
     chB = chBs[i]
@@ -69,6 +69,14 @@ for i in range(0,len(chAs)):
     # Do some more data cleaning, e.g. lowpass filters
     ct3 = cor.lowpass(ct3)
     ct4 = cor.lowpass(ct4)
+
+    # more data cleaning with notch filter for higher frequencies
+    freq3 = [50, 90, 125, 150]
+    for j in range(len(freq3)):
+        ct3 = cor.notch(ct3, freq3[j]*1e6, 80)
+    freq4 = [50, 90, 110, 130, 150, 250]
+    for k in range(len(freq4)):
+        ct4 = cor.notch(ct4, freq4[k]*1e6, 80)
 
     # Apply gaussian fits to cross correlations, keep mu and sigma fixed
     xplotf, poptA, perrA = uti.fit_fixed(chA, x, -100, 100, muA,sigmaA)
@@ -80,7 +88,7 @@ for i in range(0,len(chAs)):
     intsB.append(1e6*Int); dintsB.append(1e6*dInt)# in femtoseconds
 
 
-    # for autocorrelations of CT3 and CT4 we also average over all acquised data
+    # for autocorrelations of CT3 and CT4 we also average over all acquised data and sum all up
     rms = np.std(ct3[0:4500])
     g2_for_averaging = ct3/rms
     ct3_sum += g2_for_averaging
@@ -112,7 +120,7 @@ plt.subplot(223)
 #plt.errorbar(x, ct3_sum, yerr=0, marker=".", linestyle="--", label=timestring, color = "black", linewidth=2, alpha=1)
 plt.errorbar(x, ct4_sum+0e-5, yerr=0, marker=".", linestyle="--", label=timestring, color = "black", linewidth=2, alpha=1)
 
-
+# Figure stuff
 plt.subplot(221)
 plt.title("Cross correlations on {}".format(star))
 plt.grid()
@@ -122,15 +130,17 @@ plt.ylabel("$g^{(2)}$")
 plt.legend(loc="lower right")
 plt.xlim(-300,300)
 plt.tight_layout()
-
 plt.subplot(223)
 plt.xlim(80,160)
 
+#### making SC plot (spatial coherence) via integral data ####
 xplot = np.arange(0.1,300,0.1)
 plt.subplot(122)
 
+# get baselines for x axes
 baselines = data[:,1]
 
+# calculate SC fit and errorbars
 poptA, pcov = curve_fit(uti.spatial_coherence, baselines, intsA, sigma=dintsA, p0=[25, 2.2e-9])
 perrA = np.sqrt(np.diag(pcov))
 
@@ -142,10 +152,10 @@ deltas_scB = []
 for i in xplot:
     deltas_scA.append( np.abs(uti.delta_spatial_coherence(x=i, A=poptA[0],dA=perrA[0], phi=poptA[1], dphi=perrA[1])) )
     deltas_scB.append( np.abs(uti.delta_spatial_coherence(x=i, A=poptB[0],dA=perrB[0], phi=poptB[1], dphi=perrB[1])) )
-#print ("Angular diameter (rad): ",popt[1], perr[1])
 print ("Angular diameter Ch A: {:.2f} +/- {:.2f} (mas): ".format(uti.rad2mas(poptA[1]), uti.rad2mas(perrA[1])))
 print ("Angular diameter Ch B: {:.2f} +/- {:.2f} (mas): ".format(uti.rad2mas(poptB[1]), uti.rad2mas(perrB[1])))
 
+# plot datapoints in SC plot and fit to all points
 for i in range (0,len(baselines)):
     plt.errorbar(x=baselines[i], y=intsA[i], yerr=dintsA[i], xerr=data[:,2][i], marker="^", linestyle="", color=colors[i])
     plt.errorbar(x=baselines[i], y=intsB[i], yerr=dintsB[i], xerr=data[:,2][i], marker="o", linestyle="", color=colors[i])
