@@ -139,7 +139,7 @@ plt.subplot(223)
 plt.xlim(80,160)
 
 # store cleaned data
-np.savetxt("g2_functions{}/CT3_clean.txt".format(star), np.c_[ct3_clean], header="{} CT3 cleaned".format(star) )
+np.savetxt("g2_functions/{}/CT3_clean.txt".format(star), np.c_[ct3_clean], header="{} CT3 cleaned".format(star) )
 np.savetxt("g2_functions/{}/CT4_clean.txt".format(star), np.c_[ct4_clean], header="{} CT4 cleaned".format(star) )
 
 #### making SC plot (spatial coherence) via integral data ####
