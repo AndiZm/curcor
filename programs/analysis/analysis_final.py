@@ -123,7 +123,7 @@ ct3_sum = ct3_sum/np.mean(ct3_sum[0:4500])
 ct4_sum = ct4_sum/np.mean(ct4_sum[0:4500])
 plt.subplot(223)
 #plt.errorbar(x, ct3_sum, yerr=0, marker=".", linestyle="--", label=timestring, color = "black", linewidth=2, alpha=1)
-plt.errorbar(x, ct4_sum+0e-5, yerr=0, marker=".", linestyle="--", label=timestring, color = "black", linewidth=2, alpha=1)
+plt.errorbar(x, ct4_sum+0e-5, yerr=0, marker=".", linestyle="--", label='sum', color = "black", linewidth=2, alpha=1)
 
 # Figure stuff
 plt.subplot(221)
@@ -136,6 +136,11 @@ plt.legend(loc="lower right")
 plt.xlim(-300,300)
 plt.tight_layout()
 plt.subplot(223)
+plt.title("Auto correlations on {}".format(star))
+plt.grid()
+plt.xlabel("Time")
+plt.ylabel("$g^{(2)}$")
+plt.legend()
 plt.xlim(80,160)
 
 # store cleaned data
