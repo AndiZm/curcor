@@ -14,7 +14,7 @@ import utilities as uti
 from threading import Thread
 
 ######## RMS for chunks #################
-star = "Shaula"
+star = "Acrux"
 
 # Define files to analyze and subpackages
 folders   = [] # Data folders for analysis
@@ -113,12 +113,12 @@ def rms_parts(folder, start, stop, j):
 
 ##########################################
 # Add the number of files to be analyzed #
-for i in range(len(folders)):  #range(2,3): #
+for i in  range(len(folders)): #range(0,2): #
     folder   = folders[i]
     stepsize = stepsizes[i]
     end      = ends[i]
     steps = np.arange(0, end + 1, stepsize)
-    for j in range(len(steps)-1):
+    for j in tqdm(range(len(steps)-1)):
         start = steps[j]
         stop = steps[j+1]
         rms_parts(folder, start, stop, j)
@@ -140,14 +140,14 @@ mi = []
 s = []
 
 # Read in the data (g2 functions and time/baseline parameters)
-chAs  = np.loadtxt("../g2_functions/Cross/txt_new/{}/ChA.txt".format(star))
-chBs  = np.loadtxt("../g2_functions/Cross/txt_new/{}/ChB.txt".format(star))
-ct3s  = np.loadtxt("../g2_functions/Cross/txt_new/{}/CT3.txt".format(star))
-ct4s  = np.loadtxt("../g2_functions/Cross/txt_new/{}/CT4.txt".format(star))
-data  = np.loadtxt("../g2_functions/Cross/txt_new/{}/baseline.txt".format(star))
+chAs  = np.loadtxt("g2_functions/{}/ChA.txt".format(star))
+chBs  = np.loadtxt("g2_functions/{}/ChB.txt".format(star))
+ct3s  = np.loadtxt("g2_functions/{}/CT3.txt".format(star))
+ct4s  = np.loadtxt("g2_functions/{}/CT4.txt".format(star))
+data  = np.loadtxt("g2_functions/{}/baseline.txt".format(star))
 
 # loop over all chunks
-for i in tqdm(range(len(chAs))):  # range( 10,12):
+for i in tqdm( range(len(chAs)) ): # range( 5,6)
     chunk.append(i)
     chA = chAs[i]
     chB = chBs[i]
@@ -155,6 +155,8 @@ for i in tqdm(range(len(chAs))):  # range( 10,12):
     ct4 = ct4s[i]
 
     # Do some more data cleaning, e.g. lowpass filters
+    chA = cor.lowpass(chA)
+    chB = cor.lowpass(chB)
     ct3 = cor.lowpass(ct3)
     ct4 = cor.lowpass(ct4)
 
@@ -186,18 +188,26 @@ for i in tqdm(range(len(chAs))):  # range( 10,12):
     plt.plot(fftx,fft4, color='green', label = '4')
     plt.title('original fft')
     plt.legend()
-    plt.show()
+    #plt.show()
     plt.close()
 
     # filter higher frequencies
-    freq = [50, 90, 125, 150]
+    freq3 = [ 90, 150, 250]
     ct31 = ct3
-    for i in range(len(freq)):
-    	ct31 = cor.notch(ct31, freq[i]*1e6, 80)
-    freq4 = [50, 90, 110, 130, 150, 250]
+    for i in range(len(freq3)):
+    	ct31 = cor.notch(ct31, freq3[i]*1e6, 80)
+    freq4 = [150, 250]
     ct41 = ct4
     for i in range(len(freq4)):
     	ct41 = cor.notch(ct41, freq4[i]*1e6, 80)
+    freqB = [90, 150, 250]
+    chB1 = chB
+    for i in range(len(freqB)):
+        chB1 = cor.notch(chB1, freqB[i]*1e6, 80)
+    freqA = [90]
+    chA1 = chA
+    for i in range(len(freqA)):
+        chA1 = cor.notch(chA1, freqA[i]*1e6, 80)
 
     #plt.plot(chA, color='blue', label = 'A')
     #plt.plot(chB, color='orange', label = 'B')
@@ -207,24 +217,27 @@ for i in tqdm(range(len(chAs))):  # range( 10,12):
     #plt.legend()
     #plt.show()
     #plt.close()
+    fftB1 = np.abs(np.fft.fft(chB1-1))
+    fftB1 = fftB1[0:len(fftB1)//2]
     fft31 = np.abs(np.fft.fft(ct31-1))
     fft31 = fft31[0:len(fft31)//2]
     fft41 = np.abs(np.fft.fft(ct41-1))
     fft41 = fft41[0:len(fft41)//2]
-    plt.plot(fftx,fftA, color='blue', label = 'A', alpha=0.6)
-    plt.plot(fftx,fftB, color='orange', label = 'B', alpha=0.6)
-    plt.plot(fftx,fft3, color='purple', label = '3', alpha=0.6)
-    plt.plot(fftx,fft4, color='green', label='4', alpha=0.6)
-    plt.plot(fftx,fft41, color='red', label = '41', alpha=0.6)
-    plt.plot(fftx,fft31, color='cyan', label = '31', alpha=0.6)
-    plt.title("cleaned fft")
-    plt.legend()
-    plt.show()
-    plt.close()
+    #plt.plot(fftx,fftA, color='blue', label = 'A', alpha=0.6)
+    #plt.plot(fftx,fftB, color='orange', label = 'B', alpha=0.6)
+    #plt.plot(fftx,fft3, color='purple', label = '3', alpha=0.6)
+    #plt.plot(fftx,fft4, color='green', label='4', alpha=0.6)
+    #plt.plot(fftx,fft41, color='red', label = '41', alpha=0.6)
+    #plt.plot(fftx,fft31, color='cyan', label = '31', alpha=0.6)
+    #plt.plot(fftx,fftB1, color='yellow', label = 'B1', alpha=0.6)
+    #plt.title("cleaned fft")
+    #plt.legend()
+    #plt.show()
+    #plt.close()
 
     # calculate measured rms via std for each channel CT3AxCT3A, CT3BxCT4B, CT3 AxB, CT4 AxB
-    meas_rmsA.append( np.std(chA) /1e-7 )
-    meas_rmsB.append( np.std(chB) /1e-7 )
+    meas_rmsA.append( np.std(chA1) /1e-7 )
+    meas_rmsB.append( np.std(chB1) /1e-7 )
     meas_rms3.append( np.std(ct31[0:4500]) /1e-7 )
     meas_rms4.append( np.std(ct41[0:4500]) /1e-7 )
 

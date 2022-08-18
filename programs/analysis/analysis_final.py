@@ -11,7 +11,7 @@ import utilities as uti
 import corrections as cor
 
 star = "Shaula"
-#star = "Acrux"
+
 print("Final Analysis of {}".format(star))
 
 # Read in the data (g2 functions and time/baseline parameters)
@@ -56,6 +56,8 @@ intsA = []; dintsA = []; times = []
 intsB = []; dintsB = []
 
 # initialize CT3 and CT4 sum arrays and cleaned arrays
+chA_clean = []
+chB_clean = []
 ct3_clean = []
 ct4_clean = []
 ct3_sum = np.zeros(len(ct3s[0]))
@@ -69,6 +71,8 @@ for i in range(0,len(chAs)):
     ct4 = ct4s[i]
 
     # Do some more data cleaning, e.g. lowpass filters
+    chA = cor.lowpass(chA)
+    chB = cor.lowpass(chB)
     ct3 = cor.lowpass(ct3)
     ct4 = cor.lowpass(ct4)
 
@@ -77,10 +81,18 @@ for i in range(0,len(chAs)):
     for j in range(len(freq3)):
         ct3 = cor.notch(ct3, freq3[j]*1e6, 80)
     freq4 = [50, 90, 110, 130, 150, 250]
-    for k in range(len(freq4)):
-        ct4 = cor.notch(ct4, freq4[k]*1e6, 80)
+    for j in range(len(freq4)):
+        ct4 = cor.notch(ct4, freq4[j]*1e6, 80)
+    freqB = [90, 150, 250]
+    for j in range(len(freqB)):
+        chB = cor.notch(chB, freqB[j]*1e6, 80)
+    freqA = [90]
+    for j in range(len(freqA)):
+        chA = cor.notch(chA, freqA[j]*1e6, 80)
 
     # save cleaned data
+    chA_clean.append(chA)
+    chB_clean.append(chB)
     ct3_clean.append(ct3)
     ct4_clean.append(ct4)
 
@@ -140,10 +152,12 @@ plt.title("Auto correlations on {}".format(star))
 plt.grid()
 plt.xlabel("Time")
 plt.ylabel("$g^{(2)}$")
-plt.legend()
+plt.legend(loc='right')
 plt.xlim(80,160)
 
 # store cleaned data
+np.savetxt("g2_functions/{}/ChA_clean.txt".format(star), np.c_[chA_clean], header="{} Channel A cleaned".format(star) )
+np.savetxt("g2_functions/{}/ChB_clean.txt".format(star), np.c_[chB_clean], header="{} Channel B cleaned".format(star) )
 np.savetxt("g2_functions/{}/CT3_clean.txt".format(star), np.c_[ct3_clean], header="{} CT3 cleaned".format(star) )
 np.savetxt("g2_functions/{}/CT4_clean.txt".format(star), np.c_[ct4_clean], header="{} CT4 cleaned".format(star) )
 
