@@ -146,6 +146,7 @@ ct3s  = np.loadtxt("../g2_functions/Cross/txt_new/{}/CT3.txt".format(star))
 ct4s  = np.loadtxt("../g2_functions/Cross/txt_new/{}/CT4.txt".format(star))
 data  = np.loadtxt("../g2_functions/Cross/txt_new/{}/baseline.txt".format(star))
 
+# loop over all chunks
 for i in tqdm(range(len(chAs))):  # range( 10,12):
     chunk.append(i)
     chA = chAs[i]
@@ -157,7 +158,7 @@ for i in tqdm(range(len(chAs))):  # range( 10,12):
     ct3 = cor.lowpass(ct3)
     ct4 = cor.lowpass(ct4)
 
-    # FFT of data
+    # FFT of data to see unwanted frequencies
     fftA = np.abs(np.fft.fft(chA-1))
     fftA = fftA[0:len(fftA)//2]
     
@@ -232,11 +233,6 @@ for i in tqdm(range(len(chAs))):  # range( 10,12):
     t = ephem.Date(chunk_times[-1])
     year, month, day, hour, minute, sec = t.tuple()
     y.append(year); mo.append(month); d.append(day); h.append(hour); mi.append(minute); s.append(sec)
-    #print("{}".format(i), timestring, "{:.2f}, {:.2f}, {:.2f}, {:.2f}".format(meas_rmsA, meas_rmsB, meas_rms3, meas_rms4))
-
-    
-
-
 
 ## Printing all rms data ###
 ratioA = []

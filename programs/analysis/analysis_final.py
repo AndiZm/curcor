@@ -55,7 +55,9 @@ plt.subplot(221)
 intsA = []; dintsA = []; times = []
 intsB = []; dintsB = []
 
-# initialize CT3 and CT4 sum arrays
+# initialize CT3 and CT4 sum arrays and cleaned arrays
+ct3_clean = []
+ct4_clean = []
 ct3_sum = np.zeros(len(ct3s[0]))
 ct4_sum = np.zeros(len(ct4s[0]))
 
@@ -78,6 +80,10 @@ for i in range(0,len(chAs)):
     for k in range(len(freq4)):
         ct4 = cor.notch(ct4, freq4[k]*1e6, 80)
 
+    # save cleaned data
+    ct3_clean.append(ct3)
+    ct4_clean.append(ct4)
+
     # Apply gaussian fits to cross correlations, keep mu and sigma fixed
     xplotf, poptA, perrA = uti.fit_fixed(chA, x, -100, 100, muA,sigmaA)
     Int, dInt = uti.integral_fixed(poptA, perrA, sigmaA)
@@ -86,7 +92,6 @@ for i in range(0,len(chAs)):
     xplotf, poptB, perrB = uti.fit_fixed(chB, x, -100, 100, muB,sigmaB)
     Int, dInt = uti.integral_fixed(poptB, perrB, sigmaB)
     intsB.append(1e6*Int); dintsB.append(1e6*dInt)# in femtoseconds
-
 
     # for autocorrelations of CT3 and CT4 we also average over all acquised data and sum all up
     rms = np.std(ct3[0:4500])
@@ -132,6 +137,10 @@ plt.xlim(-300,300)
 plt.tight_layout()
 plt.subplot(223)
 plt.xlim(80,160)
+
+# store cleaned data
+np.savetxt("g2_functions{}/CT3_clean.txt".format(star), np.c_[ct3_clean], header="{} CT3 cleaned".format(star) )
+np.savetxt("g2_functions/{}/CT4_clean.txt".format(star), np.c_[ct4_clean], header="{} CT4 cleaned".format(star) )
 
 #### making SC plot (spatial coherence) via integral data ####
 xplot = np.arange(0.1,300,0.1)
