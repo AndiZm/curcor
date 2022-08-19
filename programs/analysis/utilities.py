@@ -43,11 +43,11 @@ def gauss_fixed(x, a, mu, sigma):
 def gauss_shifted(x, a, mu, sigma, shift, d=1):
     return a*np.exp(-(x-mu)**2/(2*sigma**2)) + d + 2e-6*shift
 
-def fit(data, x, s, e):
+def fit(data, x, s, e, mu_start=-2):
     xfit = x[(x>s) & (x<e)]
     yfit = data[(x>s) & (x<e)]
     xplot = np.arange(s, e, 0.01)
-    popt, cov = curve_fit(gauss, xfit, yfit, p0=[1e-6,-2,3,1])
+    popt, cov = curve_fit(gauss, xfit, yfit, p0=[1e-6,mu_start,3,1])
     perr = np.sqrt(np.diag(cov))
     return xplot, popt, perr
 def fit_fixed(data, x, s, e, mu,sigma, d=1):
@@ -71,6 +71,13 @@ def integral_fixed(fitpar, fitpar_err, sigma):
     dInt = np.sqrt(2*np.pi)*np.sqrt((a*d_s)**2 + (s*d_a)**2)
     return Int, dInt
 
+def calc_array_mean(array, darray):
+    mean = np.mean(array)
+    squaresum = 0
+    for i in range(0,len(darray)):
+        squaresum += darray[i]**2
+    dmean = 1/len(array) * np.sqrt(squaresum)
+    return mean, dmean
 
 def spatial_coherence(x, amp, ang):
     return amp * (2*scp.j1(np.pi * x * ang/lam) / (np.pi* x * ang/lam))**2
