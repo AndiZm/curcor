@@ -69,7 +69,7 @@ def readfile():
     this_pc1_filename = ct3_filename
     this_pc2_filename = ct4_filename
 
-    resultfilename = "C:/Users/ii/Documents/curcor/corr_results/results/" + datapath + "_" + this_pc1_filename.split("_")[-1].split(".")[0] + "_AB.fcorr"
+    resultfilename = "C:/Users/ii/Documents/curcor/corr_results/results_HESS/" + datapath + "_" + this_pc1_filename.split("_")[-1].split(".")[0] + "_AB.fcorr"
 
     data_pc1 = np.fromfile(this_pc1_filename,dtype=np.int8)
     data_pc2 = np.fromfile(this_pc2_filename,dtype=np.int8)

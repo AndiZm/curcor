@@ -5,7 +5,7 @@ ct3_disk = "D"
 ct4_disk = "H"
 datapath = "20220418_HESS/regor"
 
-start = 0
+start = 1005
 end   = 1391
 step  = 20
 
