@@ -11,6 +11,7 @@ import utilities as uti
 import corrections as cor
 
 star = "Acrux"
+chn6 = True
 
 print("Final Analysis of {}".format(star))
 
@@ -19,6 +20,9 @@ chAs  = np.loadtxt("g2_functions/{}/ChA.txt".format(star))
 chBs  = np.loadtxt("g2_functions/{}/ChB.txt".format(star))
 ct3s  = np.loadtxt("g2_functions/{}/CT3.txt".format(star))
 ct4s  = np.loadtxt("g2_functions/{}/CT4.txt".format(star))
+if chn6 == True:
+    c3Ax4B = np.loadtxt("g2_functions/{}/c3Ax4B.txt".format(star))
+    c4Ax3B = np.loadtxt("g2_functions/{}/c4Ax3B.txt".format(star))
 data  = np.loadtxt("g2_functions/{}/baseline.txt".format(star))
 
 # Demo function for initializing x axis and some stuff
@@ -27,22 +31,38 @@ x = np.arange(-1.6*len(demo)//2,+1.6*len(demo)//2,1.6)
 
 # Combine all data for channel A and B each for initial parameter estimation and fixing
 g2_allA = np.zeros(len(x)); g2_allB = np.zeros(len(x))
+g2_all3Ax4B = np.zeros(len(x)); g2_all4Ax3B = np.zeros(len(x))
 for i in range (0,len(chAs)):
     g2_allA += chAs[i]/len(chAs)
     g2_allB += chBs[i]/len(chBs)
+if chn6 == True:
+    for i in range (0,len(chAs)):
+        g2_all3Ax4B += c3Ax4B[i]/len(c3Ax4B)
+        g2_all4Ax3B += c4Ax3B[i]/len(c4Ax3B)
+
 # Fit for gaining mu and sigma to fix these parameters
 xplot, popt, perr = uti.fit(g2_allA, x, -40, +40)
 muA = popt[1]; sigmaA = popt[2]
-
-plt.plot(x, g2_allA)
-plt.plot(xplot, uti.gauss(xplot,*popt), color="black")
+plt.plot(x, g2_allA, label="3A x 4A")
+plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--")
 
 xplot, popt, perr = uti.fit(g2_allB, x, -40, +40)
 muB = popt[1]; sigmaB = popt[2]
-
-plt.plot(x, g2_allB)
+plt.plot(x, g2_allB, label="3B x 4B")
 plt.plot(xplot, uti.gauss(xplot,*popt), color="black")
-#plt.show()
+
+if chn6 == True:
+    xplot, popt, perr = uti.fit(g2_all3Ax4B, x, 90, 150, mu_start=110)
+    mu3Ax4B = popt[1]; sigma3Ax4B = popt[2]
+    plt.plot(x, g2_all3Ax4B, label="3A x 4B")
+    plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--")
+    
+    #xplot, popt, perr = uti.fit(g2_all4Ax3B, x, 90, 150)
+    mu4Ax3B = popt[1]; sigma4Ax3B = popt[2]
+    plt.plot(x, g2_all4Ax3B, label="4A x 3B")
+    plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--")
+    #plt.show()
+plt.legend(); plt.show()
 
 # Define colormap for plotting all summarized individual g2 functions
 cm_sub = np.linspace(1.0, 0.0, len(chAs))

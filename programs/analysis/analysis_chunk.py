@@ -138,7 +138,7 @@ def corr_parts(folder, start, stop):
         crossA = shift_bins(crossA, binshift)
         crossB = shift_bins(crossB, binshift)
         c3Ax4B = shift_bins(c3Ax4B, binshift)
-        c4Ax3B = shift_bins(c3Ax4B, -1*binshift) # negative binshift since CT4 is mentioned first
+        c4Ax3B = shift_bins(c4Ax3B, -1*binshift) # negative binshift since CT4 is mentioned first
     
         #################################
         # Averaging of the g2 functions #
