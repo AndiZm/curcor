@@ -10,7 +10,7 @@ import scipy.special as scp
 import utilities as uti
 import corrections as cor
 
-star = "Shaula"
+star = "Acrux"
 
 print("Final Analysis of {}".format(star))
 

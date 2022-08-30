@@ -13,7 +13,7 @@ import utilities as uti
 
 from threading import Thread
 
-star = "Shaula"
+star = "Acrux"
 
 # Define files to analyze and subpackages
 folders   = [] # Data folders for analysis
@@ -55,21 +55,24 @@ def shift_bins(data, binshift):
     return data
 
 # Initialize parameter arrays for data storing
-g23s = []
-g24s = []
-g2As = []
-g2Bs = []
+g2_3s = []
+g2_4s = []
+g2_As = []
+g2_Bs = []
+g2_3Ax4Bs = []
+g2_4Ax3Bs = []
 baselines = []; dbaselines = []
 time_means = []
 
 # Number of datapoints
 N = 2 * 1024**3        # 2G sample file
+folderpath = "C:/Users/ii/Documents/curcor/corr_results/results_HESS"
 
 def corr_parts(folder, start, stop):
     # Define files to be analized for a single g2 function
     files = []
     for i in range (start, stop): 
-        files.append("{}/size10000/{}_{:05d}.fcorr".format(folder, star_small, i))
+        files.append("{}/{}/size10000/{}_{:05d}.fcorr6".format(folderpath, folder, star_small, i))
 
     # Initialize g2 functions for channel A and B which will be filled in for loop
     len_data = len( np.loadtxt(files[0])[:,2] )
@@ -77,23 +80,27 @@ def corr_parts(folder, start, stop):
     g2_sum_B = np.zeros(len_data)
     g2_sum_3 = np.zeros(len_data)
     g2_sum_4 = np.zeros(len_data)
+    g2_sum_3Ax4B = np.zeros(len_data)
+    g2_sum_4Ax3B = np.zeros(len_data)
     times = []; baseline_values = []
 
     # Read offset data for offset correction
-    off3A = np.loadtxt( folder + "/calibs_ct3/off.off" )[0]
-    off3B = np.loadtxt( folder + "/calibs_ct3/off.off" )[1]
-    off4A = np.loadtxt( folder + "/calibs_ct4/off.off" )[0]
-    off4B = np.loadtxt( folder + "/calibs_ct4/off.off" )[1]
+    off3A = np.loadtxt( folderpath + "/" + folder + "/calibs_ct3/off.off" )[0]
+    off3B = np.loadtxt( folderpath + "/" + folder + "/calibs_ct3/off.off" )[1]
+    off4A = np.loadtxt( folderpath + "/" + folder + "/calibs_ct4/off.off" )[0]
+    off4B = np.loadtxt( folderpath + "/" + folder + "/calibs_ct4/off.off" )[1]
 
     # Loop over every file
     for i in tqdm(range ( 0,len(files) )):
         file = files[i]
 
         # Read in data
-        auto3  = np.loadtxt(file)[:,0] # G2 of CT3 A x CT 3 B (autocorrelations)
-        auto4  = np.loadtxt(file)[:,1] # G2 of CT4 A x CT 4 B (autocorrelations)
+        auto3  = np.loadtxt(file)[:,0] # G2 of CT3 A x CT3 B (autocorrelations)
+        auto4  = np.loadtxt(file)[:,1] # G2 of CT4 A x CT4 B (autocorrelations)
         crossA = np.loadtxt(file)[:,2] # G2 of CT3 A x CT4 A (crosscorrelations)
         crossB = np.loadtxt(file)[:,3] # G2 of CT3 B x CT4 B (crosscorrelations)
+        c3Ax4B = np.loadtxt(file)[:,4] # G2 of CT3 A x CT4 B (crosscorrelations)
+        c4Ax3B = np.loadtxt(file)[:,4] # G2 of CT4 A x CT3 B (crosscorrelations)
 
         # Read mean waveform values
         f = open(file)
@@ -108,12 +115,16 @@ def corr_parts(folder, start, stop):
         auto4  -= N * ( mean4A*off4B + mean4B*off4A - off4A*off4B ) # Only CT 4 both channels        
         crossA -= N * ( mean3A*off4A + mean4A*off3A - off3A*off4A ) # Only CH A, but CT3 and CT4
         crossB -= N * ( mean3B*off4B + mean4B*off3B - off3B*off4B ) # Only CH B, but CT3 and CT4
+        c3Ax4B -= N * ( mean3A*off4B + mean4B*off3A - off3A*off4B ) # CT3 A X CT4 B
+        c4Ax3B -= N * ( mean4A*off3B + mean3B*off4A - off4A*off3B ) # CT4 A X CT3 B
 
         # Apply pattern correction
         auto3  = cor.pattern_correction(auto3) # data already normalized
         auto4  = cor.pattern_correction(auto4) # data already normalized
         crossA = cor.pattern_correction(crossA) # data already normalized
         crossB = cor.pattern_correction(crossB) # data already normalized
+        c3Ax4B = cor.pattern_correction(c3Ax4B) # data already normalized
+        c4Ax3B = cor.pattern_correction(c4Ax3B) # data already normalized
     
         # Get file parameters from header and ephem calculations
         tdiff, mean_1, mean_2, mean_3, mean_4, az, alt, time = geo.get_params(file, starname=star)
@@ -126,6 +137,8 @@ def corr_parts(folder, start, stop):
         binshift = timebin(tdiff)
         crossA = shift_bins(crossA, binshift)
         crossB = shift_bins(crossB, binshift)
+        c3Ax4B = shift_bins(c3Ax4B, binshift)
+        c4Ax3B = shift_bins(c3Ax4B, -1*binshift) # negative binshift since CT4 is mentioned first
     
         #################################
         # Averaging of the g2 functions #
@@ -153,6 +166,16 @@ def corr_parts(folder, start, stop):
         # Adding the new data to the total g2 function
         g2_sum_B += g2_for_averaging
 
+        rms = np.std(c3Ax4B)
+        g2_for_averaging = c3Ax4B/rms
+        # Adding the new data to the total g2 function
+        g2_sum_3Ax4B += g2_for_averaging
+
+        rms = np.std(c4Ax3B)
+        g2_for_averaging = c4Ax3B/rms
+        # Adding the new data to the total g2 function
+        g2_sum_4Ax3B += g2_for_averaging
+
     time_mean = np.mean(times)
     # Calculate mean baseline and baseline error
     baseline  = np.mean(baseline_values)
@@ -165,12 +188,16 @@ def corr_parts(folder, start, stop):
     g2_sum_4 = g2_sum_4/np.mean(g2_sum_4)
     g2_sum_A = g2_sum_A/np.mean(g2_sum_A)
     g2_sum_B = g2_sum_B/np.mean(g2_sum_B)
+    g2_sum_3Ax4B = g2_sum_3Ax4B/np.mean(g2_sum_3Ax4B)
+    g2_sum_4Ax3B = g2_sum_4Ax3B/np.mean(g2_sum_4Ax3B)
 
     # Save the data of this correlation to the arrays
-    g23s.append(g2_sum_3)
-    g24s.append(g2_sum_4)
-    g2As.append(g2_sum_A)
-    g2Bs.append(g2_sum_B)
+    g2_3s.append(g2_sum_3)
+    g2_4s.append(g2_sum_4)
+    g2_As.append(g2_sum_A)
+    g2_Bs.append(g2_sum_B)
+    g2_3Ax4Bs.append(g2_sum_3Ax4B)
+    g2_4Ax3Bs.append(g2_sum_4Ax3B)
     baselines.append(baseline)
     dbaselines.append(dbaseline)
     time_means.append(time_mean)  
@@ -187,69 +214,10 @@ for i in range(len(folders)):
         stop = steps[j+1]
         corr_parts(folder, start, stop)
 
-
-#############################
-#### Auto Correlation #######
-#############################
-#begin = 0
-#files_auto = []
-#for i in range(len(folders)):
-#    folder   = folders[i]
-#    end = ends[i]
-#
-#    # read in files
-#    for i in range (begin, end+1): 
-#        files_auto.append("{}/size10000/{}_{:05d}.fcorr".format(folder, star_small, i))
-#    length = len( np.loadtxt(files_auto[0])[:,0] )
-#    g2_sum3 = np.zeros(length)
-#    g2_sum4 = np.zeros(length)
-#    g23s = np.zeros(length)
-#    g24s = np.zeros(length)
-#
-#    # loop over all files for auto correlation
-#    for i in tqdm( range(begin, end+1) ):
-#        file = files_auto[i]
-#        # Read in data
-#        auto3 = np.loadtxt(file)[:,0] # G2 of CT3 A x CT 3 B (autocorrelations)
-#        auto4 = np.loadtxt(file)[:,1] # G2 of CT3 A x CT 3 B (autocorrelations)
-#        
-#        # 8 bin pattern correction and normalization: now this is g2
-#        auto3 = cor.pattern_correction(auto3)
-#        auto4 = cor.pattern_correction(auto4)
-#
-#        # Averaging of the g2 functions
-#        rms = np.std(auto3)
-#        g2_for_averaging = auto3/rms
-#        # Adding the new data to the total g2 function
-#        g2_sum3 += g2_for_averaging
-#    
-#        # Averaging of the g2 functions
-#        rms = np.std(auto4)
-#        g2_for_averaging = auto4/rms
-#        # Adding the new data to the total g2 function
-#        g2_sum4 += g2_for_averaging
-#
-#    # Re-normalize for proper g2 function
-#    g2_sum3 = g2_sum3/np.mean(g2_sum3)
-#    g2_sum4 = g2_sum4/np.mean(g2_sum4)
-#    
-#    # Lowpass filter
-#    #g2_sum3 = lowpass(g2_sum3)
-#    #g2_sum4 = lowpass(g2_sum4)
-#    
-#    g23s += g2_sum3
-#    g24s += g2_sum4
-
-#plt.plot(g2_sum3)
-#plt.plot(g2_sum4)
-#plt.ticklabel_format(useOffset=False)
-##plt.savefig("g2_functions/Auto/pdf/g2auto_{}_{}.pdf".format(folder,star))
-#plt.show()
-
-#np.savetxt("../g2_functions/Cross/txt_new/{}/CT3.txt".format(star), np.c_[g23s], header="{} CT3".format(star))
-#np.savetxt("../g2_functions/Cross/txt_new/{}/CT4.txt".format(star), np.c_[g24s], header="{} CT4".format(star))
-np.savetxt("g2_functions/{}/CT3.txt".format(star), np.c_[g23s], header="{} CT3".format(star))
-np.savetxt("g2_functions/{}/CT4.txt".format(star), np.c_[g24s], header="{} CT4".format(star))
-np.savetxt("g2_functions/{}/ChA.txt".format(star), np.c_[g2As], header="{} Channel A".format(star) )
-np.savetxt("g2_functions/{}/ChB.txt".format(star), np.c_[g2Bs], header="{} Channel B".format(star) )
+np.savetxt("g2_functions/{}/CT3.txt".format(star), np.c_[g2_3s], header="{} CT3".format(star))
+np.savetxt("g2_functions/{}/CT4.txt".format(star), np.c_[g2_4s], header="{} CT4".format(star))
+np.savetxt("g2_functions/{}/ChA.txt".format(star), np.c_[g2_As], header="{} Channel A".format(star) )
+np.savetxt("g2_functions/{}/ChB.txt".format(star), np.c_[g2_Bs], header="{} Channel B".format(star) )
+np.savetxt("g2_functions/{}/c3Ax4B.txt".format(star), np.c_[g2_3Ax4Bs], header="{} CT3 A x CT4 B".format(star) )
+np.savetxt("g2_functions/{}/c4Ax3B.txt".format(star), np.c_[g2_4Ax3Bs], header="{} CT4 A x CT3 B".format(star) )
 np.savetxt("g2_functions/{}/baseline.txt".format(star), np.c_[time_means, baselines, dbaselines], header="Time, baseline, baseline error" )

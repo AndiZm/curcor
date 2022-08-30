@@ -3,10 +3,10 @@ from tqdm import tqdm
 
 ct3_disk = "D"
 ct4_disk = "H"
-datapath = "20220418_HESS/regor"
+datapath = "20220418_HESS/acrux"
 
-start = 1005
-end   = 1391
+start = 118
+end   = 1840
 step  = 20
 
 commands = []
