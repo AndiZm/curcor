@@ -11,7 +11,6 @@ import utilities as uti
 import corrections as cor
 
 star = "Acrux"
-chn6 = True
 
 print("Final Analysis of {}".format(star))
 
@@ -20,9 +19,8 @@ chAs  = np.loadtxt("g2_functions/{}/ChA.txt".format(star))
 chBs  = np.loadtxt("g2_functions/{}/ChB.txt".format(star))
 ct3s  = np.loadtxt("g2_functions/{}/CT3.txt".format(star))
 ct4s  = np.loadtxt("g2_functions/{}/CT4.txt".format(star))
-if chn6 == True:
-    c3Ax4Bs = np.loadtxt("g2_functions/{}/c3Ax4B.txt".format(star))
-    c4Ax3Bs = np.loadtxt("g2_functions/{}/c4Ax3B.txt".format(star))
+c3Ax4Bs = np.loadtxt("g2_functions/{}/c3Ax4B.txt".format(star))
+c4Ax3Bs = np.loadtxt("g2_functions/{}/c4Ax3B.txt".format(star))
 data  = np.loadtxt("g2_functions/{}/baseline.txt".format(star))
 
 # Demo function for initializing x axis and some stuff
@@ -38,10 +36,8 @@ g2_all3Ax4B = np.zeros(len(x)); g2_all4Ax3B = np.zeros(len(x))
 for i in range (0,len(chAs)):
     g2_allA += chAs[i]/len(chAs)
     g2_allB += chBs[i]/len(chBs)
-if chn6 == True:
-    for i in range (0,len(chAs)):
-        g2_all3Ax4B += c3Ax4Bs[i]/len(c3Ax4Bs)
-        g2_all4Ax3B += c4Ax3Bs[i]/len(c4Ax3Bs)
+    g2_all3Ax4B += c3Ax4Bs[i]/len(c3Ax4Bs)
+    g2_all4Ax3B += c4Ax3Bs[i]/len(c4Ax3Bs)
 
 # Fit for gaining mu and sigma to fix these parameters
 xplot, popt, perr = uti.fit(g2_allA, x, -50, +50)
@@ -54,16 +50,15 @@ muB = popt[1]; sigmaB = popt[2]
 plt.plot(x, g2_allB, label="3B x 4B", color="#32a8a2")
 plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--")
 
-if chn6 == True:
-    xplot, popt, perr = uti.fit(g2_all3Ax4B, x, 65, 165, mu_start=115)
-    mu3Ax4B = popt[1]; sigma3Ax4B = popt[2]
-    plt.plot(x, g2_all3Ax4B, label="3A x 4B", color="red")
-    plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--")
-    
-    xplot, popt, perr = uti.fit(g2_all4Ax3B, x, 65, 165, mu_start=115)
-    mu4Ax3B = popt[1]; sigma4Ax3B = popt[2]
-    plt.plot(x, g2_all4Ax3B, label="4A x 3B", color="orange")
-    plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--")
+xplot, popt, perr = uti.fit(g2_all3Ax4B, x, 65, 165, mu_start=115)
+mu3Ax4B = popt[1]; sigma3Ax4B = popt[2]
+plt.plot(x, g2_all3Ax4B, label="3A x 4B", color="red")
+plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--")
+
+xplot, popt, perr = uti.fit(g2_all4Ax3B, x, 65, 165, mu_start=115)
+mu4Ax3B = popt[1]; sigma4Ax3B = popt[2]
+plt.plot(x, g2_all4Ax3B, label="4A x 3B", color="orange")
+plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--")
 
 plt.legend(); plt.xlim(-100,200); plt.grid()#; plt.tight_layout()
 plt.ticklabel_format(useOffset=False)
@@ -79,6 +74,8 @@ plt.figure(figsize=(18,12))
 plt.subplot(221)
 intsA = []; dintsA = []; times = []
 intsB = []; dintsB = []
+ints3Ax4B = []; dints3Ax4B = []
+ints4Ax3B = []; dints4Ax3B = []
 
 # initialize CT3 and CT4 sum arrays and cleaned arrays
 chA_clean = []
@@ -94,12 +91,16 @@ for i in range(0,len(chAs)):
     chB = chBs[i]
     ct3 = ct3s[i]
     ct4 = ct4s[i]
+    c3Ax4B = c3Ax4Bs[i]
+    c4Ax3B = c4Ax3Bs[i]
 
     # Do some more data cleaning, e.g. lowpass filters
     chA = cor.lowpass(chA)
     chB = cor.lowpass(chB)
     ct3 = cor.lowpass(ct3)
     ct4 = cor.lowpass(ct4)
+    c3Ax4B = cor.lowpass(c3Ax4B)
+    c4Ax3B = cor.lowpass(c4Ax3B)
 
     # more data cleaning with notch filter for higher frequencies
     freq3 = [50, 90, 125, 150]
@@ -114,12 +115,14 @@ for i in range(0,len(chAs)):
     freqA = [90]
     for j in range(len(freqA)):
         chA = cor.notch(chA, freqA[j]*1e6, 80)
+    # TODO: Add data cleaning for x correlations
 
     # save cleaned data
     chA_clean.append(chA)
     chB_clean.append(chB)
     ct3_clean.append(ct3)
     ct4_clean.append(ct4)
+    # TODO: Save cleaned data for x correlations
 
     # Apply gaussian fits to cross correlations, keep mu and sigma fixed
     xplotf, poptA, perrA = uti.fit_fixed(chA, x, -100, 100, muA,sigmaA)
@@ -129,6 +132,14 @@ for i in range(0,len(chAs)):
     xplotf, poptB, perrB = uti.fit_fixed(chB, x, -100, 100, muB,sigmaB)
     Int, dInt = uti.integral_fixed(poptB, perrB, sigmaB)
     intsB.append(1e6*Int); dintsB.append(1e6*dInt)# in femtoseconds
+
+    xplotf, popt3Ax4B, perr3Ax4B = uti.fit_fixed(c3Ax4B, x, 65, 265, mu3Ax4B,sigma3Ax4B)
+    Int, dInt = uti.integral_fixed(popt3Ax4B, perr3Ax4B, sigma3Ax4B)
+    ints3Ax4B.append(1e6*Int); dints3Ax4B.append(1e6*dInt)# in femtoseconds
+
+    xplotf, popt4Ax3B, perr4Ax3B = uti.fit_fixed(c4Ax3B, x, 65, 265, mu4Ax3B,sigma4Ax3B)
+    Int, dInt = uti.integral_fixed(popt4Ax3B, perr4Ax3B, sigma4Ax3B)
+    ints4Ax3B.append(1e6*Int); dints4Ax3B.append(1e6*dInt)# in femtoseconds
 
     # for autocorrelations of CT3 and CT4 we also average over all acquised data and sum all up
     rms = np.std(ct3[0:4500])
@@ -212,6 +223,8 @@ print ("Angular diameter Ch B: {:.2f} +/- {:.2f} (mas): ".format(uti.rad2mas(pop
 for i in range (0,len(baselines)):
     plt.errorbar(x=baselines[i], y=intsA[i], yerr=dintsA[i], xerr=data[:,2][i], marker="^", linestyle="", color=colors[i])
     plt.errorbar(x=baselines[i], y=intsB[i], yerr=dintsB[i], xerr=data[:,2][i], marker="o", linestyle="", color=colors[i])
+    plt.errorbar(x=baselines[i], y=ints3Ax4B[i], yerr=dints3Ax4B[i], xerr=data[:,2][i], marker="o", linestyle="", color="red")
+    plt.errorbar(x=baselines[i], y=ints4Ax3B[i], yerr=dints4Ax3B[i], xerr=data[:,2][i], marker="o", linestyle="", color="blue")
 plt.plot(xplot, uti.spatial_coherence(xplot,*poptA), color="red")
 plt.plot(xplot, uti.spatial_coherence(xplot,*poptB), color="grey")
 #plt.fill_between(xplot, spatial_coherence(xplot,*popt) + deltas_sc, spatial_coherence(xplot,*popt) - deltas_sc, color="red", alpha=0.2)
@@ -220,4 +233,11 @@ plt.xlim(-15,250)#; plt.ylim(0,30)
 plt.xlabel("Baseline (m)"); plt.ylabel("Coherence time (fs)")
 plt.tight_layout()
 #plt.savefig("{}_crosscorrelation.png".format(star))
+plt.show()
+
+
+# Just testing: correlation plot
+plt.plot(intsA, intsB, "o")
+plt.plot(intsA, ints3Ax4B, "o")
+plt.plot(intsA, ints4Ax3B, "o")
 plt.show()

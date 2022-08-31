@@ -22,6 +22,10 @@ Alnilam
 20220419_HESS	227	554
 [end]
 
+Mimosa
+20220419_HESS	159	318
+[end]
+
 
 
 
