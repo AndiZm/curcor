@@ -1,13 +1,15 @@
 import subprocess
 from tqdm import tqdm
 
-ct3_disk = "D"
-ct4_disk = "H"
-datapath = "20220418_HESS/acrux"
-
-start = 118
-end   = 1840
 step  = 20
+ct3_disk = "K"
+ct4_disk = "L"
+
+# Do more ...
+datapath = "20220419_HESS/shaula"
+
+start = 352
+end   = 6416
 
 commands = []
 index = start
@@ -16,7 +18,74 @@ while index < end+1:
     index += step
     end_send   = min(index, end+1)
 
-    #commands.append( "python3.9 subanalysis.py -s {} -e {} --t3 {} --t4 {} -d {}".format(start_send, end_send, ct3_disk, ct4_disk, datapath) )
+    commands.append( "python3.9 subanalysis_AB.py -s {} -e {} --t3 {} --t4 {} -d {}".format(start_send, end_send, ct3_disk, ct4_disk, datapath) )
+for i in tqdm(range(len(commands))):
+    subprocess.run(commands[i], shell=True)
+
+# Do more ...
+datapath = "20220420_HESS/shaula"
+
+start = 0
+end   = 4784
+
+commands = []
+index = start
+while index < end+1:
+    start_send = index
+    index += step
+    end_send   = min(index, end+1)
+
+    commands.append( "python3.9 subanalysis_AB.py -s {} -e {} --t3 {} --t4 {} -d {}".format(start_send, end_send, ct3_disk, ct4_disk, datapath) )
+for i in tqdm(range(len(commands))):
+    subprocess.run(commands[i], shell=True)
+
+# Do more ...
+datapath = "20220421_HESS/shaula"
+
+start = 0
+end   = 5574
+
+commands = []
+index = start
+while index < end+1:
+    start_send = index
+    index += step
+    end_send   = min(index, end+1)
+
+    commands.append( "python3.9 subanalysis_AB.py -s {} -e {} --t3 {} --t4 {} -d {}".format(start_send, end_send, ct3_disk, ct4_disk, datapath) )
+for i in tqdm(range(len(commands))):
+    subprocess.run(commands[i], shell=True)
+
+# Do more ...
+datapath = "20220422_HESS/nunki"
+
+start = 0
+end   = 3924
+
+commands = []
+index = start
+while index < end+1:
+    start_send = index
+    index += step
+    end_send   = min(index, end+1)
+
+    commands.append( "python3.9 subanalysis_AB.py -s {} -e {} --t3 {} --t4 {} -d {}".format(start_send, end_send, ct3_disk, ct4_disk, datapath) )
+for i in tqdm(range(len(commands))):
+    subprocess.run(commands[i], shell=True)
+
+# Do more ...
+datapath = "20220423_HESS/nunki"
+
+start = 0
+end   = 2225
+
+commands = []
+index = start
+while index < end+1:
+    start_send = index
+    index += step
+    end_send   = min(index, end+1)
+
     commands.append( "python3.9 subanalysis_AB.py -s {} -e {} --t3 {} --t4 {} -d {}".format(start_send, end_send, ct3_disk, ct4_disk, datapath) )
 for i in tqdm(range(len(commands))):
     subprocess.run(commands[i], shell=True)

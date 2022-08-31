@@ -13,7 +13,7 @@ import utilities as uti
 
 from threading import Thread
 
-star = "Acrux"
+star = "Alnilam"
 
 # Define files to analyze and subpackages
 folders   = [] # Data folders for analysis
@@ -100,7 +100,7 @@ def corr_parts(folder, start, stop):
         crossA = np.loadtxt(file)[:,2] # G2 of CT3 A x CT4 A (crosscorrelations)
         crossB = np.loadtxt(file)[:,3] # G2 of CT3 B x CT4 B (crosscorrelations)
         c3Ax4B = np.loadtxt(file)[:,4] # G2 of CT3 A x CT4 B (crosscorrelations)
-        c4Ax3B = np.loadtxt(file)[:,4] # G2 of CT4 A x CT3 B (crosscorrelations)
+        c4Ax3B = np.loadtxt(file)[:,5] # G2 of CT4 A x CT3 B (crosscorrelations)
 
         # Read mean waveform values
         f = open(file)
@@ -139,6 +139,7 @@ def corr_parts(folder, start, stop):
         crossB = shift_bins(crossB, binshift)
         c3Ax4B = shift_bins(c3Ax4B, binshift)
         c4Ax3B = shift_bins(c4Ax3B, -1*binshift) # negative binshift since CT4 is mentioned first
+        #c4Ax3B = shift_bins(c4Ax3B, binshift) # for testing
     
         #################################
         # Averaging of the g2 functions #

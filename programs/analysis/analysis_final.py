@@ -21,8 +21,8 @@ chBs  = np.loadtxt("g2_functions/{}/ChB.txt".format(star))
 ct3s  = np.loadtxt("g2_functions/{}/CT3.txt".format(star))
 ct4s  = np.loadtxt("g2_functions/{}/CT4.txt".format(star))
 if chn6 == True:
-    c3Ax4B = np.loadtxt("g2_functions/{}/c3Ax4B.txt".format(star))
-    c4Ax3B = np.loadtxt("g2_functions/{}/c4Ax3B.txt".format(star))
+    c3Ax4Bs = np.loadtxt("g2_functions/{}/c3Ax4B.txt".format(star))
+    c4Ax3Bs = np.loadtxt("g2_functions/{}/c4Ax3B.txt".format(star))
 data  = np.loadtxt("g2_functions/{}/baseline.txt".format(star))
 
 # Demo function for initializing x axis and some stuff
@@ -30,6 +30,9 @@ demo = chAs[0]
 x = np.arange(-1.6*len(demo)//2,+1.6*len(demo)//2,1.6)
 
 # Combine all data for channel A and B each for initial parameter estimation and fixing
+plt.figure(figsize=(10,6))
+plt.title("Cumulative cross correlation data of {}".format(star))
+
 g2_allA = np.zeros(len(x)); g2_allB = np.zeros(len(x))
 g2_all3Ax4B = np.zeros(len(x)); g2_all4Ax3B = np.zeros(len(x))
 for i in range (0,len(chAs)):
@@ -37,32 +40,34 @@ for i in range (0,len(chAs)):
     g2_allB += chBs[i]/len(chBs)
 if chn6 == True:
     for i in range (0,len(chAs)):
-        g2_all3Ax4B += c3Ax4B[i]/len(c3Ax4B)
-        g2_all4Ax3B += c4Ax3B[i]/len(c4Ax3B)
+        g2_all3Ax4B += c3Ax4Bs[i]/len(c3Ax4Bs)
+        g2_all4Ax3B += c4Ax3Bs[i]/len(c4Ax3Bs)
 
 # Fit for gaining mu and sigma to fix these parameters
-xplot, popt, perr = uti.fit(g2_allA, x, -40, +40)
+xplot, popt, perr = uti.fit(g2_allA, x, -50, +50)
 muA = popt[1]; sigmaA = popt[2]
-plt.plot(x, g2_allA, label="3A x 4A")
+plt.plot(x, g2_allA, label="3A x 4A", color="blue")
 plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--")
 
-xplot, popt, perr = uti.fit(g2_allB, x, -40, +40)
+xplot, popt, perr = uti.fit(g2_allB, x, -50, +50)
 muB = popt[1]; sigmaB = popt[2]
-plt.plot(x, g2_allB, label="3B x 4B")
-plt.plot(xplot, uti.gauss(xplot,*popt), color="black")
+plt.plot(x, g2_allB, label="3B x 4B", color="#32a8a2")
+plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--")
 
 if chn6 == True:
-    xplot, popt, perr = uti.fit(g2_all3Ax4B, x, 90, 150, mu_start=110)
+    xplot, popt, perr = uti.fit(g2_all3Ax4B, x, 65, 165, mu_start=115)
     mu3Ax4B = popt[1]; sigma3Ax4B = popt[2]
-    plt.plot(x, g2_all3Ax4B, label="3A x 4B")
+    plt.plot(x, g2_all3Ax4B, label="3A x 4B", color="red")
     plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--")
     
-    #xplot, popt, perr = uti.fit(g2_all4Ax3B, x, 90, 150)
+    xplot, popt, perr = uti.fit(g2_all4Ax3B, x, 65, 165, mu_start=115)
     mu4Ax3B = popt[1]; sigma4Ax3B = popt[2]
-    plt.plot(x, g2_all4Ax3B, label="4A x 3B")
+    plt.plot(x, g2_all4Ax3B, label="4A x 3B", color="orange")
     plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--")
-    #plt.show()
-plt.legend(); plt.show()
+
+plt.legend(); plt.xlim(-100,200); plt.grid()#; plt.tight_layout()
+plt.ticklabel_format(useOffset=False)
+plt.xlabel("Time delay (ns)"); plt.ylabel("$g^{(2)}$")
 
 # Define colormap for plotting all summarized individual g2 functions
 cm_sub = np.linspace(1.0, 0.0, len(chAs))
