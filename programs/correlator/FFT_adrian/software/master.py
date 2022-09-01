@@ -8,8 +8,8 @@ ct4_disk = "L"
 # Do more ...
 datapath = "20220419_HESS/shaula"
 
-start = 352
-end   = 6416
+start = 349
+end   = 352
 
 commands = []
 index = start
@@ -25,7 +25,7 @@ for i in tqdm(range(len(commands))):
 # Do more ...
 datapath = "20220420_HESS/shaula"
 
-start = 0
+start = 3390
 end   = 4784
 
 commands = []

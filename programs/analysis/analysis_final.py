@@ -10,7 +10,7 @@ import scipy.special as scp
 import utilities as uti
 import corrections as cor
 
-star = "Acrux"
+star = "Shaula"
 
 print("Final Analysis of {}".format(star))
 
@@ -204,6 +204,9 @@ plt.subplot(122)
 # get baselines for x axes
 baselines = data[:,1]
 
+# Average over all 4 cross correlations
+ints_avg, dints_avg = uti.weighted_avg(intsA,dintsA, intsB,dintsB, ints3Ax4B,dints3Ax4B, ints4Ax3B, dints4Ax3B)
+
 # calculate SC fit and errorbars
 poptA, pcov = curve_fit(uti.spatial_coherence, baselines, intsA, sigma=dintsA, p0=[25, 2.2e-9])
 perrA = np.sqrt(np.diag(pcov))
@@ -221,10 +224,11 @@ print ("Angular diameter Ch B: {:.2f} +/- {:.2f} (mas): ".format(uti.rad2mas(pop
 
 # plot datapoints in SC plot and fit to all points
 for i in range (0,len(baselines)):
-    plt.errorbar(x=baselines[i], y=intsA[i], yerr=dintsA[i], xerr=data[:,2][i], marker="^", linestyle="", color=colors[i])
-    plt.errorbar(x=baselines[i], y=intsB[i], yerr=dintsB[i], xerr=data[:,2][i], marker="o", linestyle="", color=colors[i])
+    plt.errorbar(x=baselines[i], y=intsA[i], yerr=dintsA[i], xerr=data[:,2][i], marker="^", linestyle="", color="blue")
+    plt.errorbar(x=baselines[i], y=intsB[i], yerr=dintsB[i], xerr=data[:,2][i], marker="o", linestyle="", color="#32a8a2")
     plt.errorbar(x=baselines[i], y=ints3Ax4B[i], yerr=dints3Ax4B[i], xerr=data[:,2][i], marker="o", linestyle="", color="red")
-    plt.errorbar(x=baselines[i], y=ints4Ax3B[i], yerr=dints4Ax3B[i], xerr=data[:,2][i], marker="o", linestyle="", color="blue")
+    plt.errorbar(x=baselines[i], y=ints4Ax3B[i], yerr=dints4Ax3B[i], xerr=data[:,2][i], marker="o", linestyle="", color="orange")
+plt.errorbar(baselines+2, ints_avg, yerr=dints_avg, marker="o", linestyle="", color="black", markersize=10)
 plt.plot(xplot, uti.spatial_coherence(xplot,*poptA), color="red")
 plt.plot(xplot, uti.spatial_coherence(xplot,*poptB), color="grey")
 #plt.fill_between(xplot, spatial_coherence(xplot,*popt) + deltas_sc, spatial_coherence(xplot,*popt) - deltas_sc, color="red", alpha=0.2)
