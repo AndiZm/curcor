@@ -102,10 +102,10 @@ def weighted_avg(cA, dcA, cB, dcB, c3Ax4B, dc3Ax4B, c4ax3B, dc4Ax3B):
     means  = []
     dmeans = []
     for i in range (0,len(cA)):
-        inverse_error_sum = 1/dcA[i] + 1/dcB[i] + 1/dc3Ax4B[i] + 1/dc4Ax3B[i]
-        mean = 1/(inverse_error_sum) * ( cA[i]/dcA[i] + cB[i]/dcB[i] + c3Ax4B[i]/dc3Ax4B[i] + c4ax3B[i]/dc4Ax3B[i] )
+        inverse_error_sum = 1/dcA[i]**2 + 1/dcB[i]**2 + 1/dc3Ax4B[i]**2 + 1/dc4Ax3B[i]**2
+        mean = 1/(inverse_error_sum) * ( cA[i]/dcA[i]**2 + cB[i]/dcB[i]**2 + c3Ax4B[i]/dc3Ax4B[i]**2 + c4ax3B[i]/dc4Ax3B[i]**2 )
         means.append(mean)
 
-        dmean = np.sqrt( 1/inverse_error_sum**2 * (cA[i]+cB[i]+c3Ax4B[i]+c4ax3B[i]) )
+        dmean = np.sqrt( 1/inverse_error_sum )
         dmeans.append(dmean)
     return means, dmeans
