@@ -13,7 +13,7 @@ import utilities as uti
 
 from threading import Thread
 
-star = "Nunki"
+star = "Shaula"
 
 # Define files to analyze and subpackages
 folders   = [] # Data folders for analysis

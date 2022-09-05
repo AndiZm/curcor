@@ -83,6 +83,8 @@ chA_clean = []
 chB_clean = []
 ct3_clean = []
 ct4_clean = []
+c3Ax4B_clean = []
+c4Ax3B_clean = []
 ct3_sum = np.zeros(len(ct3s[0]))
 ct4_sum = np.zeros(len(ct4s[0]))
 
@@ -116,14 +118,20 @@ for i in range(0,len(chAs)):
     freqA = [90]
     for j in range(len(freqA)):
         chA = cor.notch(chA, freqA[j]*1e6, 80)
-    # TODO: Add data cleaning for x correlations
+    freqAB = [90,250]
+    for i in range(len(freqAB)):
+        c3Ax4B = cor.notch(c3Ax4B, freqAB[i]*1e6, 80)
+    freqBA = [90]
+    for i in range(len(freqBA)):
+        c4Ax3B = cor.notch(c4Ax3B, freqBA[i]*1e6, 80)
 
     # save cleaned data
     chA_clean.append(chA)
     chB_clean.append(chB)
     ct3_clean.append(ct3)
     ct4_clean.append(ct4)
-    # TODO: Save cleaned data for x correlations
+    c3Ax4B_clean.append(c3Ax4B)
+    c4Ax3B_clean.append(c4Ax3B)
 
     # Apply gaussian fits to cross correlations, keep mu and sigma fixed
     xplotf, poptA, perrA = uti.fit_fixed(chA, x, -70, 70, muA,sigmaA)
@@ -215,6 +223,8 @@ np.savetxt("g2_functions/{}/ChA_clean.txt".format(star), np.c_[chA_clean], heade
 np.savetxt("g2_functions/{}/ChB_clean.txt".format(star), np.c_[chB_clean], header="{} Channel B cleaned".format(star) )
 np.savetxt("g2_functions/{}/CT3_clean.txt".format(star), np.c_[ct3_clean], header="{} CT3 cleaned".format(star) )
 np.savetxt("g2_functions/{}/CT4_clean.txt".format(star), np.c_[ct4_clean], header="{} CT4 cleaned".format(star) )
+np.savetxt("g2_functions/{}/C3Ax4B_clean.txt".format(star), np.c_[c3Ax4B_clean], header="{} CT3A x CT4B cleaned".format(star) )
+np.savetxt("g2_functions/{}/C4Ax3B_clean.txt".format(star), np.c_[c4Ax3B_clean], header="{} CT4A x CT3B cleaned".format(star) )
 
 #### making SC plot (spatial coherence) via integral data ####
 xplot = np.arange(0.1,300,0.1)
