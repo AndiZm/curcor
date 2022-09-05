@@ -40,8 +40,11 @@ def gauss(x, a, x0, sigma, d):
     return a*np.exp(-(x-x0)**2/(2*sigma**2)) + d
 def gauss_fixed(x, a, mu, sigma):
     return a*np.exp(-(x-mu)**2/(2*sigma**2)) + 1
-def gauss_shifted(x, a, mu, sigma, shift, d=1):
-    return a*np.exp(-(x-mu)**2/(2*sigma**2)) + d + 2e-6*shift
+def gauss_shifted(x, a, mu, sigma, shift, d=1, inverse=False, ntotal=1):
+    if inverse == False:
+        return a*np.exp(-(x-mu)**2/(2*sigma**2)) + d + 2e-6*shift
+    else:
+        return a*np.exp(-(x-mu)**2/(2*sigma**2)) + d + 2e-6*(ntotal-shift-1)
 
 def fit(data, x, s, e, mu_start=-2):
     xfit = x[(x>s) & (x<e)]
