@@ -9,8 +9,37 @@ import scipy.special as scp
 
 import utilities as uti
 import corrections as cor
+import geometry as geo
 
 star = "Shaula"
+
+# Get the timebin shift of the specific measurement from the time difference
+def timebin(tdiff):
+    return int(1.0* np.floor((tdiff+0.8)/1.6))
+def shift_bins(data, binshift):
+    # A negative number means shifting to the right, so scrapping the right end of the array to the beginning
+    if binshift <= 0:
+        for j in range (binshift,0):
+            data = np.insert(data,0,data[-1])
+            data = np.delete(data, -1)
+    # A positive number means shifting to the left, so scrapping the beginning of the array to the end
+    if binshift > 0:
+        for j in range (0, binshift):
+            data = np.append(data,data[0])
+            data = np.delete(data, 0)
+    return data
+
+# Average over all 4 functions
+def average_g2s(cA, cB, c3Ax4B, c4Ax3B):
+    g2_avg = np.zeros( len(cA) )
+    g2_avg += cA/np.std(cA[0:4500])
+    g2_avg += cB/np.std(cB[0:4500])
+    g2_avg += c3Ax4B/np.std(c3Ax4B[0:4500])
+    g2_avg += c4Ax3B/np.std(c4Ax3B[0:4500])
+
+    g2_avg = g2_avg/np.mean(g2_avg[0:4500])
+
+    return g2_avg
 
 print("Final Analysis of {}".format(star))
 
@@ -64,6 +93,39 @@ plt.legend(); plt.xlim(-100,200); plt.grid()#; plt.tight_layout()
 plt.ticklabel_format(useOffset=False)
 plt.xlabel("Time delay (ns)"); plt.ylabel("$g^{(2)}$")
 
+plt.show()
+
+#########################
+# Shift all peaks to zero
+#########################
+plt.figure(figsize=(10,6))
+
+tbin = timebin(muA); g2_allA = shift_bins(g2_allA, tbin)
+tbin = timebin(muB); g2_allB = shift_bins(g2_allB, tbin)
+tbin = timebin(mu3Ax4B); g2_all3Ax4B = shift_bins(g2_all3Ax4B, tbin)
+tbin = timebin(mu4Ax3B); g2_all4Ax3B = shift_bins(g2_all4Ax3B, tbin)
+
+g2_avg = average_g2s(g2_allA, g2_allB, g2_all3Ax4B, g2_all4Ax3B)
+
+# Fit for gaining mu and sigma to fix these parameters
+xplot, popt, perr = uti.fit(g2_avg, x, -100, +100)
+mu_avg = popt[1]; sigma_avg = popt[2]
+
+
+plt.plot(x, g2_allA, label="3A x 4A", color="blue")
+plt.plot(x, g2_allB, label="3B x 4B", color="#32a8a2")
+plt.plot(x, g2_all3Ax4B, label="3A x 4B", color="red")
+plt.plot(x, g2_all4Ax3B, label="4A x 3B", color="orange")
+
+plt.plot(x, g2_avg, color="grey", linewidth="4", label="Average")
+plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--", label="Gaussian fit")
+
+plt.legend(); plt.xlim(-150,150); plt.grid()#; plt.tight_layout()
+plt.ticklabel_format(useOffset=False)
+plt.xlabel("Time delay (ns)"); plt.ylabel("$g^{(2)}$")
+
+plt.show()
+
 # Define colormap for plotting all summarized individual g2 functions
 cm_sub = np.linspace(1.0, 0.0, len(chAs))
 colors = [cm.viridis(x) for x in cm_sub]
@@ -77,6 +139,8 @@ intsA = []; dintsA = []; times = []
 intsB = []; dintsB = []
 ints3Ax4B = []; dints3Ax4B = []
 ints4Ax3B = []; dints4Ax3B = []
+
+ints_avgg2 = []; dints_avgg2 = []
 
 # initialize CT3 and CT4 sum arrays and cleaned arrays
 chA_clean = []
@@ -125,22 +189,14 @@ for i in range(0,len(chAs)):
     ct4_clean.append(ct4)
     # TODO: Save cleaned data for x correlations
 
-    # Apply gaussian fits to cross correlations, keep mu and sigma fixed
-    xplotf, poptA, perrA = uti.fit_fixed(chA, x, -70, 70, muA,sigmaA)
-    Int, dInt = uti.integral_fixed(poptA, perrA, sigmaA)
-    intsA.append(1e6*Int); dintsA.append(1e6*dInt)# in femtoseconds
+    #########################
+    # Shift all peaks to zero
+    #########################
+    tbin = timebin(muA); chA = shift_bins(chA, tbin)
+    tbin = timebin(muB); chB = shift_bins(chB, tbin)
+    tbin = timebin(mu3Ax4B); c3Ax4B = shift_bins(c3Ax4B, tbin)
+    tbin = timebin(mu4Ax3B); c4Ax3B = shift_bins(c4Ax3B, tbin)
 
-    xplotf, poptB, perrB = uti.fit_fixed(chB, x, -70, 70, muB,sigmaB)
-    Int, dInt = uti.integral_fixed(poptB, perrB, sigmaB)
-    intsB.append(1e6*Int); dintsB.append(1e6*dInt)# in femtoseconds
-
-    xplotfs, popt3Ax4B, perr3Ax4B = uti.fit_fixed(c3Ax4B, x, 45, 185, mu3Ax4B,sigma3Ax4B)
-    Int, dInt = uti.integral_fixed(popt3Ax4B, perr3Ax4B, sigma3Ax4B)
-    ints3Ax4B.append(1e6*Int); dints3Ax4B.append(1e6*dInt)# in femtoseconds
-
-    xplotfs, popt4Ax3B, perr4Ax3B = uti.fit_fixed(c4Ax3B, x, 45, 185, mu4Ax3B,sigma4Ax3B)
-    Int, dInt = uti.integral_fixed(popt4Ax3B, perr4Ax3B, sigma4Ax3B)
-    ints4Ax3B.append(1e6*Int); dints4Ax3B.append(1e6*dInt)# in femtoseconds
 
     # for autocorrelations of CT3 and CT4 we also average over all acquised data and sum all up
     rms = np.std(ct3[0:4500])
@@ -151,26 +207,30 @@ for i in range(0,len(chAs)):
     g2_for_averaging = ct4/rms
     ct4_sum += g2_for_averaging
 
+    # Averaged cross correlations
+    avg = average_g2s(chA, chB, c3Ax4B, c4Ax3B)
+    xplotf, popt_avg, perr_avg = uti.fit_fixed(avg, x, -100, 100, mu_avg, sigma_avg)
+    Int, dInt = uti.integral_fixed(popt_avg, perr_avg, sigma_avg)
+    ints_avgg2.append(1e6*Int); dints_avgg2.append(1e6*dInt)# in femtoseconds
+
     # Check acquisition time of original data
     timestring = ephem.Date(data[:,0][i])
     print("{}".format(i), timestring, Int, dInt)
     
-    # Subplot for the cross correlations 3A x 4A
-    plt.subplot(231)
-    plt.errorbar(x, chA+i*2e-6, yerr=0, marker=".", linestyle="--", label=timestring, color = colors[i], alpha=0.6)
-    plt.plot(xplotf, uti.gauss_shifted(x=xplotf, a=poptA[0], mu=muA, sigma=sigmaA, shift=i), color="black", linestyle="-")
-    # Subplot for the cross correlations 3A x 4B
-    plt.subplot(233)
-    plt.errorbar(x, c3Ax4B+i*2e-6, yerr=0, marker=".", linestyle="--", label=timestring, color = colors[i], alpha=0.6)
-    plt.plot(xplotfs, uti.gauss_shifted(x=xplotfs, a=popt3Ax4B[0], mu=mu3Ax4B, sigma=sigma3Ax4B, shift=i), color="black", linestyle="-")
-    # Subplot for the cross correlations 4A x 3B
-    plt.subplot(234)
-    plt.errorbar(x, c4Ax3B+i*2e-6, yerr=0, marker=".", linestyle="--", label=timestring, color = colors[i], alpha=0.6)
-    plt.plot(xplotfs, uti.gauss_shifted(x=xplotfs, a=popt4Ax3B[0], mu=mu4Ax3B, sigma=sigma4Ax3B, shift=i), color="black", linestyle="-")
-    # Subplot for the cross correlations 3B x 4B
-    plt.subplot(236)
-    plt.errorbar(x, chB+i*2e-6, yerr=0, marker=".", linestyle="--", label=timestring, color = colors[i], alpha=0.6)
-    plt.plot(xplotf, uti.gauss_shifted(x=xplotf, a=poptB[0], mu=muB, sigma=sigmaB, shift=i), color="black", linestyle="-")
+    # Subplot for all cross correlationss
+    plt.subplot(131)
+    plt.errorbar(x, chA+i*2e-6,    yerr=0, linestyle="--", label=timestring, color = "blue", alpha=0.6)
+    plt.errorbar(x, c3Ax4B+i*2e-6, yerr=0, linestyle="--", label=timestring, color = "red", alpha=0.6)
+    plt.errorbar(x, c4Ax3B+i*2e-6, yerr=0, linestyle="--", label=timestring, color = "orange", alpha=0.6)
+    plt.errorbar(x, chB+i*2e-6,    yerr=0, linestyle="--", label=timestring, color = "#32a8a2", alpha=0.6)
+    plt.errorbar(x, avg+i*2e-6,    yerr=0, linestyle="-", color = "grey", linewidth=4)
+    
+    #plt.plot(xplotf,  uti.gauss_shifted(x=xplotf,  a=poptA[0],     mu=0, sigma=sigmaA, shift=i),     color="yellow", linestyle="-")
+    #plt.plot(xplotfs, uti.gauss_shifted(x=xplotfs, a=popt3Ax4B[0], mu=0, sigma=sigma3Ax4B, shift=i), color="yellow", linestyle="-")
+    #plt.plot(xplotfs, uti.gauss_shifted(x=xplotfs, a=popt4Ax3B[0], mu=0, sigma=sigma4Ax3B, shift=i), color="yellow", linestyle="-")
+    #plt.plot(xplotf,  uti.gauss_shifted(x=xplotf,  a=poptB[0],     mu=0, sigma=sigmaB, shift=i),     color="yellow", linestyle="-")
+    
+    plt.plot(xplotf,  uti.gauss_shifted(x=xplotf,  a=popt_avg[0], mu=mu_avg, sigma=sigma_avg, shift=i), color="black", linestyle="--")
 
     # Subplot for the auto correlations, tbc
     plt.subplot(235)
@@ -196,11 +256,11 @@ def cc_plots(xlims):
     plt.xlim(xlims[0],xlims[1])
     plt.tight_layout()
 
-plt.subplot(231); plt.title("3A x 4A {}".format(star)); cc_plots((-300,300))
-plt.subplot(233); plt.title("3A x 4B {}".format(star)); cc_plots((-285,415))
-plt.subplot(234); plt.title("4A x 3B {}".format(star)); cc_plots((-285,415))
-plt.subplot(236); plt.title("3B x 4B {}".format(star)); cc_plots((-300,300))
-plt.subplot(235); plt.title("Autocorrelations".format(star)); cc_plots((0,300)); plt.ylim(0.99999,1.00002)
+plt.subplot(131); plt.title("Cross correlations of {}".format(star)); cc_plots((-150,150))
+#plt.subplot(233); plt.title("3A x 4B {}".format(star)); cc_plots((-285,415))
+#plt.subplot(234); plt.title("4A x 3B {}".format(star)); cc_plots((-285,415))
+#plt.subplot(236); plt.title("3B x 4B {}".format(star)); cc_plots((-300,300))
+#plt.subplot(235); plt.title("Autocorrelations".format(star)); cc_plots((0,300)); plt.ylim(0.99999,1.00002)
 
 #plt.subplot(223)
 #plt.title("Auto correlations on {}".format(star))

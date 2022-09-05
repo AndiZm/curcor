@@ -55,6 +55,7 @@ def fit_fixed(data, x, s, e, mu,sigma, d=1):
     yfit = data[(x>s) & (x<e)]
     xplot = np.arange(s, e, 0.01)
     popt, cov = curve_fit(lambda x, a: gauss(x,a, mu,sigma,d), xfit, yfit, p0=[1e-6])
+    #popt, cov = curve_fit(lambda x, a, d: gauss(x,a, mu,sigma,d), xfit, yfit, p0=[1e-6,1.])
     perr = np.sqrt(np.diag(cov))
     return xplot, popt, perr
 
