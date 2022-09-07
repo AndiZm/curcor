@@ -85,6 +85,9 @@ def calc_array_mean(array, darray):
 
 def spatial_coherence(x, amp, ang):
     return amp * (2*scp.j1(np.pi * x * ang/lam) / (np.pi* x * ang/lam))**2
+def spatial_coherence_odr(p, x):
+    amp, ang = p
+    return amp * (2*scp.j1(np.pi * x * ang/lam) / (np.pi* x * ang/lam))**2
 def bessel(phi, baseline):
     return scp.j1(np.pi*baseline*phi/lam)
 def numerical_deviation(phi, baseline):
@@ -113,3 +116,8 @@ def weighted_avg(cA, dcA, cB, dcB, c3Ax4B, dc3Ax4B, c4ax3B, dc4Ax3B):
         dmean = np.sqrt( 1/inverse_error_sum )
         dmeans.append(dmean)
     return means, dmeans
+
+def fourier(data):
+    fft  = np.abs(np.fft.fft(data-1))
+    xfft = np.linspace(0,1/1.6,len(data),endpoint=True)
+    return xfft, fft

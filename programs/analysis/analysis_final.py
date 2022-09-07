@@ -119,11 +119,11 @@ for i in range(0,len(chAs)):
     for j in range(len(freqA)):
         chA = cor.notch(chA, freqA[j]*1e6, 80)
     freqAB = [90,250]
-    for i in range(len(freqAB)):
-        c3Ax4B = cor.notch(c3Ax4B, freqAB[i]*1e6, 80)
+    for j in range(len(freqAB)):
+        c3Ax4B = cor.notch(c3Ax4B, freqAB[j]*1e6, 80)
     freqBA = [90]
-    for i in range(len(freqBA)):
-        c4Ax3B = cor.notch(c4Ax3B, freqBA[i]*1e6, 80)
+    for j in range(len(freqBA)):
+        c4Ax3B = cor.notch(c4Ax3B, freqBA[j]*1e6, 80)
 
     # save cleaned data
     chA_clean.append(chA)

@@ -44,13 +44,13 @@ def average_g2s(cA, cB, c3Ax4B, c4Ax3B):
 print("Final Analysis of {}".format(star))
 
 # Read in the data (g2 functions and time/baseline parameters)
-chAs  = np.loadtxt("g2_functions/{}/ChA.txt".format(star))
-chBs  = np.loadtxt("g2_functions/{}/ChB.txt".format(star))
-ct3s  = np.loadtxt("g2_functions/{}/CT3.txt".format(star))
-ct4s  = np.loadtxt("g2_functions/{}/CT4.txt".format(star))
-c3Ax4Bs = np.loadtxt("g2_functions/{}/c3Ax4B.txt".format(star))
-c4Ax3Bs = np.loadtxt("g2_functions/{}/c4Ax3B.txt".format(star))
-data  = np.loadtxt("g2_functions/{}/baseline.txt".format(star))
+chAs    = np.loadtxt("g2_functions/{}/ChA.txt".format(star))     #[0:5]
+chBs    = np.loadtxt("g2_functions/{}/ChB.txt".format(star))     #[0:5]
+ct3s    = np.loadtxt("g2_functions/{}/CT3.txt".format(star))     #[0:5]
+ct4s    = np.loadtxt("g2_functions/{}/CT4.txt".format(star))     #[0:5]
+c3Ax4Bs = np.loadtxt("g2_functions/{}/c3Ax4B.txt".format(star))  #[0:5]
+c4Ax3Bs = np.loadtxt("g2_functions/{}/c4Ax3B.txt".format(star))  #[0:5]
+data    = np.loadtxt("g2_functions/{}/baseline.txt".format(star))#[0:5]
 
 # Demo function for initializing x axis and some stuff
 demo = chAs[0]
@@ -126,6 +126,7 @@ plt.ticklabel_format(useOffset=False)
 plt.xlabel("Time delay (ns)"); plt.ylabel("$g^{(2)}$")
 
 plt.tight_layout()
+plt.savefig("images/{}_cumulative.png".format(star))
 plt.show()
 
 # Define colormap for plotting all summarized individual g2 functions
@@ -153,6 +154,7 @@ ct4_clean = []
 ct3_sum = np.zeros(len(ct3s[0]))
 ct4_sum = np.zeros(len(ct4s[0]))
 ticks = []
+ffts = []
 
 # loop over every g2 function chunks
 for i in range(0,len(chAs)):
@@ -184,7 +186,12 @@ for i in range(0,len(chAs)):
     freqA = [90]
     for j in range(len(freqA)):
         chA = cor.notch(chA, freqA[j]*1e6, 80)
-    # TODO: Add data cleaning for x correlations
+    freqAB = [90,250]
+    for j in range(len(freqAB)):
+        c3Ax4B = cor.notch(c3Ax4B, freqAB[j]*1e6, 80)
+    freqBA = [90]
+    for j in range(len(freqBA)):
+        c4Ax3B = cor.notch(c4Ax3B, freqBA[j]*1e6, 80)
 
     # save cleaned data
     chA_clean.append(chA)
@@ -213,18 +220,28 @@ for i in range(0,len(chAs)):
 
     # Averaged cross correlations
     avg = average_g2s(chA, chB, c3Ax4B, c4Ax3B)
+    # additional data cleaning
+    freq_avg = [50,110,130,144.4,150,230]
+    for j in range(len(freq_avg)):
+        avg = cor.notch(avg, freq_avg[j]*1e6, 80)
+
+
     # Fit with fixed mu and sigma
-    xplotf, popt_avg, perr_avg = uti.fit_fixed(avg, x, -50, 50, mu_avg, sigma_avg)
+    xplotf, popt_avg, perr_avg = uti.fit_fixed(avg, x, -100, 100, mu_avg, sigma_avg)
     Int, dInt = uti.integral_fixed(popt_avg, perr_avg, sigma_avg)
     ints_fixed.append(1e6*Int); dints_fixed.append(1e6*dInt)# in femtoseconds
     # Fit with free mu and sigma
-    xplotf, popt_avg_free, perr_avg_free = uti.fit(avg, x, -50, 50)
+    xplotf, popt_avg_free, perr_avg_free = uti.fit(avg, x, -100, 100)
     Int, dInt = uti.integral(popt_avg_free, perr_avg_free)
     ints_free.append(1e6*Int); dints_free.append(1e6*dInt)# in femtoseconds
 
     # Check acquisition time of original data
     timestring = ephem.Date(data[:,0][i])
     print("{}".format(i), timestring, Int, dInt)
+
+    # FFT check
+    fft = np.abs(np.fft.fft(avg-1))
+    ffts.append(fft)
     
     # Subplot for all cross correlations
     the_shift = (len(chAs)-i-1)*2e-6
@@ -254,6 +271,8 @@ plt.subplot(224)
 plt.errorbar(x, ct3_sum, yerr=0, marker=".", linestyle="--", color = "black", linewidth=2, alpha=1)
 plt.errorbar(x, ct4_sum+1e-5, yerr=0, marker=".", linestyle="--", color = "black", linewidth=2, alpha=1)
 
+np.savetxt("autocorrelation_{}.txt".format(star), np.c_[ct3_sum, ct4_sum])
+
 # Figure stuff
 def cc_plots(xlims):
     plt.grid()
@@ -267,20 +286,7 @@ def cc_plots(xlims):
 plt.subplot(121); plt.title("Cross correlations of {}".format(star)); cc_plots((-150,150))
 plt.yticks(np.arange(1,1+2e-6*len(chAs),2e-6))
 
-plt.subplot(224); plt.title("Cross correlations of {}".format(star)); cc_plots((0,200))
-
-#plt.subplot(233); plt.title("3A x 4B {}".format(star)); cc_plots((-285,415))
-#plt.subplot(234); plt.title("4A x 3B {}".format(star)); cc_plots((-285,415))
-#plt.subplot(236); plt.title("3B x 4B {}".format(star)); cc_plots((-300,300))
-#plt.subplot(235); plt.title("Autocorrelations".format(star)); cc_plots((0,300)); plt.ylim(0.99999,1.00002)
-
-#plt.subplot(223)
-#plt.title("Auto correlations on {}".format(star))
-#plt.grid()
-#plt.xlabel("Time")
-#plt.ylabel("$g^{(2)}$")
-#plt.legend(loc='right')
-#plt.xlim(80,160)
+plt.subplot(224); plt.title("Auto correlations of {}".format(star)); cc_plots((0,200))
 
 # store cleaned data
 np.savetxt("g2_functions/{}/ChA_clean.txt".format(star), np.c_[chA_clean], header="{} Channel A cleaned".format(star) )
@@ -299,31 +305,65 @@ dbaselines = data[:,2]
 # Average over all 4 cross correlations
 ints_avg, dints_avg = uti.weighted_avg(intsA,dintsA, intsB,dintsB, ints3Ax4B,dints3Ax4B, ints4Ax3B, dints4Ax3B)
 
+# Add zero-baseline
+baselines  = np.append(baselines,0+1e-6)
+dbaselines = np.append(dbaselines,0)
+ints_fixed = np.append(ints_fixed,41.28)
+dints_fixed= np.append(dints_fixed,7.02)
+
 # Calculate SC fit and errorbars for the averaged signal
 poptavg, pcov = curve_fit(uti.spatial_coherence, baselines, ints_fixed, sigma=dints_fixed, p0=[25, 2.2e-9])
 perravg = np.sqrt(np.diag(pcov))
 
 # Calculate SC fit and errorbars for the averaged signal
-poptavg_free, pcov = curve_fit(uti.spatial_coherence, baselines, ints_free, sigma=dints_free, p0=[25, 2.2e-9])
-perravg_free = np.sqrt(np.diag(pcov))
+#poptavg_free, pcov = curve_fit(uti.spatial_coherence, baselines, ints_free, sigma=dints_free, p0=[25, 2.2e-9])
+#perravg_free = np.sqrt(np.diag(pcov))
+
+###############
+# Try with ods
+# Model object
+from scipy import odr
+sc_model = odr.Model(uti.spatial_coherence_odr)
+# RealData object
+rdata = odr.RealData( baselines[:-1], ints_fixed[:-1], sx=dbaselines[:-1], sy=dints_fixed[:-1] )
+# Set up ODR with model and data
+odr = odr.ODR(rdata, sc_model, beta0=[25,2.2e-9])
+# Run the regression
+out = odr.run()
+# Fit parameters
+popt_odr = out.beta
+perr_odr = out.sd_beta
+###############
 
 deltas_sc_avg = []
 for i in xplot:
     deltas_sc_avg.append( np.abs(uti.delta_spatial_coherence(x=i, A=poptavg[0],dA=perravg[0], phi=poptavg[1], dphi=perravg[1])) )
-print ("Angular diameter AVG (fixed) : {:.2f} +/- {:.2f} (mas)".format(uti.rad2mas(poptavg[1]),   uti.rad2mas(perravg[1])))
-print ("Angular diameter AVG (free)  : {:.2f} +/- {:.2f} (mas)".format(uti.rad2mas(poptavg_free[1]),   uti.rad2mas(perravg_free[1])))
+print ("Angular diameter AVG (fixed)   : {:.2f} +/- {:.2f} (mas)".format(uti.rad2mas(poptavg[1]),   uti.rad2mas(perravg[1])))
+#print ("Angular diameter AVG (free)    : {:.2f} +/- {:.2f} (mas)".format(uti.rad2mas(poptavg_free[1]),   uti.rad2mas(perravg_free[1])))
+
+print ("Angular diameter AVG (free,odr): {:.2f} +/- {:.2f} (mas)".format(uti.rad2mas(popt_odr[1]),   uti.rad2mas(perr_odr[1])))
 
 # plot datapoints in SC plot and fit to all points
-plt.errorbar(baselines, ints_fixed, yerr=dints_fixed, xerr=dbaselines, marker="o", linestyle="", color="black", markersize=4)
+plt.errorbar(x=0, y=41.28, yerr=7.02, marker="o", color="black")
+for i in range (0,len(baselines)-1):
+    plt.errorbar(baselines[i], ints_fixed[i], yerr=dints_fixed[i], xerr=dbaselines[i], marker="o", linestyle="", color=colors[i])
+    #plt.text(baselines[i]+1,ints_fixed[i]+0.5,ephem.Date(data[:,0][i]), color=colors[i])
 #plt.errorbar(baselines, ints_free,  yerr=dints_free,  marker="o", linestyle="", color="red", markersize=4, alpha=0.4)
 plt.plot(xplot, uti.spatial_coherence(xplot,*poptavg),   label="Fixed parameters", color="red", linewidth=2)
+plt.plot(xplot, uti.spatial_coherence(xplot,*popt_odr),   label="ODR (no zero baseline)", color="orange", linewidth=2)
 #plt.plot(xplot, uti.spatial_coherence(xplot,*poptavg_free),   label="Free parameters", color="red", linewidth=2, alpha=0.4)
 
 #plt.fill_between(xplot, spatial_coherence(xplot,*popt) + deltas_sc, spatial_coherence(xplot,*popt) - deltas_sc, color="red", alpha=0.2)
 
-plt.xlim(-15,250)#; plt.ylim(0,30)
+plt.xlim(-15,250); plt.ylim(0,50)
 plt.xlabel("Baseline (m)"); plt.ylabel("Coherence time (fs)")
 plt.legend(loc="upper right")
 #plt.tight_layout()
 #plt.savefig("{}_crosscorrelation.png".format(star))
+plt.savefig("images/{}_sc.png".format(star))
 plt.show()
+
+#xfft = np.linspace(0,1./1.6,len(ffts[0]), endpoint=True)
+#for i in range (0,len(baselines)):
+#    plt.plot(xfft, ffts[i], color=colors[i])
+#plt.show()
