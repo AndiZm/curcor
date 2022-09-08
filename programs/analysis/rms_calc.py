@@ -142,7 +142,7 @@ meas_rms4 = []
 meas_rmsAB = []
 meas_rmsBA = []
 chunk =[]
-chunk_times =[]
+
 y =[]
 mo = []
 d =[]
@@ -176,6 +176,20 @@ for i in tqdm( range(len(chAs)) ): # range( 0,1)
     ct4 = cor.lowpass(ct4)
     cAB = cor.lowpass(cAB)
     cBA = cor.lowpass(cBA)
+
+    # Plotting g2 functions
+    Figure1 = plt.figure(figsize=(22,10))
+    x = np.arange(0, len(chA))
+    plt.plot(x, chA, label="A")
+    plt.plot(x, chB, label="B")
+    plt.plot(x, ct3, label="3", color="green")
+    plt.plot(x, ct4, label="4", color="limegreen")
+    plt.plot(x, cAB, label="3Ax4B", color="purple")
+    plt.plot(x, cBA, label="4Ax3B", color="plum")
+    plt.legend()
+    plt.title("g2 functions of each channel")
+    #plt.show()
+    plt.close()
 
     # FFT of data to see unwanted frequencies
     fftA = np.abs(np.fft.fft(chA-1))
@@ -244,10 +258,7 @@ for i in tqdm( range(len(chAs)) ): # range( 0,1)
     
     # Define figure
     bigfigure = plt.figure(figsize=(22,10))
-    plt.title("RMS of {}".format(star))
-    plt.subplot(241)
-    plt.subplot(243)
-
+    
     # Subplot for the fft
     plt.subplot(241)
     plt.plot(fftx, fftA, label='A', color="blue")
@@ -282,22 +293,22 @@ for i in tqdm( range(len(chAs)) ): # range( 0,1)
     plt.subplot(244)
     plt.plot(fftx, fftA, label='A', color="blue", )
     plt.plot(fftx, fftB, label='B', color="orange")
-    plt.plot(fftx, fft3, label='3', color="purple")
-    plt.plot(fftx, fft4, label='4', color="green")
-    plt.plot(fftx, fftAB, label='3Ax4B', color="yellow")
-    plt.plot(fftx, fftBA, label='4Ax3B', color="cyan")
+    plt.plot(fftx, fft3, label='3', color="green")
+    plt.plot(fftx, fft4, label='4', color="limegreen")
+    plt.plot(fftx, fftAB, label='3Ax4B', color="purple")
+    plt.plot(fftx, fftBA, label='4Ax3B', color="plum")
     plt.legend()
 
     plt.subplot(248)
     plt.plot(fftx, fftA1, label='A clean', color="blue" )
     plt.plot(fftx, fftB1, label='B clean', color="orange")
-    plt.plot(fftx, fft31, label='3 clean', color="purple")
-    plt.plot(fftx, fft41, label='4 clean', color="green")
-    plt.plot(fftx, fftAB1, label='3Ax4B clean', color="yellow")
-    plt.plot(fftx, fftBA1, label='4Ax3B clean', color="cyan")
+    plt.plot(fftx, fft31, label='3 clean', color="green")
+    plt.plot(fftx, fft41, label='4 clean', color="limegreen")
+    plt.plot(fftx, fftAB1, label='3Ax4B clean', color="purple")
+    plt.plot(fftx, fftBA1, label='4Ax3B clean', color="plum")
     plt.legend()
 
-    plt.show()
+    #plt.show()
     plt.close()
 
     # calculate measured rms via std for each channel CT3AxCT3A, CT3BxCT4B, CT3 AxB, CT4 AxB
@@ -308,11 +319,9 @@ for i in tqdm( range(len(chAs)) ): # range( 0,1)
     meas_rmsAB.append( np.std(cAB1 /1e-7) )
     meas_rmsBA.append( np.std(cBA1 /1e-7) )
 
-    # Check acquisition time of original data
-    chunk_times.append( (data[:,0][i]) )
-    t = ephem.Date(chunk_times[-1])
-    year, month, day, hour, minute, sec = t.tuple()
-    y.append(year); mo.append(month); d.append(day); h.append(hour); mi.append(minute); s.append(sec)
+# Check acquisition time of original data
+chunk_times = data[:,0]
+print(ephem.Date(chunk_times[-1]))
 
 ## Printing all rms data ###
 ratioA = []
@@ -321,6 +330,7 @@ ratio3 = []
 ratio4 = []
 ratioAB = []
 ratioBA = []
+timestrings = []
 for i in range( len(chunk_times)):
     ratioA.append((meas_rmsA[i]/exp_rmsA[i])*100)
     ratioB.append((meas_rmsB[i]/exp_rmsB[i])*100)
@@ -328,13 +338,47 @@ for i in range( len(chunk_times)):
     ratio4.append((meas_rms4[i]/exp_rms4[i])*100)
     ratioAB.append((meas_rmsAB[i]/exp_rmsAB[i])*100)
     ratioBA.append((meas_rmsBA[i]/exp_rmsBA[i])*100)
-    timestrings = ephem.Date(chunk_times[i])
-    #print("Expected rms {}".format(i), timestrings, "{:.2f}, {:.2f}, {:.2f}, {:.2f}, {:.2f}, {:.2f}".format(exp_rmsA[i], exp_rmsB[i], exp_rms3[i], exp_rms4[i], exp_rmsAB[i], exp_rmsBA[i]) )
-    #print("Measured rms {}".format(i), timestrings, "{:.2f}, {:.2f}, {:.2f}, {:.2f}, {:.2f}, {:.2f}".format(meas_rmsA[i], meas_rmsB[i], meas_rms3[i], meas_rms4[i], meas_rmsAB[i], meas_rmsBA[i]) )
-    #print("Ratio of rms {}".format(i), timestrings, "{:.2f}, {:.2f}, {:.2f}, {:.2f}, {:.2f}, {:.2f}".format(ratioA[i], ratioB[i], ratio3[i], ratio4[i], ratioAB[i], ratioBA[i]) )
+    timestring = ephem.Date(chunk_times[i])
+    timestrings.append(str(timestring))
+    year, month, day, hour, minute, sec = timestring.tuple()
+    y.append(year); mo.append(month); d.append(day); h.append(hour); mi.append(minute); s.append(sec)
+    #print("Expected rms {}".format(i), timestring, "{:.2f}, {:.2f}, {:.2f}, {:.2f}, {:.2f}, {:.2f}".format(exp_rmsA[i], exp_rmsB[i], exp_rms3[i], exp_rms4[i], exp_rmsAB[i], exp_rmsBA[i]) )
+    #print("Measured rms {}".format(i), timestring, "{:.2f}, {:.2f}, {:.2f}, {:.2f}, {:.2f}, {:.2f}".format(meas_rmsA[i], meas_rmsB[i], meas_rms3[i], meas_rms4[i], meas_rmsAB[i], meas_rmsBA[i]) )
+    #print("Ratio of rms {}".format(i), timestring, "{:.2f}, {:.2f}, {:.2f}, {:.2f}, {:.2f}, {:.2f}".format(ratioA[i], ratioB[i], ratio3[i], ratio4[i], ratioAB[i], ratioBA[i]) )
+
 
 ## Saving all rms data ###
 np.savetxt("rms/{}.txt".format(star), np.c_[chunk, d, h, mi, exp_rmsA, meas_rmsA, ratioA, exp_rmsB, meas_rmsB, ratioB, exp_rms3, meas_rms3, ratio3, exp_rms4, meas_rms4, ratio4, exp_rmsAB, meas_rmsAB, ratioAB, exp_rmsBA, meas_rmsBA, ratioBA], fmt=' '.join(["%02d"]*4 + ["%02.2f"]*18), header = "{}, {}, chunk number, day, hour, min, exp rms A, meas rms A, ratio A, exp B, meas B, ratio B, exp 3, meas 3, ratio3, exp 4, meas 4, ratio 4, exp AB, meas AB, ratio AB, exp BA, meas BA, ratio BA".format(y[-1], mo[-1]))
+data = np.loadtxt("rms/{}.txt".format(star))
+
+## plotting all rms data ###
+Figure2 = plt.figure(figsize=(22,10))
+plt.plot(timestrings, exp_rmsA, marker='o', label="exp rms A", color="blue")
+plt.plot(timestrings, exp_rmsB, marker='o', label="exp rms B", color="orange")
+plt.plot(timestrings, exp_rms3, marker='o', label="exp rms 3", color="green")
+plt.plot(timestrings, exp_rms4, marker='o', label="exp rms 4", color="limegreen")
+plt.plot(timestrings, exp_rmsAB, marker='o', label="exp rms AB", color="purple")
+plt.plot(timestrings, exp_rmsBA, marker='o', label="exp rms BA", color="plum")
+plt.plot(timestrings, meas_rmsA, marker='o', label="meas rms A", linestyle="--", color="blue")
+plt.plot(timestrings, meas_rmsB, marker='o', label="meas rms B", linestyle="--", color="orange")
+plt.plot(timestrings, meas_rms3, marker='o', label="meas rms 3", linestyle="--", color="green")
+plt.plot(timestrings, meas_rms4, marker='o', label="meas rms 4", linestyle="--", color="limegreen")
+plt.plot(timestrings, meas_rmsAB, marker='o', linestyle="--", label="meas rms AB", color="purple")
+plt.plot(timestrings, meas_rmsBA, marker='o', linestyle="--", label="meas rms BA", color="plum")
+#plt.plot(timestrings, ratioA, marker='^', label="meas rms A", linestyle="--", color="blue")
+#plt.plot(timestrings, ratioB, marker='^', label="meas rms B", linestyle="--", color="orange")
+#plt.plot(timestrings, ratio3, marker='^', label="meas rms 3", linestyle="--", color="green")
+#plt.plot(timestrings, ratio4, marker='^', label="meas rms 4", linestyle="--", color="limegreen")
+#plt.plot(timestrings, ratioAB, marker='^', linestyle="--", label="meas rms AB", color="purple")
+#plt.plot(timestrings, ratioBA, marker='', linestyle="--", label="meas rms BA", color="plum")
+
+plt.legend()
+plt.xlabel("Time chunk")
+plt.xticks(rotation=45)
+plt.ylabel("RMS")
+plt.title("RMS of {}".format(star))
+plt.tight_layout()
+plt.show()
 
 '''
 ######## RMS fuer ein file ##################
