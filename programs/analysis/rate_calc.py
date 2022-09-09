@@ -13,7 +13,7 @@ import utilities as uti
 
 from threading import Thread
 
-star = "Nunki"
+star = "Shaula"
 
 # Define files to analyze
 folders   = [] # Data folders for analysis
@@ -37,7 +37,7 @@ f.close()
 print ("Rates of {}".format(star))
 
 star_small = star[0].lower() + star[1:]
-
+folderpath = "C:/Users/ii/Documents/curcor/corr_results/results_HESS"
 
 
 def rate_calc (folder, start, stop):
@@ -56,7 +56,7 @@ def rate_calc (folder, start, stop):
 	# Define files to analyzed for rates of one night 
 	files =[]
 	for i in range(start, stop):
-		files.append("{}/size10000/{}_{:05d}.fcorr".format(folder, star_small, i))
+		files.append("{}/{}/size10000/{}_{:05d}.fcorr6".format(folderpath, folder, star_small, i))
 
 	# Define colormap for plotting all rates of one night of one channel
 	x = np.arange(0, len(files))
@@ -66,16 +66,16 @@ def rate_calc (folder, start, stop):
 	#print(len(files))
 
 	# Read offset data for offset correction
-	off3A = np.loadtxt( folder + "/calibs_ct3/off.off" )[0]
-	off3B = np.loadtxt( folder + "/calibs_ct3/off.off" )[1]
-	off4A = np.loadtxt( folder + "/calibs_ct4/off.off" )[0]
-	off4B = np.loadtxt( folder + "/calibs_ct4/off.off" )[1]
+	off3A = np.loadtxt( "{}/{}/calibs_ct3/off.off".format(folderpath, folder) )[0]
+	off3B = np.loadtxt( "{}/{}/calibs_ct3/off.off".format(folderpath, folder) )[1]
+	off4A = np.loadtxt( "{}/{}/calibs_ct4/off.off".format(folderpath, folder) )[0]
+	off4B = np.loadtxt( "{}/{}/calibs_ct4/off.off".format(folderpath, folder) )[1]
 
 	# Read avg charge data for rate calculation
-	charge3A = np.loadtxt( folder + "/calibs_ct3/calib.calib" )[10]
-	charge3B = np.loadtxt( folder + "/calibs_ct3/calib.calib" )[11]
-	charge4A = np.loadtxt( folder + "/calibs_ct4/calib.calib" )[10]
-	charge4B = np.loadtxt( folder + "/calibs_ct4/calib.calib" )[11]
+	charge3A = np.loadtxt( "{}/{}/calibs_ct3/calib.calib".format(folderpath, folder) )[10]
+	charge3B = np.loadtxt( "{}/{}/calibs_ct3/calib.calib".format(folderpath, folder) )[11]
+	charge4A = np.loadtxt( "{}/{}/calibs_ct4/calib.calib".format(folderpath, folder) )[10]
+	charge4B = np.loadtxt( "{}/{}/calibs_ct4/calib.calib".format(folderpath, folder) )[11]
 
 	# Loop over every file
 	for i in tqdm(range ( 0,len(files) )):
@@ -138,7 +138,7 @@ start = 0
 #end = 100
 for i in range(len(folders)): #range(0,1):#
     folder   = folders[i]
-    date = folder[3:11]
+    date = folder[0:8]
     #stepsize = stepsizes[i]
     end      = ends[i]
     #steps = np.arange(0, end + 1, stepsize)
