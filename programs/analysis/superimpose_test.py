@@ -11,7 +11,7 @@ import utilities as uti
 import corrections as cor
 import geometry as geo
 
-star = "Nunki"
+star = "Acrux"
 
 # Get the timebin shift of the specific measurement from the time difference
 def timebin(tdiff):
@@ -44,13 +44,13 @@ def average_g2s(cA, cB, c3Ax4B, c4Ax3B):
 print("Final Analysis of {}".format(star))
 
 # Read in the data (g2 functions and time/baseline parameters)
-chAs    = np.loadtxt("g2_functions/{}/ChA.txt".format(star))     #[0:5]
-chBs    = np.loadtxt("g2_functions/{}/ChB.txt".format(star))     #[0:5]
-ct3s    = np.loadtxt("g2_functions/{}/CT3.txt".format(star))     #[0:5]
-ct4s    = np.loadtxt("g2_functions/{}/CT4.txt".format(star))     #[0:5]
-c3Ax4Bs = np.loadtxt("g2_functions/{}/c3Ax4B.txt".format(star))  #[0:5]
-c4Ax3Bs = np.loadtxt("g2_functions/{}/c4Ax3B.txt".format(star))  #[0:5]
-data    = np.loadtxt("g2_functions/{}/baseline.txt".format(star))#[0:5]
+chAs    = np.loadtxt("g2_functions/{}/ChA.txt".format(star))     
+chBs    = np.loadtxt("g2_functions/{}/ChB.txt".format(star))     
+ct3s    = np.loadtxt("g2_functions/{}/CT3.txt".format(star))     
+ct4s    = np.loadtxt("g2_functions/{}/CT4.txt".format(star))     
+c3Ax4Bs = np.loadtxt("g2_functions/{}/c3Ax4B.txt".format(star))  
+c4Ax3Bs = np.loadtxt("g2_functions/{}/c4Ax3B.txt".format(star))  
+data    = np.loadtxt("g2_functions/{}/baseline.txt".format(star))
 
 # Demo function for initializing x axis and some stuff
 demo = chAs[0]
@@ -72,21 +72,29 @@ for i in range (0,len(chAs)):
 # Fit for gaining mu and sigma to fix these parameters
 xplot, popt, perr = uti.fit(g2_allA, x, -50, +50)
 muA = popt[1]; sigmaA = popt[2]
+integral, dintegral = uti.integral(popt, perr)
+print ("3A x 4A sigma/integral: {:.2f} +/- {:.2f} ns \t {:.2f} +/- {:.2f} fs".format(popt[2],perr[2],1e6*integral,1e6*dintegral))
 plt.plot(x, g2_allA, label="3A x 4A", color="blue")
 plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--")
 
 xplot, popt, perr = uti.fit(g2_allB, x, -50, +50)
 muB = popt[1]; sigmaB = popt[2]
+integral, dintegral = uti.integral(popt, perr)
+print ("3B x 4B sigma/integral: {:.2f} +/- {:.2f} ns \t {:.2f} +/- {:.2f} fs".format(popt[2],perr[2],1e6*integral,1e6*dintegral))
 plt.plot(x, g2_allB, label="3B x 4B", color="#32a8a2")
 plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--")
 
 xplot, popt, perr = uti.fit(g2_all3Ax4B, x, 65, 165, mu_start=115)
 mu3Ax4B = popt[1]; sigma3Ax4B = popt[2]
+integral, dintegral = uti.integral(popt, perr)
+print ("3A x 4B sigma/integral: {:.2f} +/- {:.2f} ns \t {:.2f} +/- {:.2f} fs".format(popt[2],perr[2],1e6*integral,1e6*dintegral))
 plt.plot(x, g2_all3Ax4B, label="3A x 4B", color="red")
 plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--")
 
 xplot, popt, perr = uti.fit(g2_all4Ax3B, x, 65, 165, mu_start=115)
 mu4Ax3B = popt[1]; sigma4Ax3B = popt[2]
+integral, dintegral = uti.integral(popt, perr)
+print ("4A x 3B sigma/integral: {:.2f} +/- {:.2f} ns \t {:.2f} +/- {:.2f} fs".format(popt[2],perr[2],1e6*integral,1e6*dintegral))
 plt.plot(x, g2_all4Ax3B, label="4A x 3B", color="orange")
 plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--")
 
@@ -229,6 +237,8 @@ for i in range(0,len(chAs)):
     # Fit with fixed mu and sigma
     xplotf, popt_avg, perr_avg = uti.fit_fixed(avg, x, -100, 100, mu_avg, sigma_avg)
     Int, dInt = uti.integral_fixed(popt_avg, perr_avg, sigma_avg)
+    # TEST
+    dInt = max( dInt, np.std(avg)*sigma_avg*np.sqrt(2*np.pi) )
     ints_fixed.append(1e6*Int); dints_fixed.append(1e6*dInt)# in femtoseconds
     # Fit with free mu and sigma
     xplotf, popt_avg_free, perr_avg_free = uti.fit(avg, x, -100, 100)
