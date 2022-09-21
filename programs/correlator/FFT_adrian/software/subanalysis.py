@@ -101,7 +101,7 @@ def readfile():
     # Do the correlation
     for i in range(iterations):
         # Auto correlation PC1A X PC1B
-        data_pc1B_cu = cupy.array(data_pc1B[int(corlen/2)+(length*i):(-1)*int(corlen/2)+(length*(i+1))]).astype(np.float32)
+        data_pc1B_cu = cupy.array(data_pc1B[ int(corlen/2)+(length*i) : (-1)*int(corlen/2)+(length*(i+1)) ]).astype(np.float32)
         data_pc1A_cu = cupy.array(data_pc1A[length*i:length*(i+1)]).astype(np.float32)
         this_cor1 += cupy.correlate(data_pc1B_cu, data_pc1A_cu, "valid")
         # Auto correlation PC2A X PC2B
