@@ -1,4 +1,4 @@
-# Folder		step	end
+# Folder	step	end
 
 Acrux
 20220416_HESS	520	2600
@@ -24,6 +24,10 @@ Alnilam
 
 Mimosa
 20220419_HESS	159	318
+[end]
+
+Regor
+20220418_HESS	695	1390
 [end]
 
 

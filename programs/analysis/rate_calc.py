@@ -6,6 +6,8 @@ import matplotlib as mpl
 from tqdm import tqdm
 from datetime import datetime, timezone
 import ephem
+import math
+from scipy.optimize import curve_fit
 
 import geometry as geo
 import corrections as cor
@@ -46,12 +48,15 @@ def rate_calc (folder, start, stop):
 	rate3B_all = []
 	rate4A_all = []
 	rate4B_all = []
+	rateA_ratio =[]
+	rateB_ratio =[]
+	alt_all = []
 
 	# Define total figure for plotting all rates of one night for each channel
-	plt.rcParams['figure.figsize'] = 16,12
-	fig, (ax1,ax2) = plt.subplots(1,2, sharey='row')
+	plt.rcParams['figure.figsize'] = 22,10
+	fig1, (ax1,ax2) = plt.subplots(1,2, sharey='row')
 	# add a big axes, hide frame
-	fig.add_subplot(111, frameon=False)
+	fig1.add_subplot(111, frameon=False)
 
 	# Define files to analyzed for rates of one night 
 	files =[]
@@ -90,12 +95,16 @@ def rate_calc (folder, start, stop):
 		mean4B = float(line_params[5])
 
 		# Get file parameters from header and ephem calculations
-		tdiff, mean_1, mean_2, mean_3, mean_4, az, alt, time = geo.get_params(file, starname=star)
+		if star == "Regor":
+			tdiff, mean_1, mean_2, mean_3, mean_4, az, alt, time = geo.get_params_manual(file, ra=[8,10,12.5], dec=[-47,24,22.2])
+		else:
+			tdiff, mean_1, mean_2, mean_3, mean_4, az, alt, time = geo.get_params(file, starname=star)
 		# Store acquisition times and corresponding baselines for rate plot
 		times.append(ephem.Date(time))
 		baseline_values.append(uti.get_baseline(date=time, star=star))
 		t = str(times[-1]) 
 		tplot.append(t.split(' ')[1])	# get h:min:sec
+		alt_all.append(alt)
 		
 		# Calculate rate for each channel 
 		rate3A = (mean3A - off3A) * 1e-6/ (charge3A * 1.6e-9)  # 1e-6 fuer MHz (durch e6 teilen) und 1.6e-9 fuer 1.6ns bins bei peakshape
@@ -109,28 +118,117 @@ def rate_calc (folder, start, stop):
 		rate4A_all.append(rate4A)
 		rate4B_all.append(rate4B)
 
+		# rate ratios between the telescopes
+		rateA_ratio.append(rate3A / rate4A)
+		rateB_ratio.append(rate3B / rate4B)
+
 		# Plot rates vs time
 		p1, = ax1.plot(tplot[-1], rate3A, color="blue", alpha=0.6, marker='.', label="Channel 3A")
 		p2, = ax1.plot(tplot[-1], rate3B, color="orange", alpha=0.6, marker='.', label="Channel 3B")
 		p3, = ax2.plot(tplot[-1], rate4A, color="green", alpha=0.6, marker='.', label="Channel 4A")
 		p4, = ax2.plot(tplot[-1], rate4B, color="purple", alpha=0.6, marker='.', label="Channel 4B")
 
+	# creating x axis for altitude plot
+	minval = min(alt_all)
+	maxval = max(alt_all)
+	minval = math.floor(minval)
+	maxval = math.ceil(maxval)
+	xplot = np.arange(minval, maxval, 5)
+
+	alt_all = np.array(alt_all)
+	# fitting cos to rate vs altitude
+	def func(x, a, f, c):
+		return a * np.sin(f*x) + c
+	p0 = [400, 1/20, 200]
+	popt3A, pcov3A = curve_fit(func, alt_all, rate3A_all, p0=p0)
+	#popt3B, pcov3B = curve_fit(func, alt_all, rate3B_all, p0=p0)
+	popt4A, pcov4A = curve_fit(func, alt_all, rate4A_all, p0=p0)
+	popt4B, pcov4B = curve_fit(func, alt_all, rate4B_all, p0=p0)
+
+
+	# Plotting rates vs time
 	ax1.set_xticks(tplot[::1000])
-	ax1.set_xticklabels(tplot[::1000], rotation=45)
-	ax1.legend(handles=[p1,p2])
+	ax1.set_xticklabels(tplot[::1000], rotation=45, fontsize=13)
+	ax1.tick_params(labelsize=13)
+	ax1.legend(handles=[p1,p2], fontsize=13)
 	ax2.set_xticks(tplot[::1000])
-	ax2.set_xticklabels(tplot[::1000], rotation=45)
-	ax2.legend(handles=[p3,p4])
+	ax2.set_xticklabels(tplot[::1000], rotation=45, fontsize=13)
+	ax2.legend(handles=[p3,p4], fontsize=13)
+	ax2.tick_params(labelsize=13)
 	# hide tick label of the big axes
 	plt.tick_params(labelcolor="none", top=False, bottom=False, left=False, right=False)
 	# set labels for figure
-	plt.title("Rates of {}".format(star))
-	fig.supxlabel("Time (UTC)")
-	fig.supylabel("Rate (MHz)")
+	plt.title("Rates of {}".format(star), fontsize=17)
+	fig1.supxlabel("Time (UTC)", fontsize=14)
+	fig1.supylabel("Rate (MHz)", fontsize=14)
 	plt.tight_layout()
-	plt.show()
-	fig.savefig("rates/{}_{}.pdf".format(star, date))
-	np.savetxt("rates/{}_{}.txt".format(star, date), np.c_[rate3A_all, rate3B_all, rate4A_all, rate4B_all], header="{} 3A, 3B, 4A, 4B".format(star))
+	fig1.savefig("rates/{}_{}_Ch.pdf".format(star, date))
+	np.savetxt("rates/{}_{}.txt".format(star, date), np.c_[rate3A_all, rate3B_all, rate4A_all, rate4B_all], fmt=' '.join(["%03.2d"]*4 ), header="{} 3A, 3B, 4A, 4B".format(star))
+
+
+	Figure2 = plt.figure(figsize=(22,10))
+	plt.subplot(121)
+	plt.plot(tplot, rate3A_all, color="blue", alpha=0.6, marker='.', linestyle='', label="Channel 3A")
+	plt.plot(tplot, rate4A_all, color="green", alpha=0.6, marker='.', linestyle='', label="Channel 4A")
+	plt.legend(fontsize=13)
+	plt.xlabel("Time (UTC)", fontsize=14)
+	plt.xticks(tplot[::1000],rotation=45, fontsize=13)
+	plt.yticks(fontsize=13)
+	plt.ylabel("Rate (MHz)", fontsize=14)
+	plt.title("Rates of {}".format(star), fontsize=17)
+	plt.tight_layout()
+	plt.subplot(122)
+	plt.plot(tplot, rate3B_all, color="orange", alpha=0.6, marker='.', linestyle='', label="Channel 3B")
+	plt.plot(tplot, rate4B_all, color="purple", alpha=0.6, marker='.', linestyle='', label="Channel 4B")
+	plt.legend(fontsize=13)
+	plt.xlabel("Time (UTC)", fontsize=14)
+	plt.xticks(tplot[::1000],rotation=45, fontsize=13)
+	plt.yticks(fontsize=13)
+	plt.ylabel("Rate (MHz)", fontsize=14)
+	plt.title("Rates of {}".format(star), fontsize=17)
+	plt.tight_layout()
+	plt.savefig("rates/{}_{}_Tel.pdf".format(star,date))
+
+
+	Figure3 = plt.figure(figsize=(17,12))
+	plt.plot(tplot, rateA_ratio, linestyle='-', label='Ratio 3A/4A')
+	plt.plot(tplot, rateB_ratio, linestyle='-', label="Ratio 3B/4B")
+	plt.legend(fontsize=13)
+	plt.xlabel("Time (UTC)", fontsize=14)
+	plt.xticks(tplot[::1000],rotation=45, fontsize=13)
+	plt.yticks(fontsize=13)
+	plt.ylabel("Ratio", fontsize=14)
+	plt.title("Ratio of rates of {}".format(star), fontsize=17)
+	plt.tight_layout()
+	plt.savefig("rates/{}_{}_ratio.pdf".format(star,date))
+
+	Figure4 = plt.figure(figsize=(22,10))
+	plt.subplot(121)
+	plt.plot(alt_all, rate3A_all, marker='.', linestyle='', color="blue", label='Channel 3A')
+	#plt.plot(alt_all, func(alt_all, *popt3A), color='blue')
+	plt.plot(alt_all, rate3B_all, marker='.', linestyle='', color="orange", label='Channel 3B')
+	#plt.plot(alt_all, func(alt_all, *popt3B), color='orange')
+	plt.legend(fontsize=13)
+	plt.xlabel("Altitude (degree)", fontsize=14)
+	plt.xticks(xplot, fontsize=13)
+	plt.yticks(fontsize=13)
+	plt.ylabel("Rate (MHz)", fontsize=14)
+	plt.title("Rates of {} vs altitude".format(star), fontsize=17)
+	plt.tight_layout()
+	plt.subplot(122)
+	plt.plot(alt_all, rate4A_all, marker='.', linestyle='', color="green", label='Channel 4A')
+	#plt.plot(alt_all, func(alt_all, *popt4A), color='green')
+	plt.plot(alt_all, rate4B_all, marker='.', linestyle='', color="purple", label='Channel 4B')
+	#plt.plot(alt_all, func(alt_all, *popt4B), color='purple')
+	plt.legend(fontsize=13)
+	plt.xlabel("Altitude (degree)", fontsize=14)
+	plt.xticks(xplot, fontsize=13)
+	plt.yticks(fontsize=13)
+	plt.ylabel("Rate (MHz)", fontsize=14)
+	plt.title("Rates of {} vs altitude".format(star), fontsize=17)
+	plt.tight_layout()
+	plt.savefig("rates/{}_{}_alt.pdf".format(star,date))
+	#plt.show()
 
 ##########################################
 # Add the number of files to be analyzed #

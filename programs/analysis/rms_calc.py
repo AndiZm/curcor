@@ -131,11 +131,6 @@ def rms_parts(folder, start, stop, j):
     exp_rmsAB_corr.append(exp_rmsAB[-1]*corfactor[4])
     exp_rmsBA_corr.append(exp_rmsBA[-1]*corfactor[5])
 
-    print(len(exp_rms3),len(exp_rms3_corr))
-    print(exp_rms3)
-    print(exp_rms3_corr)
-
-
     #time_mean = np.mean(times)
     #tstring = ephem.Date(time_mean)
     #print("{}".format(j), tstring, "{:.2f}, {:.2f}, {:.2f}, {:.2f}".format(exp_rmsA, exp_rmsB, exp_rms3, exp_rms4 ))
@@ -153,7 +148,7 @@ for i in range(len(folders)): # range(2,3)
     corfactor = np.loadtxt("../simulations/data/{}_{}_ana.txt".format(star,folder))[:,0]
     corfactor_std = np.loadtxt("../simulations/data/{}_{}_ana.txt".format(star,folder))[:,1]
     corfactor_err = np.loadtxt("../simulations/data/{}_{}_ana.txt".format(star,folder))[:,2]
-    print(corfactor)
+    #print(corfactor)
     for j in tqdm(range(len(steps)-1)):
         start = steps[j]
         stop = steps[j+1]
@@ -195,6 +190,14 @@ for i in tqdm( range(len(chAs)) ): # range( 11,13)
     ct4 = ct4s[i]
     cAB = cABs[i]
     cBA = cBAs[i]
+
+    # Only take part of g2 since auto corr have cross talk
+    chA = chA[0:4000]
+    chB = chB[0:4000]
+    ct3 = ct3[0:4000]
+    ct4 = ct4[0:4000]
+    cAB = cAB[0:4000]
+    cBA = cBA[0:4000]
 
     # Do some more data cleaning, e.g. lowpass filters
     chA = cor.lowpass(chA)
@@ -298,38 +301,38 @@ for i in tqdm( range(len(chAs)) ): # range( 11,13)
     plt.close()
     
     # Define figure
-    bigfigure = plt.figure(figsize=(22,10))
+    Figure3 = plt.figure(figsize=(22,10))
     
     # Subplot for the fft
     plt.subplot(241)
     plt.plot(fftx, fftA, label='A', color="blue")
     plt.plot(fftx, fftA1, label='A clean', color="orange")
-    plt.legend()
+    plt.legend(fontsize=14)
 
     plt.subplot(245) 
     plt.plot(fftx, fftB, label='B', color="blue")
     plt.plot(fftx, fftB1, label='B clean', color="orange")
-    plt.legend()
+    plt.legend(fontsize=14)
 
     plt.subplot(242)
     plt.plot(fftx, fft3, label='3', color="blue")
     plt.plot(fftx, fft31, label='3 clean', color="orange")
-    plt.legend()
+    plt.legend(fontsize=14)
 
     plt.subplot(246)
     plt.plot(fftx, fft4, label='4', color="blue")
     plt.plot(fftx, fft41, label='4 clean', color="orange")
-    plt.legend()
+    plt.legend(fontsize=14)
 
     plt.subplot(243)
     plt.plot(fftx, fftAB, label='3Ax4B', color="blue")
     plt.plot(fftx, fftAB1, label='3Ax4B clean', color="orange")
-    plt.legend()
+    plt.legend(fontsize=14)
 
     plt.subplot(247)
     plt.plot(fftx, fftBA, label='4Ax3B', color="blue")
     plt.plot(fftx, fftBA1, label='4Ax3B clean', color="orange")
-    plt.legend()
+    plt.legend(fontsize=14)
 
     plt.subplot(244)
     plt.plot(fftx, fftA, label='A', color="blue", )
@@ -338,7 +341,7 @@ for i in tqdm( range(len(chAs)) ): # range( 11,13)
     plt.plot(fftx, fft4, label='4', color="limegreen")
     plt.plot(fftx, fftAB, label='3Ax4B', color="purple")
     plt.plot(fftx, fftBA, label='4Ax3B', color="plum")
-    plt.legend()
+    plt.legend(fontsize=14)
 
     plt.subplot(248)
     plt.plot(fftx, fftA1, label='A clean', color="blue" )
@@ -347,16 +350,16 @@ for i in tqdm( range(len(chAs)) ): # range( 11,13)
     plt.plot(fftx, fft41, label='4 clean', color="limegreen")
     plt.plot(fftx, fftAB1, label='3Ax4B clean', color="purple")
     plt.plot(fftx, fftBA1, label='4Ax3B clean', color="plum")
-    plt.legend()
+    plt.legend(fontsize=14)
 
     #plt.show()
     plt.close()
 
-    # calculate measured rms via std for each channel CT3AxCT3A, CT3BxCT4B, CT3 AxB, CT4 AxB
+    # calculate measured rms via std for each channel CT3AxCT4A, CT3BxCT4B, CT3 AxB, CT4 AxB, CT3AxCT4B, CT4AxCT3B
     meas_rmsA.append( np.std(chA1) /1e-7 )
     meas_rmsB.append( np.std(chB1) /1e-7 )
-    meas_rms3.append( np.std(ct31[0:4000]) /1e-7 )
-    meas_rms4.append( np.std(ct41[0:4000]) /1e-7 )
+    meas_rms3.append( np.std(ct31) /1e-7 )
+    meas_rms4.append( np.std(ct41) /1e-7 )
     meas_rmsAB.append( np.std(cAB1 /1e-7) )
     meas_rmsBA.append( np.std(cBA1 /1e-7) )
 
@@ -371,6 +374,12 @@ ratio3 = []
 ratio4 = []
 ratioAB = []
 ratioBA = []
+ratioA_corr = []
+ratioB_corr = []
+ratio3_corr = []
+ratio4_corr = []
+ratioAB_corr = []
+ratioBA_corr = []
 timestrings = []
 for i in range( len(chunk_times)):
     ratioA.append((meas_rmsA[i]/exp_rmsA[i])*100)
@@ -379,6 +388,12 @@ for i in range( len(chunk_times)):
     ratio4.append((meas_rms4[i]/exp_rms4[i])*100)
     ratioAB.append((meas_rmsAB[i]/exp_rmsAB[i])*100)
     ratioBA.append((meas_rmsBA[i]/exp_rmsBA[i])*100)
+    ratioA_corr.append((meas_rmsA[i]/exp_rmsA_corr[i])*100)
+    ratioB_corr.append((meas_rmsB[i]/exp_rmsB_corr[i])*100)
+    ratio3_corr.append((meas_rms3[i]/exp_rms3_corr[i])*100)
+    ratio4_corr.append((meas_rms4[i]/exp_rms4_corr[i])*100)
+    ratioAB_corr.append((meas_rmsAB[i]/exp_rmsAB_corr[i])*100)
+    ratioBA_corr.append((meas_rmsBA[i]/exp_rmsBA_corr[i])*100)
     timestring = ephem.Date(chunk_times[i])
     timestrings.append(str(timestring))
     year, month, day, hour, minute, sec = timestring.tuple()
@@ -392,7 +407,7 @@ np.savetxt("rms/{}.txt".format(star), np.c_[chunk, d, h, mi, exp_rmsA, meas_rmsA
 data = np.loadtxt("rms/{}.txt".format(star))
 
 ## plotting all rms data ###
-Figure2 = plt.figure(figsize=(25,10))
+Figure4 = plt.figure(figsize=(25,10))
 plt.subplot(121)
 plt.plot(timestrings, exp_rmsA, marker='o', label="exp rms A", color="blue")
 plt.plot(timestrings, exp_rmsB, marker='o', label="exp rms B", color="orange")
@@ -406,11 +421,12 @@ plt.plot(timestrings, meas_rms3, marker='o', label="meas rms 3", linestyle="--",
 plt.plot(timestrings, meas_rms4, marker='o', label="meas rms 4", linestyle="--", color="limegreen")
 plt.plot(timestrings, meas_rmsAB, marker='o', linestyle="--", label="meas rms AB", color="purple")
 plt.plot(timestrings, meas_rmsBA, marker='o', linestyle="--", label="meas rms BA", color="plum")
-plt.legend()
-plt.xlabel("Time chunk")
-plt.xticks(rotation=45)
-plt.ylabel("RMS")
-plt.title("RMS of {}".format(star))
+plt.legend(fontsize=13)
+plt.xlabel("Time chunk", fontsize=14)
+plt.xticks(rotation=45, fontsize=13)
+plt.yticks(fontsize=13)
+plt.ylabel("RMS", fontsize=14)
+plt.title("RMS of {}".format(star), fontsize=17)
 plt.tight_layout()
 plt.subplot(122)
 plt.plot(timestrings, exp_rmsA_corr, marker='^', linestyle="-", label="exp rms A corfactor", color="blue")
@@ -425,18 +441,34 @@ plt.plot(timestrings, meas_rms3, marker='o', label="meas rms 3", linestyle="--",
 plt.plot(timestrings, meas_rms4, marker='o', label="meas rms 4", linestyle="--", color="limegreen")
 plt.plot(timestrings, meas_rmsAB, marker='o', linestyle="--", label="meas rms AB", color="purple")
 plt.plot(timestrings, meas_rmsBA, marker='o', linestyle="--", label="meas rms BA", color="plum")
-#plt.plot(timestrings, ratioA, marker='^', label="meas rms A", linestyle="--", color="blue")
-#plt.plot(timestrings, ratioB, marker='^', label="meas rms B", linestyle="--", color="orange")
-#plt.plot(timestrings, ratio3, marker='^', label="meas rms 3", linestyle="--", color="green")
-#plt.plot(timestrings, ratio4, marker='^', label="meas rms 4", linestyle="--", color="limegreen")
-#plt.plot(timestrings, ratioAB, marker='^', linestyle="--", label="meas rms AB", color="purple")
-#plt.plot(timestrings, ratioBA, marker='', linestyle="--", label="meas rms BA", color="plum")
+plt.legend(fontsize=13)
+plt.xlabel("Time chunk", fontsize=14)
+plt.xticks(rotation=45, fontsize=13)
+plt.yticks(fontsize=13)
+plt.ylabel("RMS", fontsize=14)
+plt.title("RMS corrected of {}".format(star), fontsize=17)
+plt.tight_layout()
 
-plt.legend()
-plt.xlabel("Time chunk")
-plt.xticks(rotation=45)
-plt.ylabel("RMS")
-plt.title("RMS of {}".format(star))
+Figure5 = plt.figure(figsize=(20,10))
+plt.plot(timestrings, ratioA, marker='o', label="ratio A", linestyle="-", color="blue")
+plt.plot(timestrings, ratioB, marker='o', label="ratio B", linestyle="-", color="orange")
+plt.plot(timestrings, ratio3, marker='o', label="ratio 3", linestyle="-", color="green")
+plt.plot(timestrings, ratio4, marker='o', label="ratio 4", linestyle="-", color="limegreen")
+plt.plot(timestrings, ratioAB, marker='o', linestyle="-", label="ratio AB", color="purple")
+plt.plot(timestrings, ratioBA, marker='o', linestyle="-", label="ratio BA", color="plum")
+plt.plot(timestrings, ratioA_corr, marker='o', label="ratio corrected A", linestyle="--", color="blue")
+plt.plot(timestrings, ratioB_corr, marker='o', label="ratio corrected B", linestyle="--", color="orange")
+plt.plot(timestrings, ratio3_corr, marker='o', label="ratio corrected 3", linestyle="--", color="green")
+plt.plot(timestrings, ratio4_corr, marker='o', label="ratio corrected 4", linestyle="--", color="limegreen")
+plt.plot(timestrings, ratioAB_corr, marker='o', linestyle="--", label="ratio corrected AB", color="purple")
+plt.plot(timestrings, ratioBA_corr, marker='o', linestyle="--", label="ratio corrected BA", color="plum")
+
+plt.legend(fontsize=13)
+plt.xlabel("Time chunk", fontsize=14)
+plt.xticks(rotation=45, fontsize=13)
+plt.yticks(fontsize=13)
+plt.ylabel("Ratio measured to expected", fontsize=14)
+plt.title("Ratio of RMS of {}".format(star), fontsize=17)
 plt.tight_layout()
 plt.show()
 

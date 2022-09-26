@@ -13,7 +13,7 @@ import utilities as uti
 
 from threading import Thread
 
-star = "Nunki"
+star = "Regor"
 
 # Define files to analyze and subpackages
 folders   = [] # Data folders for analysis
@@ -127,8 +127,10 @@ def corr_parts(folder, start, stop):
         c4Ax3B = cor.pattern_correction(c4Ax3B) # data already normalized
     
         # Get file parameters from header and ephem calculations
-        tdiff, mean_1, mean_2, mean_3, mean_4, az, alt, time = geo.get_params(file, starname=star)
-
+        if star == "Regor":
+            tdiff, mean_1, mean_2, mean_3, mean_4, az, alt, time = geo.get_params_manual(file, ra=[8,10,12.5], dec=[-47,24,22.2])
+        else:
+            tdiff, mean_1, mean_2, mean_3, mean_4, az, alt, time = geo.get_params(file, starname=star)
         # Store acquisition times and corresponding baselines for sc plot
         times.append(ephem.Date(time))
         baseline_values.append(uti.get_baseline(date=time, star=star))
