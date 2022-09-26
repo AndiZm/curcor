@@ -141,7 +141,7 @@ def rate_calc (folder, start, stop):
 		return a * np.sin(f*x) + c
 	p0 = [400, 1/20, 200]
 	popt3A, pcov3A = curve_fit(func, alt_all, rate3A_all, p0=p0)
-	#popt3B, pcov3B = curve_fit(func, alt_all, rate3B_all, p0=p0)
+	popt3B, pcov3B = curve_fit(func, alt_all, rate3B_all, p0=p0)
 	popt4A, pcov4A = curve_fit(func, alt_all, rate4A_all, p0=p0)
 	popt4B, pcov4B = curve_fit(func, alt_all, rate4B_all, p0=p0)
 
@@ -162,8 +162,8 @@ def rate_calc (folder, start, stop):
 	fig1.supxlabel("Time (UTC)", fontsize=14)
 	fig1.supylabel("Rate (MHz)", fontsize=14)
 	plt.tight_layout()
-	fig1.savefig("rates/{}_{}_Ch.pdf".format(star, date))
-	np.savetxt("rates/{}_{}.txt".format(star, date), np.c_[rate3A_all, rate3B_all, rate4A_all, rate4B_all], fmt=' '.join(["%03.2d"]*4 ), header="{} 3A, 3B, 4A, 4B".format(star))
+	fig1.savefig("rates/{}/{}_{}_Ch.pdf".format(star, star, date))
+	np.savetxt("rates/{}/{}_{}.txt".format(star, star, date), np.c_[rate3A_all, rate3B_all, rate4A_all, rate4B_all], fmt=' '.join(["%03.2d"]*4 ), header="{} 3A, 3B, 4A, 4B".format(star))
 
 
 	Figure2 = plt.figure(figsize=(22,10))
@@ -187,7 +187,7 @@ def rate_calc (folder, start, stop):
 	plt.ylabel("Rate (MHz)", fontsize=14)
 	plt.title("Rates of {}".format(star), fontsize=17)
 	plt.tight_layout()
-	plt.savefig("rates/{}_{}_Tel.pdf".format(star,date))
+	plt.savefig("rates/{}/{}_{}_Tel.pdf".format(star,star,date))
 
 
 	Figure3 = plt.figure(figsize=(17,12))
@@ -200,14 +200,14 @@ def rate_calc (folder, start, stop):
 	plt.ylabel("Ratio", fontsize=14)
 	plt.title("Ratio of rates of {}".format(star), fontsize=17)
 	plt.tight_layout()
-	plt.savefig("rates/{}_{}_ratio.pdf".format(star,date))
+	plt.savefig("rates/{}/{}_{}_ratio.pdf".format(star,star,date))
 
 	Figure4 = plt.figure(figsize=(22,10))
 	plt.subplot(121)
 	plt.plot(alt_all, rate3A_all, marker='.', linestyle='', color="blue", label='Channel 3A')
-	#plt.plot(alt_all, func(alt_all, *popt3A), color='blue')
+	plt.plot(alt_all, func(alt_all, *popt3A), color='blue')
 	plt.plot(alt_all, rate3B_all, marker='.', linestyle='', color="orange", label='Channel 3B')
-	#plt.plot(alt_all, func(alt_all, *popt3B), color='orange')
+	plt.plot(alt_all, func(alt_all, *popt3B), color='orange')
 	plt.legend(fontsize=13)
 	plt.xlabel("Altitude (degree)", fontsize=14)
 	plt.xticks(xplot, fontsize=13)
@@ -217,9 +217,9 @@ def rate_calc (folder, start, stop):
 	plt.tight_layout()
 	plt.subplot(122)
 	plt.plot(alt_all, rate4A_all, marker='.', linestyle='', color="green", label='Channel 4A')
-	#plt.plot(alt_all, func(alt_all, *popt4A), color='green')
+	plt.plot(alt_all, func(alt_all, *popt4A), color='green')
 	plt.plot(alt_all, rate4B_all, marker='.', linestyle='', color="purple", label='Channel 4B')
-	#plt.plot(alt_all, func(alt_all, *popt4B), color='purple')
+	plt.plot(alt_all, func(alt_all, *popt4B), color='purple')
 	plt.legend(fontsize=13)
 	plt.xlabel("Altitude (degree)", fontsize=14)
 	plt.xticks(xplot, fontsize=13)
@@ -227,7 +227,7 @@ def rate_calc (folder, start, stop):
 	plt.ylabel("Rate (MHz)", fontsize=14)
 	plt.title("Rates of {} vs altitude".format(star), fontsize=17)
 	plt.tight_layout()
-	plt.savefig("rates/{}_{}_alt.pdf".format(star,date))
+	plt.savefig("rates/{}/{}_{}_alt.pdf".format(star,star,date))
 	#plt.show()
 
 ##########################################

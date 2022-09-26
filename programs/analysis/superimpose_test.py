@@ -11,7 +11,7 @@ import utilities as uti
 import corrections as cor
 import geometry as geo
 
-star = "Acrux"
+star = "Shaula"
 
 # Get the timebin shift of the specific measurement from the time difference
 def timebin(tdiff):
@@ -368,7 +368,7 @@ plt.plot(xplot, uti.spatial_coherence(xplot,*popt_odr),   label="ODR (no zero ba
 plt.xlim(-15,250); plt.ylim(0,50)
 plt.xlabel("Baseline (m)"); plt.ylabel("Coherence time (fs)")
 plt.legend(loc="upper right")
-#plt.tight_layout()
+plt.tight_layout()
 #plt.savefig("{}_crosscorrelation.png".format(star))
 plt.savefig("images/{}_sc.png".format(star))
 plt.show()
