@@ -178,6 +178,7 @@ xplot, popt, perr = uti.fit(g2_avg, x, -30, +30)
 Int, dInt = uti.integral(popt, perr)
 print ("Coherence time: {:.2f} +/- {:.2f}  (fs)".format(1e6*Int, 1e6*dInt))
 
+figure = plt.figure(figsize=(20,10))
 #plt.plot(x, g2_ct3)
 #plt.plot(x, g2_ct4)
 plt.plot(x, g2_avg, color="black", linewidth=1)
