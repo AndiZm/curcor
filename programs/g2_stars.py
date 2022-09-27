@@ -3,14 +3,15 @@ import math
 import matplotlib.pyplot as plt
 import scipy.special as sp
 
+
 R_s = 6.96342e8 # Solar radius
 Ly  = 9.46e15 	# Light year
 
 #Alle angaben in m
-wellenlaenge = 465e-9
-entfernung = 7500 * Ly
-radius = 240 * R_s
-baseline = 120.
+wellenlaenge = 432e-9
+entfernung   = 8.60 * Ly
+radius       = 1.711 * R_s
+baseline     = 20.
 
 # Angular diameter
 phi_arc = 2 * radius / entfernung
@@ -28,5 +29,6 @@ def g2(delta_r):
 plt.figure()
 xplot = np.linspace(0.0001,1.*baseline,10000)
 plt.plot(xplot, g2(xplot)+1., c="red")
+plt.xlabel("Baseline (m)")
 plt.ylabel("$g^{(2)}$")
 plt.show()
