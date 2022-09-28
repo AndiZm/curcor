@@ -6,12 +6,13 @@ from scipy.signal import butter, filtfilt, find_peaks
 from matplotlib.pyplot import cm
 import ephem
 import scipy.special as scp
+import sys
 
 import utilities as uti
 import corrections as cor
 import geometry as geo
 
-star = "Shaula"
+star = sys.argv[1]
 
 # Get the timebin shift of the specific measurement from the time difference
 def timebin(tdiff):
@@ -84,7 +85,7 @@ print ("3B x 4B sigma/integral: {:.2f} +/- {:.2f} ns \t {:.2f} +/- {:.2f} fs".fo
 plt.plot(x, g2_allB, label="3B x 4B", color="#32a8a2")
 plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--")
 
-xplot, popt, perr = uti.fit(g2_all3Ax4B, x, 65, 165, mu_start=115)
+xplot, popt, perr = uti.fit(g2_all3Ax4B, x, 90, 140, mu_start=115)
 mu3Ax4B = popt[1]; sigma3Ax4B = popt[2]
 integral, dintegral = uti.integral(popt, perr)
 print ("3A x 4B sigma/integral: {:.2f} +/- {:.2f} ns \t {:.2f} +/- {:.2f} fs".format(popt[2],perr[2],1e6*integral,1e6*dintegral))
@@ -238,7 +239,7 @@ for i in range(0,len(chAs)):
     xplotf, popt_avg, perr_avg = uti.fit_fixed(avg, x, -100, 100, mu_avg, sigma_avg)
     Int, dInt = uti.integral_fixed(popt_avg, perr_avg, sigma_avg)
     # TEST
-    dInt = max( dInt, np.std(avg)*sigma_avg*np.sqrt(2*np.pi) )
+    dInt = np.sqrt( dInt**2 + (np.std(avg)*sigma_avg*np.sqrt(2*np.pi))**2 )
     ints_fixed.append(1e6*Int); dints_fixed.append(1e6*dInt)# in femtoseconds
     # Fit with free mu and sigma
     xplotf, popt_avg_free, perr_avg_free = uti.fit(avg, x, -100, 100)
@@ -268,6 +269,9 @@ for i in range(0,len(chAs)):
     #plt.plot(xplotf,  uti.gauss_shifted(x=xplotf,  a=popt_avg_free[0], mu=popt_avg_free[1], sigma=popt_avg_free[2], shift=i, inverse=True, ntotal=len(chAs)), color="red", linestyle="--", zorder=4, alpha=0.4)
 
     # Subplot for the auto correlations, tbc
+    # Shift all peaks to zero
+    tbin = timebin(118.62); ct3 = shift_bins(ct3, tbin)
+    tbin = timebin(114.23); ct4 = shift_bins(ct4, tbin)
     plt.subplot(224)
     plt.errorbar(x, ct3+i*0e-6, yerr=0, marker=".", linestyle="--", color = colors[i], alpha=0.6)
     plt.errorbar(x, ct4+i*0e-6+1e-5, yerr=0, marker=".", linestyle="--", color = colors[i], alpha=0.6)
@@ -277,6 +281,10 @@ for i in range(0,len(chAs)):
 # Renormalize ct3 and ct4 autocorrelation data
 ct3_sum = ct3_sum/np.mean(ct3_sum[0:4500])
 ct4_sum = ct4_sum/np.mean(ct4_sum[0:4500])
+# Shift all peaks to zero
+tbin = timebin(118.62); ct3_sum = shift_bins(ct3_sum, tbin)
+tbin = timebin(114.23); ct4_sum = shift_bins(ct4_sum, tbin)
+
 plt.subplot(224)
 plt.errorbar(x, ct3_sum, yerr=0, marker=".", linestyle="--", color = "black", linewidth=2, alpha=1)
 plt.errorbar(x, ct4_sum+1e-5, yerr=0, marker=".", linestyle="--", color = "black", linewidth=2, alpha=1)
@@ -296,7 +304,7 @@ def cc_plots(xlims):
 plt.subplot(121); plt.title("Cross correlations of {}".format(star)); cc_plots((-150,150))
 plt.yticks(np.arange(1,1+2e-6*len(chAs),2e-6))
 
-plt.subplot(224); plt.title("Auto correlations of {}".format(star)); cc_plots((0,200))
+plt.subplot(224); plt.title("Auto correlations of {}".format(star)); cc_plots((-100,100))
 
 # store cleaned data
 np.savetxt("g2_functions/{}/ChA_clean.txt".format(star), np.c_[chA_clean], header="{} Channel A cleaned".format(star) )
