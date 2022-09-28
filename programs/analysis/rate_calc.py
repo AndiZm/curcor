@@ -99,7 +99,7 @@ def rate_calc (folder, start, stop):
 			tdiff, mean_1, mean_2, mean_3, mean_4, az, alt, time = geo.get_params_manual(file, ra=[8,10,12.5], dec=[-47,24,22.2])
 		else:
 			tdiff, mean_1, mean_2, mean_3, mean_4, az, alt, time = geo.get_params(file, starname=star)
-		# Store acquisition times and corresponding baselines for rate plot
+		# Store acquisition times and corresponding baselines and altitudes for rate plot
 		times.append(ephem.Date(time))
 		baseline_values.append(uti.get_baseline(date=time, star=star))
 		t = str(times[-1]) 
@@ -162,7 +162,7 @@ def rate_calc (folder, start, stop):
 	fig1.supxlabel("Time (UTC)", fontsize=14)
 	fig1.supylabel("Rate (MHz)", fontsize=14)
 	plt.tight_layout()
-	fig1.savefig("rates/{}/{}_{}_Ch.pdf".format(star, star, date))
+	fig1.savefig("rates/{}/{}_{}_Tel.pdf".format(star, star, date))
 	np.savetxt("rates/{}/{}_{}.txt".format(star, star, date), np.c_[rate3A_all, rate3B_all, rate4A_all, rate4B_all], fmt=' '.join(["%03.2d"]*4 ), header="{} 3A, 3B, 4A, 4B".format(star))
 
 
@@ -187,7 +187,7 @@ def rate_calc (folder, start, stop):
 	plt.ylabel("Rate (MHz)", fontsize=14)
 	plt.title("Rates of {}".format(star), fontsize=17)
 	plt.tight_layout()
-	plt.savefig("rates/{}/{}_{}_Tel.pdf".format(star,star,date))
+	plt.savefig("rates/{}/{}_{}_Ch.pdf".format(star,star,date))
 
 
 	Figure3 = plt.figure(figsize=(17,12))
