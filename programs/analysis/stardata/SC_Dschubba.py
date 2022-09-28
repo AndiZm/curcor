@@ -18,19 +18,19 @@ import subprocess
 import os
 
 #source, rad, dis, mag = np.genfromtxt('star_list.txt', delimiter=';', unpack=True)
-source = "Shaula"
-anfang = 21
-ende = 22
+source = "Dschubba"
+anfang = 20
+ende = 21
 
 command = 'python baselines/ -source %s -t1 2022/04/%s 17:00:00 -t2 2022/04/%s 05:00:00 -verbose -save_data -save_plot' %(source,anfang, ende)
 os.system(command)
 
 print('picture')
 
-angles, atm_trans = np.loadtxt('../baselines/output/atm txt/Mimosa_atm_trans.txt', unpack=True)
+angles, atm_trans = np.loadtxt('baselines/output/atm txt/Mimosa_atm_trans.txt', unpack=True)
 func = scipy.interpolate.interp1d(angles, atm_trans)
 #realtime, sourcealt, baseline_3_4, baseline_1_3, baseline_1_4, baseline_2_4, baseline_1_2, baseline_2_3 = np.loadtxt('baselines/output/baseline txt/%s.txt' %(source), unpack=True)
-realtime, sourcealt, baseline_3_4, baseline_1_4, separation = np.loadtxt('../baselines/output/baseline txt/%s.txt' %(source), unpack=True)
+realtime, sourcealt, baseline_3_4, baseline_1_4, separation = np.loadtxt('baselines/output/baseline txt/%s.txt' %(source), unpack=True)
 #bl_1_2 = np.nan_to_num(baseline_1_2, nan=0)
 #bl_1_3 = np.nan_to_num(baseline_1_3, nan=0)
 bl_1_4 = np.nan_to_num(baseline_1_4)
@@ -62,9 +62,9 @@ hour = np.array(h)
 minute = np.array(mi)
 
 #### change  ###
-rad = 8.8                   # radius of star in m
-dis = 180  					# distance of star in m 
-mag = 1.41  				# magnitude of star
+rad = 6.7                   # radius of star in m
+dis = 136  					# distance of star in m 
+mag = 2.0  					# magnitude of star
 #### #####
 
 atm = 0.7 					# atmospheric transmission 

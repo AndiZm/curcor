@@ -202,8 +202,8 @@ plt.title('g2 for %s' %(source))
 plt.xlabel('baseline')
 plt.savefig('%s/%s_%s_%s_sc.pdf' %(source, source, anfang, ende))
 #np.savetxt("Namibia_April2022/, np.c_[realtime, sourcealt, baseline_3_4, baseline_1_4, separation])
-np.savetxt("%s/%s_%s_%s.txt" %(source, source, anfang, ende), np.c_[year, month ,day ,hour, minute, sourcealt, bl_3_4, separation], fmt=' '.join(['%02d']*5 + ['%1.2f']*3))
-np.savetxt("%s/%s_%s_%s_rate.txt" %(source, source, anfang, ende), np.c_[thour, tminute, salt, bl34, R34, S_bl34], fmt=' '.join(['%02d']*2 + ['%1.2f']*4))
+np.savetxt("%s/%s_%s_%s.txt" %(source, source, anfang, ende), np.c_[year, month ,day ,hour, minute, sourcealt, bl_3_4, separation], fmt=' '.join(['%02d']*5 + ['%1.2f']*3), header = "year, month, day, hour, min, alt, baseline, separation moon")
+np.savetxt("%s/%s_%s_%s_rate.txt" %(source, source, anfang, ende), np.c_[thour, tminute, salt, bl34, R34, S_bl34], fmt=' '.join(['%02d']*2 + ['%1.2f']*4), header = "hour, min, alt, baseline, rate, SC")
 
 #plt.show()
 
