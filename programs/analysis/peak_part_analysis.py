@@ -6,6 +6,7 @@ from scipy.signal import butter, filtfilt, find_peaks
 from matplotlib.pyplot import cm
 import ephem
 import scipy.special as scp
+import sys
 
 import utilities as uti
 import corrections as cor
@@ -14,7 +15,7 @@ import corrections as cor
 ## First analysis: take Shaula data and divide cross and auto correlation data in 2 bunches of equal measurement time
 ## to check for systematics in the g2 functions
 #####################################################################################################################
-star = "Shaula"
+star = sys.argv[1]
 print("1. Peak part Analysis of {}".format(star))
 
 # Read in the data (g2 functions and time/baseline parameters)

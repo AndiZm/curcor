@@ -6,6 +6,7 @@ import matplotlib as mpl
 from tqdm import tqdm
 from datetime import datetime, timezone
 import ephem
+import sys
 
 import geometry as geo
 import corrections as cor
@@ -13,7 +14,7 @@ import utilities as uti
 
 from threading import Thread
 
-star = "Regor"
+star = sys.argv[1]
 
 # Define files to analyze and subpackages
 folders   = [] # Data folders for analysis

@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 import ephem
 import math
 from scipy.optimize import curve_fit
+import sys
 
 import geometry as geo
 import corrections as cor
@@ -15,7 +16,7 @@ import utilities as uti
 
 from threading import Thread
 
-star = "Shaula"
+star = sys.argv[1]
 
 exp_rates = np.loadtxt("stardata/{}/{}_19_20_data.txt".format(star,star))[4]
 hour = np.loadtxt("stardata/{}/{}_19_20_data.txt".format(star,star))[0]

@@ -6,11 +6,12 @@ from scipy.signal import butter, filtfilt, find_peaks
 from matplotlib.pyplot import cm
 import ephem
 import scipy.special as scp
+import sys
 
 import utilities as uti
 import corrections as cor
 
-star = "Shaula"
+star = sys.argv[1]
 
 print("Final Analysis of {}".format(star))
 

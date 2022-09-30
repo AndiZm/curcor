@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 import ephem
 import math
 from scipy.optimize import curve_fit
+import sys
 
 import geometry as geo
 import corrections as cor
@@ -15,7 +16,7 @@ import utilities as uti
 
 from threading import Thread
 
-star = "Shaula"
+star = sys.argv[1]
 
 # Define files to analyze
 folders   = [] # Data folders for analysis
