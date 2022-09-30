@@ -285,9 +285,23 @@ ct4_sum = ct4_sum/np.mean(ct4_sum[0:4500])
 tbin = timebin(118.62); ct3_sum = shift_bins(ct3_sum, tbin)
 tbin = timebin(114.23); ct4_sum = shift_bins(ct4_sum, tbin)
 
+
 plt.subplot(224)
 plt.errorbar(x, ct3_sum, yerr=0, marker=".", linestyle="--", color = "black", linewidth=2, alpha=1)
 plt.errorbar(x, ct4_sum+1e-5, yerr=0, marker=".", linestyle="--", color = "black", linewidth=2, alpha=1)
+
+# Fit into autocorrelations
+if star == "Regor":
+    xplota, popt_3, perr_3 = uti.fit(ct3_sum, x, -50, 50)
+    xplota, popt_4, perr_4 = uti.fit(ct4_sum, x, -50, 50)
+    plt.plot(xplota, uti.gauss_shifted(x=xplota, a=popt_3[0], mu=popt_3[1], sigma=popt_3[2], shift=0), color="red", linestyle="--", linewidth=2, zorder=4)
+    plt.plot(xplota, uti.gauss_shifted(x=xplota, a=popt_4[0], mu=popt_4[1], sigma=popt_4[2], shift=5), color="red", linestyle="--", linewidth=2, zorder=4)
+
+    Int3, dInt3 = uti.integral(popt_3, perr_3)
+    Int4, dInt4 = uti.integral(popt_4, perr_4)
+    print ("Autocorrelation integrals:")
+    print ("CT3: {:.2f} +/- {:.2f}  fs".format(1e6*Int3,1e6*dInt3))
+    print ("CT4: {:.2f} +/- {:.2f}  fs".format(1e6*Int4,1e6*dInt4))
 
 np.savetxt("autocorrelation_{}.txt".format(star), np.c_[ct3_sum, ct4_sum])
 
@@ -326,8 +340,12 @@ ints_avg, dints_avg = uti.weighted_avg(intsA,dintsA, intsB,dintsB, ints3Ax4B,din
 # Add zero-baseline
 baselines  = np.append(baselines,0+1e-6)
 dbaselines = np.append(dbaselines,0)
-ints_fixed = np.append(ints_fixed,41.28)
-dints_fixed= np.append(dints_fixed,7.02)
+if star == "Regor":
+    ints_fixed = np.append(ints_fixed, 1e6*Int3)
+    dints_fixed= np.append(dints_fixed, 1e6*dInt3)
+else:
+    ints_fixed = np.append(ints_fixed,41.28)
+    dints_fixed= np.append(dints_fixed,7.02)
 
 # Calculate SC fit and errorbars for the averaged signal
 poptavg, pcov = curve_fit(uti.spatial_coherence, baselines, ints_fixed, sigma=dints_fixed, p0=[25, 2.2e-9])
@@ -362,7 +380,11 @@ print ("Angular diameter AVG (fixed)   : {:.2f} +/- {:.2f} (mas)".format(uti.rad
 print ("Angular diameter AVG (free,odr): {:.2f} +/- {:.2f} (mas)".format(uti.rad2mas(popt_odr[1]),   uti.rad2mas(perr_odr[1])))
 
 # plot datapoints in SC plot and fit to all points
-plt.errorbar(x=0, y=41.28, yerr=7.02, marker="o", color="black")
+if star == "Regor":
+    plt.errorbar(x=0, y=1e6*Int3, yerr=1e6*dInt3, marker="o", color="black")
+else:
+    plt.errorbar(x=0, y=41.28, yerr=7.02, marker="o", color="black")
+
 for i in range (0,len(baselines)-1):
     plt.errorbar(baselines[i], ints_fixed[i], yerr=dints_fixed[i], xerr=dbaselines[i], marker="o", linestyle="", color=colors[i])
     #plt.text(baselines[i]+1,ints_fixed[i]+0.5,ephem.Date(data[:,0][i]), color=colors[i])
