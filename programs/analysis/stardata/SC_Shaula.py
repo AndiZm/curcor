@@ -16,21 +16,33 @@ import geopy.distance
 import numpy as np
 import subprocess
 import os
+import sys
 
-#source, rad, dis, mag = np.genfromtxt('star_list.txt', delimiter=';', unpack=True)
-source = "Shaula"
-anfang = 21
-ende = 22
+source = sys.argv[1]
+anfang = 19
+ende = 20
+
+# Open text file with measurement split data and read the data for the specific star
+f = open("star_data.txt")
+# Find line for the star
+line = f.readline()
+while source in line:
+    rad = int(line.split()[1] )
+    dis = int(line.split()[2] )
+    mag = int(line.split()[3] )
+    line = f.readline()
+f.close()
+
 
 command = 'python baselines/ -source %s -t1 2022/04/%s 17:00:00 -t2 2022/04/%s 05:00:00 -verbose -save_data -save_plot' %(source,anfang, ende)
 os.system(command)
 
 print('picture')
 
-angles, atm_trans = np.loadtxt('../baselines/output/atm txt/Mimosa_atm_trans.txt', unpack=True)
+angles, atm_trans = np.loadtxt('baselines/output/atm txt/Mimosa_atm_trans.txt', unpack=True)
 func = scipy.interpolate.interp1d(angles, atm_trans)
 #realtime, sourcealt, baseline_3_4, baseline_1_3, baseline_1_4, baseline_2_4, baseline_1_2, baseline_2_3 = np.loadtxt('baselines/output/baseline txt/%s.txt' %(source), unpack=True)
-realtime, sourcealt, baseline_3_4, baseline_1_4, separation = np.loadtxt('../baselines/output/baseline txt/%s.txt' %(source), unpack=True)
+realtime, sourcealt, baseline_3_4, baseline_1_4, separation = np.loadtxt('baselines/output/baseline txt/%s.txt' %(source), unpack=True)
 #bl_1_2 = np.nan_to_num(baseline_1_2, nan=0)
 #bl_1_3 = np.nan_to_num(baseline_1_3, nan=0)
 bl_1_4 = np.nan_to_num(baseline_1_4)
@@ -183,9 +195,7 @@ for i in range(len(t_ob)):
 
 thour = np.array(th)
 tminute = np.array(tmin)
-print(len(thour), len(tminute), len(salt), len(Rate34))
-#print(Rate34)
-print(ephem.Date(realtime[0]), sourcealt[0], ephem.Date(realtime[-1]), sourcealt[-1], ephem.Date(t_ob[0]), ephem.Date(t_ob[-1]))
+print(realtime[0], ephem.Date(realtime[0]), sourcealt[0], ephem.Date(realtime[-1]), sourcealt[-1], ephem.Date(t_ob[0]), ephem.Date(t_ob[-1]))
 #S = (2*scp.j1(np.pi*110*ang/lam)/(np.pi*110*)ang/lam))**2   # fuer bestimmte baseline 110m 
 #S2 = (2*scp.j1(np.pi*100*ang/lam)/(np.pi*100*ang/lam))**2 
 
@@ -203,7 +213,7 @@ plt.xlabel('baseline')
 plt.savefig('%s/%s_%s_%s_sc.pdf' %(source, source, anfang, ende))
 #np.savetxt("Namibia_April2022/, np.c_[realtime, sourcealt, baseline_3_4, baseline_1_4, separation])
 np.savetxt("%s/%s_%s_%s.txt" %(source, source, anfang, ende), np.c_[year, month ,day ,hour, minute, sourcealt, bl_3_4, separation], fmt=' '.join(['%02d']*5 + ['%1.2f']*3), header = "year, month, day, hour, min, alt, baseline, separation moon")
-np.savetxt("%s/%s_%s_%s_data.txt" %(source, source, anfang, ende), np.c_[thour, tminute, salt, bl34, R34, S_bl34], fmt=' '.join(['%02d']*2 + ['%1.2f']*4), header = "hour, min, alt, baseline, rate, SC")
+np.savetxt("%s/%s_%s_%s_data.txt" %(source, source, anfang, ende), np.c_[t_ob, thour, tminute, salt, bl34, R34, S_bl34], fmt=' '.join(['%1.9f']*1 + ['%02d']*2 + ['%1.2f']*4), header = "realtime, hour, min, alt, baseline, rate, SC")
 
 #plt.show()
 

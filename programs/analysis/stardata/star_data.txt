@@ -1,0 +1,7 @@
+#Star	radius	distance	magnitude	
+
+Acrux	7.8	99	1.09
+Mimosa	8.4	85	1.25
+Nunki	4.5	70	2.05
+Regor	6	379	1.83
+Shaula	8.8	180	1.41
