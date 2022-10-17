@@ -1,5 +1,5 @@
-#Star	radius	distance	magnitude	
-
+#Star	radius	distance	magnitude
+	
 Acrux	7.8	99	1.09
 Mimosa	8.4	85	1.25
 Nunki	4.5	70	2.05
