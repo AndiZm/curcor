@@ -6,8 +6,8 @@ from matplotlib.pyplot import cm
 import utilities as uti
 import corrections as cor
 
-ct3 = np.loadtxt("g2_functions/Shaula/CT3.txt")
-ct4 = np.loadtxt("g2_functions/Shaula/CT4.txt")
+ct3 = np.loadtxt("g2_functions/Acrux/CT3.txt")
+ct4 = np.loadtxt("g2_functions/Acrux/CT4.txt")
 x = np.arange(-1.6*len(ct3[0])//2,+1.6*len(ct3[0])//2,1.6)
 
 # Define colormap for plotting all summarized individual g2 functions
@@ -39,29 +39,10 @@ for i in range (0,len(ct3)):
         if xfft[j] > 0.04 and xfft[j] < 0.625/2:
             peaks_new.append(j)
 
-    #plt.subplot(211)
-    #plt.plot(g2, color="blue", alpha=0.5)
-    #plt.subplot(212)    
-    #plt.plot(xfft, fft, color="blue")
-    #plt.plot(xfft[peaks_new], fft[peaks_new], "o")
-
     # clear g2 function from the peaks
     freqs = xfft[peaks_new]
     for j in range(len(freqs)):
         g2 = cor.notch(g2, freqs[j]*1e9, 80)
-    #g2 = cor.notch(g2, 0.104*1e9, 80)
-
-    #xfft, fft = uti.fourier(g2[5300:])
-    #plt.subplot(211)
-    #plt.plot(g2, color="red")
-    #plt.subplot(212)    
-    #plt.plot(xfft, fft, color="red")
-#
-    #plt.show()
-
-    #xfft, fft = uti.fourier(g2[5020:5225])
-    #plt.plot(xfft, fft)
-    #plt.show()
 
     # Average g2 functions
     rms = np.std(g2[5020:5300])
@@ -105,29 +86,10 @@ for i in range (0,len(ct3)):
         if xfft[j] > 0.04 and xfft[j] < 0.625/2:
             peaks_new.append(j)
 
-    #plt.subplot(211)
-    #plt.plot(g2, color="blue", alpha=0.5)
-    #plt.subplot(212)    
-    #plt.plot(xfft, fft, color="blue")
-    #plt.plot(xfft[peaks_new], fft[peaks_new], "o")
-
     # clear g2 function from the peaks
     freqs = xfft[peaks_new]
     for j in range(len(freqs)):
         g2 = cor.notch(g2, freqs[j]*1e9, 80)
-    #g2 = cor.notch(g2, 0.104*1e9, 80)
-
-    #xfft, fft = uti.fourier(g2[5300:])
-    #plt.subplot(211)
-    #plt.plot(g2, color="red")
-    #plt.subplot(212)    
-    #plt.plot(xfft, fft, color="red")
-#
-    #plt.show()
-
-    #xfft, fft = uti.fourier(g2[5020:5225])
-    #plt.plot(xfft, fft)
-    #plt.show()
 
     # Average g2 functions
     rms = np.std(g2[5020:5300])
@@ -173,6 +135,8 @@ tbin = timebin(114.23); g2_ct4 = shift_bins(g2_ct4, tbin)
 g2_avg = g2_ct3/np.std(g2_ct3[5020:5300]) + g2_ct4/np.std(g2_ct4[5020:5300])
 g2_avg = g2_avg/np.mean(g2_avg[0:4500])
 
+np.savetxt("g2_functions/Acrux/autocorrelation.txt", np.c_[x,g2_avg])
+
 # Fit
 xplot, popt, perr = uti.fit(g2_avg, x, -30, +30)
 Int, dInt = uti.integral(popt, perr)
@@ -185,7 +149,7 @@ plt.plot(x, g2_avg, color="black", linewidth=1)
 plt.plot(xplot, uti.gauss(xplot, *popt), color="red", linestyle="--")
 plt.xlabel("Time difference (ns)", fontsize=14)
 plt.ylabel("$g^{(2)}$", fontsize=14)
-plt.title("Shaula auto correlation", fontsize=16)
+plt.title("Acrux auto correlation", fontsize=16)
 plt.grid()
 plt.xlim(-150,150)
 plt.show()

@@ -270,12 +270,18 @@ for i in range(0,len(chAs)):
 
     # Subplot for the auto correlations, tbc
     # Shift all peaks to zero
-    tbin = timebin(118.62); ct3 = shift_bins(ct3, tbin)
-    tbin = timebin(114.23); ct4 = shift_bins(ct4, tbin)
-    plt.subplot(224)
-    plt.errorbar(x, ct3+i*0e-6, yerr=0, marker=".", linestyle="--", color = colors[i], alpha=0.6)
-    plt.errorbar(x, ct4+i*0e-6+1e-5, yerr=0, marker=".", linestyle="--", color = colors[i], alpha=0.6)
+    #tbin = timebin(118.62); ct3 = shift_bins(ct3, tbin)
+    #tbin = timebin(114.23); ct4 = shift_bins(ct4, tbin)
+    #plt.subplot(224)
+    #plt.errorbar(x, ct3+i*0e-6, yerr=0, marker=".", linestyle="--", color = colors[i], alpha=0.6)
+    #plt.errorbar(x, ct4+i*0e-6+1e-5, yerr=0, marker=".", linestyle="--", color = colors[i], alpha=0.6)
     #plt.errorbar(x, ct4+i*0e-6+1e-5, yerr=0, marker=".", linestyle="--", label=timestring, color = colors[i], alpha=0.6)
+
+
+############################
+# Autocorrelation analysis #
+############################
+# ---- This is old and not used any more ---- #
 
 # Finalize analysis of integrated autocorrelations and plot it to the auto correlation plot
 # Renormalize ct3 and ct4 autocorrelation data
@@ -285,11 +291,32 @@ ct4_sum = ct4_sum/np.mean(ct4_sum[0:4500])
 tbin = timebin(118.62); ct3_sum = shift_bins(ct3_sum, tbin)
 tbin = timebin(114.23); ct4_sum = shift_bins(ct4_sum, tbin)
 
-plt.subplot(224)
-plt.errorbar(x, ct3_sum, yerr=0, marker=".", linestyle="--", color = "black", linewidth=2, alpha=1)
-plt.errorbar(x, ct4_sum+1e-5, yerr=0, marker=".", linestyle="--", color = "black", linewidth=2, alpha=1)
+#plt.subplot(224)
+#plt.errorbar(x, ct3_sum, yerr=0, marker=".", linestyle="--", color = "black", linewidth=2, alpha=1)
+#plt.errorbar(x, ct4_sum+1e-5, yerr=0, marker=".", linestyle="--", color = "black", linewidth=2, alpha=1)
+#
+#np.savetxt("autocorrelation_{}.txt".format(star), np.c_[ct3_sum, ct4_sum])
 
-np.savetxt("autocorrelation_{}.txt".format(star), np.c_[ct3_sum, ct4_sum])
+# ---- This is the new method ---- #
+# Read in the autocorrelation functions
+try:
+    autocorrelation = np.loadtxt("g2_functions/{}/autocorrelation.txt".format(star))
+except:
+    print ("No autocorrelation found, please make sure it exists")
+    exit(1)
+
+x_auto  = autocorrelation[:,0]
+c_auto = autocorrelation[:,1]
+# Fit gaussian into autocorrelation
+xplotf, popt_avg_free, perr_avg_free = uti.fit(c_auto, x_auto, -50, 50)
+int_auto, dint_auto = uti.integral(popt_avg_free, perr_avg_free)
+
+plt.subplot(224)
+plt.plot(x_auto, c_auto, color="black")
+plt.plot(xplotf, uti.gauss(xplotf, *popt_avg_free), linestyle="--", color="red")
+plt.ylim(1-1*popt_avg_free[0] , 1+2*popt_avg_free[0])
+
+
 
 # Figure stuff
 def cc_plots(xlims):
@@ -326,8 +353,8 @@ ints_avg, dints_avg = uti.weighted_avg(intsA,dintsA, intsB,dintsB, ints3Ax4B,din
 # Add zero-baseline
 baselines  = np.append(baselines,0+1e-6)
 dbaselines = np.append(dbaselines,0)
-ints_fixed = np.append(ints_fixed,41.28)
-dints_fixed= np.append(dints_fixed,7.02)
+ints_fixed = np.append(ints_fixed,  1e6*int_auto)
+dints_fixed= np.append(dints_fixed, 1e6*dint_auto)
 
 # Calculate SC fit and errorbars for the averaged signal
 poptavg, pcov = curve_fit(uti.spatial_coherence, baselines, ints_fixed, sigma=dints_fixed, p0=[25, 2.2e-9])
@@ -362,13 +389,13 @@ print ("Angular diameter AVG (fixed)   : {:.2f} +/- {:.2f} (mas)".format(uti.rad
 print ("Angular diameter AVG (free,odr): {:.2f} +/- {:.2f} (mas)".format(uti.rad2mas(popt_odr[1]),   uti.rad2mas(perr_odr[1])))
 
 # plot datapoints in SC plot and fit to all points
-plt.errorbar(x=0, y=41.28, yerr=7.02, marker="o", color="black")
+plt.errorbar(x=0, y=1e6*int_auto, yerr=1e6*dint_auto, marker="o", color="black") # auto correlation
 for i in range (0,len(baselines)-1):
     plt.errorbar(baselines[i], ints_fixed[i], yerr=dints_fixed[i], xerr=dbaselines[i], marker="o", linestyle="", color=colors[i])
     #plt.text(baselines[i]+1,ints_fixed[i]+0.5,ephem.Date(data[:,0][i]), color=colors[i])
 #plt.errorbar(baselines, ints_free,  yerr=dints_free,  marker="o", linestyle="", color="red", markersize=4, alpha=0.4)
 plt.plot(xplot, uti.spatial_coherence(xplot,*poptavg),   label="fit", color="red", linewidth=2)
-#plt.plot(xplot, uti.spatial_coherence(xplot,*popt_odr),   label="ODR (no zero baseline)", color="orange", linewidth=2)
+plt.plot(xplot, uti.spatial_coherence(xplot,*popt_odr),   label="ODR (no zero baseline)", color="orange", linewidth=2)
 #plt.plot(xplot, uti.spatial_coherence(xplot,*poptavg_free),   label="Free parameters", color="red", linewidth=2, alpha=0.4)
 
 #plt.fill_between(xplot, spatial_coherence(xplot,*popt) + deltas_sc, spatial_coherence(xplot,*popt) - deltas_sc, color="red", alpha=0.2)
