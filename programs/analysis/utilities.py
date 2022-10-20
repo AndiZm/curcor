@@ -9,30 +9,29 @@ lam = 465e-9
 
 # GET_BASELINE function for cross analysis
 def get_baseline(date, star):
-	starname_big = star[0].upper() + star[1:]
-	timestring = ephem.Date(date)
-	# Split time string a la 2022/4/20 23:15:07
-	year, month, day, hour, minute, second = timestring.tuple()
-	# Decide which part of the night
-	if hour > 12: # before midnight
-		filename = "stardata/{}/{}_{}_{}.txt".format(starname_big, starname_big, day, day+1)
-	elif hour <= 12: # after midnight
-		filename = "stardata/{}/{}_{}_{}.txt".format(starname_big, starname_big, day-1, day)
-
-	#print (filename)
-	# Try open the file
-	file = np.loadtxt(filename)
-	hours     = file[:,3]
-	minutes   = file[:,4]
-	baselines = file[:,6]
-
-	lineindex = 0
-	while ( hours[lineindex] != hour or minutes[lineindex] != minute ):
-		lineindex += 1
-	baseline = baselines[lineindex]
-
-	#print (baseline)
-	return baseline
+    starname_big = star[0].upper() + star[1:]
+    timestring = ephem.Date(date)
+    # Split time string a la 2022/4/20 23:15:07
+    year, month, day, hour, minute, second = timestring.tuple()
+    datestring1 = str(year) + str("{:02d}".format(month)) + str("{:02d}".format(day))
+    datestring2 = str(year) + str("{:02d}".format(month)) + str("{:02d}".format(day-1))
+    # Decide which part of the night
+    if hour > 12: # before midnight
+    	filename = "stardata/{}/{}_{}.txt".format(starname_big, starname_big, datestring1)
+    elif hour <= 12: # after midnight
+    	filename = "stardata/{}/{}_{}.txt".format(starname_big, starname_big, datestring2)
+    #print (filename)
+    # Try open the file
+    file = np.loadtxt(filename)
+    hours     = file[:,3]
+    minutes   = file[:,4]
+    baselines = file[:,6]
+    lineindex = 0
+    while ( hours[lineindex] != hour or minutes[lineindex] != minute ):
+    	lineindex += 1
+    baseline = baselines[lineindex]
+    #print (baseline)
+    return baseline
 
 
 # Some utility functions for the final analysis

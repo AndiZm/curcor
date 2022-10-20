@@ -52,6 +52,9 @@ def rate_calc (folder, start, stop):
 	rateA_ratio =[]
 	rateB_ratio =[]
 	alt_all = []
+	times = []; baseline_values = []; tplot =[]; realt =[]
+
+
 
 	# Define total figure for plotting all rates of one night for each channel
 	plt.rcParams['figure.figsize'] = 22,10
@@ -68,9 +71,7 @@ def rate_calc (folder, start, stop):
 	x = np.arange(0, len(files))
 	cm_sub = np.linspace(1.0, 0.0, len(files))
 	colors = [cm.viridis(x) for x in cm_sub]
-	times = []; baseline_values = []; tplot =[]
-	#print(len(files))
-
+	
 	# Read offset data for offset correction
 	off3A = np.loadtxt( "{}/{}/calibs_ct3/off.off".format(folderpath, folder) )[0]
 	off3B = np.loadtxt( "{}/{}/calibs_ct3/off.off".format(folderpath, folder) )[1]
@@ -129,6 +130,7 @@ def rate_calc (folder, start, stop):
 		p3, = ax2.plot(tplot[-1], rate4A, color="green", alpha=0.6, marker='.', label="Channel 4A")
 		p4, = ax2.plot(tplot[-1], rate4B, color="purple", alpha=0.6, marker='.', label="Channel 4B")
 
+	print(times[0])
 	# creating x axis for altitude plot
 	minval = min(alt_all)
 	maxval = max(alt_all)
@@ -164,7 +166,7 @@ def rate_calc (folder, start, stop):
 	fig1.supylabel("Rate (MHz)", fontsize=14)
 	plt.tight_layout()
 	fig1.savefig("rates/{}/{}_{}_Tel.pdf".format(star, star, date))
-	np.savetxt("rates/{}/{}_{}.txt".format(star, star, date), np.c_[rate3A_all, rate3B_all, rate4A_all, rate4B_all], fmt=' '.join(["%03.2d"]*4 ), header="{} 3A, 3B, 4A, 4B".format(star))
+	np.savetxt("rates/{}/{}_{}.txt".format(star, star, date), np.c_[times, rate3A_all, rate3B_all, rate4A_all, rate4B_all], fmt=' '.join(['%01.9f']*1 + ["%03.2f"]*4 ), header="{} realtime, 3A, 3B, 4A, 4B".format(star))
 
 
 	Figure2 = plt.figure(figsize=(22,10))
