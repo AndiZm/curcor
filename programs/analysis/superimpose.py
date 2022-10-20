@@ -405,7 +405,7 @@ plt.xlabel("Baseline (m)"); plt.ylabel("Coherence time (fs)")
 plt.legend(loc="upper right")
 plt.tight_layout()
 #plt.savefig("{}_crosscorrelation.png".format(star))
-plt.savefig("images/{}_sc.png".format(star))
+plt.savefig("images/{}_sc.pdf".format(star))
 plt.show()
 
 #xfft = np.linspace(0,1./1.6,len(ffts[0]), endpoint=True)
