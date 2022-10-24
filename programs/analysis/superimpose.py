@@ -175,7 +175,7 @@ ticks = []
 ffts = []
 
 # loop over every g2 function chunks
-for i in range(5,len(chAs)):
+for i in range(0,len(chAs)):
     chA = chAs[i]
     chB = chBs[i]
     ct3 = ct3s[i]
