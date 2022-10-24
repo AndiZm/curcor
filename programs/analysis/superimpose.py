@@ -43,7 +43,9 @@ def average_g2s(cA, cB, c3Ax4B, c4Ax3B):
     return g2_avg
 
 print("Final Analysis of {}".format(star))
-
+################################################
+#### Analysis over whole measruement time #####
+################################################
 # Read in the data (g2 functions and time/baseline parameters)
 chAs    = np.loadtxt("g2_functions/{}/ChA.txt".format(star))     
 chBs    = np.loadtxt("g2_functions/{}/ChB.txt".format(star))     
@@ -160,11 +162,17 @@ chA_clean = []
 chB_clean = []
 ct3_clean = []
 ct4_clean = []
+c3Ax4B_clean = []
+c4Ax3B_clean = []
 ct3_sum = np.zeros(len(ct3s[0]))
 ct4_sum = np.zeros(len(ct4s[0]))
 ticks = []
 ffts = []
 
+
+#########################################
+###### Chunk analysis ###################
+#########################################
 # loop over every g2 function chunks
 for i in range(0,len(chAs)):
     chA = chAs[i]
@@ -183,16 +191,7 @@ for i in range(0,len(chAs)):
     c4Ax3B = cor.lowpass(c4Ax3B)
 
     # more data cleaning with notch filter for higher frequencies
-    freq3 = [50, 90, 125, 150]
-    for j in range(len(freq3)):
-        ct3 = cor.notch(ct3, freq3[j]*1e6, 80)
-    freq4 = [50, 90, 110, 130, 150, 250]
-    for j in range(len(freq4)):
-        ct4 = cor.notch(ct4, freq4[j]*1e6, 80)
-    freqB = [90, 150, 250]
-    for j in range(len(freqB)):
-        chB = cor.notch(chB, freqB[j]*1e6, 80)
-    freqA = [90]
+    freqA = [90,130,150]
     for j in range(len(freqA)):
         chA = cor.notch(chA, freqA[j]*1e6, 80)
     freqAB = [90,250]
@@ -201,13 +200,29 @@ for i in range(0,len(chAs)):
     freqBA = [90]
     for j in range(len(freqBA)):
         c4Ax3B = cor.notch(c4Ax3B, freqBA[j]*1e6, 80)
+    freqB = [90, 110, 130, 150, 250]
+    for j in range(len(freqB)):
+        chB = cor.notch(chB, freqB[j]*1e6, 80)
+    freq3 = [50, 90, 125, 130, 150, 250]
+    for j in range(len(freq3)):
+        ct3 = cor.notch(ct3, freq3[j]*1e6, 80)
+    freq4 = [90,130,150,250]
+    for j in range(len(freq4)):
+        ct4 = cor.notch(ct4, freq4[j]*1e6, 80)
+    freqAB = [90,130,150,250]
+    for j in range(len(freqAB)):
+        c3Ax4B = cor.notch(c3Ax4B, freqAB[j]*1e6, 80)
+    freqBA = [50,90,110,130]
+    for j in range(len(freqBA)):
+        c4Ax3B = cor.notch(c4Ax3B, freqBA[j]*1e6, 80)
 
     # save cleaned data
     chA_clean.append(chA)
     chB_clean.append(chB)
     ct3_clean.append(ct3)
     ct4_clean.append(ct4)
-    # TODO: Save cleaned data for x correlations
+    c3Ax4B_clean.append(c3Ax4B)
+    c4Ax3B_clean.append(c4Ax3B)
 
     #########################
     # Shift all peaks to zero
