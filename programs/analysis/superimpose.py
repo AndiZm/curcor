@@ -138,7 +138,7 @@ plt.xlabel("Time delay (ns)"); plt.ylabel("$g^{(2)}$")
 
 plt.tight_layout()
 plt.savefig("images/{}_cumulative.png".format(star))
-plt.show()
+plt.plot()
 
 
 #########################################
@@ -351,8 +351,8 @@ dbaselines = data[:,2]
 ints_avg, dints_avg = uti.weighted_avg(intsA,dintsA, intsB,dintsB, ints3Ax4B,dints3Ax4B, ints4Ax3B, dints4Ax3B)
 
 # Add zero-baseline
-baselines  = np.append(baselines,0+1e-6)
-dbaselines = np.append(dbaselines,0)
+baselines  = np.append(baselines, 5.43) # Average photon distance in a 12 m diameter circle
+dbaselines = np.append(dbaselines,2.50) # rms distance of photon in a 12 m diameter circle
 ints_fixed = np.append(ints_fixed,  1e6*int_auto)
 dints_fixed= np.append(dints_fixed, 1e6*dint_auto)
 
@@ -389,7 +389,7 @@ print ("Angular diameter AVG (fixed)   : {:.2f} +/- {:.2f} (mas)".format(uti.rad
 print ("Angular diameter AVG (free,odr): {:.2f} +/- {:.2f} (mas)".format(uti.rad2mas(popt_odr[1]),   uti.rad2mas(perr_odr[1])))
 
 # plot datapoints in SC plot and fit to all points
-plt.errorbar(x=0, y=1e6*int_auto, yerr=1e6*dint_auto, marker="o", color="black") # auto correlation
+plt.errorbar(x=5.43, y=1e6*int_auto, yerr=1e6*dint_auto, xerr=2.50, marker="o", color="black") # auto correlation
 for i in range (0,len(baselines)-1):
     plt.errorbar(baselines[i], ints_fixed[i], yerr=dints_fixed[i], xerr=dbaselines[i], marker="o", linestyle="", color=colors[i])
     #plt.text(baselines[i]+1,ints_fixed[i]+0.5,ephem.Date(data[:,0][i]), color=colors[i])
