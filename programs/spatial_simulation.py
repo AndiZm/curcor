@@ -3,11 +3,14 @@ import math
 import matplotlib.pyplot as plt
 import scipy.special as sp
 
+R_s = 6.96342e8 # Solar radius
+Ly  = 9.46e15 	# Light year
+
 #Alle angaben in mm
-wellenlaenge = 465e-6
-entfernung = 3e3
-pinhole = 0.030
-oeffnungsradius = 25.4/2
+wellenlaenge    = 465e-6
+entfernung      = 1e3 * 570*Ly#3e3
+pinhole         = 1e3 * 8.8*R_s#0.030
+oeffnungsradius = 6*1e3#25.4/2
 
 
 
@@ -39,6 +42,8 @@ for i in range (statistics):
 
 
 t=np.array(t)
+print ("Distance distribution (avg +/- rms): {:.2f} +/- {:.2f}".format(np.mean(d),np.std(d)))
+
 
 print("[" + str(wellenlaenge*1e6) + " nm] x (" + str(pinhole * 1e3) + " mum) --------" + str(entfernung * 1e-3) + " m -------- (" + str(oeffnungsradius*2) + " mm)")
 print("Spatial coherence loss: " +str(np.mean(t)))

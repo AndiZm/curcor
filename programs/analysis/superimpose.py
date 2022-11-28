@@ -43,7 +43,9 @@ def average_g2s(cA, cB, c3Ax4B, c4Ax3B):
     return g2_avg
 
 print("Final Analysis of {}".format(star))
-
+################################################
+#### Analysis over whole measurement time #####
+################################################
 # Read in the data (g2 functions and time/baseline parameters)
 chAs    = np.loadtxt("g2_functions/{}/ChA.txt".format(star))     
 chBs    = np.loadtxt("g2_functions/{}/ChB.txt".format(star))     
@@ -136,7 +138,12 @@ plt.xlabel("Time delay (ns)"); plt.ylabel("$g^{(2)}$")
 
 plt.tight_layout()
 plt.savefig("images/{}_cumulative.png".format(star))
-plt.show()
+plt.plot()
+
+
+#########################################
+###### Chunk analysis ###################
+#########################################
 
 # Define colormap for plotting all summarized individual g2 functions
 cm_sub = np.linspace(1.0, 0.0, len(chAs))
@@ -160,6 +167,8 @@ chA_clean = []
 chB_clean = []
 ct3_clean = []
 ct4_clean = []
+c3Ax4B_clean = []
+c4Ax3B_clean = []
 ct3_sum = np.zeros(len(ct3s[0]))
 ct4_sum = np.zeros(len(ct4s[0]))
 ticks = []
@@ -183,16 +192,7 @@ for i in range(0,len(chAs)):
     c4Ax3B = cor.lowpass(c4Ax3B)
 
     # more data cleaning with notch filter for higher frequencies
-    freq3 = [50, 90, 125, 150]
-    for j in range(len(freq3)):
-        ct3 = cor.notch(ct3, freq3[j]*1e6, 80)
-    freq4 = [50, 90, 110, 130, 150, 250]
-    for j in range(len(freq4)):
-        ct4 = cor.notch(ct4, freq4[j]*1e6, 80)
-    freqB = [90, 150, 250]
-    for j in range(len(freqB)):
-        chB = cor.notch(chB, freqB[j]*1e6, 80)
-    freqA = [90]
+    freqA = [90,130,150]
     for j in range(len(freqA)):
         chA = cor.notch(chA, freqA[j]*1e6, 80)
     freqAB = [90,250]
@@ -201,13 +201,29 @@ for i in range(0,len(chAs)):
     freqBA = [90]
     for j in range(len(freqBA)):
         c4Ax3B = cor.notch(c4Ax3B, freqBA[j]*1e6, 80)
+    freqB = [90, 110, 130, 150, 250]
+    for j in range(len(freqB)):
+        chB = cor.notch(chB, freqB[j]*1e6, 80)
+    freq3 = [50, 90, 125, 130, 150, 250]
+    for j in range(len(freq3)):
+        ct3 = cor.notch(ct3, freq3[j]*1e6, 80)
+    freq4 = [90,130,150,250]
+    for j in range(len(freq4)):
+        ct4 = cor.notch(ct4, freq4[j]*1e6, 80)
+    freqAB = [90,130,150,250]
+    for j in range(len(freqAB)):
+        c3Ax4B = cor.notch(c3Ax4B, freqAB[j]*1e6, 80)
+    freqBA = [50,90,110,130]
+    for j in range(len(freqBA)):
+        c4Ax3B = cor.notch(c4Ax3B, freqBA[j]*1e6, 80)
 
     # save cleaned data
     chA_clean.append(chA)
     chB_clean.append(chB)
     ct3_clean.append(ct3)
     ct4_clean.append(ct4)
-    # TODO: Save cleaned data for x correlations
+    c3Ax4B_clean.append(c3Ax4B)
+    c4Ax3B_clean.append(c4Ax3B)
 
     #########################
     # Shift all peaks to zero
@@ -277,26 +293,17 @@ for i in range(0,len(chAs)):
     #plt.errorbar(x, ct4+i*0e-6+1e-5, yerr=0, marker=".", linestyle="--", color = colors[i], alpha=0.6)
     #plt.errorbar(x, ct4+i*0e-6+1e-5, yerr=0, marker=".", linestyle="--", label=timestring, color = colors[i], alpha=0.6)
 
+# store cleaned data
+np.savetxt("g2_functions/{}/ChA_clean.txt".format(star), np.c_[chA_clean], header="{} Channel A cleaned".format(star) )
+np.savetxt("g2_functions/{}/ChB_clean.txt".format(star), np.c_[chB_clean], header="{} Channel B cleaned".format(star) )
+np.savetxt("g2_functions/{}/CT3_clean.txt".format(star), np.c_[ct3_clean], header="{} CT3 cleaned".format(star) )
+np.savetxt("g2_functions/{}/CT4_clean.txt".format(star), np.c_[ct4_clean], header="{} CT4 cleaned".format(star) )
+np.savetxt("g2_functions/{}/C3Ax4B_clean.txt".format(star), np.c_[c3Ax4B_clean], header="{} CT3A x CT4B cleaned".format(star) )
+np.savetxt("g2_functions/{}/C4Ax3B_clean.txt".format(star), np.c_[c4Ax3B_clean], header="{} CT4A x CT3B cleaned".format(star) )
 
 ############################
 # Autocorrelation analysis #
 ############################
-# ---- This is old and not used any more ---- #
-
-# Finalize analysis of integrated autocorrelations and plot it to the auto correlation plot
-# Renormalize ct3 and ct4 autocorrelation data
-ct3_sum = ct3_sum/np.mean(ct3_sum[0:4500])
-ct4_sum = ct4_sum/np.mean(ct4_sum[0:4500])
-# Shift all peaks to zero
-tbin = timebin(118.62); ct3_sum = shift_bins(ct3_sum, tbin)
-tbin = timebin(114.23); ct4_sum = shift_bins(ct4_sum, tbin)
-
-#plt.subplot(224)
-#plt.errorbar(x, ct3_sum, yerr=0, marker=".", linestyle="--", color = "black", linewidth=2, alpha=1)
-#plt.errorbar(x, ct4_sum+1e-5, yerr=0, marker=".", linestyle="--", color = "black", linewidth=2, alpha=1)
-#
-#np.savetxt("autocorrelation_{}.txt".format(star), np.c_[ct3_sum, ct4_sum])
-
 # ---- This is the new method ---- #
 # Read in the autocorrelation functions
 try:
@@ -316,8 +323,6 @@ plt.plot(x_auto, c_auto, color="black")
 plt.plot(xplotf, uti.gauss(xplotf, *popt_avg_free), linestyle="--", color="red")
 plt.ylim(1-1*popt_avg_free[0] , 1+2*popt_avg_free[0])
 
-
-
 # Figure stuff
 def cc_plots(xlims):
     plt.grid()
@@ -333,12 +338,7 @@ plt.yticks(np.arange(1,1+2e-6*len(chAs),2e-6))
 
 plt.subplot(224); plt.title("Auto correlations of {}".format(star)); cc_plots((-100,100))
 
-# store cleaned data
-np.savetxt("g2_functions/{}/ChA_clean.txt".format(star), np.c_[chA_clean], header="{} Channel A cleaned".format(star) )
-np.savetxt("g2_functions/{}/ChB_clean.txt".format(star), np.c_[chB_clean], header="{} Channel B cleaned".format(star) )
-np.savetxt("g2_functions/{}/CT3_clean.txt".format(star), np.c_[ct3_clean], header="{} CT3 cleaned".format(star) )
-np.savetxt("g2_functions/{}/CT4_clean.txt".format(star), np.c_[ct4_clean], header="{} CT4 cleaned".format(star) )
-
+#############################################################
 #### making SC plot (spatial coherence) via integral data ####
 xplot = np.arange(0.1,300,0.1)
 plt.subplot(222)
@@ -351,8 +351,8 @@ dbaselines = data[:,2]
 ints_avg, dints_avg = uti.weighted_avg(intsA,dintsA, intsB,dintsB, ints3Ax4B,dints3Ax4B, ints4Ax3B, dints4Ax3B)
 
 # Add zero-baseline
-baselines  = np.append(baselines,0+1e-6)
-dbaselines = np.append(dbaselines,0)
+baselines  = np.append(baselines, 5.43) # Average photon distance in a 12 m diameter circle
+dbaselines = np.append(dbaselines,2.50) # rms distance of photon in a 12 m diameter circle
 ints_fixed = np.append(ints_fixed,  1e6*int_auto)
 dints_fixed= np.append(dints_fixed, 1e6*dint_auto)
 
@@ -389,7 +389,7 @@ print ("Angular diameter AVG (fixed)   : {:.2f} +/- {:.2f} (mas)".format(uti.rad
 print ("Angular diameter AVG (free,odr): {:.2f} +/- {:.2f} (mas)".format(uti.rad2mas(popt_odr[1]),   uti.rad2mas(perr_odr[1])))
 
 # plot datapoints in SC plot and fit to all points
-plt.errorbar(x=0, y=1e6*int_auto, yerr=1e6*dint_auto, marker="o", color="black") # auto correlation
+plt.errorbar(x=5.43, y=1e6*int_auto, yerr=1e6*dint_auto, xerr=2.50, marker="o", color="black") # auto correlation
 for i in range (0,len(baselines)-1):
     plt.errorbar(baselines[i], ints_fixed[i], yerr=dints_fixed[i], xerr=dbaselines[i], marker="o", linestyle="", color=colors[i])
     #plt.text(baselines[i]+1,ints_fixed[i]+0.5,ephem.Date(data[:,0][i]), color=colors[i])
