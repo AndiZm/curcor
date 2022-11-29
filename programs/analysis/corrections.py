@@ -34,10 +34,9 @@ def gauss_fit_filter(data):
 		datacor.append(data[i]/gauss(xdata[i], *popt))
 	return datacor
 
-def lowpass(data):    
+def lowpass(data, cutoff = 0.2): # cutoff in GHz    
     fs = 1./1.6
     nyq = 0.5*fs
-    cutoff = 0.2 # GHz
     order = 2
     normal_cutoff = cutoff / nyq
     # Get the filter coefficients 

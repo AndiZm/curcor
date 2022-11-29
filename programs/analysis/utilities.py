@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 import ephem
 from scipy.optimize import curve_fit
 import scipy.special as scp
+import random
 
 # Operating wavelength
 lam = 465e-9
@@ -72,6 +73,8 @@ def integral_fixed(fitpar, fitpar_err, sigma):
     s = np.abs(sigma); d_s = 0
     Int = a*s*np.sqrt(2*np.pi)
     dInt = np.sqrt(2*np.pi)*np.sqrt((a*d_s)**2 + (s*d_a)**2)
+    # Use the formula from Master thesis
+    #dInt = 2 * rms * np.sqrt(1.6e-9 * sigma)
     return Int, dInt
 
 def calc_array_mean(array, darray):
@@ -82,8 +85,24 @@ def calc_array_mean(array, darray):
     dmean = 1/len(array) * np.sqrt(squaresum)
     return mean, dmean
 
+####################################
+# Spatial coherence plot functions #
+####################################
+# Fitting the spatial coherence values
 def spatial_coherence(x, amp, ang):
     return amp * (2*scp.j1(np.pi * x * ang/lam) / (np.pi* x * ang/lam))**2
+# Calculate error band numerically
+def get_error_numerical(x, amp, damp, ang, dang):
+    sc_vals = []
+    # simulate random (gaussian distributed) realizations of amp and ang
+    for i in range (0,100):
+        amp_real = random.gauss(amp, damp)
+        ang_real = random.gauss(ang, dang)
+        # calculate corresponding spatial coherence values
+        sc_vals.append( spatial_coherence(x=x, amp=amp_real, ang=ang_real) )
+    return np.std(sc_vals)
+
+# Try including x error bars with orthogonal distance regression
 def spatial_coherence_odr(p, x):
     amp, ang = p
     return amp * (2*scp.j1(np.pi * x * ang/lam) / (np.pi* x * ang/lam))**2

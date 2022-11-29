@@ -60,7 +60,7 @@ demo = chAs[0]
 x = np.arange(-1.6*len(demo)//2,+1.6*len(demo)//2,1.6)
 
 # Combine all data for channel A and B each for initial parameter estimation and fixing
-plt.figure(figsize=(10,9))
+plt.figure(figsize=(12,10))
 plt.subplot(211)
 plt.title("Cumulative cross correlation data of {}".format(star))
 
@@ -160,7 +160,6 @@ ints3Ax4B = []; dints3Ax4B = []
 ints4Ax3B = []; dints4Ax3B = []
 
 ints_fixed = []; dints_fixed = []
-ints_free  = []; dints_free = []
 
 # initialize CT3 and CT4 sum arrays and cleaned arrays
 chA_clean = []
@@ -254,13 +253,11 @@ for i in range(0,len(chAs)):
     # Fit with fixed mu and sigma
     xplotf, popt_avg, perr_avg = uti.fit_fixed(avg, x, -100, 100, mu_avg, sigma_avg)
     Int, dInt = uti.integral_fixed(popt_avg, perr_avg, sigma_avg)
-    # TEST
-    dInt = np.sqrt( dInt**2 + (np.std(avg)*sigma_avg*np.sqrt(2*np.pi))**2 )
+    # TEST: use an other formula for the integral calculation
+    #dInt = 2 * np.std(avg) * np.sqrt( 1.6 * sigma_avg )
+    #print (np.std(avg), sigma_avg)
+    dInt = np.sqrt( dInt**2 + (np.std(avg)*sigma_avg*np.sqrt(2*np.pi))**2 ) # this is the empirical formula from the simulations
     ints_fixed.append(1e6*Int); dints_fixed.append(1e6*dInt)# in femtoseconds
-    # Fit with free mu and sigma
-    xplotf, popt_avg_free, perr_avg_free = uti.fit(avg, x, -100, 100)
-    Int, dInt = uti.integral(popt_avg_free, perr_avg_free)
-    ints_free.append(1e6*Int); dints_free.append(1e6*dInt)# in femtoseconds
 
     # Check acquisition time of original data
     timestring = ephem.Date(data[:,0][i])
@@ -360,17 +357,13 @@ dints_fixed= np.append(dints_fixed, 1e6*dint_auto)
 poptavg, pcov = curve_fit(uti.spatial_coherence, baselines, ints_fixed, sigma=dints_fixed, p0=[25, 2.2e-9])
 perravg = np.sqrt(np.diag(pcov))
 
-# Calculate SC fit and errorbars for the averaged signal
-#poptavg_free, pcov = curve_fit(uti.spatial_coherence, baselines, ints_free, sigma=dints_free, p0=[25, 2.2e-9])
-#perravg_free = np.sqrt(np.diag(pcov))
-
 ###############
 # Try with ods
 # Model object
 from scipy import odr
 sc_model = odr.Model(uti.spatial_coherence_odr)
 # RealData object
-rdata = odr.RealData( baselines[:-1], ints_fixed[:-1], sx=dbaselines[:-1], sy=dints_fixed[:-1] )
+rdata = odr.RealData( baselines, ints_fixed, sx=dbaselines, sy=dints_fixed )
 # Set up ODR with model and data
 odr = odr.ODR(rdata, sc_model, beta0=[25,2.2e-9])
 # Run the regression
@@ -386,29 +379,51 @@ for i in xplot:
 print ("Angular diameter AVG (fixed)   : {:.2f} +/- {:.2f} (mas)".format(uti.rad2mas(poptavg[1]),   uti.rad2mas(perravg[1])))
 #print ("Angular diameter AVG (free)    : {:.2f} +/- {:.2f} (mas)".format(uti.rad2mas(poptavg_free[1]),   uti.rad2mas(perravg_free[1])))
 
-print ("Angular diameter AVG (free,odr): {:.2f} +/- {:.2f} (mas)".format(uti.rad2mas(popt_odr[1]),   uti.rad2mas(perr_odr[1])))
+print ("Angular diameter AVG (odr): {:.2f} +/- {:.2f} (mas)".format(uti.rad2mas(popt_odr[1]),   uti.rad2mas(perr_odr[1])))
 
-# plot datapoints in SC plot and fit to all points
-plt.errorbar(x=5.43, y=1e6*int_auto, yerr=1e6*dint_auto, xerr=2.50, marker="o", color="black") # auto correlation
+####################################################
+# plot datapoints in SC plot and fit to all points #
+####################################################
+# auto correlation (zero baseline)
+plt.errorbar(x=5.43, y=1e6*int_auto, yerr=1e6*dint_auto, xerr=2.50, marker="o", color="black")
+# cross correlations
 for i in range (0,len(baselines)-1):
     plt.errorbar(baselines[i], ints_fixed[i], yerr=dints_fixed[i], xerr=dbaselines[i], marker="o", linestyle="", color=colors[i])
     #plt.text(baselines[i]+1,ints_fixed[i]+0.5,ephem.Date(data[:,0][i]), color=colors[i])
-#plt.errorbar(baselines, ints_free,  yerr=dints_free,  marker="o", linestyle="", color="red", markersize=4, alpha=0.4)
-plt.plot(xplot, uti.spatial_coherence(xplot,*poptavg),   label="fit", color="red", linewidth=2)
-plt.plot(xplot, uti.spatial_coherence(xplot,*popt_odr),   label="ODR (no zero baseline)", color="orange", linewidth=2)
+#plt.plot(xplot, uti.spatial_coherence(xplot,*poptavg),   label="fit", color="red", linewidth=2)
+
+# Obtain values for error band
+#lower_A = []; upper_A = []
+lower = []; upper = []
+for i in xplot:
+    #uncertainty_A = uti.delta_spatial_coherence(x=i, A=poptavg[0], dA=perravg[0], phi=poptavg[1], dphi=perravg[1])
+
+    uncertainty = uti.get_error_numerical(x=i, amp=popt_odr[0], damp=perr_odr[0], ang=popt_odr[1], dang=perr_odr[1])
+    uncertainty = uti.get_error_numerical(x=i, amp=popt_odr[0], damp=perr_odr[0], ang=popt_odr[1], dang=perr_odr[1])
+
+    lower.append(uti.spatial_coherence(i, *popt_odr) - uncertainty)
+    upper.append(uti.spatial_coherence(i, *popt_odr) + uncertainty)
+    #lower_A.append(uti.spatial_coherence(i, *poptavg) - uncertainty_A)
+    #upper_A.append(uti.spatial_coherence(i, *poptavg) + uncertainty_A)
+lower = cor.lowpass(lower, cutoff=0.001)
+upper = cor.lowpass(upper, cutoff=0.001)
+
+if star != "Acrux":
+    plt.fill_between(xplot, lower, upper, color="#003366", alpha=0.15)
+
+#plt.plot(xplot, lower_A, color="blue", alpha=0.3); plt.plot(xplot, upper_A, color="blue", alpha=0.3)
+#plt.fillxplot, _between(xplot, lower_A, upper_A, color="blue", alpha=0.3)
+
+    plt.plot(xplot, uti.spatial_coherence(xplot,*popt_odr),   label="ODR fit", color="#003366", linewidth=2)
 #plt.plot(xplot, uti.spatial_coherence(xplot,*poptavg_free),   label="Free parameters", color="red", linewidth=2, alpha=0.4)
 
-#plt.fill_between(xplot, spatial_coherence(xplot,*popt) + deltas_sc, spatial_coherence(xplot,*popt) - deltas_sc, color="red", alpha=0.2)
+plt.text(100, 38, "Angular diameter: {:.2f} +/- {:.2f} mas".format(uti.rad2mas(popt_odr[1]),   uti.rad2mas(perr_odr[1])), color="#003366", fontsize=13)
 
-plt.xlim(-15,250); plt.ylim(0,50)
+plt.xlim(-15,250); plt.ylim(0,)
 plt.xlabel("Baseline (m)"); plt.ylabel("Coherence time (fs)")
 plt.legend(loc="upper right")
 plt.tight_layout()
 #plt.savefig("{}_crosscorrelation.png".format(star))
 plt.savefig("images/{}_sc.pdf".format(star))
+plt.savefig("images/{}_sc.png".format(star))
 plt.show()
-
-#xfft = np.linspace(0,1./1.6,len(ffts[0]), endpoint=True)
-#for i in range (0,len(baselines)):
-#    plt.plot(xfft, ffts[i], color=colors[i])
-#plt.show()
