@@ -7,7 +7,7 @@ ct4_disk = "L"
 
 datapath = "20220423_HESS/nunki"
 
-start = 575
+start = 0
 end   = 585
 
 commands = []
@@ -17,6 +17,6 @@ while index < end+1:
     index += step
     end_send   = min(index, end+1)
 
-    commands.append( "python3.9 subanalysis.py -s {} -e {} --t3 {} --t4 {} -d {}".format(start_send, end_send, ct3_disk, ct4_disk, datapath) )
+    commands.append( "python3.9 subanalysis6.py -s {} -e {} --t3 {} --t4 {} -d {}".format(start_send, end_send, ct3_disk, ct4_disk, datapath) )
 for i in tqdm(range(len(commands))):
     subprocess.run(commands[i], shell=True)
