@@ -149,34 +149,34 @@ def corr_parts(folder, start, stop):
         #################################
         #--  Autocorrelations --#
         rms = np.std(auto3[0:4500])
-        g2_for_averaging = auto3/rms
+        g2_for_averaging = auto3/rms**2
         # Adding the new data to the total g2 function
         g2_sum_3 += g2_for_averaging
 
         rms = np.std(auto4[0:4500])
-        g2_for_averaging = auto4/rms
+        g2_for_averaging = auto4/rms**2
         # Adding the new data to the total g2 function
         g2_sum_4 += g2_for_averaging
 
 
         #-- Crosscorrelations --#
         rms = np.std(crossA)
-        g2_for_averaging = crossA/rms
+        g2_for_averaging = crossA/rms**2
         # Adding the new data to the total g2 function
         g2_sum_A += g2_for_averaging
     
         rms = np.std(crossB)
-        g2_for_averaging = crossB/rms
+        g2_for_averaging = crossB/rms**2
         # Adding the new data to the total g2 function
         g2_sum_B += g2_for_averaging
 
         rms = np.std(c3Ax4B)
-        g2_for_averaging = c3Ax4B/rms
+        g2_for_averaging = c3Ax4B/rms**2
         # Adding the new data to the total g2 function
         g2_sum_3Ax4B += g2_for_averaging
 
         rms = np.std(c4Ax3B)
-        g2_for_averaging = c4Ax3B/rms
+        g2_for_averaging = c4Ax3B/rms**2
         # Adding the new data to the total g2 function
         g2_sum_4Ax3B += g2_for_averaging
 
@@ -218,10 +218,10 @@ for i in range(len(folders)):
         stop = steps[j+1]
         corr_parts(folder, start, stop)
 
-np.savetxt("g2_functions/{}/CT3.txt".format(star), np.c_[g2_3s], header="{} CT3".format(star))
-np.savetxt("g2_functions/{}/CT4.txt".format(star), np.c_[g2_4s], header="{} CT4".format(star))
-np.savetxt("g2_functions/{}/ChA.txt".format(star), np.c_[g2_As], header="{} Channel A".format(star) )
-np.savetxt("g2_functions/{}/ChB.txt".format(star), np.c_[g2_Bs], header="{} Channel B".format(star) )
-np.savetxt("g2_functions/{}/c3Ax4B.txt".format(star), np.c_[g2_3Ax4Bs], header="{} CT3 A x CT4 B".format(star) )
-np.savetxt("g2_functions/{}/c4Ax3B.txt".format(star), np.c_[g2_4Ax3Bs], header="{} CT4 A x CT3 B".format(star) )
-np.savetxt("g2_functions/{}/baseline.txt".format(star), np.c_[time_means, baselines, dbaselines], header="Time, baseline, baseline error" )
+np.savetxt("g2_functions/weight_rms_squared/{}/CT3.txt".format(star), np.c_[g2_3s], header="{} CT3".format(star))
+np.savetxt("g2_functions/weight_rms_squared/{}/CT4.txt".format(star), np.c_[g2_4s], header="{} CT4".format(star))
+np.savetxt("g2_functions/weight_rms_squared/{}/ChA.txt".format(star), np.c_[g2_As], header="{} Channel A".format(star) )
+np.savetxt("g2_functions/weight_rms_squared/{}/ChB.txt".format(star), np.c_[g2_Bs], header="{} Channel B".format(star) )
+np.savetxt("g2_functions/weight_rms_squared/{}/c3Ax4B.txt".format(star), np.c_[g2_3Ax4Bs], header="{} CT3 A x CT4 B".format(star) )
+np.savetxt("g2_functions/weight_rms_squared/{}/c4Ax3B.txt".format(star), np.c_[g2_4Ax3Bs], header="{} CT4 A x CT3 B".format(star) )
+np.savetxt("g2_functions/weight_rms_squared/{}/baseline.txt".format(star), np.c_[time_means, baselines, dbaselines], header="Time, baseline, baseline error" )
