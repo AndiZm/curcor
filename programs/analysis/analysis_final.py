@@ -16,13 +16,13 @@ star = sys.argv[1]
 print("Final Analysis of {}".format(star))
 
 # Read in the data (g2 functions and time/baseline parameters)
-chAs  = np.loadtxt("g2_functions/{}/ChA.txt".format(star))
-chBs  = np.loadtxt("g2_functions/{}/ChB.txt".format(star))
-ct3s  = np.loadtxt("g2_functions/{}/CT3.txt".format(star))
-ct4s  = np.loadtxt("g2_functions/{}/CT4.txt".format(star))
-c3Ax4Bs = np.loadtxt("g2_functions/{}/c3Ax4B.txt".format(star))
-c4Ax3Bs = np.loadtxt("g2_functions/{}/c4Ax3B.txt".format(star))
-data  = np.loadtxt("g2_functions/{}/baseline.txt".format(star))
+chAs    = np.loadtxt("g2_functions/weight_rms/{}/ChA.txt".format(star))
+chBs    = np.loadtxt("g2_functions/weight_rms/{}/ChB.txt".format(star))
+ct3s    = np.loadtxt("g2_functions/weight_rms/{}/CT3.txt".format(star))
+ct4s    = np.loadtxt("g2_functions/weight_rms/{}/CT4.txt".format(star))
+c3Ax4Bs = np.loadtxt("g2_functions/weight_rms/{}/c3Ax4B.txt".format(star))
+c4Ax3Bs = np.loadtxt("g2_functions/weight_rms/{}/c4Ax3B.txt".format(star))
+data    = np.loadtxt("g2_functions/weight_rms/{}/baseline.txt".format(star))
 
 # Demo function for initializing x axis and some stuff
 demo = chAs[0]
@@ -226,12 +226,12 @@ plt.subplot(235); plt.title("Autocorrelations".format(star)); cc_plots((0,300));
 #plt.xlim(80,160)
 
 # store cleaned data
-np.savetxt("g2_functions/{}/ChA_clean.txt".format(star), np.c_[chA_clean], header="{} Channel A cleaned".format(star) )
-np.savetxt("g2_functions/{}/ChB_clean.txt".format(star), np.c_[chB_clean], header="{} Channel B cleaned".format(star) )
-np.savetxt("g2_functions/{}/CT3_clean.txt".format(star), np.c_[ct3_clean], header="{} CT3 cleaned".format(star) )
-np.savetxt("g2_functions/{}/CT4_clean.txt".format(star), np.c_[ct4_clean], header="{} CT4 cleaned".format(star) )
-np.savetxt("g2_functions/{}/C3Ax4B_clean.txt".format(star), np.c_[c3Ax4B_clean], header="{} CT3A x CT4B cleaned".format(star) )
-np.savetxt("g2_functions/{}/C4Ax3B_clean.txt".format(star), np.c_[c4Ax3B_clean], header="{} CT4A x CT3B cleaned".format(star) )
+np.savetxt("g2_functions/weight_rms/{}/ChA_clean.txt".format(star), np.c_[chA_clean], header="{} Channel A cleaned".format(star) )
+np.savetxt("g2_functions/weight_rms/{}/ChB_clean.txt".format(star), np.c_[chB_clean], header="{} Channel B cleaned".format(star) )
+np.savetxt("g2_functions/weight_rms/{}/CT3_clean.txt".format(star), np.c_[ct3_clean], header="{} CT3 cleaned".format(star) )
+np.savetxt("g2_functions/weight_rms/{}/CT4_clean.txt".format(star), np.c_[ct4_clean], header="{} CT4 cleaned".format(star) )
+np.savetxt("g2_functions/weight_rms/{}/C3Ax4B_clean.txt".format(star), np.c_[c3Ax4B_clean], header="{} CT3A x CT4B cleaned".format(star) )
+np.savetxt("g2_functions/weight_rms/{}/C4Ax3B_clean.txt".format(star), np.c_[c4Ax3B_clean], header="{} CT4A x CT3B cleaned".format(star) )
 
 #### making SC plot (spatial coherence) via integral data ####
 xplot = np.arange(0.1,300,0.1)

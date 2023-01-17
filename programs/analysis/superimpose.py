@@ -47,13 +47,13 @@ print("Final Analysis of {}".format(star))
 #### Analysis over whole measurement time #####
 ################################################
 # Read in the data (g2 functions and time/baseline parameters)
-chAs    = np.loadtxt("g2_functions/{}/ChA.txt".format(star))     
-chBs    = np.loadtxt("g2_functions/{}/ChB.txt".format(star))     
-ct3s    = np.loadtxt("g2_functions/{}/CT3.txt".format(star))     
-ct4s    = np.loadtxt("g2_functions/{}/CT4.txt".format(star))     
-c3Ax4Bs = np.loadtxt("g2_functions/{}/c3Ax4B.txt".format(star))  
-c4Ax3Bs = np.loadtxt("g2_functions/{}/c4Ax3B.txt".format(star))  
-data    = np.loadtxt("g2_functions/{}/baseline.txt".format(star))
+chAs    = np.loadtxt("g2_functions/weight_rms_squared/{}/ChA.txt".format(star))     
+chBs    = np.loadtxt("g2_functions/weight_rms_squared/{}/ChB.txt".format(star))     
+ct3s    = np.loadtxt("g2_functions/weight_rms_squared/{}/CT3.txt".format(star))     
+ct4s    = np.loadtxt("g2_functions/weight_rms_squared/{}/CT4.txt".format(star))     
+c3Ax4Bs = np.loadtxt("g2_functions/weight_rms_squared/{}/c3Ax4B.txt".format(star))  
+c4Ax3Bs = np.loadtxt("g2_functions/weight_rms_squared/{}/c4Ax3B.txt".format(star))  
+data    = np.loadtxt("g2_functions/weight_rms_squared/{}/baseline.txt".format(star))
 
 # Demo function for initializing x axis and some stuff
 demo = chAs[0]
@@ -291,12 +291,12 @@ for i in range(0,len(chAs)):
     #plt.errorbar(x, ct4+i*0e-6+1e-5, yerr=0, marker=".", linestyle="--", label=timestring, color = colors[i], alpha=0.6)
 
 # store cleaned data
-np.savetxt("g2_functions/{}/ChA_clean.txt".format(star), np.c_[chA_clean], header="{} Channel A cleaned".format(star) )
-np.savetxt("g2_functions/{}/ChB_clean.txt".format(star), np.c_[chB_clean], header="{} Channel B cleaned".format(star) )
-np.savetxt("g2_functions/{}/CT3_clean.txt".format(star), np.c_[ct3_clean], header="{} CT3 cleaned".format(star) )
-np.savetxt("g2_functions/{}/CT4_clean.txt".format(star), np.c_[ct4_clean], header="{} CT4 cleaned".format(star) )
-np.savetxt("g2_functions/{}/C3Ax4B_clean.txt".format(star), np.c_[c3Ax4B_clean], header="{} CT3A x CT4B cleaned".format(star) )
-np.savetxt("g2_functions/{}/C4Ax3B_clean.txt".format(star), np.c_[c4Ax3B_clean], header="{} CT4A x CT3B cleaned".format(star) )
+np.savetxt("g2_functions/weight_rms_squared/{}/ChA_clean.txt".format(star), np.c_[chA_clean], header="{} Channel A cleaned".format(star) )
+np.savetxt("g2_functions/weight_rms_squared/{}/ChB_clean.txt".format(star), np.c_[chB_clean], header="{} Channel B cleaned".format(star) )
+np.savetxt("g2_functions/weight_rms_squared/{}/CT3_clean.txt".format(star), np.c_[ct3_clean], header="{} CT3 cleaned".format(star) )
+np.savetxt("g2_functions/weight_rms_squared/{}/CT4_clean.txt".format(star), np.c_[ct4_clean], header="{} CT4 cleaned".format(star) )
+np.savetxt("g2_functions/weight_rms_squared/{}/C3Ax4B_clean.txt".format(star), np.c_[c3Ax4B_clean], header="{} CT3A x CT4B cleaned".format(star) )
+np.savetxt("g2_functions/weight_rms_squared/{}/C4Ax3B_clean.txt".format(star), np.c_[c4Ax3B_clean], header="{} CT4A x CT3B cleaned".format(star) )
 
 ############################
 # Autocorrelation analysis #
@@ -304,7 +304,7 @@ np.savetxt("g2_functions/{}/C4Ax3B_clean.txt".format(star), np.c_[c4Ax3B_clean],
 # ---- This is the new method ---- #
 # Read in the autocorrelation functions
 try:
-    autocorrelation = np.loadtxt("g2_functions/{}/autocorrelation.txt".format(star))
+    autocorrelation = np.loadtxt("g2_functions/weight_rms_squared/{}/autocorrelation.txt".format(star))
 except:
     print ("No autocorrelation found, please make sure it exists")
     exit(1)
@@ -312,7 +312,7 @@ except:
 x_auto  = autocorrelation[:,0]
 c_auto = autocorrelation[:,1]
 # Fit gaussian into autocorrelation
-xplotf, popt_avg_free, perr_avg_free = uti.fit(c_auto, x_auto, -50, 50)
+xplotf, popt_avg_free, perr_avg_free = uti.fit(c_auto, x_auto, -30, 30)
 int_auto, dint_auto = uti.integral(popt_avg_free, perr_avg_free)
 
 plt.subplot(224)
