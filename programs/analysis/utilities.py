@@ -5,6 +5,13 @@ from scipy.optimize import curve_fit
 import scipy.special as scp
 import random
 
+# Define colors of the different channels for usage in all the plottings
+color_3A = "#8f0303"
+color_3B = "#f7a488"
+color_4A = "#003366" # ECAP Blue
+color_4B = "#98cced"
+
+
 # Operating wavelength
 lam = 465e-9
 

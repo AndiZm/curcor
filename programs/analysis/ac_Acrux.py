@@ -6,8 +6,8 @@ from matplotlib.pyplot import cm
 import utilities as uti
 import corrections as cor
 
-ct3 = np.loadtxt("g2_functions/Acrux/CT3.txt")
-ct4 = np.loadtxt("g2_functions/Acrux/CT4.txt")
+ct3 = np.loadtxt("g2_functions/weight_rms_squared/Acrux/CT3.txt")
+ct4 = np.loadtxt("g2_functions/weight_rms_squared/Acrux/CT4.txt")
 x = np.arange(-1.6*len(ct3[0])//2,+1.6*len(ct3[0])//2,1.6)
 
 # Define colormap for plotting all summarized individual g2 functions
@@ -135,7 +135,7 @@ tbin = timebin(114.23); g2_ct4 = shift_bins(g2_ct4, tbin)
 g2_avg = g2_ct3/np.std(g2_ct3[5020:5300]) + g2_ct4/np.std(g2_ct4[5020:5300])
 g2_avg = g2_avg/np.mean(g2_avg[0:4500])
 
-np.savetxt("g2_functions/Acrux/autocorrelation.txt", np.c_[x,g2_avg])
+np.savetxt("g2_functions/weight_rms_squared/Acrux/autocorrelation.txt", np.c_[x,g2_avg])
 
 # Fit
 xplot, popt, perr = uti.fit(g2_avg, x, -30, +30)

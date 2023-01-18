@@ -129,6 +129,7 @@ def shift_bins(data, binshift):
             data = np.delete(data, 0)
     return data
 
+# The cable delays here are taken from the Acrux autocorrelation analysis by running "acrux_autocorrelation.py"
 tbin = timebin(118.62); g2_ct3 = shift_bins(g2_ct3, tbin)
 tbin = timebin(114.23); g2_ct4 = shift_bins(g2_ct4, tbin)
 

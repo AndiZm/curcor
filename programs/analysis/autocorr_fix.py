@@ -4,6 +4,12 @@ import corrections as cor
 from scipy.signal import find_peaks
 import utilities as uti
 
+#######
+# The purpose of this program is to get the most out of the noisy autocorrelations.
+# Therefore the more or less okayish Acrux autocorrelation data are used to find the exact cable delays.
+# The Shaula of both CT3 and CT4 are then overlayed to get a statistical more significant signal.
+#######
+
 # Get the timebin shift of the specific measurement from the time difference
 def timebin(tdiff):
     return int(1.0* np.floor((tdiff+0.8)/1.6))

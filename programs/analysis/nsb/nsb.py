@@ -1,6 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+import sys; sys.path.append("../")
+import utilities as uti
+
 data = np.loadtxt("nsb_data.txt")
 
 distances = data[:,0]
@@ -12,10 +15,10 @@ r4bs      = data[:,4]
 plt.figure(figsize=(5,3.5))
 plt.title("Night Sky Background")
 
-plt.plot(distances, r3as, "o--", label="CT3 Ch A", color="#8f0303", markersize=7)
-plt.plot(distances, r3bs, "o--", label="CT3 Ch B", color="#f7a488", markersize=7)
-plt.plot(distances, r4as, "X--", label="CT4 Ch A", color="#003366", markersize=7)
-plt.plot(distances, r4bs, "X--", label="CT4 Ch B", color="#98cced", markersize=7)
+plt.plot(distances, r3as, "o--", label="CT3 Ch A", color=uti.color_3A, markersize=7)
+plt.plot(distances, r3bs, "o--", label="CT3 Ch B", color=uti.color_3B, markersize=7)
+plt.plot(distances, r4as, "X--", label="CT4 Ch A", color=uti.color_4A, markersize=7)
+plt.plot(distances, r4bs, "X--", label="CT4 Ch B", color=uti.color_4B, markersize=7)
 plt.xlabel("Separation from moon ($^\circ$)")
 plt.ylabel("Photon rates (MHz)")
 plt.legend()
