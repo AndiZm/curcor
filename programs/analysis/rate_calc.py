@@ -168,7 +168,7 @@ def rate_calc (folder, start, stop):
 	fig1.savefig("rates/{}/{}_{}_Tel.pdf".format(star, star, date))
 	np.savetxt("rates/{}/{}_{}.txt".format(star, star, date), np.c_[times, rate3A_all, rate3B_all, rate4A_all, rate4B_all], fmt=' '.join(['%01.9f']*1 + ["%03.2f"]*4 ), header="{} realtime, 3A, 3B, 4A, 4B".format(star))
 
-
+	'''
 	Figure2 = plt.figure(figsize=(22,10))
 	plt.subplot(121)
 	plt.plot(tplot, rate3A_all, color="blue", alpha=0.6, marker='.', linestyle='', label="Channel 3A")
@@ -232,6 +232,18 @@ def rate_calc (folder, start, stop):
 	plt.tight_layout()
 	plt.savefig("rates/{}/{}_{}_alt.pdf".format(star,star,date))
 	#plt.show()
+	'''
+
+	Figure5 = plt.figure(figsize=(7, 3.5))
+	plt.plot(tplot, rate3A_all, color=uti.color_3A, label='Channel 3A', marker=".")
+	plt.plot(tplot, rate3B_all, color=uti.color_3B)
+	plt.yticks(fontsize=13)
+	plt.legend(fontsize=13)
+	plt.title("Rates of {}".format(star), fontsize=17)
+	plt.xlabel("Time (UTC)", fontsize=14)
+	plt.ylabel("Rate (MHz)", fontsize=14)
+	plt.tight_layout()
+	plt.show()
 
 ##########################################
 # Add the number of files to be analyzed #
