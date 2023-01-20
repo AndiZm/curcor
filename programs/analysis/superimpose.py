@@ -60,7 +60,7 @@ demo = chAs[0]
 x = np.arange(-1.6*len(demo)//2,+1.6*len(demo)//2,1.6)
 
 # Combine all data for channel A and B each for initial parameter estimation and fixing
-plt.figure(figsize=(12,10))
+plt.figure(figsize=(6,7))
 plt.subplot(211)
 plt.title("Cumulative cross correlation data of {}".format(star))
 
@@ -77,39 +77,39 @@ xplot, popt, perr = uti.fit(g2_allA, x, -50, +50)
 muA = popt[1]; sigmaA = popt[2]
 integral, dintegral = uti.integral(popt, perr)
 print ("3A x 4A sigma/integral: {:.2f} +/- {:.2f} ns \t {:.2f} +/- {:.2f} fs".format(popt[2],perr[2],1e6*integral,1e6*dintegral))
-plt.plot(x, g2_allA, label="3A x 4A", color="blue")
+plt.plot(x, g2_allA, label="3A x 4A", color=uti.color_chA)
 plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--")
 
 xplot, popt, perr = uti.fit(g2_allB, x, -50, +50)
 muB = popt[1]; sigmaB = popt[2]
 integral, dintegral = uti.integral(popt, perr)
 print ("3B x 4B sigma/integral: {:.2f} +/- {:.2f} ns \t {:.2f} +/- {:.2f} fs".format(popt[2],perr[2],1e6*integral,1e6*dintegral))
-plt.plot(x, g2_allB, label="3B x 4B", color="#32a8a2")
+plt.plot(x, g2_allB, label="3B x 4B", color=uti.color_chB)
 plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--")
 
 xplot, popt, perr = uti.fit(g2_all3Ax4B, x, 90, 140, mu_start=115)
 mu3Ax4B = popt[1]; sigma3Ax4B = popt[2]
 integral, dintegral = uti.integral(popt, perr)
 print ("3A x 4B sigma/integral: {:.2f} +/- {:.2f} ns \t {:.2f} +/- {:.2f} fs".format(popt[2],perr[2],1e6*integral,1e6*dintegral))
-plt.plot(x, g2_all3Ax4B, label="3A x 4B", color="red")
+plt.plot(x, g2_all3Ax4B, label="3A x 4B", color=uti.color_c3A4B)
 plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--")
 
 xplot, popt, perr = uti.fit(g2_all4Ax3B, x, 65, 165, mu_start=115)
 mu4Ax3B = popt[1]; sigma4Ax3B = popt[2]
 integral, dintegral = uti.integral(popt, perr)
 print ("4A x 3B sigma/integral: {:.2f} +/- {:.2f} ns \t {:.2f} +/- {:.2f} fs".format(popt[2],perr[2],1e6*integral,1e6*dintegral))
-plt.plot(x, g2_all4Ax3B, label="4A x 3B", color="orange")
+plt.plot(x, g2_all4Ax3B, label="4A x 3B", color=uti.color_c4A3B)
 plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--")
 
 plt.legend(); plt.xlim(-100,200); plt.grid()#; plt.tight_layout()
-plt.ticklabel_format(useOffset=False)
+#plt.ticklabel_format(useOffset=False)
 plt.xlabel("Time delay (ns)"); plt.ylabel("$g^{(2)}$")
 
 plt.tight_layout()
 #########################
 # Shift all peaks to zero
 #########################
-plt.subplot(212)
+plt.subplot(212); plt.title("Cable-delay corrected cross correlations")
 
 tbin = timebin(muA); g2_allA = shift_bins(g2_allA, tbin)
 tbin = timebin(muB); g2_allB = shift_bins(g2_allB, tbin)
@@ -124,20 +124,20 @@ mu_avg = popt[1]; sigma_avg = popt[2]
 print ("Resolution: {:.2f} +/- {:.2f}  (ns)".format(sigma_avg,perr[2]))
 
 
-plt.plot(x, g2_allA, label="3A x 4A", color="blue")
-plt.plot(x, g2_allB, label="3B x 4B", color="#32a8a2")
-plt.plot(x, g2_all3Ax4B, label="3A x 4B", color="red")
-plt.plot(x, g2_all4Ax3B, label="4A x 3B", color="orange")
+plt.plot(x, g2_allA,     label="3A x 4A", zorder=1, color=uti.color_chA)
+plt.plot(x, g2_allB,     label="3B x 4B", zorder=1, color=uti.color_chB)
+plt.plot(x, g2_all3Ax4B, label="3A x 4B", zorder=1, color=uti.color_c3A4B)
+plt.plot(x, g2_all4Ax3B, label="4A x 3B", zorder=1, color=uti.color_c4A3B)
 
-plt.plot(x, g2_avg, color="grey", linewidth="4", label="Average")
+plt.plot(x, g2_avg, color="grey", linewidth="4", label="Average", zorder=2, alpha=0.7)
 plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--", label="Gaussian fit")
 
-plt.legend(); plt.xlim(-150,150); plt.grid()#; plt.tight_layout()
-plt.ticklabel_format(useOffset=False)
+plt.legend(); plt.xlim(-100,100); plt.grid()#; plt.tight_layout()
+#plt.ticklabel_format(useOffset=False)
 plt.xlabel("Time delay (ns)"); plt.ylabel("$g^{(2)}$")
 
 plt.tight_layout()
-plt.savefig("images/{}_cumulative.png".format(star))
+plt.savefig("images/{}_cumulative.pdf".format(star))
 plt.plot()
 
 

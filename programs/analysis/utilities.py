@@ -11,6 +11,15 @@ color_3B = "#f7a488"
 color_4A = "#003366" # ECAP Blue
 color_4B = "#98cced"
 
+# Define colors for the correlation channels for usage in all the plottings
+color_CT3   = "#c35446"
+color_CT4   = "#4c80aa"
+
+color_chA   = "#0a6304"
+color_chB   = "#cff24e"
+color_c3A4B = "#581894"
+color_c4A3B = "#d980ff"
+
 
 # Operating wavelength
 lam = 465e-9
