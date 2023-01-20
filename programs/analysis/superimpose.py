@@ -33,10 +33,10 @@ def shift_bins(data, binshift):
 # Average over all 4 functions
 def average_g2s(cA, cB, c3Ax4B, c4Ax3B):
     g2_avg = np.zeros( len(cA) )
-    g2_avg += cA/np.std(cA[0:4500])
-    g2_avg += cB/np.std(cB[0:4500])
-    g2_avg += c3Ax4B/np.std(c3Ax4B[0:4500])
-    g2_avg += c4Ax3B/np.std(c4Ax3B[0:4500])
+    g2_avg += cA/np.std(cA[0:4500])**2
+    g2_avg += cB/np.std(cB[0:4500])**2
+    g2_avg += c3Ax4B/np.std(c3Ax4B[0:4500])**2
+    g2_avg += c4Ax3B/np.std(c4Ax3B[0:4500])**2
 
     g2_avg = g2_avg/np.mean(g2_avg[0:4500])
 

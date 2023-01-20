@@ -18,11 +18,11 @@ star = "Acrux"
 print("Peak part Analysis of {}".format(star))
 
 # Read in the data (g2 functions and time/baseline parameters), only interested in autocorrelations
-chAs  = np.loadtxt("g2_functions/{}/ChA.txt".format(star))
-chBs  = np.loadtxt("g2_functions/{}/ChB.txt".format(star))
-ct3s  = np.loadtxt("g2_functions/{}/CT3_clean.txt".format(star))
-ct4s  = np.loadtxt("g2_functions/{}/CT4_clean.txt".format(star))
-data  = np.loadtxt("g2_functions/{}/baseline.txt".format(star))
+chAs  = np.loadtxt("g2_functions/weight_rms_squared/{}/ChA.txt".format(star))
+chBs  = np.loadtxt("g2_functions/weight_rms_squared/{}/ChB.txt".format(star))
+ct3s  = np.loadtxt("g2_functions/weight_rms_squared/{}/CT3_clean.txt".format(star))
+ct4s  = np.loadtxt("g2_functions/weight_rms_squared/{}/CT4_clean.txt".format(star))
+data  = np.loadtxt("g2_functions/weight_rms_squared/{}/baseline.txt".format(star))
 
 # Demo function for initializing x axis and some stuff
 demo = chAs[0]
@@ -73,9 +73,9 @@ colors = [cm.viridis(x) for x in cm_sub]
 
 # Define figure which will show all autocorrelations of CT3, CT4 and the fit integrals
 
-plt.figure(figsize=(12,4))
+plt.figure(figsize=(6,7))
 
-plt.subplot(121)
+plt.subplot(211); plt.title("CT3 auto-correlations of Acrux")
 
 ints3 = []; dints3 = []; times = []
 ints4 = []; dints4 = []
@@ -99,7 +99,7 @@ for i in range(0,len(ct3s)):
     ints4.append(1e6*Int); dints4.append(1e6*dInt)# in femtoseconds
 
     # Check acquisition time of original data
-    timestring = ephem.Date(data[:,0][i])
+    timestring = str( ephem.Date(data[:,0][i]) )[5:]
     timestrings.append(timestring)
     print("{}".format(i), timestring, Int, dInt)
     
@@ -127,7 +127,7 @@ for i in range(0,len(ct3s)):
 
 
 # Figure stuff
-plt.subplot(122)
+plt.subplot(212)
 
 # plot the peak integrals
 x3 = np.arange(0,len(ints3),1)
