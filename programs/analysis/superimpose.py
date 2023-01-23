@@ -151,7 +151,7 @@ colors = [cm.viridis(x) for x in cm_sub]
 
 # Define total figure which will show individuall g2 functions off cross and auto-correlation
 # and also the spatial correlation curve (baseline vs. g2 integral)
-bigfigure = plt.figure(figsize=(16,9))
+bigfigure = plt.figure(figsize=(6,14)) # 12,7
 plt.subplot(231)#; bigfigure.patch.set_facecolor("blue")
 plt.subplot(233)#; bigfigure.patch.set_facecolor("red")
 intsA = []; dintsA = []; times = []
@@ -262,6 +262,8 @@ for i in range(0,len(chAs)):
     # Check acquisition time of original data
     timestring = ephem.Date(data[:,0][i])
     print("{}".format(i), timestring, Int, dInt)
+    # Shorter timestring for plotting, not showing year and seconds
+    tstring_short = str(timestring)[5:-3]
 
     # FFT check
     fft = np.abs(np.fft.fft(avg-1))
@@ -270,15 +272,15 @@ for i in range(0,len(chAs)):
     # Subplot for all cross correlations
     the_shift = (len(chAs)-i-1)*2e-6
     ticks.append(1.+the_shift)
-    plt.subplot(121)
-    plt.errorbar(x, chA    +the_shift,    yerr=0, linestyle="-", color = "blue", alpha=0.3)
-    plt.errorbar(x, c3Ax4B +the_shift, yerr=0, linestyle="-", color = "red", alpha=0.3)
-    plt.errorbar(x, c4Ax3B +the_shift, yerr=0, linestyle="-", color = "orange", alpha=0.3)
-    plt.errorbar(x, chB    +the_shift,    yerr=0, linestyle="-", color = "#32a8a2", alpha=0.3)
-    plt.errorbar(x, avg    +the_shift,    yerr=0, linestyle="-", color = colors[i], linewidth=3, label=timestring)
-    plt.text(x=20, y=1+the_shift+0.7e-6, s=timestring, color=colors[i])
+    plt.subplot(211)#121
+    plt.errorbar(x, chA    + the_shift, yerr=0, linestyle="-", color = uti.color_chA,   alpha=0.5)
+    plt.errorbar(x, c3Ax4B + the_shift, yerr=0, linestyle="-", color = uti.color_c3A4B, alpha=0.5)
+    plt.errorbar(x, c4Ax3B + the_shift, yerr=0, linestyle="-", color = uti.color_c4A3B, alpha=0.5)
+    plt.errorbar(x, chB    + the_shift, yerr=0, linestyle="-", color = uti.color_chB,   alpha=0.5)
+    plt.errorbar(x, avg    + the_shift, yerr=0, linestyle="-", color = colors[i], linewidth=3, label=timestring)
+    plt.text(x=70, y=1+the_shift+0.7e-6, s=tstring_short, color=colors[i], fontweight="bold", bbox=dict(boxstyle="round", ec="white", fc="white", alpha=0.75))
     
-    plt.plot(xplotf,  uti.gauss_shifted(x=xplotf,  a=popt_avg[0],      mu=mu_avg,          sigma=sigma_avg,         shift=i, inverse=True, ntotal=len(chAs)), color="black", linestyle="--", zorder=4)
+    plt.plot(xplotf,  uti.gauss_shifted(x=xplotf,  a=popt_avg[0], mu=mu_avg, sigma=sigma_avg, shift=i, inverse=True, ntotal=len(chAs)), color="black", linestyle="--", zorder=4)
     #plt.plot(xplotf,  uti.gauss_shifted(x=xplotf,  a=popt_avg_free[0], mu=popt_avg_free[1], sigma=popt_avg_free[2], shift=i, inverse=True, ntotal=len(chAs)), color="red", linestyle="--", zorder=4, alpha=0.4)
 
     # Subplot for the auto correlations, tbc
@@ -315,14 +317,14 @@ c_auto = autocorrelation[:,1]
 xplotf, popt_avg_free, perr_avg_free = uti.fit(c_auto, x_auto, -30, 30)
 int_auto, dint_auto = uti.integral(popt_avg_free, perr_avg_free)
 
-plt.subplot(224)
-plt.plot(x_auto, c_auto, color="black")
+plt.subplot(413)#224
+plt.plot(x_auto, c_auto, "o-", color="black", alpha=0.5)
 plt.plot(xplotf, uti.gauss(xplotf, *popt_avg_free), linestyle="--", color="red")
 plt.ylim(1-1*popt_avg_free[0] , 1+2*popt_avg_free[0])
 
 # Figure stuff
 def cc_plots(xlims):
-    plt.grid()
+    #plt.grid()
     plt.ticklabel_format(useOffset=False)
     plt.xlabel("Time difference (ns)")
     plt.ylabel("$g^{(2)}$")
@@ -330,15 +332,15 @@ def cc_plots(xlims):
     plt.xlim(xlims[0],xlims[1])
     #plt.tight_layout()
 
-plt.subplot(121); plt.title("Cross correlations of {}".format(star)); cc_plots((-150,150))
+plt.subplot(211); plt.title("Cross correlations of {}".format(star)); cc_plots((-150,150))
 plt.yticks(np.arange(1,1+2e-6*len(chAs),2e-6))
 
-plt.subplot(224); plt.title("Auto correlations of {}".format(star)); cc_plots((-100,100))
+plt.subplot(413); plt.title("Auto correlation of {}".format(star)); cc_plots((-100,100))
 
 #############################################################
 #### making SC plot (spatial coherence) via integral data ####
 xplot = np.arange(0.1,300,0.1)
-plt.subplot(222)
+plt.subplot(414); plt.title("Spatial coherence")
 
 # get baselines for x axes
 baselines = data[:,1]
@@ -417,7 +419,7 @@ if star != "Acrux":
     plt.plot(xplot, uti.spatial_coherence(xplot,*popt_odr),   label="ODR fit", color="#003366", linewidth=2)
 #plt.plot(xplot, uti.spatial_coherence(xplot,*poptavg_free),   label="Free parameters", color="red", linewidth=2, alpha=0.4)
 
-plt.text(100, 38, "Angular diameter: {:.2f} +/- {:.2f} mas".format(uti.rad2mas(popt_odr[1]),   uti.rad2mas(perr_odr[1])), color="#003366", fontsize=13)
+plt.text(75, 38, "Angular diameter: {:.2f} +/- {:.2f} mas".format(uti.rad2mas(popt_odr[1]),   uti.rad2mas(perr_odr[1])), color="#003366", fontsize=10)
 
 plt.xlim(-15,250); plt.ylim(0,)
 plt.xlabel("Baseline (m)"); plt.ylabel("Coherence time (fs)")

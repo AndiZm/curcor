@@ -99,25 +99,29 @@ for i in range(0,len(ct3s)):
     ints4.append(1e6*Int); dints4.append(1e6*dInt)# in femtoseconds
 
     # Check acquisition time of original data
-    timestring = str( ephem.Date(data[:,0][i]) )[5:]
+    timestring = str( ephem.Date(data[:,0][i]) )[5:-3]
     timestrings.append(timestring)
     print("{}".format(i), timestring, Int, dInt)
+
+    the_shift = ( len(ct3s)-i-2 ) * 0.5e-6
     
 
     if i%3 == 0:
         # Subplot for the auto correlation CT3
-        plt.plot(x-mu3, ct3+i*0.5e-6, "o-", label=timestring, color = colors[i], alpha=0.5)
-        plt.plot(xplotf-mu3, uti.gauss_shifted(x=xplotf-mu3, a=popt3[0], mu=0, sigma=sigma3, shift=0.25*i), color=colors[i], linestyle="-")
-    
+        plt.plot(x-mu3, ct3+the_shift, "o-", label=timestring, color = colors[i], alpha=0.5)
+        plt.plot(xplotf-mu3, uti.gauss_shifted(x=xplotf-mu3, a=popt3[0], mu=0, sigma=sigma3, shift=0.5e6*the_shift), color=colors[i], linestyle="-")
+        
+        plt.text(x=30, y=1+the_shift+0.2e-6, s=timestring, color=colors[i], fontweight="bold", bbox=dict(boxstyle="round", ec="white", fc="white", alpha=0.75))
+
         ## Subplot for the auto correlation CT4
         #plt.subplot(222)
         #plt.errorbar(x, ct4+i*2e-6, yerr=0, marker=".", linestyle="--", label=timestring, color = colors[i], alpha=0.6)
         #plt.plot(xplotf, uti.gauss_shifted(x=xplotf, a=popt4[0], mu=mu4, sigma=sigma4, shift=i), color="black", linestyle="-")
 
     plt.grid()
-    plt.xlim(70-mu3,180-mu3); plt.ylim(1-2e-6, 1+16e-6)
+    plt.xlim(70-mu3,180-mu3); plt.ylim(1-2e-6, 1+17e-6)
     plt.ticklabel_format(useOffset=False)
-    plt.legend()
+    #plt.legend()
     plt.tight_layout()
     plt.xlabel("Time difference (ns)")
     plt.ylabel("$g^{(2)}$")
