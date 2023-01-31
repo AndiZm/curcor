@@ -7,6 +7,8 @@ from matplotlib.pyplot import cm
 import ephem
 import scipy.special as scp
 import sys
+from brokenaxes import brokenaxes
+from matplotlib.gridspec import GridSpec
 
 import utilities as uti
 import corrections as cor
@@ -144,16 +146,31 @@ plt.plot()
 #########################################
 ###### Chunk analysis ###################
 #########################################
-
 # Define colormap for plotting all summarized individual g2 functions
 cm_sub = np.linspace(1.0, 0.0, len(chAs))
 colors = [cm.viridis(x) for x in cm_sub]
 
-# Define total figure which will show individuall g2 functions off cross and auto-correlation
-# and also the spatial correlation curve (baseline vs. g2 integral)
-bigfigure = plt.figure(figsize=(6,14)) # 12,7
-plt.subplot(231)#; bigfigure.patch.set_facecolor("blue")
-plt.subplot(233)#; bigfigure.patch.set_facecolor("red")
+# Define total figure which will show individual g2 cross correlations and averaged auto correlation
+# and also the spatial coherence curve (baseline vs. g2 integral)
+bigfigure = plt.figure(figsize=(12,7))
+# cross correlations
+ax_cross = bigfigure.add_subplot(121); ax_cross.set_title("Cross correlations of {}".format(star))
+ax_cross.set_xlabel("Time difference (ns)"); ax_cross.set_ylabel("$g^{(2)}$"); ax_cross.ticklabel_format(useOffset=False)
+ax_cross.set_xlim(-150,150); ax_cross.set_yticks(np.arange(1,1+2e-6*len(chAs),2e-6))
+# spatial coherence
+sps1, sps2, sps3, sps4 = GridSpec(2,2)
+if star == "Acrux":# broken x axis for better representation later
+    ax_sc = brokenaxes(xlims=((0, 10), (73, 120)), subplot_spec=sps2, wspace=0.05, despine=False)
+else:
+    ax_sc = bigfigure.add_subplot(222)
+ax_sc.set_title("Spatial coherence of {}".format(star))
+ax_sc.set_xlabel("Baseline (m)"); ax_sc.set_ylabel("Coherence time (fs)")
+# auto correlation
+ax_auto  = bigfigure.add_subplot(224); ax_auto.set_title("Auto correlation of {}".format(star))
+ax_auto.set_xlabel("Time difference (ns)"); ax_auto.set_ylabel("$g^{(2)}$"); ax_auto.ticklabel_format(useOffset=False)
+ax_auto.set_xlim(-100,100)
+
+
 intsA = []; dintsA = []; times = []
 intsB = []; dintsB = []
 ints3Ax4B = []; dints3Ax4B = []
@@ -272,25 +289,14 @@ for i in range(0,len(chAs)):
     # Subplot for all cross correlations
     the_shift = (len(chAs)-i-1)*2e-6
     ticks.append(1.+the_shift)
-    plt.subplot(211)#121
-    plt.errorbar(x, chA    + the_shift, yerr=0, linestyle="-", color = uti.color_chA,   alpha=0.5)
-    plt.errorbar(x, c3Ax4B + the_shift, yerr=0, linestyle="-", color = uti.color_c3A4B, alpha=0.5)
-    plt.errorbar(x, c4Ax3B + the_shift, yerr=0, linestyle="-", color = uti.color_c4A3B, alpha=0.5)
-    plt.errorbar(x, chB    + the_shift, yerr=0, linestyle="-", color = uti.color_chB,   alpha=0.5)
-    plt.errorbar(x, avg    + the_shift, yerr=0, linestyle="-", color = colors[i], linewidth=3, label=timestring)
-    plt.text(x=70, y=1+the_shift+0.7e-6, s=tstring_short, color=colors[i], fontweight="bold", bbox=dict(boxstyle="round", ec="white", fc="white", alpha=0.75))
-    
-    plt.plot(xplotf,  uti.gauss_shifted(x=xplotf,  a=popt_avg[0], mu=mu_avg, sigma=sigma_avg, shift=i, inverse=True, ntotal=len(chAs)), color="black", linestyle="--", zorder=4)
-    #plt.plot(xplotf,  uti.gauss_shifted(x=xplotf,  a=popt_avg_free[0], mu=popt_avg_free[1], sigma=popt_avg_free[2], shift=i, inverse=True, ntotal=len(chAs)), color="red", linestyle="--", zorder=4, alpha=0.4)
+    ax_cross.errorbar(x, chA    + the_shift, yerr=0, linestyle="-", color = uti.color_chA,   alpha=0.5)
+    ax_cross.errorbar(x, c3Ax4B + the_shift, yerr=0, linestyle="-", color = uti.color_c3A4B, alpha=0.5)
+    ax_cross.errorbar(x, c4Ax3B + the_shift, yerr=0, linestyle="-", color = uti.color_c4A3B, alpha=0.5)
+    ax_cross.errorbar(x, chB    + the_shift, yerr=0, linestyle="-", color = uti.color_chB,   alpha=0.5)
+    ax_cross.errorbar(x, avg    + the_shift, yerr=0, linestyle="-", color = colors[i], linewidth=3, label=timestring)
+    ax_cross.text(x=70, y=1+the_shift+0.7e-6, s=tstring_short, color=colors[i], fontweight="bold", bbox=dict(boxstyle="round", ec="white", fc="white", alpha=0.75))
+    ax_cross.plot(xplotf,  uti.gauss_shifted(x=xplotf,  a=popt_avg[0], mu=mu_avg, sigma=sigma_avg, shift=i, inverse=True, ntotal=len(chAs)), color="black", linestyle="--", zorder=4)
 
-    # Subplot for the auto correlations, tbc
-    # Shift all peaks to zero
-    #tbin = timebin(118.62); ct3 = shift_bins(ct3, tbin)
-    #tbin = timebin(114.23); ct4 = shift_bins(ct4, tbin)
-    #plt.subplot(224)
-    #plt.errorbar(x, ct3+i*0e-6, yerr=0, marker=".", linestyle="--", color = colors[i], alpha=0.6)
-    #plt.errorbar(x, ct4+i*0e-6+1e-5, yerr=0, marker=".", linestyle="--", color = colors[i], alpha=0.6)
-    #plt.errorbar(x, ct4+i*0e-6+1e-5, yerr=0, marker=".", linestyle="--", label=timestring, color = colors[i], alpha=0.6)
 
 # store cleaned data
 np.savetxt("g2_functions/weight_rms_squared/{}/ChA_clean.txt".format(star), np.c_[chA_clean], header="{} Channel A cleaned".format(star) )
@@ -317,50 +323,35 @@ c_auto = autocorrelation[:,1]
 xplotf, popt_avg_free, perr_avg_free = uti.fit(c_auto, x_auto, -30, 30)
 int_auto, dint_auto = uti.integral(popt_avg_free, perr_avg_free)
 
-plt.subplot(413)#224
-plt.plot(x_auto, c_auto, "o-", color="black", alpha=0.5)
-plt.plot(xplotf, uti.gauss(xplotf, *popt_avg_free), linestyle="--", color="red")
-plt.ylim(1-1*popt_avg_free[0] , 1+2*popt_avg_free[0])
+ax_auto.plot(x_auto, c_auto, "o-", color="black", alpha=0.5)
+ax_auto.plot(xplotf, uti.gauss(xplotf, *popt_avg_free), linestyle="--", color="red")
+ax_auto.set_ylim(1-1*popt_avg_free[0] , 1+2*popt_avg_free[0])
 
-# Figure stuff
-def cc_plots(xlims):
-    #plt.grid()
-    plt.ticklabel_format(useOffset=False)
-    plt.xlabel("Time difference (ns)")
-    plt.ylabel("$g^{(2)}$")
-    #plt.legend(loc="upper right")
-    plt.xlim(xlims[0],xlims[1])
-    #plt.tight_layout()
-
-plt.subplot(211); plt.title("Cross correlations of {}".format(star)); cc_plots((-150,150))
-plt.yticks(np.arange(1,1+2e-6*len(chAs),2e-6))
-
-plt.subplot(413); plt.title("Auto correlation of {}".format(star)); cc_plots((-100,100))
-
-#############################################################
+##############################################################
 #### making SC plot (spatial coherence) via integral data ####
+##############################################################
 xplot = np.arange(0.1,300,0.1)
-plt.subplot(414); plt.title("Spatial coherence")
 
 # get baselines for x axes
-baselines = data[:,1]
+baselines  = data[:,1]
 dbaselines = data[:,2]
 
 # Average over all 4 cross correlations
 ints_avg, dints_avg = uti.weighted_avg(intsA,dintsA, intsB,dintsB, ints3Ax4B,dints3Ax4B, ints4Ax3B, dints4Ax3B)
 
 # Add zero-baseline
-baselines  = np.append(baselines, 5.43) # Average photon distance in a 12 m diameter circle
-dbaselines = np.append(dbaselines,2.50) # rms distance of photon in a 12 m diameter circle
-ints_fixed = np.append(ints_fixed,  1e6*int_auto)
-dints_fixed= np.append(dints_fixed, 1e6*dint_auto)
+baselines   = np.append(baselines, 5.43) # Average photon distance in a 12 m diameter circle
+dbaselines  = np.append(dbaselines,2.50) # rms distance of photon in a 12 m diameter circle
+ints_fixed  = np.append(ints_fixed,  1e6*int_auto)
+dints_fixed = np.append(dints_fixed, 1e6*dint_auto)
+colors.append( (0,0,0,1.) )
 
 # Calculate SC fit and errorbars for the averaged signal
 poptavg, pcov = curve_fit(uti.spatial_coherence, baselines, ints_fixed, sigma=dints_fixed, p0=[25, 2.2e-9])
 perravg = np.sqrt(np.diag(pcov))
 
-###############
-# Try with ods
+#--------------------#
+# Try fitting with ods
 # Model object
 from scipy import odr
 sc_model = odr.Model(uti.spatial_coherence_odr)
@@ -373,59 +364,54 @@ out = odr.run()
 # Fit parameters
 popt_odr = out.beta
 perr_odr = out.sd_beta
-###############
+#--------------------#
 
 deltas_sc_avg = []
 for i in xplot:
     deltas_sc_avg.append( np.abs(uti.delta_spatial_coherence(x=i, A=poptavg[0],dA=perravg[0], phi=poptavg[1], dphi=perravg[1])) )
-print ("Angular diameter AVG (fixed)   : {:.2f} +/- {:.2f} (mas)".format(uti.rad2mas(poptavg[1]),   uti.rad2mas(perravg[1])))
-#print ("Angular diameter AVG (free)    : {:.2f} +/- {:.2f} (mas)".format(uti.rad2mas(poptavg_free[1]),   uti.rad2mas(perravg_free[1])))
-
-print ("Angular diameter AVG (odr): {:.2f} +/- {:.2f} (mas)".format(uti.rad2mas(popt_odr[1]),   uti.rad2mas(perr_odr[1])))
+print ("Angular diameter AVG (fixed): {:.2f} +/- {:.2f} (mas)".format(uti.rad2mas(poptavg[1]),  uti.rad2mas(perravg[1])))
+print ("Angular diameter AVG (odr)  : {:.2f} +/- {:.2f} (mas)".format(uti.rad2mas(popt_odr[1]), uti.rad2mas(perr_odr[1])))
 
 ####################################################
 # plot datapoints in SC plot and fit to all points #
 ####################################################
-# auto correlation (zero baseline)
-plt.errorbar(x=5.43, y=1e6*int_auto, yerr=1e6*dint_auto, xerr=2.50, marker="o", color="black")
-# cross correlations
-for i in range (0,len(baselines)-1):
-    plt.errorbar(baselines[i], ints_fixed[i], yerr=dints_fixed[i], xerr=dbaselines[i], marker="o", linestyle="", color=colors[i])
+# cross and auto correlations
+for i in range (0,len(baselines)):
+    ax_sc.errorbar(baselines[i], ints_fixed[i], yerr=dints_fixed[i], xerr=dbaselines[i], marker="o", linestyle="", color=colors[i])
     #plt.text(baselines[i]+1,ints_fixed[i]+0.5,ephem.Date(data[:,0][i]), color=colors[i])
 #plt.plot(xplot, uti.spatial_coherence(xplot,*poptavg),   label="fit", color="red", linewidth=2)
 
+np.savetxt("spatial_coherence/{}_sc_data.txt".format(star), np.c_[baselines, dbaselines, ints_fixed, dints_fixed])
+
 # Obtain values for error band
-#lower_A = []; upper_A = []
 lower = []; upper = []
 for i in xplot:
-    #uncertainty_A = uti.delta_spatial_coherence(x=i, A=poptavg[0], dA=perravg[0], phi=poptavg[1], dphi=perravg[1])
-
     uncertainty = uti.get_error_numerical(x=i, amp=popt_odr[0], damp=perr_odr[0], ang=popt_odr[1], dang=perr_odr[1])
     uncertainty = uti.get_error_numerical(x=i, amp=popt_odr[0], damp=perr_odr[0], ang=popt_odr[1], dang=perr_odr[1])
 
     lower.append(uti.spatial_coherence(i, *popt_odr) - uncertainty)
     upper.append(uti.spatial_coherence(i, *popt_odr) + uncertainty)
-    #lower_A.append(uti.spatial_coherence(i, *poptavg) - uncertainty_A)
-    #upper_A.append(uti.spatial_coherence(i, *poptavg) + uncertainty_A)
+
 lower = cor.lowpass(lower, cutoff=0.001)
 upper = cor.lowpass(upper, cutoff=0.001)
 
+ax_sc.set_ylim(0,)
+# Special treatment of Acrux: do not fit into the spatial coherence data, instead zoom in
 if star != "Acrux":
-    plt.fill_between(xplot, lower, upper, color="#003366", alpha=0.15)
+    ax_sc.fill_between(xplot, lower, upper, color="#003366", alpha=0.15)
+    ax_sc.plot(xplot, uti.spatial_coherence(xplot,*popt_odr),   label="ODR fit", color="#003366", linewidth=2)
+    ax_sc.text(75, 38, "Angular diameter: {:.2f} +/- {:.2f} mas".format(uti.rad2mas(popt_odr[1]), uti.rad2mas(perr_odr[1])), color="#003366", fontsize=10)
+    ax_sc.set_xlim(-15,250)
+    ax_sc.legend(loc="upper right")
+    plt.tight_layout()
 
-#plt.plot(xplot, lower_A, color="blue", alpha=0.3); plt.plot(xplot, upper_A, color="blue", alpha=0.3)
-#plt.fillxplot, _between(xplot, lower_A, upper_A, color="blue", alpha=0.3)
-
-    plt.plot(xplot, uti.spatial_coherence(xplot,*popt_odr),   label="ODR fit", color="#003366", linewidth=2)
-#plt.plot(xplot, uti.spatial_coherence(xplot,*poptavg_free),   label="Free parameters", color="red", linewidth=2, alpha=0.4)
-
-plt.text(75, 38, "Angular diameter: {:.2f} +/- {:.2f} mas".format(uti.rad2mas(popt_odr[1]),   uti.rad2mas(perr_odr[1])), color="#003366", fontsize=10)
-
-plt.xlim(-15,250); plt.ylim(0,)
-plt.xlabel("Baseline (m)"); plt.ylabel("Coherence time (fs)")
-plt.legend(loc="upper right")
-plt.tight_layout()
-#plt.savefig("{}_crosscorrelation.png".format(star))
 plt.savefig("images/{}_sc.pdf".format(star))
 plt.savefig("images/{}_sc.png".format(star))
+
+# In addition save also only the spatial coherence plot
+#extent = ax_sc.get_window_extent()#.transformed(fig.dpi_scale_trans.inverted())
+#plt.savefig("images/{}_sc_only.pdf".format(star), bbox_inches=extent)
+## Pad the saved area by 10% in the x-direction and 20% in the y-direction
+#fig.savefig('ax2_figure_expanded.png', bbox_inches=extent.expanded(1.1, 1.2))
+
 plt.show()
