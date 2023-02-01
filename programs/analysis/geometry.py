@@ -8,7 +8,7 @@ import numpy as np
 # ct3 = [-85.04,  0.24, -0.82]
 # ct4 = [-0.28, -85.04, -0.48]
 
-# But we set ct3 to zero and calculate relative coordinated for ct4
+# But we set ct3 to zero and calculate relative coordinates for ct4
 ct3 = [0., 0., 0.]
 ct4 = [84.76, -85.28, 0.34]
 

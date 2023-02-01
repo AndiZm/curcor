@@ -12,7 +12,7 @@ r3bs      = data[:,2]
 r4as      = data[:,3]
 r4bs      = data[:,4]
 
-plt.figure(figsize=(5,3.5))
+plt.figure(figsize=(6,3.5))
 plt.title("Night Sky Background")
 
 plt.plot(distances, r3as, "o--", label="CT3 Ch A", color=uti.color_3A, markersize=7)

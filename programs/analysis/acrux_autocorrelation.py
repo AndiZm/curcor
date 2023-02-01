@@ -18,11 +18,11 @@ star = "Acrux"
 print("Peak part Analysis of {}".format(star))
 
 # Read in the data (g2 functions and time/baseline parameters), only interested in autocorrelations
-chAs  = np.loadtxt("g2_functions/{}/ChA.txt".format(star))
-chBs  = np.loadtxt("g2_functions/{}/ChB.txt".format(star))
-ct3s  = np.loadtxt("g2_functions/{}/CT3_clean.txt".format(star))
-ct4s  = np.loadtxt("g2_functions/{}/CT4_clean.txt".format(star))
-data  = np.loadtxt("g2_functions/{}/baseline.txt".format(star))
+chAs  = np.loadtxt("g2_functions/weight_rms_squared/{}/ChA.txt".format(star))
+chBs  = np.loadtxt("g2_functions/weight_rms_squared/{}/ChB.txt".format(star))
+ct3s  = np.loadtxt("g2_functions/weight_rms_squared/{}/CT3_clean.txt".format(star))
+ct4s  = np.loadtxt("g2_functions/weight_rms_squared/{}/CT4_clean.txt".format(star))
+data  = np.loadtxt("g2_functions/weight_rms_squared/{}/baseline.txt".format(star))
 
 # Demo function for initializing x axis and some stuff
 demo = chAs[0]
@@ -73,9 +73,9 @@ colors = [cm.viridis(x) for x in cm_sub]
 
 # Define figure which will show all autocorrelations of CT3, CT4 and the fit integrals
 
-plt.figure(figsize=(12,4))
+plt.figure(figsize=(6,7))
 
-plt.subplot(121)
+plt.subplot(211); plt.title("CT3 auto-correlations of Acrux")
 
 ints3 = []; dints3 = []; times = []
 ints4 = []; dints4 = []
@@ -99,25 +99,29 @@ for i in range(0,len(ct3s)):
     ints4.append(1e6*Int); dints4.append(1e6*dInt)# in femtoseconds
 
     # Check acquisition time of original data
-    timestring = ephem.Date(data[:,0][i])
+    timestring = str( ephem.Date(data[:,0][i]) )[5:-3]
     timestrings.append(timestring)
     print("{}".format(i), timestring, Int, dInt)
+
+    the_shift = ( len(ct3s)-i-2 ) * 0.5e-6
     
 
     if i%3 == 0:
         # Subplot for the auto correlation CT3
-        plt.plot(x-mu3, ct3+i*0.5e-6, "o-", label=timestring, color = colors[i], alpha=0.5)
-        plt.plot(xplotf-mu3, uti.gauss_shifted(x=xplotf-mu3, a=popt3[0], mu=0, sigma=sigma3, shift=0.25*i), color=colors[i], linestyle="-")
-    
+        plt.plot(x-mu3, ct3+the_shift, "o-", label=timestring, color = colors[i], alpha=0.5)
+        plt.plot(xplotf-mu3, uti.gauss_shifted(x=xplotf-mu3, a=popt3[0], mu=0, sigma=sigma3, shift=0.5e6*the_shift), color=colors[i], linestyle="-")
+        
+        plt.text(x=30, y=1+the_shift+0.2e-6, s=timestring, color=colors[i], fontweight="bold", bbox=dict(boxstyle="round", ec="white", fc="white", alpha=0.75))
+
         ## Subplot for the auto correlation CT4
         #plt.subplot(222)
         #plt.errorbar(x, ct4+i*2e-6, yerr=0, marker=".", linestyle="--", label=timestring, color = colors[i], alpha=0.6)
         #plt.plot(xplotf, uti.gauss_shifted(x=xplotf, a=popt4[0], mu=mu4, sigma=sigma4, shift=i), color="black", linestyle="-")
 
     plt.grid()
-    plt.xlim(70-mu3,180-mu3); plt.ylim(1-2e-6, 1+16e-6)
+    plt.xlim(70-mu3,180-mu3); plt.ylim(1-2e-6, 1+17e-6)
     plt.ticklabel_format(useOffset=False)
-    plt.legend()
+    #plt.legend()
     plt.tight_layout()
     plt.xlabel("Time difference (ns)")
     plt.ylabel("$g^{(2)}$")
@@ -127,7 +131,7 @@ for i in range(0,len(ct3s)):
 
 
 # Figure stuff
-plt.subplot(122)
+plt.subplot(212)
 
 # plot the peak integrals
 x3 = np.arange(0,len(ints3),1)
