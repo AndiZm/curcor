@@ -2,6 +2,7 @@ import socket as soc
 from time import sleep
 import threading
 import configparser
+import numpy as np
 
 class rate_client:
 
