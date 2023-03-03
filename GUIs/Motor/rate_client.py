@@ -2,6 +2,7 @@ import socket as soc
 from time import sleep
 import threading
 import configparser
+import numpy as np
 
 class rate_client:
 
@@ -25,33 +26,19 @@ class rate_client:
     rateB = None
     
     def __init__(self):
-        #check if config file exists and load it, otherwise standard parameters are kept
-        motor_pc_no = None
-        this_config = configparser.ConfigParser()
-        this_config.read('../../../this_pc.conf')
-        if "who_am_i" in this_config:
-            if this_config["who_am_i"]["type"]!="motor_pc":
-                print("According to the 'this_pc.config'-file this pc is not meant as a motor pc! Please fix that!")
-                exit()
-            motor_pc_no = int(this_config["who_am_i"]["no"])
-        else:
-            print("There is no config file on this computer which specifies the computer function! Please fix that!")
-            exit()
+        # Find address, message length and port to connect to
         global_config = configparser.ConfigParser()
         global_config.read('../global.conf')
-        if "rate_transmission" in global_config:
-            if motor_pc_no == 1:
-                self.port=int(global_config["cam_pc_1"]["port_motor"])
-                self.address=global_config["cam_pc_1"]["address"]
-            elif motor_pc_no == 2:
-                self.port=int(global_config["cam_pc_2"]["port_motor"])
-                self.address=global_config["cam_pc_2"]["address"]
-            else:
-                print("Error in the 'this_pc.config'-file. The number of the Motor PC is neither 1 nor 2. Please correct!")
+        if "controller" in global_config:
+            self.address=global_config["controller"]["address"]
+        else:
+            print("Error in the 'global.config'-file. The file does not contain the section 'controller'. Please correct!")
+            exit()
+        if "rate_transmission" in global_config:            
             self.msg_length=int(global_config["rate_transmission"]["msg_length"])
         else:
-            print("Error in the 'this_pc.config'-file. The file does not contain the section 'rate_transmission'. Please correct!")
-            exit()
+            print("Error in the 'global.config'-file. The file does not contain the section 'rate_transmission'. Please correct!")
+        self.port = np.loadtxt("/home/pi/Desktop/port.txt") 
         print("rate-client init completed. Configuation: addr {0} port {1} msg_length {2}".format(self.address, self.port, self.msg_length))
 
         
