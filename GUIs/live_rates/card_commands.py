@@ -32,7 +32,7 @@ pvBuffer = c_void_p ()
 qwContBufLen = uint64 (0)
 
 # open card
-hCard = spcm_hOpen (create_string_buffer (b'/dev/spcm0'))
+hCard = spcm_hOpen (create_string_buffer (b'/dev/spcm2'))
 if hCard == None:
     sys.stdout.write("no card found...\n")
     exit ()
@@ -243,8 +243,9 @@ def measurement(filename):
     else:
         while qwTotalMem.value < qwToTransfer.value:
         #while lAvailUser.value < qwContBufLen.value:
-    
+            #print ("running ...")    
             dwError = spcm_dwSetParam_i32 (hCard, SPC_M2CMD, M2CMD_DATA_WAITDMA)
+            #print ("still running ...")
             if dwError != ERR_OK:
                 if dwError == ERR_TIMEOUT:
                     sys.stdout.write ("... Timeout\n")
@@ -254,6 +255,7 @@ def measurement(filename):
                     break;
     
             else:
+                #print ("... No error!")
                 # Wait until the new available Data exceeds the defined chunk size
                 spcm_dwGetParam_i32 (hCard, SPC_DATA_AVAIL_USER_LEN, byref (lAvailUser))
                 spcm_dwGetParam_i32 (hCard, SPC_DATA_AVAIL_USER_POS, byref (lPCPos))

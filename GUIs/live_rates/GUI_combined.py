@@ -72,13 +72,13 @@ disk_card2 = str(global_config["controller"]["disk_card2"])
 print ("Storing data to {}:/ and {}:/".format(disk_card1, disk_card2))
 
 def create_project(name,window):
-	if not os.path.exists(disk_card1+":/"+name):
-		os.mkdir(disk_card1+":/"+name)
-	if not os.path.exists(disk_card2+":/"+name):
-		os.mkdir(disk_card2+":/"+name)
+	if not os.path.exists(disk_card1+"/"+name):
+		os.mkdir(disk_card1+"/"+name)
+	if not os.path.exists(disk_card2+"/"+name):
+		os.mkdir(disk_card2+"/"+name)
 	gl.projectName = name
-	gl.basicpath  = disk_card1+":/"+name
-	gl.basicpath2 = disk_card2+":/"+name
+	gl.basicpath  = disk_card1+"/"+name
+	gl.basicpath2 = disk_card2+"/"+name
 	if not os.path.exists(gl.basicpath+"/calibs"):
 		os.mkdir(gl.basicpath+"/calibs")
 	if not os.path.exists(gl.basicpath2+"/calibs"):
