@@ -37,7 +37,7 @@ class rate_client:
             self.msg_length=int(global_config["rate_transmission"]["msg_length"])
         else:
             print("Error in the 'global.config'-file. The file does not contain the section 'rate_transmission'. Please correct!")
-       self.port = np.loadtxt("home/pi/Desktop/port.txt") 
+        self.port = np.loadtxt("home/pi/Desktop/port.txt") 
         print("rate-client init completed. Configuation: addr {0} port {1} msg_length {2}".format(self.address, self.port, self.msg_length))
 
         
