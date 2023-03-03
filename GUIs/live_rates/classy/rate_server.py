@@ -27,9 +27,10 @@ class server:
 	#list of client sockets to send to
 	clientsockets = []
 	
-	def __init__(self, port):
+	def __init__(self, port, tel_number):
 
 		self.port = port
+		self.tel_number = int(tel_number)
 		#check if config file exists and load it, otherwise standard parameters are kept
 		global_config = configparser.ConfigParser()
 		global_config.read('../../global.conf')
@@ -65,7 +66,7 @@ class server:
 			
 			#routine to start a client thread as soon as a connection is requested (in own thread)
 			#self.listen_thread = threading.Thread(target=listen, args=[self])
-			self.listen_thread = threading.Thread(target=self.listen, args=[])
+			self.listen_thread = threading.Thread(target=self.listen, args=[self.tel_number])
 			self.still_listening=True
 			self.listen_thread.start()
 			if self.listen_thread != None:
@@ -114,7 +115,7 @@ class server:
 				i.close()
 				self.clientsockets.remove(i)
 
-	def listen(self):
+	def listen(self, tel_number):
 		while self.still_listening:
 			# accept connections from outside. The OSError exception ist thrown, when the server is shutdown, becaus the accept routine can't handle well that the socket is closed by another thread.
 			try:
@@ -128,6 +129,7 @@ class server:
 				print (self)
 				print (self.clientsockets)
 				print("Created new client socket for new client which connected to the rate server!")
+				gl.motorServerButton[tel_number].config(bg="#bfff91")
 			except OSError:
 				if self.still_listening :
 					print("There was an error in the accept() statement of the server while listening for incoming connections. How could that be?")

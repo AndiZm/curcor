@@ -892,18 +892,13 @@ class telescope(object):
 				self.CHb_Label_curr.config(text="{:.1f}".format(curr_b_microamp), bg="black", fg="orange")
 			else:
 				self.CHb_Label_curr.config(text="{:.1f}".format(curr_b_microamp), bg="#edd266", fg="red")
-	
-		# Communicate with the motor box if connected # TODO: add communication with the motor box
-		#if self.server != None:
-		#	self.server.sendRate(r_a, r_b)
-		#if self.server_controller != None:
-		#	if self.settings.o_nchn == 1:
-		#		self.server_controller.sendRate(r_a)
-		#	else:
-		#		self.server_controller.sendRates(r_a,r_b)
+
 
 		if self.calc_rate == True:
 			self.update_rate_plot()
+			# Communicate with the motor box if connected
+			if self.server != None:
+				self.server.sendRate(r_a, r_b)
 		root.update()
 
 	# This function is for quickly taking single waveform data (no storing to disk)
@@ -941,7 +936,7 @@ class telescope(object):
 		#check if server is running
 		if self.server == None :	
 			#start server
-			self.server=svr.server(port=self.server_port)
+			self.server=svr.server(port=self.server_port, tel_number=self.tel_number)
 			try:
 				self.server.start()
 				#change button label
