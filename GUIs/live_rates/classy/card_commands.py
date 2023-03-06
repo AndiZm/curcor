@@ -6,6 +6,7 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 import globals as gl
+#import correlation as corr
 
 #
 # **************************************************************************
@@ -257,7 +258,9 @@ class card(object):
                         self.qwTotalMem.value += self.lNotifySize.value
         
                         pbyData = cast  (self.pvBuffer.value + self.lPCPos.value, ptr8) # cast to pointer to 8bit integer
-                        np_data = np.ctypeslib.as_array(pbyData, shape=(self.lNumSamples, 1))          
+                        np_data = np.ctypeslib.as_array(pbyData, shape=(self.lNumSamples, 1))
+                        # Insert auto-correlation here
+                        #autocorr += corr.autocorrelation(np_data)
                         newFile.write(np_data)
     
                         spcm_dwSetParam_i32 (self.hCard, SPC_DATA_AVAIL_CARD_LEN,  self.lNotifySize)
@@ -266,6 +269,7 @@ class card(object):
     
         t2 = time.time()
         newFile.close()
+        #np.savetxt(filename[:-3]+".acorr", autocorr)
         print("sn {} - Finished in {:.2f} seconds".format(self.lSerialNumber.value, t2-t1))
     
         # The last part of the data will be used for plotting and rate calculations
