@@ -37,7 +37,7 @@ def szTypeToName (lCardType):
 # **************************************************************************
 #
 def pvAllocMemPageAligned (qwBytes):
-    dwAlignment = 4096
+    dwAlignment = 4096#655536   #was 4096
     dwMask = dwAlignment - 1
 
     # allocate non-aligned, slightly larger buffer

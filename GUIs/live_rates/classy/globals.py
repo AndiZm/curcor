@@ -55,6 +55,10 @@ class calibs():
 		# Maximum rates
 		self.rmax_a = None
 		self.rmax_b = None
+		# Parameters for second calibration
+		self.rates_before_a = 0; self.rates_before_b = 0
+		self.rates_after_a  = 0; self.rates_after_b  = 0
+		self.corr_rates_a   = 1; self.corr_rates_b   = 1
 
 
 ### GUI ELEMENTS ###

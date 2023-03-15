@@ -36,15 +36,16 @@ chBcolor = "#00bfff"
 #----------------#
 # Telescope data #
 #----------------#
-tel_nos = []; tel_names = []; spcm_ports = []; datapaths = []; ports = []
+tel_nos = []; tel_names = []; spcm_ports = []; datapaths = []; ports = []; modes = []
 # Read in the data of the connected telescopes and digitizer cards
-tel_data = np.loadtxt("../../telescopes.conf", dtype={'names': ('tel_nos', 'tel_names', 'spcm_ports', 'datapaths', 'ports'), 'formats': ('<f8', 'U15', '<f8', 'U15', '<f8')})
+tel_data = np.loadtxt("../../telescopes.conf", dtype={'names': ('tel_nos', 'tel_names', 'spcm_ports', 'datapaths', 'ports', 'modes'), 'formats': ('<f8', 'U15', '<f8', 'U15', '<f8', 'U15')})
 for i in range (0,len(tel_data)):
 	tel_nos.append   (int(tel_data[i][0]))
 	tel_names.append (str(tel_data[i][1]))
 	spcm_ports.append(int(tel_data[i][2]))
 	datapaths.append (str(tel_data[i][3]))
 	ports.append     (int(tel_data[i][4]))
+	modes.append     (str(tel_data[i][5]))
 
 
 # Initialize the complete GUI window
@@ -160,9 +161,14 @@ def reset_index():
 indexButton = Button(indexFrame, text="Reset", command=reset_index); indexButton.grid(row=0,column=0)
 
 #--- Now some small stuff for plotting the acquisition times
-fig = Figure(figsize=(4,0.5))
-plot_times = fig.add_subplot(121); plot_times.set_xticks([])
-plot_times2 = fig.add_subplot(122); plot_times2.set_xticks([])
+fig = Figure(figsize=(4*len(tel_nos),0.5))
+# For the acquisition times of each individual card
+plot_times = fig.add_subplot(111)
+#plot_times.set_xticks([])
+#plot_times.set_ylim(3.4,5)
+plot_times.axhline(y=4, color="black", linestyle="--")
+plot_times.grid()
+#plot_times2 = fig.add_subplot(122); plot_times2.set_xticks([])
 
 plotCanvas = FigureCanvasTkAgg(fig, master=syncFrame)
 plotCanvas.get_tk_widget().grid(row=0,column=2)
@@ -181,16 +187,18 @@ cardsFrame = Frame(root, bg="#003366"); cardsFrame.grid(row=2,column=0)
 
 class telescope(object):
 
-	def __init__(self, tel_number, tel_name, spcm_port, datapath, port):
+	def __init__(self, tel_number, tel_name, spcm_port, datapath, port, mode):
 		self.tel_number  = int(tel_number)
 		self.spcm_port   = int(spcm_port) # Tells the card command file which card to control
 		self.server_port = int(port)
+		self.mode        = str(mode) # Tells the card whether to use the ethernet data transfer mode
 		print ("Initializing new telescope {} at position {}".format(tel_name, tel_number))
 
 		# Plotting objects
 		self.wf_canvas = None
 		self.wf_a_line = None; self.wf_b_line = None
 		self.rates_a_line = None; self.rates_b_line = None
+		self.acquisition_times = []; self.acq_plot, = plot_times.plot([0,1,2,3,4],[0,1,4,9,16], ".-"); plotCanvas.draw()
 		# Arrays with the photon rates
 		self.rates_a = []; self.rates_b = []
 		# maximum allowed rates, will be assigned at calibration
@@ -216,7 +224,7 @@ class telescope(object):
 		self.rootMainFrame = Frame(self.cardFrame); self.rootMainFrame.grid(row=0,column=2) # for the calibrations and data acquisition commands
 
 		# Initialize the digitizer card
-		self.card = cc.card(spcm_port=self.spcm_port)
+		self.card = cc.card(spcm_port=self.spcm_port, mode=self.mode)
 
 		################
 		## LEFT FRAME ##
@@ -439,7 +447,8 @@ class telescope(object):
 		self.recalibrateButton = Button(self.calibDoFrame, text="Calibrate", background="#ccf2ff", command=self.start_calib_thread); self.recalibrateButton.grid(row=0,column=0)
 		self.stopCalibrationButton = Button(self.calibDoFrame, text="Abort", background="#fa857a", command=self.stop_calib_thread); self.stopCalibrationButton.grid(row=0,column=1)
 		self.CalibFitButton = Button(self.calibDoFrame, text="Only Fit", background="#ccf2ff", command=self.calibrate_newFit); self.CalibFitButton.grid(row=0,column=2)
-
+		self.SecondCalibButton = Button(self.calibDoFrame, text="2nd Calib", background="#ccf2ff", command=self.secondCalibration); self.SecondCalibButton.grid(row=0,column=3)
+		self.secondCalibState = False # Parameter checking if the second calibration is currently running
 
 		######################
 		### START/STOP FRAME ##
@@ -573,7 +582,7 @@ class telescope(object):
 	def takeMeasurement(self):
 		self.card.init_storage()
 		filename = self.basicpath + "/" + self.measFileNameEntry.get() + ".bin"
-		ma, mb, a_rec, b_rec = self.card.measurement(filename, nchn=self.settings.o_nchn, samples=self.settings.o_samples)
+		ma, mb, a_rec, b_rec, t_acq = self.card.measurement(filename, nchn=self.settings.o_nchn, samples=self.settings.o_samples)
 		self.update_waveform(a_rec, b_rec)
 		self.calculate_data(ma, mb)
 		self.card.init_display(samples=self.settings.o_samples, nchn=self.settings.o_nchn)
@@ -592,15 +601,16 @@ class telescope(object):
 		fileindex = 0
 		while self.measloop == True:
 			filename = self.basicpath + "/" + self.measFileNameEntry.get() + "_" + uti.numberstring(fileindex) + ".bin"
-			ma, mb, rec_a, rec_b = self.card.measurement(filename, nchn=self.settings.o_nchn, samples=self.settings.o_samples)
+			ma, mb, rec_a, rec_b, t_acq = self.card.measurement(filename, nchn=self.settings.o_nchn, samples=self.settings.o_samples)
 			self.calculate_data(ma, mb)
 			fileindex += 1	
 		self.card.init_display(samples=self.settings.o_samples, nchn=self.settings.o_nchn)
 	def remote_measurement(self, name, index):
 		filename = self.basicpath + "/" + name + "_" + uti.numberstring(index) + ".bin"
-		ma, mb, a_rec, b_rec = self.card.measurement(filename, nchn=self.settings.o_nchn, samples=self.settings.o_samples)
+		ma, mb, a_rec, b_rec, t_acq = self.card.measurement(filename, nchn=self.settings.o_nchn, samples=self.settings.o_samples)
 		self.update_waveform(a_rec, b_rec)
 		self.calculate_data(ma, mb)
+		self.acquisition_times.append(t_acq)
 		self.awaitR = False; self.waitCanvas.itemconfig(self.waitLED, fill="green"); root.update()
 
 	# --- Functions for the display frame --- #
@@ -634,7 +644,7 @@ class telescope(object):
 		self.qsettings_calibrations()
 		filename = self.basicpath + "/" + self.offsetNameEntry.get()
 		# Send the command to take data. The return parameters are the mean of both channels (ma, mb) and 1000 datapoints of each channel for plotting the waveforms
-		ma, mb, a_rec, b_rec = self.card.measurement(filename, nchn=self.settings.o_nchn, samples=self.settings.o_samples)
+		ma, mb, a_rec, b_rec, t_acq = self.card.measurement(filename, nchn=self.settings.o_nchn, samples=self.settings.o_samples)
 		self.update_waveform(a_rec, b_rec)
 		self.calculate_data(ma, mb)
 		self.qsettings_checkWaveform()
@@ -660,16 +670,14 @@ class telescope(object):
 	def displayOffset(self):
 		wv_off_a, wv_off_b = wv.execute(file=self.calibs.offsetFile, length=int(int(self.offsetLEntry.get())/10), nchn=self.settings.o_nchn)
 		plt.figure("Offset calculations", figsize=(10,6))
+		print (wv_off_a)
 		plt.plot(wv_off_a, label="Channel A", color=chAcolor, alpha=0.4); plt.axhline(y=self.calibs.off_a, color=chAcolor)
 		if self.settings.o_nchn == 2:
-			plt.plot(wv_off_b, label="Channel B", color=chBcolor , alpha=0.4); plt.axhline(y=self.calibs.off_b, color=chB)
+			plt.plot(wv_off_b, label="Channel B", color=chBcolor , alpha=0.4); plt.axhline(y=self.calibs.off_b, color=chBcolor)
 		plt.xlabel("Time bins"); plt.ylabel("ADC"); plt.legend(); plt.title(self.calibs.offsetFile); plt.show()
 	# Simply display part of the waveform
 	def displayWaveformOffset(self):
-		if self.settings.o_nchn == 2:
-			wv_off_a, wv_off_b = wv.execute(file=self.calibs.offsetFile, length=int(int(self.offsetLEntry.get())/10), nchn=self.settings.o_nchn)
-		else:
-			wv_off_a = wv.execute(file=self.calibs.offsetFile, length=int(int(self.offsetLEntry.get())/10))
+		wv_off_a, wv_off_b = wv.execute(file=self.calibs.offsetFile, length=int(int(self.offsetLEntry.get())/10), nchn=self.settings.o_nchn)
 		plt.figure("Offset file waveforms", figsize=(10,6))
 		plt.plot(wv_off_a, label="Channel A", color=chAcolor)
 		if self.settings.o_nchn == 2:
@@ -688,7 +696,7 @@ class telescope(object):
 			else:
 				self.parOffsetLabelB.config(text="--")
 				outfileOff = uti.to_calib(self.calibs.offsetFile,".off1")
-				np.savetxt(self.outfileOff, [self.calibs.off_a])
+				np.savetxt(outfileOff, [self.calibs.off_a])
 			self.calibs.offsetLoad = outfileOff; self.loadOffsetLabel.config(text=self.calibs.offsetLoad.split("/")[-1])
 		self.idle()
 	def start_offset_thread(self):
@@ -755,21 +763,34 @@ class telescope(object):
 			np.savetxt(uti.to_calib(self.calibs.calibFile, ".shape"), np.c_[self.calibs.ps_x, self.calibs.ps_a, self.calibs.ps_b])
 			np.savetxt(uti.to_calib(self.calibs.calibFile, ".xplot"), self.calibs.xplot)
 			with open(uti.to_calib(self.calibs.calibFile, ".calib"), 'w') as f:
-				f.write(str(self.calibs.pa[0]) + "\n" +  str(self.calibs.pa[1]) + "\n" + str(self.calibs.pa[2]) + "\n")
-				f.write(str(self.calibs.pb[0]) + "\n" +  str(self.calibs.pb[1]) + "\n" + str(self.calibs.pb[2]) + "\n")
-				f.write(str(self.calibs.nsum_a) + "\n" + str(self.calibs.nsum_b) + "\n")
-				f.write(str(self.calibs.ph_a) + "\n" +   str(self.calibs.ph_b) + "\n")
-				f.write(str(self.calibs.avg_charge_a) + "\n" + str(self.calibs.avg_charge_b) + "\n")
+				f.write("# Gaussian fit parameters of pulse height distribution Ch A\n")
+				f.write(str(self.calibs.pa[0]) + "\t# Amplitude\n" +  str(self.calibs.pa[1]) + "\t# Mean\n" + str(self.calibs.pa[2]) + "\t# Sigma\n")
+				f.write("# Gaussian fit parameters of pulse height distribution Ch B\n")
+				f.write(str(self.calibs.pb[0]) + "\t# Amplitude\n" +  str(self.calibs.pb[1]) + "\t# Mean\n" + str(self.calibs.pb[2]) + "\t# Sigma\n")
+				f.write("# Integrals of normalized pulses (nsum)\n")
+				f.write(str(self.calibs.nsum_a) + "\t# Ch A\n" + str(self.calibs.nsum_b) + "\t# Ch B\n")
+				f.write("# Pulse heights of phd (ph)\n")
+				f.write(str(self.calibs.ph_a) + "\t# Ch A\n" +   str(self.calibs.ph_b) + "\t# Ch B\n")
+				f.write("# Average Charges\n")
+				f.write(str(self.calibs.avg_charge_a) + "\t# Ch A\n" + str(self.calibs.avg_charge_b) + "\t# Ch B\n")
+				f.write("# 2nd stage calibration factors\n")
+				f.write(str(self.calibs.corr_rates_a) + "\t# Ch A\n" + str(self.calibs.corr_rates_b) + "\t# Ch B")
 			self.calibs.calibLoad = uti.to_calib(self.calibs.calibFile, ".calib")
 		else:
 			np.savetxt(uti.to_calib(self.calibs.calibFile, ".phd1"),   np.c_[self.calibs.histo_x, self.calibs.histo_a])
 			np.savetxt(uti.to_calib(self.calibs.calibFile, ".shape1"), np.c_[self.calibs.ps_x, self.calibs.ps_a])
 			np.savetxt(uti.to_calib(self.calibs.calibFile, ".xplot1"), self.calibs.xplot)
 			with open(uti.to_calib(self.calibs.calibFile, ".calib1"), 'w') as f:
-				f.write(str(self.calibs.pa[0]) + "\n" + str(self.calibs.pa[1]) + "\n" + str(self.calibs.pa[2]) + "\n")
+				f.write("# Gaussian fit parameters of pulse height distribution Ch A\n")
+				f.write(str(self.calibs.pa[0]) + "\t# Amplitude\n" +  str(self.calibs.pa[1]) + "\t# Mean\n" + str(self.calibs.pa[2]) + "\t# Sigma\n")
+				f.write("# Integral of normalized pulse (nsum)\n")
 				f.write(str(self.calibs.nsum_a) + "\n")
+				f.write("# Pulse height of phd (ph)\n")
 				f.write(str(self.calibs.ph_a) + "\n")
+				f.write("# Average Charge\n")
 				f.write(str(self.calibs.avg_charge_a) + "\n")
+				f.write("# 2nd stage calibration factor\n")
+				f.write(str(self.calibs.corr_rates_a))
 			self.calibs.calibLoad = uti.to_calib(self.calibs.calibFile, ".calib1")
 		self.loadCalibLabel.config(text=self.calibs.calibLoad.split("/")[-1])
 	# Only apply new fit range to calibration data
@@ -802,6 +823,10 @@ class telescope(object):
 			self.calibs.nsum_a = np.loadtxt(self.calibs.calibLoad)[6]; self.calibs.nsum_b = np.loadtxt(self.calibs.calibLoad)[7]
 			self.calibs.ph_a = np.loadtxt(self.calibs.calibLoad)[8]; self.calibs.ph_b = np.loadtxt(self.calibs.calibLoad)[9]
 			self.calibs.avg_charge_a = np.loadtxt(self.calibs.calibLoad)[10]; self.calibs.avg_charge_b = np.loadtxt(self.calibs.calibLoad)[11]
+			try:
+				self.calibs.corr_rates_a = np.loadtxt(self.calibs.calibLoad)[12]; self.calibs.corr_rates_b = np.loadtxt(self.calibs.calibLoad)[13]
+			except:
+				print ("Calib file version too old to contain correction factor. Omitting ...")
 			self.avgChargeLabelA.config(text="{:.2f}".format(self.calibs.avg_charge_a)); self.avgChargeLabelB.config(text="{:.2f}".format(self.calibs.avg_charge_b))
 			self.rmax_b = self.maxRate(self.calibs.avg_charge_b) # Maximum rate
 			self.rateBCanvas.itemconfig(self.rmaxbText, text="{:.0f}".format(self.rmax_b)) # Show in rate bar
@@ -814,7 +839,11 @@ class telescope(object):
 			self.calibs.pa[0] = np.loadtxt(self.calibs.calibLoad)[0]; self.calibs.pa[1] = np.loadtxt(self.calibs.calibLoad)[1]; self.calibs.pa[2] = np.loadtxt(self.calibs.calibLoad)[2]
 			self.calibs.nsum_a = np.loadtxt(self.calibs.calibLoad)[3]
 			self.calibs.ph_a = np.loadtxt(self.calibs.calibLoad)[4]
-			self,calibs.avg_charge_a = np.loadtxt(self.calibs.calibLoad)[5]
+			self.calibs.avg_charge_a = np.loadtxt(self.calibs.calibLoad)[5]
+			try:
+				self.calibs.corr_rates_a = np.loadtxt(self.calibs.calibLoad)[6]
+			except:
+				print ("Calib file version too old to contain correction factor. Omitting ...")
 			self.avgChargeLabelA.config(text="{:.2f}".format(self.calibs.avg_charge_a))
 			self.avgChargeLabelB.config(text="--")
 		self.rmax_a = self.maxRate(self.calibs.avg_charge_a) # Maximum rates
@@ -826,7 +855,7 @@ class telescope(object):
 	def takeCalibMeasurement(self):
 		self.qsettings_calibrations()
 		filename = self.basicpath + "/" + self.calibNameEntry.get()
-		ma, mb, a_rec, b_rec = self.card.measurement(filename, nchn=self.settings.o_nchn, samples=self.settings.o_samples)
+		ma, mb, a_rec, b_rec, t_acq = self.card.measurement(filename, nchn=self.settings.o_nchn, samples=self.settings.o_samples)
 		self.calculate_data(ma, mb)
 		self.qsettings_checkWaveform()
 		self.calibs.calibFile = filename; self.calibFileLabel.config(text=self.calibs.calibFile.split("/")[-1])
@@ -838,6 +867,26 @@ class telescope(object):
 		if self.settings.o_nchn == 2:
 			plt.plot(wv_b, label="Channel B", color=chBcolor)
 		plt.xlabel("Time bins"); plt.ylabel("ADC"); plt.legend(); plt.title(self.calibs.calibFile); plt.show()
+	def secondCalibration(self):
+		if self.secondCalibState == False: # Start the 2nd calibration
+			# Get the 100 avg of the current rates
+			self.calibs.rates_before_a = np.mean(self.rates_a)
+			if self.settings.o_nchn == 2:				
+				self.calibs.rates_before_b = np.mean(self.rates_b)
+			# Change state and Button
+			self.secondCalibState = True
+			self.SecondCalibButton.config(text="Stop Calib", background="#fa857a")
+		else: # The second calibration is currently running and should be stopped
+			self.calibs.rates_afer_a = np.mean(self.rates_a)
+			self.calibs.corr_rates_a = self.calibs.rates_before_a/self.calibs.rates_afer_a
+			if self.settings.o_nchn == 2:				
+				self.calibs.rates_afer_b = np.mean(self.rates_b)				
+				self.calibs.corr_rates_b = self.calibs.rates_before_b/self.calibs.rates_afer_b
+			# Change state and Button
+			self.secondCalibState = False
+			self.SecondCalibButton.config(text="2nd Calib", background="#ccf2ff")
+			# Write to calibration file
+			self.finish_calibration()
 
 	#----------------------------------------------------------------------------------#
 	# --- Functions that control the quick measurement stuff and rate calculations --- #
@@ -853,7 +902,7 @@ class telescope(object):
 		mean_a = mean_a - self.calibs.off_a
 		# Rates
 		if self.calc_rate == True:
-			r_a = 1e-6 * mean_a/(self.calibs.avg_charge_a*binRange)
+			r_a = 1e-6 * mean_a/(self.calibs.avg_charge_a*binRange) * self.calibs.corr_rates_a
 			# Discard the oldest rate and add the newest rate
 			self.rates_a.pop(0)
 			self.rates_a.append(r_a)
@@ -876,7 +925,7 @@ class telescope(object):
 			mean_b = mean_b - self.calibs.off_b
 			# Rates
 			if self.calc_rate == True:
-				r_b = 1e-6 * mean_b/(self.calibs.avg_charge_b*binRange)
+				r_b = 1e-6 * mean_b/(self.calibs.avg_charge_b*binRange) * self.calibs.corr_rates_b
 				# Discard the oldest rate and add the newest rate
 				self.rates_b.pop(0)
 				self.rates_b.append(r_b)
@@ -967,11 +1016,14 @@ class telescope(object):
 
 # Measurement procedure
 tdiffs = []; timestamps_between = []; t_stamps = []
+# Parameters which track the acquisition times
+
+
 def singles():
 	theThread = Thread(target=singlesT, args=[])
 	theThread.start()
 def singlesT():
-	global measurement, tdiffs, timestamps_between, t_stamps
+	global measurement, tdiffs, timestamps_between, t_stamps, plotCanvas, plot_times
 	# change all the status labels
 	for t in telescopes:
 		gl.statusLabel[t.tel_number].config(text="Remote Measurement", bg="#ff867d")
@@ -993,6 +1045,14 @@ def singlesT():
 			t.pcThread.join()
 
 		## Time investigations
+		for t in telescopes:
+			t.acq_plot.set_xdata( np.arange(0,len(t.acquisition_times[-100:]),1) )
+			t.acq_plot.set_ydata( t.acquisition_times[-100:] )
+
+		plot_times.relim()
+		plot_times.autoscale_view(True,True,True)
+		#plot_times.set_xlim(0, len(telescopes[0].acquisition_times))
+		plotCanvas.draw()
 		#timestamps_between.append(time.time())
 		#time.sleep(0.1)
 		#
@@ -1016,7 +1076,9 @@ def singlesT():
 	
 	for t in telescopes:
 		t.idle()
+		np.savetxt("tel_{}.txt".format(t.tel_number), t.acquisition_times)
 	enable_buttons()
+
 		
 
 '''
@@ -1167,6 +1229,6 @@ gl.frameLabel2 = Label(rootExitFrame2, text=str(gl.scheck2)); gl.frameLabel2.gri
 # Add telescopes to the GUI
 telescopes = []
 for i in range (0,len(tel_nos)):
-	telescopes.append( telescope(tel_number=tel_nos[i], tel_name=tel_names[i], spcm_port=spcm_ports[i], datapath=datapaths[i], port=ports[i]) )
+	telescopes.append( telescope(tel_number=tel_nos[i], tel_name=tel_names[i], spcm_port=spcm_ports[i], datapath=datapaths[i], port=ports[i], mode=modes[i] ))
 
 root.mainloop()

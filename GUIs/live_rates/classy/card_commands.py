@@ -6,6 +6,7 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 import globals as gl
+import os
 #import correlation as corr
 
 #
@@ -15,8 +16,9 @@ import globals as gl
 #
 class card(object):
     
-    def __init__(self, spcm_port):
+    def __init__(self, spcm_port, mode):
         self.spcm_port = int(spcm_port)
+        self.mode = str(mode)
 
         self.szErrorTextBuffer = create_string_buffer (ERRORTEXTLEN)
         self.dwError = uint32 ();
@@ -59,8 +61,9 @@ class card(object):
         else:
             sys.stdout.write("This is an example for A/D cards.\nCard: {0} sn {1:05d} not supported by example\n".format(self.sCardName,self.lSerialNumber.value))
             exit ()
+        if mode == 'eth':
+            print ("\tUsing ethernet settings")
 
-        #self.init()
     
     def init(self, samples, nchn):
     
@@ -115,12 +118,12 @@ class card(object):
         self.qwBufferSize = uint64 (self.dataSize * 2 * 1); # in bytes. Enough memory for 16384 samples with 2 bytes each, only one channel active
         spcm_dwSetParam_i32 (self.hCard, SPC_MEMSIZE, self.dataSize)
         spcm_dwGetContBuf_i64 (self.hCard, SPCM_BUF_DATA, byref(self.pvBuffer), byref(self.qwContBufLen))
-        print ("ContBuf length: {0:d}\n".format(self.qwContBufLen.value))
-        if self.qwContBufLen.value >= self.qwBufferSize.value:
-            print ("Using continuous buffer\n")
-        else:
-            self.pvBuffer = pvAllocMemPageAligned (self.qwBufferSize.value)
-            print ("Using buffer allocated by user program\n")
+        print ("ContBuf length: {0:d}\n".format(self.qwContBufLen.value),"qwBuffer length:",self.qwBufferSize.value )
+        #if self.qwContBufLen.value >= self.qwBufferSize.value:
+        #    print ("Using continuous buffer\n")
+        #else:
+        #    self.pvBuffer = pvAllocMemPageAligned (self.qwBufferSize.value)
+        #    print ("Using buffer allocated by user program\n")
     def set_sampling(self, x):
         if x == 0.8e-9:
             spcm_dwSetParam_i64 (self.hCard, SPC_SAMPLERATE, MEGA(1250))
@@ -139,7 +142,7 @@ class card(object):
     def set_triggermode(self, x):
         if x == True:
             spcm_dwSetParam_i32 (self.hCard, SPC_TRIG_ORMASK,    SPC_TMASK_EXT0)         # trigger set to extern
-            spcm_dwSetParam_i32 (self.hCard, SPC_TRIG_TERM,      1)                      # 50 Ohm termination active
+            spcm_dwSetParam_i32 (self.hCard, SPC_TRIG_TERM,      0)                      # 50 Ohm termination, 1 == active
             spcm_dwSetParam_i32 (self.hCard, SPC_TRIG_EXT0_ACDC, 0)                      # DC coupling
             spcm_dwSetParam_i32 (self.hCard, SPC_TRIG_EXT0_LEVEL0, 700)                  # Trigger level 700 mV
             spcm_dwSetParam_i32 (self.hCard, SPC_TRIG_EXT0_MODE, SPC_TM_POS)             # Trigger set on positive edge
@@ -202,8 +205,9 @@ class card(object):
                     a_send = a_np[0:1000]; b_send = b_np[0:1000]
                 else:
                     data = np.array(data)
+                    a_np = np.array(data)
                     mean_a = np.mean(data); mean_b = 0
-                    a_send = a_np[0:1000]; b_send = None               
+                    a_send = a_np[0:1000]; b_send = []             
                 return mean_a, mean_b, a_send, b_send
         
     
@@ -211,9 +215,13 @@ class card(object):
     # This function is called to initialize the mechanism for data storage to disk
     def init_storage(self):
         # settings for the FIFO mode buffer handling
-        self.qwBufferSize = uint64 (MEGA_B(256))
-        self.lNotifySize = int32 (KILO_B(256))
-    
+        
+        if self.mode == "eth": # Data transfer via ethernet
+            self.lNotifySize = int32 (KILO_B(32768*2))   #was 256
+            self.qwBufferSize = uint64 (MEGA_B(512))
+        else :
+            self.lNotifySize = int32 (KILO_B(4096))   #was 256
+            self.qwBufferSize = uint64 (MEGA_B(64))
         # define the data buffer
         self.pvBuffer = c_void_p ()
         self.qwContBufLen = uint64 (0)
@@ -224,22 +232,39 @@ class card(object):
         self.lNumSamples = int (self.lNotifySize.value)  # one byte per sample
        
     def measurement(self, filename, nchn, samples):
+        t1=-1
+        t1 = time.time()
         spcm_dwDefTransfer_i64 (self.hCard, SPCM_BUF_DATA, SPCM_DIR_CARDTOPC, self.lNotifySize, self.pvBuffer, uint64 (0), self.qwBufferSize)
         self.qwTotalMem = uint64 (0)
         self.qwToTransfer = uint64 (nchn * samples)
-    
-        newFile = open(filename,"ab")
-        t1 = time.time()
+        
+        #newFile = open(filename,"ab")
+        flags =  os.O_WRONLY  | os.O_BINARY | os.O_SEQUENTIAL | os.O_CREAT #|os.O_APPEND 
+        mode = 0o666
+        newFile = os.open(filename,flags,mode)
+        #if self.lSerialNumber.value==13100 :
+        #    alldata=[]
+       #     filename2=("Y:"+filename[2:])
+       #     newFile2 = os.open(filename2,flags,mode)
+
         dwError = spcm_dwSetParam_i32 (self.hCard, SPC_M2CMD, M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER | M2CMD_DATA_STARTDMA)
+
+
         # check for error
         if dwError != 0: # != ERR_OK
             spcm_dwGetErrorInfo_i32 (self.hCard, None, None, self.szErrorTextBuffer)
             sys.stdout.write("{0}\n".format(self.szErrorTextBuffer.value))
             spcm_vClose (self.hCard)
             exit ()
+
         # run the FIFO mode and loop through the data
         else:
+            t=0
+            #t1 = time.time()
             while self.qwTotalMem.value < self.qwToTransfer.value:   
+                if time.time()-t1>10:
+                    print("too long")
+                    break;
                 dwError = spcm_dwSetParam_i32 (self.hCard, SPC_M2CMD, M2CMD_DATA_WAITDMA)
                 if dwError != ERR_OK:
                     if dwError == ERR_TIMEOUT:
@@ -252,38 +277,88 @@ class card(object):
                     # Wait until the new available Data exceeds the defined chunk size
                     spcm_dwGetParam_i32 (self.hCard, SPC_DATA_AVAIL_USER_LEN, byref (self.lAvailUser))
                     spcm_dwGetParam_i32 (self.hCard, SPC_DATA_AVAIL_USER_POS, byref (self.lPCPos))
-    
+                    
                     #poss.append(lPCPos.value)
                     if self.lAvailUser.value >= self.lNotifySize.value:
-                        self.qwTotalMem.value += self.lNotifySize.value
-        
+
+                        #if self.mode == "eth" :
+                        #   #print("t",t,"Card",self.lSerialNumber.value,"AvailUser",self.lAvailUser.value, "User Pos", self.lPCPos.value)
+                        #   if ((self.lAvailUser.value + self.lPCPos.value) > 201326592+67108864) :
+                        #       self.lAvailUser.value = self.lNotifySize.value
+                        #   self.qwTotalMem.value += self.lAvailUser.value
+                        #   
+                        #   t+=1
+                        #   pbyData = cast  (self.pvBuffer.value + self.lPCPos.value, ptr8) # cast to pointer to 8bit integer
+                        #   np_data = np.ctypeslib.as_array(pbyData, shape=(int(self.lAvailUser.value), 1))
+                        #   os.write(newFile,np_data)
+                        #   spcm_dwSetParam_i32 (self.hCard, SPC_DATA_AVAIL_CARD_LEN,  self.lAvailUser)
+                        #else :
+                        if t==0:
+                            tfirst=time.time()
+                            print("sn {} - First block after {:.2f} seconds".format(self.lSerialNumber.value, tfirst-t1))
+                        #if t1==-1:
+                        #    pass
+                        self.qwTotalMem.value += self.lNotifySize.value 
                         pbyData = cast  (self.pvBuffer.value + self.lPCPos.value, ptr8) # cast to pointer to 8bit integer
                         np_data = np.ctypeslib.as_array(pbyData, shape=(self.lNumSamples, 1))
+                            #if self.mode == "eth":
+                            #    pass
+                             #   if t==0:
+                              #      np_all=np.copy(np_data)
+                               # else:
+                                #    np_all=np.concatenate(np_all,np_data)
+                            #else:
+                        #os.write(newFile,np_data)
+                        spcm_dwSetParam_i32 (self.hCard, SPC_DATA_AVAIL_CARD_LEN,  self.lNotifySize)
+                        
                         # Insert auto-correlation here
                         #autocorr += corr.autocorrelation(np_data)
-                        newFile.write(np_data)
-    
-                        spcm_dwSetParam_i32 (self.hCard, SPC_DATA_AVAIL_CARD_LEN,  self.lNotifySize)
+                        #newFile.write(np_data)
+                        #if self.mode == "eth":
+                        #    if t%2==0:
+                        #        alldata=np_data
+                        #    else:
+                        #        alldata=np.concatenate(alldata,np_data)
+                        #        os.write(newFile,alldata)
+                        #    #if(t%2==0):
+                        #    #    os.write(newFile,np_data)
+                        #    #else:
+                        #    #    os.write(newFile2,np_data)
+                        #else:
+                        os.write(newFile,np_data)
+                        t+=1
+                        #spcm_dwSetParam_i32 (self.hCard, SPC_DATA_AVAIL_CARD_LEN,  self.lNotifySize)
         # send the stop command
         dwError = spcm_dwSetParam_i32 (self.hCard, SPC_M2CMD, M2CMD_CARD_STOP | M2CMD_DATA_STOPDMA)
     
         t2 = time.time()
-        newFile.close()
+        #newFile.close()
+        #if self.lSerialNumber.value==13100 :
+         #   os.write(newFile,alldata)
+          #  os.close(newFile)
+        #else:
+        os.close(newFile)
+
         #np.savetxt(filename[:-3]+".acorr", autocorr)
-        print("sn {} - Finished in {:.2f} seconds".format(self.lSerialNumber.value, t2-t1))
-    
+        t_acq = t2-t1
+        print("sn {} - Finished in {:.2f} seconds".format(self.lSerialNumber.value, t_acq))
+        #return 0,0,[0,0,0],[0,0,0]
         # The last part of the data will be used for plotting and rate calculations
-        data = np.array(np_data)
+        data = np.array(np_data[0:2000])
+        shape_x=data.shape[0]
         if nchn == 2:
-            data = data.reshape(int((self.lNotifySize.value)/2), 2)
+            #data = data.reshape(int((self.lNotifySize.value)/2), 2)
+            data = data.reshape(shape_x//2,2)
             a_np = np.array(data[:,0]); b_np = np.array(data[:,1])
             mean_a = np.mean(a_np); mean_b = np.mean(b_np)
             a_send = a_np[0:1000]; b_send = b_np[0:1000]
         else:
-            data = data.reshape(self.lNotifySize.value,1)
+            #data = data.reshape(self.lNotifySize.value,1)
             mean_a = np.mean(data); mean_b = 0
-            a_send = a_np[0:1000]; b_send = None
-        return mean_a, mean_b, a_send, b_send
+            a_np = data
+            a_send = a_np[0:1000]; b_send = []
+        #print(mean_a, mean_b, a_send, b_send)
+        return mean_a, mean_b, a_send, b_send, t_acq
     
     # clean up
     def close(self):
