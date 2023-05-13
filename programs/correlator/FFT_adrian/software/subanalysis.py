@@ -25,8 +25,8 @@ ct4_disk = str(options.ct4_disk)
 datapath = str(options.datapath)
 
 # Combine data paths for both telescopes
-ct3_path = ct3_disk + ":/" + datapath
-ct4_path = ct4_disk + ":/" + datapath
+ct3_path = ct3_disk + ":/ct1/" + datapath
+ct4_path = ct4_disk + ":/ct4/" + datapath
 
 # File creation time
 def file_time(file1, file2):
@@ -69,7 +69,7 @@ def readfile():
     this_pc1_filename = ct3_filename
     this_pc2_filename = ct4_filename
 
-    resultfilename = "C:/Users/ii/Documents/curcor/corr_results/results_HESS/" + datapath + "_" + this_pc1_filename.split("_")[-1].split(".")[0] + ".fcorr"
+    resultfilename = "C:/Users/ii/Documents/curcor/corr_results/results_HESS/" + datapath + "_" + this_pc1_filename.split("_")[-1].split(".")[0] + ".fcorr6"
 
     data_pc1 = np.fromfile(this_pc1_filename,dtype=np.int8)
     data_pc2 = np.fromfile(this_pc2_filename,dtype=np.int8)
@@ -96,7 +96,9 @@ def readfile():
     this_cor1 = cupy.zeros((acorlen))
     this_cor2 = cupy.zeros((acorlen))
     this_corA = cupy.zeros((acorlen))
-    this_corB = cupy.zeros((acorlen))    
+    this_corB = cupy.zeros((acorlen))
+    this_cor1A2B = cupy.zeros((acorlen))
+    this_cor2A1B = cupy.zeros((acorlen))
 
     # Do the correlation
     for i in range(iterations):
@@ -115,21 +117,30 @@ def readfile():
         # Cross correlation PC1B X PC2B
         ###data_pc2B_cu = cupy.array(data_pc2B[int(corlen/2)+(length*i):(-1)*int(corlen/2)+(length*(i+1))]).astype(np.float32)
         data_pc1B_cu = cupy.array(data_pc1B[length*i:length*(i+1)]).astype(np.float32)
-        this_corB += cupy.correlate(data_pc2B_cu, data_pc1B_cu, "valid")    
+        this_corB += cupy.correlate(data_pc2B_cu, data_pc1B_cu, "valid")
+        # Cross correlations PC1A x PC2B
+        data_pc2B_cu = cupy.array(data_pc2B[int(corlen/2)+(length*i):(-1)*int(corlen/2)+(length*(i+1))]).astype(np.float32)
+        data_pc1A_cu = cupy.array(data_pc1A[length*i:length*(i+1)]).astype(np.float32)
+        this_cor1A2B += cupy.correlate(data_pc2B_cu, data_pc1A_cu, "valid")
+        # Cross correlations PC2A x PC1B
+        data_pc1B_cu = cupy.array(data_pc1B[int(corlen/2)+(length*i):(-1)*int(corlen/2)+(length*(i+1))]).astype(np.float32)
+        data_pc2A_cu = cupy.array(data_pc2A[length*i:length*(i+1)]).astype(np.float32)
+        this_cor2A1B += cupy.correlate(data_pc1B_cu, data_pc2A_cu, "valid")
 
     this_cor1 = cupy.asnumpy(this_cor1)
     this_cor2 = cupy.asnumpy(this_cor2)
     this_corA = cupy.asnumpy(this_corA)
-    this_corB = cupy.asnumpy(this_corB)    
+    this_corB = cupy.asnumpy(this_corB)
+    this_cor1A2B = cupy.asnumpy(this_cor1A2B)
+    this_cor2A1B = cupy.asnumpy(this_cor2A1B) 
 
-    np.savetxt(resultfilename, np.c_[this_cor1, this_cor2, this_corA, this_corB], header="{} {} {} {} {}".format(ctime, mean_pc1A, mean_pc1B, mean_pc2A, mean_pc2B))
+    np.savetxt(resultfilename, np.c_[this_cor1, this_cor2, this_corA, this_corB, this_cor1A2B, this_cor2A1B], header="{} {} {} {} {}".format(ctime, mean_pc1A, mean_pc1B, mean_pc2A, mean_pc2B))
     endtime = time.time(); dtime = endtime - stime
     analyzefiles += 1; totalfiles += 1
-    del this_corA; del this_corB; del this_cor1; del this_cor2
+    del this_corA; del this_corB; del this_cor1; del this_cor2; del this_cor1A2B; del this_cor2A1B
     del data_pc1A_cu; data_pc1B_cu; del data_pc2A_cu; del data_pc2B_cu
     del data_pc1; del data_pc2; del data_pc1A; del data_pc1B; del data_pc2A; del data_pc2B
     print ("\tAnalyzing {} files in {:.2f} seconds : {:.2f} s per file. Total files: {}".format(analyzefiles, dtime, dtime/analyzefiles, totalfiles))
-
 
 
 fileindex = start
@@ -160,4 +171,5 @@ while fileindex <= end:
 endfull = time.time()
 fulltime = endfull - startfull
 print ("########################################################################")
+print ("\tAnalyzing {} files in {:.2f} seconds".format(totalfiles, fulltime))
 print ("\tAnalyzing {} files in {:.2f} seconds : {:.2f} s per file".format(totalfiles, fulltime, fulltime/totalfiles))

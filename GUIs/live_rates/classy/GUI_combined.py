@@ -30,8 +30,8 @@ import header as header
 #import hv_commands2 as com2
 
 # plotting colors for waveform channels
-chAcolor = "#00008b"
-chBcolor = "#00bfff"
+chAcolor = "green"#"#00008b"
+chBcolor = "blue"#"#00bfff"
 
 #----------------#
 # Telescope data #

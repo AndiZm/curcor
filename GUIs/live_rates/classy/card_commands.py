@@ -218,7 +218,7 @@ class card(object):
         
         if self.mode == "eth": # Data transfer via ethernet
             self.lNotifySize = int32 (KILO_B(32768*2))   #was 256
-            self.qwBufferSize = uint64 (MEGA_B(512))
+            self.qwBufferSize = uint64 (MEGA_B(256)) # 512
         else :
             self.lNotifySize = int32 (KILO_B(4096))   #was 256
             self.qwBufferSize = uint64 (MEGA_B(64))
