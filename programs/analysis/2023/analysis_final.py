@@ -180,6 +180,7 @@ ax_sc.set_xlabel("Baseline (m)"); ax_sc.set_ylabel("Coherence time (fs)")
 ax_auto  = bigfigure.add_subplot(224); ax_auto.set_title("Auto correlation of {}".format(star))
 ax_auto.set_xlabel("Time difference (ns)"); ax_auto.set_ylabel("$g^{(2)}$"); ax_auto.ticklabel_format(useOffset=False)
 ax_auto.set_xlim(-100,100)
+ax_auto.axhline(y=0.0, color='black', linestyle='--')
 
 
 intsA = []; dintsA = []; times = []
@@ -415,12 +416,13 @@ for i in range (0,len(baselines)):
     ax_sc.errorbar(baselines[i], ints_fixedA[i], yerr=dints_fixedA[i], xerr=dbaselines[i], marker="o", linestyle="", color=uti.color_chA)
     ax_sc.errorbar(baselines[i], ints_fixedB[i], yerr=dints_fixedB[i], xerr=dbaselines[i], marker="o", linestyle="", color=uti.color_chB)
     #plt.text(baselines[i]+1,ints_fixed[i]+0.5,ephem.Date(data[:,0][i]), color=colors[i])
-ax_sc.plot(xplot, uti.spatial_coherence(xplot,*popt_odrA),   label="470 nm", color="green", linewidth=2)
+ax_sc.plot(xplot, uti.spatial_coherenceG(xplot,*popt_odrA),   label="470 nm", color="green", linewidth=2)
 ax_sc.plot(xplot, uti.spatial_coherenceUV(xplot,*popt_odrB), label="375 nm", color="blue",  linewidth=2)
 #ax_sc.plot(xplot, uti.spatial_coherence(xplot, 20, 4.6e-9),   label="fit", color="blue", linewidth=2)
+ax_sc.axhline(y=0.0, color='black', linestyle='--')
 
 ax_sc.legend()
-
+plt.tight_layout()
 np.savetxt("spatial_coherence/{}_sc_data.txt".format(star), np.c_[baselines, dbaselines, ints_fixedA, dints_fixedA, ints_fixedB, dints_fixedB])
 '''
 # Obtain values for error band
@@ -464,14 +466,14 @@ for i in range (0,len(baselines)):
     plt.errorbar(baselines[i], ints_fixedA[i], yerr=dints_fixedA[i], xerr=dbaselines[i], marker="o", linestyle="", color=uti.color_chA)
     plt.errorbar(baselines[i], ints_fixedB[i], yerr=dints_fixedB[i], xerr=dbaselines[i], marker="o", linestyle="", color=uti.color_chB)
     #plt.text(baselines[i]+1,ints_fixed[i]+0.5,ephem.Date(data[:,0][i]), color=colors[i])
-plt.plot(xplot, uti.spatial_coherence(xplot,1, popt_odrA[1]),   label="470 nm", color="green", linewidth=2)
+plt.plot(xplot, uti.spatial_coherenceG(xplot,1, popt_odrA[1]),   label="470 nm", color="green", linewidth=2)
 plt.plot(xplot, uti.spatial_coherenceUV(xplot,1,popt_odrB[1]), label="375 nm", color="blue",  linewidth=2)
 #ax_sc.plot(xplot, uti.spatial_coherence(xplot, 20, 4.6e-9),   label="fit", color="blue", linewidth=2)
 
 plt.title("{}".format(star))
 plt.xlabel("Projected baseline (m)")
 plt.ylabel("Spatial coherence")
-
+plt.axhline(y=0.0, color='black', linestyle='--')
 plt.xlim(0,200)
 
 plt.legend()
@@ -479,4 +481,4 @@ plt.legend()
 plt.show()
 
 # In addition save also only the spatial coherence values
-np.savetxt("sc_measured/{}.sc".format(star), np.c_[baselines, dbaselines, ints_fixedA, dints_fixedA, ints_fixedB, dints_fixedB], header="{} {}\nbl\tdbl\tscA\tdscA\tscB\tdscB".format(popt_odrA[1],popt_odrB[1]))
+np.savetxt("sc_measured/{}_scaled.sc".format(star), np.c_[baselines, dbaselines, ints_fixedA, dints_fixedA, ints_fixedB, dints_fixedB], header="{} {} {} {}\nbl\tdbl\tscA\tdscA\tscB\tdscB".format(popt_odrA[0], popt_odrB[0], popt_odrA[1],popt_odrB[1]))

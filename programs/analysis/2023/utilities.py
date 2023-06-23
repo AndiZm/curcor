@@ -110,7 +110,9 @@ def calc_array_mean(array, darray):
 # Spatial coherence plot functions #
 ####################################
 # Fitting the spatial coherence values
-def spatial_coherence(x, amp, ang, lam=470e-9):
+def spatial_coherence(x, amp, ang, lam):
+    return amp * (2*scp.j1(np.pi * x * ang/lam) / (np.pi* x * ang/lam))**2
+def spatial_coherenceG(x, amp, ang, lam=470e-9):
     return amp * (2*scp.j1(np.pi * x * ang/lam) / (np.pi* x * ang/lam))**2
 def spatial_coherenceUV(x, amp, ang, lam=375e-9):
     return amp * (2*scp.j1(np.pi * x * ang/lam) / (np.pi* x * ang/lam))**2
@@ -155,6 +157,9 @@ def delta_spatial_coherenceUV(x, A,dA, phi,dphi, lam=375e-9):
 
 def rad2mas(x):
     return 180*3600*1000/np.pi * x
+
+def mas2rad(x):
+    return np.pi/(180*3600*1000) * x
 
 # Function for averaging over the 4 cross correlation datapoints
 def weighted_avg(cA, dcA, cB, dcB, c3Ax4B, dc3Ax4B, c4ax3B, dc4Ax3B):

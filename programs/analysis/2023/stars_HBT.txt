@@ -1,0 +1,8 @@
+# Star	wavelength	ang dia
+
+Mimosa	440e-9	0.702
+
+Etacen	443e-9	0.47
+
+Dschubba	443e-9	0.45	
+
