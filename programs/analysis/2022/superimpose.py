@@ -381,7 +381,7 @@ for i in range (0,len(baselines)):
     #plt.text(baselines[i]+1,ints_fixed[i]+0.5,ephem.Date(data[:,0][i]), color=colors[i])
 #plt.plot(xplot, uti.spatial_coherence(xplot,*poptavg),   label="fit", color="red", linewidth=2)
 
-np.savetxt("spatial_coherence/{}_sc_data.txt".format(star), np.c_[baselines, dbaselines, ints_fixed, dints_fixed])
+np.savetxt("spatial_coherence/{}_sc_data.txt".format(star), np.c_[baselines, dbaselines, ints_fixed, dints_fixed], header="{} {} \nbl\tdbl\tscA\tdscA".format(popt_odr[0], popt_odr[1]))
 
 # Obtain values for error band
 lower = []; upper = []

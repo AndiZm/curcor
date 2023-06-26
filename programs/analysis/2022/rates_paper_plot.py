@@ -31,7 +31,7 @@ for i in range(len(times)):
 	t = str(time) 
 	tplot.append(t.split(' ')[1])	# get h:min:sec
 	tplots.append(tplot[-1][0:5])
-print(tplots[-1])
+#print(tplot)
 
 
 F1 = plt.figure(figsize=(7, 5))
