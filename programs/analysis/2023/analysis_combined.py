@@ -1,21 +1,247 @@
-import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib as mpl  
-from scipy.optimize import curve_fit
-from scipy.signal import butter, filtfilt, find_peaks
+import numpy as np
+import matplotlib.dates as mdates
 from matplotlib.pyplot import cm
+import matplotlib as mpl
+from tqdm import tqdm
+from datetime import datetime, timezone
 import ephem
-import scipy.special as scp
 import sys
-from brokenaxes import brokenaxes
-from matplotlib.gridspec import GridSpec
 
-import utilities as uti
-import corrections as cor
 import geometry as geo
+import corrections as cor
+import utilities as uti
+
+from threading import Thread
 
 star = sys.argv[1]
 
+# Define files to analyze and subpackages
+folders   = [] # Data folders for analysis
+stepsizes = [] # Number of files for a single g2 function
+ends      = [] # Total number of files used from this folder
+telcombis = [] # Combination of telescopes (either 14, 34 or 134)
+
+# Open text file with measurement split data and read the data for the specific star
+f = open("measurement_chunks.txt")
+# Find line for the star
+line = f.readline()
+while star not in line:
+    line = f.readline()
+# Fill arrays with the data
+line = f.readline()
+while "[end]" not in line:
+    folders.append(line.split()[0])
+    stepsizes.append( int(line.split()[1]) )
+    ends.append( int(line.split()[2]) )
+    telcombis.append( str(line.split()[3]) )
+    line = f.readline()
+f.close()
+
+print ("Analyzing {}".format(star))
+
+star_small = star[0].lower() + star[1:]
+# Get the timebin shift of the specific measurement from the time difference
+def timebin(tdiff):
+    return int(1.0* np.floor((tdiff+0.8)/1.6))
+def shift_bins(data, binshift):
+    # A negative number means shifting to the right, so scrapping the right end of the array to the beginning
+    if binshift <= 0:
+        for j in range (binshift,0):
+            data = np.insert(data,0,data[-1])
+            data = np.delete(data, -1)
+    # A positive number means shifting to the left, so scrapping the beginning of the array to the end
+    if binshift > 0:
+        for j in range (0, binshift):
+            data = np.append(data,data[0])
+            data = np.delete(data, 0)
+    return data
+def get_baseline_entry(telcombi):
+    if telcombi == "13":
+        return int(0)
+    elif telcombi == "14":
+        return int(1)
+    elif telcombi == "34":
+        return int(2)
+
+# Initialize parameter arrays for data storing
+g2_3s = []
+g2_4s = []
+g2_As = []
+g2_Bs = []
+#g2_3Ax4Bs = []
+#g2_4Ax3Bs = []
+baselines = []; dbaselines = []
+time_means = []
+
+# Number of datapoints
+N = 2 * 1024**3        # 2G sample file
+folderpath = "C:/Users/ii/Documents/curcor/corr_results/results_HESS"
+
+def corr_parts(folder, start, stop, telcombi):
+    # Define files to be analized for a single g2 function
+    files = []
+    for i in range (start, stop): 
+        files.append("{}/{}/size10000/{}_{:05d}.fcorr6".format(folderpath, folder, star_small, i))
+
+    # Initialize g2 functions for channel A and B which will be filled in for loop
+    len_data = len( np.loadtxt(files[0])[:,2] )
+    g2_sum_A = np.zeros(len_data)
+    g2_sum_B = np.zeros(len_data)
+    g2_sum_3 = np.zeros(len_data)
+    g2_sum_4 = np.zeros(len_data)
+    #g2_sum_3Ax4B = np.zeros(len_data)
+    #g2_sum_4Ax3B = np.zeros(len_data)
+    times = []; baseline_values = []
+
+    # Read offset data for offset correction
+    off3A = np.loadtxt( folderpath + "/" + folder + "/calibs_ct{}/off.off".format(telcombi[0]) )[0]
+    off3B = np.loadtxt( folderpath + "/" + folder + "/calibs_ct{}/off.off".format(telcombi[0]) )[1]
+    off4A = np.loadtxt( folderpath + "/" + folder + "/calibs_ct{}/off.off".format(telcombi[1]) )[0]
+    off4B = np.loadtxt( folderpath + "/" + folder + "/calibs_ct{}/off.off".format(telcombi[1]) )[1]
+
+    # Loop over every file
+    for i in tqdm(range ( 0,len(files) )):
+        file = files[i]
+
+        # Read in data
+        auto3  = np.loadtxt(file)[:,0] # G2 of CT3 A x CT3 B (autocorrelations)
+        auto4  = np.loadtxt(file)[:,1] # G2 of CT4 A x CT4 B (autocorrelations)
+        crossA = np.loadtxt(file)[:,2] # G2 of CT3 A x CT4 A (crosscorrelations)
+        crossB = np.loadtxt(file)[:,3] # G2 of CT3 B x CT4 B (crosscorrelations)
+        #c3Ax4B = np.loadtxt(file)[:,4] # G2 of CT3 A x CT4 B (crosscorrelations)
+        #c4Ax3B = np.loadtxt(file)[:,5] # G2 of CT4 A x CT3 B (crosscorrelations)
+
+        # Read mean waveform values
+        f = open(file)
+        line_params = f.readline()[:-1].split(" ") # Read header of fcorr file
+        mean3A = float(line_params[2])
+        mean3B = float(line_params[3])
+        mean4A = float(line_params[4])
+        mean4B = float(line_params[5])
+
+        # Apply offset correction
+        auto3  -= N * ( mean3A*off3B + mean3B*off3A - off3A*off3B ) # Only CT 3 both channels
+        auto4  -= N * ( mean4A*off4B + mean4B*off4A - off4A*off4B ) # Only CT 4 both channels        
+        crossA -= N * ( mean3A*off4A + mean4A*off3A - off3A*off4A ) # Only CH A, but CT3 and CT4
+        crossB -= N * ( mean3B*off4B + mean4B*off3B - off3B*off4B ) # Only CH B, but CT3 and CT4
+        #c3Ax4B -= N * ( mean3A*off4B + mean4B*off3A - off3A*off4B ) # CT3 A X CT4 B
+        #c4Ax3B -= N * ( mean4A*off3B + mean3B*off4A - off4A*off3B ) # CT4 A X CT3 B
+
+        # Apply pattern correction
+        auto3  = cor.pattern_correction(auto3) # data already normalized
+        auto4  = cor.pattern_correction(auto4) # data already normalized
+        crossA = cor.pattern_correction(crossA) # data already normalized
+        crossB = cor.pattern_correction(crossB) # data already normalized
+        #c3Ax4B = cor.pattern_correction(c3Ax4B) # data already normalized
+        #c4Ax3B = cor.pattern_correction(c4Ax3B) # data already normalized
+    
+        # Get file parameters from header and ephem calculations
+        if star == "Regor":
+            tdiff, mean_1, mean_2, mean_3, mean_4, az, alt, time = geo.get_params_manual(file, ra=[8,10,12.5], dec=[-47,24,22.2], telcombi=telcombi)
+        elif star == "Etacen":
+            tdiff, mean_1, mean_2, mean_3, mean_4, az, alt, time = geo.get_params_manual(file, ra=[14,35,30.42], dec=[-42,9,28.17], telcombi=telcombi)
+        else:
+            tdiff, mean_1, mean_2, mean_3, mean_4, az, alt, time = geo.get_params(file, starname=star, telcombi=telcombi)
+        # Store acquisition times and corresponding baselines for sc plot
+        times.append(ephem.Date(time))
+        baseline_values.append(uti.get_baseline(date=time, star=star)[get_baseline_entry(telcombi=telcombi)])
+
+        # Apply optical path length correction for cross correlations
+        binshift = timebin(tdiff)
+        crossA = shift_bins(crossA, binshift)
+        crossB = shift_bins(crossB, binshift)
+        #c3Ax4B = shift_bins(c3Ax4B, binshift)
+        #c4Ax3B = shift_bins(c4Ax3B, -1*binshift) # negative binshift since CT4 is mentioned first
+        #c4Ax3B = shift_bins(c4Ax3B, binshift) # for testing
+    
+        #################################
+        # Averaging of the g2 functions #
+        #################################
+        #--  Autocorrelations --#
+        rms = np.std(auto3[0:4500])
+        g2_for_averaging = auto3/rms**2
+        # Adding the new data to the total g2 function
+        g2_sum_3 += g2_for_averaging
+
+        rms = np.std(auto4[0:4500])
+        g2_for_averaging = auto4/rms**2
+        # Adding the new data to the total g2 function
+        g2_sum_4 += g2_for_averaging
+
+
+        #-- Crosscorrelations --#
+        rms = np.std(crossA)
+        g2_for_averaging = crossA/rms**2
+        # Adding the new data to the total g2 function
+        g2_sum_A += g2_for_averaging
+    
+        rms = np.std(crossB)
+        g2_for_averaging = crossB/rms**2
+        # Adding the new data to the total g2 function
+        g2_sum_B += g2_for_averaging
+
+        #rms = np.std(c3Ax4B)
+        #g2_for_averaging = c3Ax4B/rms**2
+        ## Adding the new data to the total g2 function
+        #g2_sum_3Ax4B += g2_for_averaging
+
+        #rms = np.std(c4Ax3B)
+        #g2_for_averaging = c4Ax3B/rms**2
+        ## Adding the new data to the total g2 function
+        #g2_sum_4Ax3B += g2_for_averaging
+
+    time_mean = np.mean(times)
+    # Calculate mean baseline and baseline error
+    baseline  = np.mean(baseline_values)
+    dbaseline = np.std(baseline_values)
+    print ("Telescope combination =  {}".format(telcombi))
+    print ("Baseline =  {:.1f} +/- {:.1f}  m".format(baseline, dbaseline))
+    print ("Central time = {}".format(ephem.Date(time_mean)))
+    
+    # Re-normalize for proper g2 function
+    g2_sum_3 = g2_sum_3/np.mean(g2_sum_3)
+    g2_sum_4 = g2_sum_4/np.mean(g2_sum_4)
+    g2_sum_A = g2_sum_A/np.mean(g2_sum_A)
+    g2_sum_B = g2_sum_B/np.mean(g2_sum_B)
+    #g2_sum_3Ax4B = g2_sum_3Ax4B/np.mean(g2_sum_3Ax4B)
+    #g2_sum_4Ax3B = g2_sum_4Ax3B/np.mean(g2_sum_4Ax3B)
+
+    # Save the data of this correlation to the arrays
+    g2_3s.append(g2_sum_3)
+    g2_4s.append(g2_sum_4)
+    g2_As.append(g2_sum_A)
+    g2_Bs.append(g2_sum_B)
+    #g2_3Ax4Bs.append(g2_sum_3Ax4B)
+    #g2_4Ax3Bs.append(g2_sum_4Ax3B)
+    baselines.append(baseline)
+    dbaselines.append(dbaseline)
+    time_means.append(time_mean)  
+
+##########################################
+# Add the number of files to be analyzed #
+for i in range(len(folders)):
+    folder   = folders[i]
+    stepsize = stepsizes[i]
+    end      = ends[i]
+    telcombi = telcombis[i]
+
+    steps = np.arange(0, end + 1, stepsize)
+    for j in range(len(steps)-1):
+        start = steps[j]
+        stop = steps[j+1]
+        corr_parts(folder, start, stop, telcombi)
+
+np.savetxt("g2_functions/weight_rms_squared/{}/CT3.txt".format(star), np.c_[g2_3s], header="{} CT3".format(star))
+np.savetxt("g2_functions/weight_rms_squared/{}/CT4.txt".format(star), np.c_[g2_4s], header="{} CT4".format(star))
+np.savetxt("g2_functions/weight_rms_squared/{}/ChA.txt".format(star), np.c_[g2_As], header="{} Channel A".format(star) )
+np.savetxt("g2_functions/weight_rms_squared/{}/ChB.txt".format(star), np.c_[g2_Bs], header="{} Channel B".format(star) )
+#np.savetxt("g2_functions/weight_rms_squared/{}/c3Ax4B.txt".format(star), np.c_[g2_3Ax4Bs], header="{} CT3 A x CT4 B".format(star) )
+#np.savetxt("g2_functions/weight_rms_squared/{}/c4Ax3B.txt".format(star), np.c_[g2_4Ax3Bs], header="{} CT4 A x CT3 B".format(star) )
+np.savetxt("g2_functions/weight_rms_squared/{}/baseline.txt".format(star), np.c_[time_means, baselines, dbaselines], header="Time, baseline, baseline error" )
+
+
+#######################################################################################################################################################################################################################
 # Get the timebin shift of the specific measurement from the time difference
 def timebin(tdiff):
     return int(1.0* np.floor((tdiff+0.8)/1.6))
@@ -32,16 +258,29 @@ def shift_bins(data, binshift):
             data = np.delete(data, 0)
     return data
 
+# Average over all 2 functions - CAUTION: You will never use this for two color measurements!
+def average_g2s(cA, cB, c3Ax4B, c4Ax3B):
+    g2_avg = np.zeros( len(cA) )
+    g2_avg += cA/np.std(cA[0:4500])**2
+    g2_avg += cB/np.std(cB[0:4500])**2
+    g2_avg += c3Ax4B/np.std(c3Ax4B[0:4500])**2
+    g2_avg += c4Ax3B/np.std(c4Ax3B[0:4500])**2
+
+    g2_avg = g2_avg/np.mean(g2_avg[0:4500])
+
+    return g2_avg
 
 print("Final Analysis of {}".format(star))
 ################################################
 #### Analysis over whole measurement time #####
 ################################################
 # Read in the data (g2 functions and time/baseline parameters)
-chAs    = np.loadtxt("g2_functions/weight_rms_squared/{}/ChA.txt".format(star))     
-chBs    = np.loadtxt("g2_functions/weight_rms_squared/{}/ChB.txt".format(star))     
-#ct3s    = np.loadtxt("g2_functions/weight_rms_squared/{}/CT3.txt".format(star))     
-#ct4s    = np.loadtxt("g2_functions/weight_rms_squared/{}/CT4.txt".format(star))     
+chAs    = g2_As    
+chBs    = g2_Bs   
+ct3s    = g2_3s   
+ct4s    = g2_4s   
+#c3Ax4Bs = g2_3Ax4Bs 
+#c4Ax3Bs = g2_4Ax3Bs
 data    = np.loadtxt("g2_functions/weight_rms_squared/{}/baseline.txt".format(star))
 
 # Demo function for initializing x axis and some stuff
@@ -59,6 +298,8 @@ for i in range (0,len(chAs)):
     #plt.plot(chAs[i]); plt.plot(chBs[i]); plt.show()
     g2_allA += chAs[i]/len(chAs)
     g2_allB += chBs[i]/len(chBs)
+    #g2_all3Ax4B += c3Ax4Bs[i]/len(c3Ax4Bs)
+    #g2_all4Ax3B += c4Ax3Bs[i]/len(c4Ax3Bs)
 
 # Fit for gaining mu and sigma to fix these parameters
 xplot, popt, perr = uti.fit(g2_allA, x, -50, +50)
@@ -75,7 +316,21 @@ print ("3B x 4B sigma/integral: {:.2f} +/- {:.2f} ns \t {:.2f} +/- {:.2f} fs".fo
 plt.plot(x, g2_allB, label="3B x 4B", color=uti.color_chB)
 plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--")
 
-plt.legend(); plt.xlim(-100,200); plt.grid()
+#xplot, popt, perr = uti.fit(g2_all3Ax4B, x, 90, 140, mu_start=115)
+#mu3Ax4B = popt[1]; sigma3Ax4B = popt[2]
+#integral, dintegral = uti.integral(popt, perr)
+#print ("3A x 4B sigma/integral: {:.2f} +/- {:.2f} ns \t {:.2f} +/- {:.2f} fs".format(popt[2],perr[2],1e6*integral,1e6*dintegral))
+#plt.plot(x, g2_all3Ax4B, label="3A x 4B", color=uti.color_c3A4B)
+#plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--")
+#
+#xplot, popt, perr = uti.fit(g2_all4Ax3B, x, 65, 165, mu_start=115)
+#mu4Ax3B = popt[1]; sigma4Ax3B = popt[2]
+#integral, dintegral = uti.integral(popt, perr)
+#print ("4A x 3B sigma/integral: {:.2f} +/- {:.2f} ns \t {:.2f} +/- {:.2f} fs".format(popt[2],perr[2],1e6*integral,1e6*dintegral))
+#plt.plot(x, g2_all4Ax3B, label="4A x 3B", color=uti.color_c4A3B)
+#plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--")
+
+plt.legend(); plt.xlim(-100,200); plt.grid()#; plt.tight_layout()
 #plt.ticklabel_format(useOffset=False)
 plt.xlabel("Time delay (ns)"); plt.ylabel("$g^{(2)}$")
 
@@ -87,6 +342,11 @@ plt.subplot(212); plt.title("Cable-delay corrected cross correlations")
 
 tbin = timebin(muA); g2_allA = shift_bins(g2_allA, tbin)
 tbin = timebin(muB); g2_allB = shift_bins(g2_allB, tbin)
+#tbin = timebin(mu3Ax4B); g2_all3Ax4B = shift_bins(g2_all3Ax4B, tbin)
+#tbin = timebin(mu4Ax3B); g2_all4Ax3B = shift_bins(g2_all4Ax3B, tbin)
+
+# CAUTION: Never use this for two-color measurements
+#g2_avg = average_g2s(g2_allA, g2_allB, g2_all3Ax4B, g2_all4Ax3B)
 
 # Fit for gaining mu and sigma to fix these parameters
 xplot, poptA, perrA = uti.fit(g2_allA, x, -100, +100)
@@ -97,20 +357,26 @@ xplot, poptB, perrB = uti.fit(g2_allB, x, -100, +100)
 mu_B = poptB[1]; sigma_B = poptB[2]
 print ("Resolution Ch B: {:.2f} +/- {:.2f}  (ns)".format(sigma_B,perrB[2]))
 
+
 plt.plot(x, g2_allA,     label="3A x 4A", zorder=1, color=uti.color_chA)
 plt.plot(xplot, uti.gauss(xplot,*poptA), color="black", linestyle="--", label="Gaussian fit")
 
 plt.plot(x, g2_allB,     label="3B x 4B", zorder=1, color=uti.color_chB)
 plt.plot(xplot, uti.gauss(xplot,*poptB), color="black", linestyle="--", label="Gaussian fit")
+#plt.plot(x, g2_all3Ax4B, label="3A x 4B", zorder=1, color=uti.color_c3A4B)
+#plt.plot(x, g2_all4Ax3B, label="4A x 3B", zorder=1, color=uti.color_c4A3B)
 
-plt.legend(); plt.xlim(-100,100); plt.grid()
+#plt.plot(x, g2_avg, color="grey", linewidth="4", label="Average", zorder=2, alpha=0.7)
+#plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--", label="Gaussian fit")
+
+plt.legend(); plt.xlim(-100,100); plt.grid()#; plt.tight_layout()
 #plt.ticklabel_format(useOffset=False)
 plt.xlabel("Time delay (ns)"); plt.ylabel("$g^{(2)}$")
 
 plt.tight_layout()
 plt.savefig("images/{}_cumulative.pdf".format(star))
 plt.plot()
-plt.close()
+
 #plt.show()
 
 
@@ -145,6 +411,8 @@ ax_auto.axhline(y=0.0, color='black', linestyle='--')
 
 intsA = []; dintsA = []; times = []
 intsB = []; dintsB = []
+#ints3Ax4B = []; dints3Ax4B = []
+#ints4Ax3B = []; dints4Ax3B = []
 
 ints_fixedA = []; dints_fixedA = []
 ints_fixedB = []; dints_fixedB = []
@@ -152,10 +420,12 @@ ints_fixedB = []; dints_fixedB = []
 # initialize CT3 and CT4 sum arrays and cleaned arrays
 chA_clean = []
 chB_clean = []
-#ct3_clean = []
-#ct4_clean = []
-#ct3_sum = np.zeros(len(ct3s[0]))
-#ct4_sum = np.zeros(len(ct4s[0]))
+ct3_clean = []
+ct4_clean = []
+#c3Ax4B_clean = []
+#c4Ax3B_clean = []
+ct3_sum = np.zeros(len(ct3s[0]))
+ct4_sum = np.zeros(len(ct4s[0]))
 ticks = []
 ffts = []
 
@@ -163,79 +433,65 @@ ffts = []
 for i in range(0,len(chAs)):
     chA = chAs[i]
     chB = chBs[i]
-    #ct3 = ct3s[i]
-    #ct4 = ct4s[i]
-    
+    ct3 = ct3s[i]
+    ct4 = ct4s[i]
+    #c3Ax4B = c3Ax4Bs[i]
+    #c4Ax3B = c4Ax3Bs[i]
+
     # Do some more data cleaning, e.g. lowpass filters
     chA = cor.lowpass(chA)
     chB = cor.lowpass(chB)
-    #ct3 = cor.lowpass(ct3)
-    #ct4 = cor.lowpass(ct4)
-
-    ### building fft of g2 to cut out noise ###
-    F_fft = plt.figure(figsize=(12,7))
-    ax1 = F_fft.add_subplot(121)
-    stepsize = 1.6e-3                   # sampling bin size
-    N = len(chA)
-    chAfft = chA # für auto corr teil ohne crosstalk [5500:10000]            
-    N = len(chAfft)
-    xfft = np.linspace(0.0, stepsize*N, N)
-    ax1.plot(xfft, chAfft, label='A') 
-    x_fft = np.linspace(0.0, 1./(2.*stepsize), N//2) #N2//2)
-    chA_fft = np.abs(np.fft.fft(chAfft)/(N/2)) # ct4_fft = np.abs(np.fft.fft(ct4)/(N2))
-    #chA_freq, rest = find_peaks(chA_fft, threshold=[0.5e-8, 1.e-8], width=[0,5])
-    #print(chA_freq)
-    ax2 = F_fft.add_subplot(122)
-    ax2.plot(x_fft, chA_fft[0:N//2], label='A')
-
+    ct3 = cor.lowpass(ct3)
+    ct4 = cor.lowpass(ct4)
+    #c3Ax4B = cor.lowpass(c3Ax4B)
+    #c4Ax3B = cor.lowpass(c4Ax3B)
 
     # more data cleaning with notch filter for higher frequencies
-    freqA = [45,95,110,145,155,175,195]
-    for j in range(len(freqA)):
-        chA = cor.notch(chA, freqA[j]*1e6, 80)
-    freqB = [50]
-    for j in range(len(freqB)):
-        chB = cor.notch(chB, freqB[j]*1e6, 80)
-    #freq3 = [17.3, 39, 42,110,125,145,150,190,200,250] #50, 90, 125, 130, 150, 250]
+    #freqA = [90,130,150]
+    #for j in range(len(freqA)):
+    #    chA = cor.notch(chA, freqA[j]*1e6, 80)
+    #freqB = [90, 110, 130, 150, 250]
+    #for j in range(len(freqB)):
+    #    chB = cor.notch(chB, freqB[j]*1e6, 80)
+    #freq3 = [50, 90, 125, 130, 150, 250]
     #for j in range(len(freq3)):
     #    ct3 = cor.notch(ct3, freq3[j]*1e6, 80)
-    #freq4 = [50,90,95,110,125,150,155,175]
+    #freq4 = [90,130,150,250]
     #for j in range(len(freq4)):
     #    ct4 = cor.notch(ct4, freq4[j]*1e6, 80)
 
-    ### Plot g2 after cleaning ####
-    chAfft = chA
-    ax1.plot(xfft, chAfft, label='A')
-    ax1.legend()
-    ax1.set_xlabel('bins of 1.6ns')
-    chA_fft = np.abs(np.fft.fft(chAfft)/(N/2))
-    ax2.plot(x_fft, chA_fft[0:N//2], label='A')
-    ax2.set_ylim(0,8e-8)
-    ax2.legend()
-    ax2.set_xlabel('MHz')
-    #plt.show()
-    
+    #freqAB = [90,130,150,250]
+    #for j in range(len(freqAB)):
+    #    c3Ax4B = cor.notch(c3Ax4B, freqAB[j]*1e6, 80)
+    #freqBA = [50,90,110,130]
+    #for j in range(len(freqBA)):
+    #    c4Ax3B = cor.notch(c4Ax3B, freqBA[j]*1e6, 80)
+
     # save cleaned data
     chA_clean.append(chA)
     chB_clean.append(chB)
-    #ct3_clean.append(ct3)
-    #ct4_clean.append(ct4)
-
+    ct3_clean.append(ct3)
+    ct4_clean.append(ct4)
+    #c3Ax4B_clean.append(c3Ax4B)
+    #c4Ax3B_clean.append(c4Ax3B)
 
     #########################
     # Shift all peaks to zero
     #########################
     tbin = timebin(muA); chA = shift_bins(chA, tbin)
     tbin = timebin(muB); chB = shift_bins(chB, tbin)
+    #tbin = timebin(mu3Ax4B); c3Ax4B = shift_bins(c3Ax4B, tbin)
+    #tbin = timebin(mu4Ax3B); c4Ax3B = shift_bins(c4Ax3B, tbin)
+
 
     # for autocorrelations of CT3 and CT4 we also average over all acquised data and sum all up
-    #rms = np.std(ct3[0:4500])
-    #g2_for_averaging = ct3/rms
-    #ct3_sum += g2_for_averaging
+    rms = np.std(ct3[0:4500])
+    g2_for_averaging = ct3/rms
+    ct3_sum += g2_for_averaging
 
-    #rms = np.std(ct4[0:4500])
-    #g2_for_averaging = ct4/rms
-    #ct4_sum += g2_for_averaging
+    rms = np.std(ct4[0:4500])
+    g2_for_averaging = ct4/rms
+    ct4_sum += g2_for_averaging
 
     # Averaged cross correlations
     #avg = average_g2s(chA, chB, c3Ax4B, c4Ax3B)
@@ -271,6 +527,8 @@ for i in range(0,len(chAs)):
     ticks.append(1.+the_shift)
     ax_cross.errorbar(x, chA    + the_shift, yerr=0, linestyle="-", color = uti.color_chA,   alpha=0.7)
     ax_cross.plot(xplotf, uti.gauss_shifted(x=xplotf,  a=popt_A[0], mu=mu_A, sigma=sigma_A, shift=i, inverse=True, ntotal=len(chAs)), color=uti.color_chA, linestyle="--", zorder=4)
+    #ax_cross.errorbar(x, c3Ax4B + the_shift, yerr=0, linestyle="-", color = uti.color_c3A4B, alpha=0.5)
+    #ax_cross.errorbar(x, c4Ax3B + the_shift, yerr=0, linestyle="-", color = uti.color_c4A3B, alpha=0.5)
     ax_cross.errorbar(x, chB    + the_shift, yerr=0, linestyle="-", color = uti.color_chB,   alpha=0.7)
     ax_cross.plot(xplotf, uti.gauss_shifted(x=xplotf,  a=popt_B[0], mu=mu_B, sigma=sigma_B, shift=i, inverse=True, ntotal=len(chBs)), color=uti.color_chB, linestyle="--", zorder=4)
     #ax_cross.errorbar(x, avg    + the_shift, yerr=0, linestyle="-", color = colors[i], linewidth=3, label=timestring)
@@ -281,8 +539,10 @@ for i in range(0,len(chAs)):
 # store cleaned data
 np.savetxt("g2_functions/weight_rms_squared/{}/ChA_clean.txt".format(star), np.c_[chA_clean], header="{} Channel A cleaned".format(star) )
 np.savetxt("g2_functions/weight_rms_squared/{}/ChB_clean.txt".format(star), np.c_[chB_clean], header="{} Channel B cleaned".format(star) )
-#np.savetxt("g2_functions/weight_rms_squared/{}/CT3_clean.txt".format(star), np.c_[ct3_clean], header="{} CT3 cleaned".format(star) )
-#np.savetxt("g2_functions/weight_rms_squared/{}/CT4_clean.txt".format(star), np.c_[ct4_clean], header="{} CT4 cleaned".format(star) )
+np.savetxt("g2_functions/weight_rms_squared/{}/CT3_clean.txt".format(star), np.c_[ct3_clean], header="{} CT3 cleaned".format(star) )
+np.savetxt("g2_functions/weight_rms_squared/{}/CT4_clean.txt".format(star), np.c_[ct4_clean], header="{} CT4 cleaned".format(star) )
+#np.savetxt("g2_functions/weight_rms_squared/{}/C3Ax4B_clean.txt".format(star), np.c_[c3Ax4B_clean], header="{} CT3A x CT4B cleaned".format(star) )
+#np.savetxt("g2_functions/weight_rms_squared/{}/C4Ax3B_clean.txt".format(star), np.c_[c4Ax3B_clean], header="{} CT4A x CT3B cleaned".format(star) )
 
 '''
 ############################

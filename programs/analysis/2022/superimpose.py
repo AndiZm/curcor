@@ -206,6 +206,20 @@ for i in range(0,len(chAs)):
     ct4 = cor.lowpass(ct4)
     c3Ax4B = cor.lowpass(c3Ax4B)
     c4Ax3B = cor.lowpass(c4Ax3B)
+    '''
+    F_fft = plt.figure(figsize=(12,7))
+    ax1 = F_fft.add_subplot(121)
+    ax1.plot(x, chA); ax1.plot(x, chB); ax1.plot(x, ct3); ax1.plot(x, ct4)
+    N = len(chA)
+    stepsize = 1.6
+    x = np.linspace(0.0, stepsize*N, N)
+    x_fft = np.linspace(0.0, 1./(2.*stepsize), N//2)
+    chA_fft = np.abs(np.fft.fft(chA)/(N/2)); chB_fft = np.abs(np.fft.fft(chB)/(N/2)); ct3_fft = np.abs(np.fft.fft(ct3)/(N/2)); ct4_fft = np.abs(np.fft.fft(ct4)/(N/2))
+    ax2 = F_fft.add_subplot(122)
+    ax2.plot(x_fft, chA_fft[0:N//2]); ax2.plot(x_fft, chB_fft[0:N//2]); ax2.plot(x_fft, ct3_fft[0:N//2]); ax2.plot(x_fft, ct4_fft[0:N//2])
+    ax2.set_ylim(0,8e-8)
+    plt.show()
+    '''
 
     # more data cleaning with notch filter for higher frequencies
     freqA = [90,130,150]

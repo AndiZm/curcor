@@ -109,8 +109,6 @@ def corr_parts(folder, start, stop, telcombi):
         auto4  = np.loadtxt(file)[:,1] # G2 of CT4 A x CT4 B (autocorrelations)
         crossA = np.loadtxt(file)[:,2] # G2 of CT3 A x CT4 A (crosscorrelations)
         crossB = np.loadtxt(file)[:,3] # G2 of CT3 B x CT4 B (crosscorrelations)
-        #c3Ax4B = np.loadtxt(file)[:,4] # G2 of CT3 A x CT4 B (crosscorrelations)
-        #c4Ax3B = np.loadtxt(file)[:,5] # G2 of CT4 A x CT3 B (crosscorrelations)
 
         # Read mean waveform values
         f = open(file)
@@ -125,16 +123,12 @@ def corr_parts(folder, start, stop, telcombi):
         auto4  -= N * ( mean4A*off4B + mean4B*off4A - off4A*off4B ) # Only CT 4 both channels        
         crossA -= N * ( mean3A*off4A + mean4A*off3A - off3A*off4A ) # Only CH A, but CT3 and CT4
         crossB -= N * ( mean3B*off4B + mean4B*off3B - off3B*off4B ) # Only CH B, but CT3 and CT4
-        #c3Ax4B -= N * ( mean3A*off4B + mean4B*off3A - off3A*off4B ) # CT3 A X CT4 B
-        #c4Ax3B -= N * ( mean4A*off3B + mean3B*off4A - off4A*off3B ) # CT4 A X CT3 B
 
         # Apply pattern correction
         auto3  = cor.pattern_correction(auto3) # data already normalized
         auto4  = cor.pattern_correction(auto4) # data already normalized
         crossA = cor.pattern_correction(crossA) # data already normalized
         crossB = cor.pattern_correction(crossB) # data already normalized
-        #c3Ax4B = cor.pattern_correction(c3Ax4B) # data already normalized
-        #c4Ax3B = cor.pattern_correction(c4Ax3B) # data already normalized
     
         # Get file parameters from header and ephem calculations
         if star == "Regor":
