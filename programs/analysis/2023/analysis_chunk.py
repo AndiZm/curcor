@@ -76,7 +76,7 @@ time_means = []
 
 # Number of datapoints
 N = 2 * 1024**3        # 2G sample file
-folderpath = "C:/Users/ii/Documents/curcor/corr_results/results_HESS"
+folderpath = "D:/results_HESS"
 
 def corr_parts(folder, start, stop, telcombi):
     # Define files to be analized for a single g2 function
@@ -90,8 +90,6 @@ def corr_parts(folder, start, stop, telcombi):
     g2_sum_B = np.zeros(len_data)
     g2_sum_3 = np.zeros(len_data)
     g2_sum_4 = np.zeros(len_data)
-    #g2_sum_3Ax4B = np.zeros(len_data)
-    #g2_sum_4Ax3B = np.zeros(len_data)
     times = []; baseline_values = []
 
     # Read offset data for offset correction
@@ -135,6 +133,8 @@ def corr_parts(folder, start, stop, telcombi):
             tdiff, mean_1, mean_2, mean_3, mean_4, az, alt, time = geo.get_params_manual(file, ra=[8,10,12.5], dec=[-47,24,22.2], telcombi=telcombi)
         elif star == "Etacen":
             tdiff, mean_1, mean_2, mean_3, mean_4, az, alt, time = geo.get_params_manual(file, ra=[14,35,30.42], dec=[-42,9,28.17], telcombi=telcombi)
+        elif star == "Dschubba":
+            tdiff, mean_1, mean_2, mean_3, mean_4, az, alt, time = geo.get_params_manual(file, ra=[16,0,20], dec=[-22,37,18.14], telcombi=telcombi)
         else:
             tdiff, mean_1, mean_2, mean_3, mean_4, az, alt, time = geo.get_params(file, starname=star, telcombi=telcombi)
         # Store acquisition times and corresponding baselines for sc plot
@@ -145,10 +145,7 @@ def corr_parts(folder, start, stop, telcombi):
         binshift = timebin(tdiff)
         crossA = shift_bins(crossA, binshift)
         crossB = shift_bins(crossB, binshift)
-        #c3Ax4B = shift_bins(c3Ax4B, binshift)
-        #c4Ax3B = shift_bins(c4Ax3B, -1*binshift) # negative binshift since CT4 is mentioned first
-        #c4Ax3B = shift_bins(c4Ax3B, binshift) # for testing
-    
+        
         #################################
         # Averaging of the g2 functions #
         #################################
@@ -175,15 +172,18 @@ def corr_parts(folder, start, stop, telcombi):
         # Adding the new data to the total g2 function
         g2_sum_B += g2_for_averaging
 
-        #rms = np.std(c3Ax4B)
-        #g2_for_averaging = c3Ax4B/rms**2
-        ## Adding the new data to the total g2 function
-        #g2_sum_3Ax4B += g2_for_averaging
 
-        #rms = np.std(c4Ax3B)
-        #g2_for_averaging = c4Ax3B/rms**2
-        ## Adding the new data to the total g2 function
-        #g2_sum_4Ax3B += g2_for_averaging
+    # Re-normalize for proper g2 function
+    g2_sum_3 = g2_sum_3/np.mean(g2_sum_3)
+    g2_sum_4 = g2_sum_4/np.mean(g2_sum_4)
+    g2_sum_A = g2_sum_A/np.mean(g2_sum_A)
+    g2_sum_B = g2_sum_B/np.mean(g2_sum_B)
+
+    # Save the data of this correlation to the arrays
+    g2_3s.append(g2_sum_3)
+    g2_4s.append(g2_sum_4)
+    g2_As.append(g2_sum_A)
+    g2_Bs.append(g2_sum_B)
 
     time_mean = np.mean(times)
     # Calculate mean baseline and baseline error
@@ -192,22 +192,6 @@ def corr_parts(folder, start, stop, telcombi):
     print ("Telescope combination =  {}".format(telcombi))
     print ("Baseline =  {:.1f} +/- {:.1f}  m".format(baseline, dbaseline))
     print ("Central time = {}".format(ephem.Date(time_mean)))
-    
-    # Re-normalize for proper g2 function
-    g2_sum_3 = g2_sum_3/np.mean(g2_sum_3)
-    g2_sum_4 = g2_sum_4/np.mean(g2_sum_4)
-    g2_sum_A = g2_sum_A/np.mean(g2_sum_A)
-    g2_sum_B = g2_sum_B/np.mean(g2_sum_B)
-    #g2_sum_3Ax4B = g2_sum_3Ax4B/np.mean(g2_sum_3Ax4B)
-    #g2_sum_4Ax3B = g2_sum_4Ax3B/np.mean(g2_sum_4Ax3B)
-
-    # Save the data of this correlation to the arrays
-    g2_3s.append(g2_sum_3)
-    g2_4s.append(g2_sum_4)
-    g2_As.append(g2_sum_A)
-    g2_Bs.append(g2_sum_B)
-    #g2_3Ax4Bs.append(g2_sum_3Ax4B)
-    #g2_4Ax3Bs.append(g2_sum_4Ax3B)
     baselines.append(baseline)
     dbaselines.append(dbaseline)
     time_means.append(time_mean)  
@@ -226,10 +210,8 @@ for i in range(len(folders)):
         stop = steps[j+1]
         corr_parts(folder, start, stop, telcombi)
 
-np.savetxt("g2_functions/weight_rms_squared/{}/CT3.txt".format(star), np.c_[g2_3s], header="{} CT3".format(star))
-np.savetxt("g2_functions/weight_rms_squared/{}/CT4.txt".format(star), np.c_[g2_4s], header="{} CT4".format(star))
-np.savetxt("g2_functions/weight_rms_squared/{}/ChA.txt".format(star), np.c_[g2_As], header="{} Channel A".format(star) )
-np.savetxt("g2_functions/weight_rms_squared/{}/ChB.txt".format(star), np.c_[g2_Bs], header="{} Channel B".format(star) )
-#np.savetxt("g2_functions/weight_rms_squared/{}/c3Ax4B.txt".format(star), np.c_[g2_3Ax4Bs], header="{} CT3 A x CT4 B".format(star) )
-#np.savetxt("g2_functions/weight_rms_squared/{}/c4Ax3B.txt".format(star), np.c_[g2_4Ax3Bs], header="{} CT4 A x CT3 B".format(star) )
-np.savetxt("g2_functions/weight_rms_squared/{}/baseline.txt".format(star), np.c_[time_means, baselines, dbaselines], header="Time, baseline, baseline error" )
+np.savetxt("g2_functions/weight_rms_squared/{}/{}/CT3.txt".format(star,telcombi), np.c_[g2_3s], header="{} CT3".format(star))
+np.savetxt("g2_functions/weight_rms_squared/{}/{}/CT4.txt".format(star,telcombi), np.c_[g2_4s], header="{} CT4".format(star))
+np.savetxt("g2_functions/weight_rms_squared/{}/{}/ChA.txt".format(star,telcombi), np.c_[g2_As], header="{} Channel A".format(star) )
+np.savetxt("g2_functions/weight_rms_squared/{}/{}/ChB.txt".format(star,telcombi), np.c_[g2_Bs], header="{} Channel B".format(star) )
+np.savetxt("g2_functions/weight_rms_squared/{}/{}/baseline.txt".format(star,telcombi), np.c_[time_means, baselines, dbaselines], header="Time, baseline, baseline error" )

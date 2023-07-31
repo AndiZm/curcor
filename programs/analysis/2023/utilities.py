@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 import ephem
 from scipy.optimize import curve_fit
 import scipy.special as scp
+import scipy.stats as stats
 import random
 
 # Define colors of the different channels for usage in all the plottings
@@ -82,6 +83,15 @@ def fit_fixed(data, x, s, e, mu,sigma, d=1):
     #popt, cov = curve_fit(lambda x, a, d: gauss(x,a, mu,sigma,d), xfit, yfit, p0=[1e-6,1.])
     perr = np.sqrt(np.diag(cov))
     return xplot, popt, perr
+def fit_fixed1(data,x,s,e,sigma,mu_start, error, par, d=1):
+    xfit = x[(x>s) & (x<e)]
+    yfit = data[(x>s) & (x<e)]
+    N = len(yfit)
+    xplot = np.arange(s, e, 0.01)
+    popt, cov = curve_fit(lambda x, a, mu: gauss(x,a, mu,sigma,d), xfit, yfit, p0=[1e-6,mu_start])
+    perr = np.sqrt(np.diag(cov))
+    chi = chi_squared(yfit, gauss(xfit, popt[0], popt[1], sigma, d), error, N, par)
+    return xplot, popt, perr, chi
 
 def integral(fitpar, fitpar_err):
     a = fitpar[0]; d_a = fitpar_err[0]
@@ -105,6 +115,13 @@ def calc_array_mean(array, darray):
         squaresum += darray[i]**2
     dmean = 1/len(array) * np.sqrt(squaresum)
     return mean, dmean
+
+
+def chi_squared(y, fy, error, N, par):
+    chi = np.sum( (y-fy)**2 / (error)**2 )
+    ndf = N - par
+    chi_red = chi / ndf 
+    return chi_red
 
 ####################################
 # Spatial coherence plot functions #
