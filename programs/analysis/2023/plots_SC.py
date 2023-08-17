@@ -15,8 +15,12 @@ import corrections as cor
 import geometry as geo
 
 star = sys.argv[1]
+telcombi = sys.argv[2]
 
-
+colorA14 = uti.color_chA
+colorB14 = uti.color_chB
+colorA34 = 'limegreen'
+colorB34 = 'deepskyblue'
 xplot = np.arange(0.1,300,0.1)
 lam_g = 470e-9
 lam_uv = 375e-9
@@ -39,27 +43,26 @@ f.close()
 print(bl_HBT)
 
 ##### read in data scaled and unscaled ######
-
 # Open text file with SC values for star 1
-f = open("spatial_coherence/{}_scaled.sc".format(star))
+f = open("spatial_coherence/{}/{}_{}_scaled.sc".format(star,star,telcombi))
 header = f.readline()
 amp_A = header.split(' ')[1]
 amp_B = header.split(' ')[2]
 ang_A = header.split(' ')[3]
 ang_B = header.split(' ')[4]
 
-baselines    = np.loadtxt("spatial_coherence/{}_scaled.sc".format(star)) [:,0]
-dbaselines   = np.loadtxt("spatial_coherence/{}_scaled.sc".format(star)) [:,1]
+baselines    = np.loadtxt("spatial_coherence/{}/{}_{}_data.sc".format(star,star,telcombi)) [:,0]
+dbaselines   = np.loadtxt("spatial_coherence/{}/{}_{}_data.sc".format(star,star,telcombi)) [:,1]
+ints_fixedA  = np.loadtxt("spatial_coherence/{}/{}_{}_data.sc".format(star,star,telcombi)) [:,2]
+dints_fixedA = np.loadtxt("spatial_coherence/{}/{}_{}_data.sc".format(star,star,telcombi)) [:,3]
+ints_fixedB  = np.loadtxt("spatial_coherence/{}/{}_{}_data.sc".format(star,star,telcombi)) [:,4]
+dints_fixedB = np.loadtxt("spatial_coherence/{}/{}_{}_data.sc".format(star,star,telcombi)) [:,5]
 
-ints_fixedA_scaled  = np.loadtxt("spatial_coherence/{}_scaled.sc".format(star)) [:,2]
-dints_fixedA_scaled = np.loadtxt("spatial_coherence/{}_scaled.sc".format(star)) [:,3]
-ints_fixedB_scaled  = np.loadtxt("spatial_coherence/{}_scaled.sc".format(star)) [:,4]
-dints_fixedB_scaled = np.loadtxt("spatial_coherence/{}_scaled.sc".format(star)) [:,5]
+ints_fixedA_scaled  = np.loadtxt("spatial_coherence/{}/{}_{}_scaled.sc".format(star,star,telcombi)) [:,0]
+dints_fixedA_scaled = np.loadtxt("spatial_coherence/{}/{}_{}_scaled.sc".format(star,star,telcombi)) [:,1]
+ints_fixedB_scaled  = np.loadtxt("spatial_coherence/{}/{}_{}_scaled.sc".format(star,star,telcombi)) [:,2]
+dints_fixedB_scaled = np.loadtxt("spatial_coherence/{}/{}_{}_scaled.sc".format(star,star,telcombi)) [:,3]
 
-ints_fixedA  = np.loadtxt("spatial_coherence/{}_sc_data.txt".format(star)) [:,2]
-dints_fixedA = np.loadtxt("spatial_coherence/{}_sc_data.txt".format(star)) [:,3]
-ints_fixedB  = np.loadtxt("spatial_coherence/{}_sc_data.txt".format(star)) [:,4]
-dints_fixedB = np.loadtxt("spatial_coherence/{}_sc_data.txt".format(star)) [:,5]
 
 
 ##############################################
@@ -80,8 +83,8 @@ plt.axhline(y=0.0, color='black', linestyle='--')
 #plt.xlim(0,200)
 
 plt.legend()
-plt.savefig("images/{}_sc_scaled_HBT_lamdependent.pdf".format(star))
-plt.savefig("images/{}_sc_scaled_HBT_lamdependent.png".format(star))
+plt.savefig("images/{}/{}_{}_sc_scaled_HBT_lamdependent.pdf".format(star,star,telcombi))
+plt.savefig("images/{}/{}_{}_sc_scaled_HBT_lamdependent.png".format(star,star,telcombi))
 plt.show()
 
 
@@ -118,8 +121,8 @@ plt.axhline(y=0.0, color='black', linestyle='--')
 #plt.xlim(0,200)
 
 plt.legend()
-plt.savefig("images/{}_sc_scaled_HBT_lamindependent.pdf".format(star))
-plt.savefig("images/{}_sc_scaled_HBT_lamindependent.png".format(star))
+plt.savefig("images/{}/{}_{}_sc_scaled_HBT_lamindependent.pdf".format(star,star,telcombi))
+plt.savefig("images/{}/{}_{}_sc_scaled_HBT_lamindependent.png".format(star,star,telcombi))
 plt.show()
 
 
@@ -141,8 +144,8 @@ plt.axhline(y=0.0, color='black', linestyle='--')
 #plt.xlim(0,200)
 
 plt.legend()
-plt.savefig("images/{}_sc_unscaled_lamdependent.pdf".format(star))
-plt.savefig("images/{}_sc_unscaled_lamdependent.png".format(star))
+plt.savefig("images/{}/{}_{}_sc_unscaled_lamdependent.pdf".format(star,star,telcombi))
+plt.savefig("images/{}/{}_{}_sc_unscaled_lamdependent.png".format(star,star,telcombi))
 plt.show()
 
 
@@ -177,8 +180,8 @@ plt.axhline(y=0.0, color='black', linestyle='--')
 #plt.xlim(0,200)
 
 plt.legend()
-plt.savefig("images/{}_sc_unscaled_lamindependent.pdf".format(star))
-plt.savefig("images/{}_sc_unscaled_lamindependent.png".format(star))
+plt.savefig("images/{}/{}_{}_sc_unscaled_lamindependent.pdf".format(star,star,telcombi))
+plt.savefig("images/{}/{}_{}_sc_unscaled_lamindependent.png".format(star,star,telcombi))
 plt.show()
 
 
@@ -187,8 +190,8 @@ plt.show()
 ##### plots with different stars not scaled ####
 ################################################
 
-if sys.argv[2] == 'Etacen':
-    star2 = sys.argv[2]
+if sys.argv[3] == 'Etacen':
+    star2 = sys.argv[3]
     # Open text file with SC values for star 2
     f = open("spatial_coherence/{}_scaled.sc".format(star2))
     header = f.readline()
@@ -197,17 +200,17 @@ if sys.argv[2] == 'Etacen':
     ang_A2 = header.split(' ')[3]
     ang_B2 = header.split(' ')[4]
     
-    baselines2    = np.loadtxt("spatial_coherence/{}_sc_data.txt".format(star2)) [:,0]
-    dbaselines2   = np.loadtxt("spatial_coherence/{}_sc_data.txt".format(star2)) [:,1]
-    ints_fixedA2  = np.loadtxt("spatial_coherence/{}_sc_data.txt".format(star2)) [:,2]
-    dints_fixedA2 = np.loadtxt("spatial_coherence/{}_sc_data.txt".format(star2)) [:,3]
-    ints_fixedB2  = np.loadtxt("spatial_coherence/{}_sc_data.txt".format(star2)) [:,4]
-    dints_fixedB2 = np.loadtxt("spatial_coherence/{}_sc_data.txt".format(star2)) [:,5]
+    baselines2    = np.loadtxt("spatial_coherence/{}/{}_{}_sc_data.txt".format(star2,star2,telcombi)) [:,0]
+    dbaselines2   = np.loadtxt("spatial_coherence/{}/{}_{}_sc_data.txt".format(star2,star2,telcombi)) [:,1]
+    ints_fixedA2  = np.loadtxt("spatial_coherence/{}/{}_{}_sc_data.txt".format(star2,star2,telcombi)) [:,2]
+    dints_fixedA2 = np.loadtxt("spatial_coherence/{}/{}_{}_sc_data.txt".format(star2,star2,telcombi)) [:,3]
+    ints_fixedB2  = np.loadtxt("spatial_coherence/{}/{}_{}_sc_data.txt".format(star2,star2,telcombi)) [:,4]
+    dints_fixedB2 = np.loadtxt("spatial_coherence/{}/{}_{}_sc_data.txt".format(star2,star2,telcombi)) [:,5]
     
-    ints_fixedA2_scaled  = np.loadtxt("spatial_coherence/{}_scaled.sc".format(star2)) [:,2]
-    dints_fixedA2_scaled = np.loadtxt("spatial_coherence/{}_scaled.sc".format(star2)) [:,3]
-    ints_fixedB2_scaled  = np.loadtxt("spatial_coherence/{}_scaled.sc".format(star2)) [:,4]
-    dints_fixedB2_scaled = np.loadtxt("spatial_coherence/{}_scaled.sc".format(star2)) [:,5]
+    ints_fixedA2_scaled  = np.loadtxt("spatial_coherence/{}/{}_{}_scaled.sc".format(star2,star2,telcombi)) [:,2]
+    dints_fixedA2_scaled = np.loadtxt("spatial_coherence/{}/{}_{}_scaled.sc".format(star2,star2,telcombi)) [:,3]
+    ints_fixedB2_scaled  = np.loadtxt("spatial_coherence/{}/{}_{}_scaled.sc".format(star2,star2,telcombi)) [:,4]
+    dints_fixedB2_scaled = np.loadtxt("spatial_coherence/{}/{}_{}_scaled.sc".format(star2,star2,telcombi)) [:,5]
 
     # Define total figure for plotting all rates of one night for each channel
     plt.rcParams['figure.figsize'] = 22,10
@@ -246,8 +249,8 @@ if sys.argv[2] == 'Etacen':
     fig2.supxlabel("Projected baseline (m)", fontsize=14)
     fig2.supylabel("Spatial coherence", fontsize=14)
     plt.tight_layout()
-    fig2.savefig("images/{}_{}_sc_unscaled.pdf".format(star, star2))
-    fig2.savefig("images/{}_{}_sc_unscaled.png".format(star, star2))
+    fig2.savefig("images/{}_{}_{}_sc_unscaled.pdf".format(star, star2,telcombi))
+    fig2.savefig("images/{}_{}_{}_sc_unscaled.png".format(star, star2,telcombi))
     plt.show()
     plt.close()
     
@@ -293,8 +296,8 @@ if sys.argv[2] == 'Etacen':
     fig1.supxlabel("Projected baseline (m)", fontsize=14)
     fig1.supylabel("Spatial coherence", fontsize=14)
     plt.tight_layout()
-    fig1.savefig("images/{}_{}_sc_scaled.pdf".format(star, star2))
-    fig1.savefig("images/{}_{}_sc_scaled.png".format(star, star2))
+    fig1.savefig("images/{}_{}_{}_sc_scaled.pdf".format(star, star2,telcombi))
+    fig1.savefig("images/{}_{}_{}_sc_scaled.png".format(star, star2,telcombi))
     plt.show()  
 
 else:

@@ -146,6 +146,10 @@ def get_error_numerical(x, amp, damp, ang, dang):
 
 # Try including x error bars with orthogonal distance regression
 def spatial_coherence_odr(p, x):
+    lam=422.5e-9
+    amp, ang = p
+    return amp * (2*scp.j1(np.pi * x * ang/lam) / (np.pi* x * ang/lam))**2
+def spatial_coherence_odrG(p, x):
     lam=470e-9
     amp, ang = p
     return amp * (2*scp.j1(np.pi * x * ang/lam) / (np.pi* x * ang/lam))**2
