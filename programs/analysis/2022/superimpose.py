@@ -163,7 +163,7 @@ if star == "Acrux":# broken x axis for better representation later
     ax_sc = brokenaxes(xlims=((0, 10), (73, 120)), subplot_spec=sps2, wspace=0.05, despine=False)
 else:
     ax_sc = bigfigure.add_subplot(222)
-ax_sc.set_title("Spatial coherence of {}".format(star))
+#ax_sc.set_title("Spatial coherence of {}".format(star))
 ax_sc.set_xlabel("Baseline (m)"); ax_sc.set_ylabel("Coherence time (fs)")
 # auto correlation
 ax_auto  = bigfigure.add_subplot(224); ax_auto.set_title("Auto correlation of {}".format(star))
