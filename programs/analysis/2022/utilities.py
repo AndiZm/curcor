@@ -102,15 +102,7 @@ def calc_array_mean(array, darray):
     return mean, dmean
 
 def chi_squared(y, fy, error, N, par):
-    print ("Number of datapoints: {}; fit parameters: {}".format(N, par))
-    chi_sum = 0
-    for i in range (0,len(y)):
-        chi = (y[i]-fy[i])**2/(error[i]**2)
-        print ("\ty = ({:.2f} +/- {:.2f})\tfy = {:.2f}\t=> chi_squared = {:.2f}".format(y[i],error[i],fy[i],chi))
-        chi_sum += chi
-    print ("loop sum: {:.2f}".format(chi_sum))
     chi = np.sum( (y-fy)**2 / (error)**2 )
-    print ("og sum: {:.2f}".format(chi))
     ndf = N - par
     chi_red = chi / ndf 
     return chi, chi_red
