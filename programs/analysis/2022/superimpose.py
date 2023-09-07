@@ -385,8 +385,18 @@ out = odr.run()
 # Fit parameters
 popt_odr = out.beta
 perr_odr = out.sd_beta
+<<<<<<< HEAD
 print (popt_odr)
 print (perr_odr)
+=======
+chi_odr = out.res_var
+print('CHIIII= {}'.format(out.res_var))
+
+
+# evaluating chi squared reduced
+chi, chi_red = uti.chi_squared(ints_fixed, uti.spatial_coherence(baselines, *popt_odr), error=dints_fixed, N=len(ints_fixed), par=2)
+print('CHI= {} & reduced= {}'.format(chi, chi_red))
+>>>>>>> 2bc5d47f19412e0754b8b8ffa4268f52630c74dd
 #--------------------#
 
 deltas_sc_avg = []
@@ -422,7 +432,7 @@ ax_sc.set_ylim(0,)
 # Special treatment of Acrux: do not fit into the spatial coherence data, instead zoom in
 if star != "Acruxi":
     ax_sc.fill_between(xplot, lower, upper, color="#003366", alpha=0.15)
-    ax_sc.plot(xplot, uti.spatial_coherence(xplot,*popt_odr),   label="ODR fit", color="#003366", linewidth=2)
+    ax_sc.plot(xplot, uti.spatial_coherence(xplot,*popt_odr),   label="ODR fit, $\chi^2$/dof={:.2f}".format(chi_odr), color="#003366", linewidth=2)
     ax_sc.text(75, 38, "Angular diameter: {:.2f} +/- {:.2f} mas".format(uti.rad2mas(popt_odr[1]), uti.rad2mas(perr_odr[1])), color="#003366", fontsize=10)
     ax_sc.set_xlim(-15,250)
     ax_sc.legend(loc="upper right")
