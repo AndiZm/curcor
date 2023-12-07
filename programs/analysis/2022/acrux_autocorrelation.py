@@ -7,9 +7,12 @@ from matplotlib.pyplot import cm
 import ephem
 import scipy.special as scp
 import sys
+from matplotlib.gridspec import  GridSpec
+from matplotlib.transforms import Affine2D
 
 import utilities as uti
 import corrections as cor
+
 
 ############################################################################
 ## take Acrux data and analyze the autocorrelations in different aspects ###
@@ -73,9 +76,11 @@ colors = [cm.viridis(x) for x in cm_sub]
 
 # Define figure which will show all autocorrelations of CT3, CT4 and the fit integrals
 
-plt.figure(figsize=(6,7))
+fig = plt.figure(figsize=(6,7))
+grid = GridSpec (2, 20, left=0.1, bottom=0.15, right=0.94, top=0.94, wspace=0.1, hspace=0.3)
 
-plt.subplot(211); plt.title("CT3 auto-correlations of Acrux")
+ax_upper = fig.add_subplot( grid[0:1, 2:20] )
+ax_upper.set_title("CT3 auto-correlations of Acrux")
 
 ints3 = []; dints3 = []; times = []
 ints4 = []; dints4 = []
@@ -104,53 +109,104 @@ for i in range(0,len(ct3s)):
     print("{}".format(i), timestring, Int, dInt)
 
     the_shift = ( len(ct3s)-i-2 ) * 0.5e-6
+    #the_shift = 0
     
 
     if i%3 == 0:
         # Subplot for the auto correlation CT3
-        plt.plot(x-mu3, ct3+the_shift, "o-", label=timestring, color = colors[i], alpha=0.5)
-        plt.plot(xplotf-mu3, uti.gauss_shifted(x=xplotf-mu3, a=popt3[0], mu=0, sigma=sigma3, shift=0.5e6*the_shift), color=colors[i], linestyle="-")
+        ax_upper.plot(x-mu3, ct3+the_shift, "o-", label=timestring, color = colors[i], alpha=0.5)
+        ax_upper.plot(xplotf-mu3, uti.gauss_shifted(x=xplotf-mu3, a=popt3[0], mu=0, sigma=sigma3, shift=0.5e6*the_shift), color=colors[i], linestyle="-")
         
-        plt.text(x=30, y=1+the_shift+0.2e-6, s=timestring, color=colors[i], fontweight="bold", bbox=dict(boxstyle="round", ec="white", fc="white", alpha=0.75))
+        ax_upper.text(x=30, y=1+the_shift+0.2e-6, s=timestring, color=colors[i], fontweight="bold", bbox=dict(boxstyle="round", ec="white", fc="white", alpha=0.75))
 
         ## Subplot for the auto correlation CT4
         #plt.subplot(222)
         #plt.errorbar(x, ct4+i*2e-6, yerr=0, marker=".", linestyle="--", label=timestring, color = colors[i], alpha=0.6)
         #plt.plot(xplotf, uti.gauss_shifted(x=xplotf, a=popt4[0], mu=mu4, sigma=sigma4, shift=i), color="black", linestyle="-")
 
-    plt.grid()
-    plt.xlim(70-mu3,180-mu3); plt.ylim(1-2e-6, 1+17e-6)
-    plt.ticklabel_format(useOffset=False)
-    #plt.legend()
-    plt.tight_layout()
-    plt.xlabel("Time difference (ns)")
-    plt.ylabel("$g^{(2)}$")
+#ax_upper.grid()
+ax_upper.set_xlim(70-mu3,180-mu3); ax_upper.set_ylim(1-2e-6, 1+17e-6)
+ax_upper.ticklabel_format(useOffset=False)
+#plt.legend()
+#plt.tight_layout()
+ax_upper.set_xlabel("Time difference (ns)")
+ax_upper.set_ylabel("$g^{(2)}$")
     
 
     
 
 
 # Figure stuff
-plt.subplot(212)
+ax_lower = fig.add_subplot( grid[1:2, 2:17] )
 
 # plot the peak integrals
 x3 = np.arange(0,len(ints3),1)
 x4 = np.arange(0.1,len(ints4)+0.1,1)
 m3, dm3 = uti.calc_array_mean(ints3, dints3)
 m4, dm4 = uti.calc_array_mean(ints4, dints4)
-plt.title("Peak integrals")
-plt.errorbar(x3, y=ints3, yerr=dints3, marker="o", linestyle="", label="CT 3", color="#8f0303")
-plt.errorbar(x4, y=ints4, yerr=dints4, marker="o", linestyle="", label="CT 4", color="#003366")
-plt.fill_between(x3, y1=np.mean(ints3)+np.std(ints3), y2=np.mean(ints3)-np.std(ints3), color="#8f0303",   alpha=0.1)
-plt.fill_between(x4, y1=np.mean(ints4)+np.std(ints4), y2=np.mean(ints4)-np.std(ints4), color="#003366", alpha=0.1)
-plt.axhline(y=np.mean(ints3), linestyle="--", alpha=0.5, color="#8f0303")
-plt.axhline(y=np.mean(ints4), linestyle="--", alpha=0.5, color="#003366")
+ax_lower.set_title("Peak integrals")
+ax_lower.errorbar(x3, y=ints3, yerr=dints3, marker="o", linestyle="", label="CT 3", color="#8f0303")
+ax_lower.errorbar(x4, y=ints4, yerr=dints4, marker="o", linestyle="", label="CT 4", color="#003366")
+ax_lower.fill_between(x3, y1=np.mean(ints3)+np.std(ints3), y2=np.mean(ints3)-np.std(ints3), color="#8f0303",   alpha=0.1)
+ax_lower.fill_between(x4, y1=np.mean(ints4)+np.std(ints4), y2=np.mean(ints4)-np.std(ints4), color="#003366", alpha=0.1)
+ax_lower.axhline(y=np.mean(ints3), linestyle="--", alpha=0.5, color="#8f0303")
+ax_lower.axhline(y=np.mean(ints4), linestyle="--", alpha=0.5, color="#003366")
+ax_lower.set_ylim(16.63, 42.87)
 
-plt.xlabel("Measurement index")
-plt.ylabel("Coherence time (fs)")
+print(np.std(ints3))
+print(np.std(ints4))
+
+ax_lower.set_xlabel("Measurement index")
+ax_lower.set_ylabel("Coherence time (fs)")
 #plt.ylim(0,)
-plt.legend()
-plt.tight_layout()
+ax_lower.legend(loc="lower left")
 
+ax_right = fig.add_subplot( grid[1:2, 17:20] )
+#ax_right.rotate(90)
+
+
+
+# Histogram
+the_bins=int(1)
+binsx = np.arange(13,47,the_bins)
+xplot = np.arange(13,47,0.1)
+ct3_histo = np.histogram(ints3, bins=binsx)
+ct4_histo = np.histogram(ints4, bins=binsx)
+
+
+histo_x = ct3_histo[1][:-1]; histo_3 = ct3_histo[0]; histo_4 = ct4_histo[0]
+# error on y values
+histo_3_err = np.sqrt(histo_3); histo_3_err[histo_3_err==0]= 1
+histo_4_err = np.sqrt(histo_4); histo_4_err[histo_4_err==0]= 1
+
+# Fit gauss
+def gauss(x,a,m,s):
+    return a * np.exp( -(x-m)**2/2/s/s )
+popt3, pcov3 = curve_fit(gauss, histo_x, histo_3, p0=[10,25,3]); perr3 = np.sqrt(np.diag(pcov3))
+popt4, pcov4 = curve_fit(gauss, histo_x, histo_4, p0=[10,25,3]); perr4 = np.sqrt(np.diag(pcov4))
+
+print ("----------------------------------------------------")
+print (perr3)
+print (perr4)
+print ("Gauß fit parameter results")
+print ("Mean:")
+print ("CT3: {:.2f} +/- {:.2f}".format(popt3[1], perr3[1]))
+print ("CT4: {:.2f} +/- {:.2f}".format(popt4[1], perr4[1]))
+print ("Sigma:")
+print ("CT3: {:.2f} +/- {:.2f}".format(popt3[2], perr3[2]))
+print ("CT4: {:.2f} +/- {:.2f}".format(popt4[2], perr4[2]))
+print ("----------------------------------------------------")
+
+
+ax_right.barh(histo_x, histo_3, alpha=0.2, height=the_bins, color="#8f0303")
+ax_right.barh(histo_x, histo_4, alpha=0.2, height=the_bins, color="#003366")
+ax_right.plot(gauss(xplot, *popt3), xplot, alpha=0.7, color="#8f0303", linestyle="dashdot")
+ax_right.plot(gauss(xplot, *popt4), xplot, alpha=0.7, color="#003366", linestyle="dashdot")
+
+ax_right.set_ylim(16.63, 42.87)
+ax_right.set_yticks([])
+ax_right.set_xlabel("Counts")
+
+plt.tight_layout()
 plt.savefig("images/misc/acrux_autocorrelations.pdf")
 plt.show()

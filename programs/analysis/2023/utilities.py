@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 import ephem
 from scipy.optimize import curve_fit
 import scipy.special as scp
+import scipy.stats as stats
 import random
 
 # Define colors of the different channels for usage in all the plottings
@@ -82,6 +83,15 @@ def fit_fixed(data, x, s, e, mu,sigma, d=1):
     #popt, cov = curve_fit(lambda x, a, d: gauss(x,a, mu,sigma,d), xfit, yfit, p0=[1e-6,1.])
     perr = np.sqrt(np.diag(cov))
     return xplot, popt, perr
+def fit_fixed1(data,x,s,e,sigma,mu_start, error, par, d=1):
+    xfit = x[(x>s) & (x<e)]
+    yfit = data[(x>s) & (x<e)]
+    N = len(yfit)
+    xplot = np.arange(s, e, 0.01)
+    popt, cov = curve_fit(lambda x, a, mu: gauss(x,a, mu,sigma,d), xfit, yfit, p0=[1e-6,mu_start])
+    perr = np.sqrt(np.diag(cov))
+    chi = chi_squared(yfit, gauss(xfit, popt[0], popt[1], sigma, d), error, N, par)
+    return xplot, popt, perr, chi
 
 def integral(fitpar, fitpar_err):
     a = fitpar[0]; d_a = fitpar_err[0]
@@ -106,14 +116,26 @@ def calc_array_mean(array, darray):
     dmean = 1/len(array) * np.sqrt(squaresum)
     return mean, dmean
 
+
+def chi_squared(y, fy, error, N, par):
+    chi = np.sum( (y-fy)**2 / (error)**2 )
+    ndf = N - par
+    chi_red = chi / ndf 
+    return chi_red
+
 ####################################
 # Spatial coherence plot functions #
 ####################################
 # Fitting the spatial coherence values
-def spatial_coherence(x, amp, ang, lam=470e-9):
+def spatial_coherence(x, amp, ang, lam):
+    return amp * (2*scp.j1(np.pi * x * ang/lam) / (np.pi* x * ang/lam))**2
+def spatial_coherenceG(x, amp, ang, lam=470e-9):
     return amp * (2*scp.j1(np.pi * x * ang/lam) / (np.pi* x * ang/lam))**2
 def spatial_coherenceUV(x, amp, ang, lam=375e-9):
     return amp * (2*scp.j1(np.pi * x * ang/lam) / (np.pi* x * ang/lam))**2
+def SC_limb_darkening(x,amp,ang,lam,u):
+    return amp * ( (1-u)/2 + u/3 )**(-2) * ( (1-u)/2 * scp.j1(np.pi * x * ang/lam) / (np.pi* x * ang/lam) + (u*(np.pi/2)**0.5) * bessel32(ang, x, lam) / ((np.pi*x*ang/lam)))**2
+
 # Calculate error band numerically
 def get_error_numerical(x, amp, damp, ang, dang):
     sc_vals = []
@@ -127,6 +149,14 @@ def get_error_numerical(x, amp, damp, ang, dang):
 
 # Try including x error bars with orthogonal distance regression
 def spatial_coherence_odr(p, x):
+    lam=422.5e-9
+    amp, ang = p
+    return amp * (2*scp.j1(np.pi * x * ang/lam) / (np.pi* x * ang/lam))**2
+def spatial_coherence_odr_scaled(ang, x):
+    lam=422.5e-9
+    amp = 1
+    return amp * (2*scp.j1(np.pi * x * ang/lam) / (np.pi* x * ang/lam))**2
+def spatial_coherence_odrG(p, x):
     lam=470e-9
     amp, ang = p
     return amp * (2*scp.j1(np.pi * x * ang/lam) / (np.pi* x * ang/lam))**2
@@ -134,6 +164,16 @@ def spatial_coherence_odrUV(p, x):
     lam=375e-9
     amp, ang = p
     return amp * (2*scp.j1(np.pi * x * ang/lam) / (np.pi* x * ang/lam))**2
+
+def SC_limb_darkening_odr(ang,x):
+    lam=422.5e-9
+    u = 0.8
+    amp = 1
+    return amp * ( (1-u)/2 + u/3 )**(-2) * ( (1-u)/2 * scp.j1(np.pi * x * ang/lam) / (np.pi* x * ang/lam) + (u*(np.pi/2)**0.5) * bessel32(ang, x, lam) / ((np.pi*x*ang/lam)**(3/2)))
+
+def bessel32(phi, baseline, lam):
+    x = np.pi * baseline * phi/lam
+    return np.sqrt(2/(np.pi*x**3)) * (np.sin(x) - x*np.cos(x))
 def bessel(phi, baseline, lam=470e-9):
     return scp.j1(np.pi*baseline*phi/lam)
 def besselUV(phi, baseline, lam=375e-9):
@@ -155,6 +195,9 @@ def delta_spatial_coherenceUV(x, A,dA, phi,dphi, lam=375e-9):
 
 def rad2mas(x):
     return 180*3600*1000/np.pi * x
+
+def mas2rad(x):
+    return np.pi/(180*3600*1000) * x
 
 # Function for averaging over the 4 cross correlation datapoints
 def weighted_avg(cA, dcA, cB, dcB, c3Ax4B, dc3Ax4B, c4ax3B, dc4Ax3B):

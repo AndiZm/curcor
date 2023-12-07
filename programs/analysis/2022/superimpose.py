@@ -16,6 +16,10 @@ import geometry as geo
 
 star = sys.argv[1]
 
+# Add error on the zero baseline from fluctuations in Acrux autocorrelation data
+zero_baseline_systematic = True
+zero_baseline_fluctuations = np.loadtxt("oscillations.txt")
+
 # Get the timebin shift of the specific measurement from the time difference
 def timebin(tdiff):
     return int(1.0* np.floor((tdiff+0.8)/1.6))
@@ -153,6 +157,9 @@ colors = [cm.viridis(x) for x in cm_sub]
 # Define total figure which will show individual g2 cross correlations and averaged auto correlation
 # and also the spatial coherence curve (baseline vs. g2 integral)
 bigfigure = plt.figure(figsize=(12,7))
+grid = GridSpec (10, 2, left=0.1, bottom=0.15, right=0.94, top=0.94, wspace=0.1, hspace=0.3)
+
+
 # cross correlations
 ax_cross = bigfigure.add_subplot(121); ax_cross.set_title("Cross correlations of {}".format(star))
 ax_cross.set_xlabel("Time difference (ns)"); ax_cross.set_ylabel("$g^{(2)}$"); ax_cross.ticklabel_format(useOffset=False)
@@ -163,7 +170,7 @@ if star == "Acrux":# broken x axis for better representation later
     ax_sc = brokenaxes(xlims=((0, 10), (73, 120)), subplot_spec=sps2, wspace=0.05, despine=False)
 else:
     ax_sc = bigfigure.add_subplot(222)
-ax_sc.set_title("Spatial coherence of {}".format(star))
+#ax_sc.set_title("Spatial coherence of {}".format(star))
 ax_sc.set_xlabel("Baseline (m)"); ax_sc.set_ylabel("Coherence time (fs)")
 # auto correlation
 ax_auto  = bigfigure.add_subplot(224); ax_auto.set_title("Auto correlation of {}".format(star))
@@ -206,6 +213,20 @@ for i in range(0,len(chAs)):
     ct4 = cor.lowpass(ct4)
     c3Ax4B = cor.lowpass(c3Ax4B)
     c4Ax3B = cor.lowpass(c4Ax3B)
+    '''
+    F_fft = plt.figure(figsize=(12,7))
+    ax1 = F_fft.add_subplot(121)
+    ax1.plot(x, chA); ax1.plot(x, chB); ax1.plot(x, ct3); ax1.plot(x, ct4)
+    N = len(chA)
+    stepsize = 1.6
+    x = np.linspace(0.0, stepsize*N, N)
+    x_fft = np.linspace(0.0, 1./(2.*stepsize), N//2)
+    chA_fft = np.abs(np.fft.fft(chA)/(N/2)); chB_fft = np.abs(np.fft.fft(chB)/(N/2)); ct3_fft = np.abs(np.fft.fft(ct3)/(N/2)); ct4_fft = np.abs(np.fft.fft(ct4)/(N/2))
+    ax2 = F_fft.add_subplot(122)
+    ax2.plot(x_fft, chA_fft[0:N//2]); ax2.plot(x_fft, chB_fft[0:N//2]); ax2.plot(x_fft, ct3_fft[0:N//2]); ax2.plot(x_fft, ct4_fft[0:N//2])
+    ax2.set_ylim(0,8e-8)
+    plt.show()
+    '''
 
     # more data cleaning with notch filter for higher frequencies
     freqA = [90,130,150]
@@ -327,6 +348,22 @@ ax_auto.plot(x_auto, c_auto, "o-", color="black", alpha=0.5)
 ax_auto.plot(xplotf, uti.gauss(xplotf, *popt_avg_free), linestyle="--", color="red")
 ax_auto.set_ylim(1-1*popt_avg_free[0] , 1+2*popt_avg_free[0])
 
+# Add systematic error
+lower_error = [zero_baseline_fluctuations[0]]
+upper_error = [zero_baseline_fluctuations[1]]
+if zero_baseline_systematic == True:
+    asymmetric_error = np.array(list(zip(lower_error, upper_error))).T
+    #ax_auto.errorbar(x=popt_avg_free[1], y=uti.gauss(popt_avg_free[1], *popt_avg_free), yerr=asymmetric_error, marker="^", color="red")
+    ax_auto.fill_between(x=xplotf, y1=uti.gauss(xplotf, popt_avg_free[0]-lower_error, popt_avg_free[1], popt_avg_free[2], popt_avg_free[3]) , y2=uti.gauss(xplotf, popt_avg_free[0]+upper_error, popt_avg_free[1], popt_avg_free[2], popt_avg_free[3]), color="red", alpha=0.4, label="systematic amplitude uncertainty")
+    ax_auto.legend()
+
+    int_auto, dint_auto = uti.integral_systematic(popt_avg_free, perr_avg_free, zero_baseline_fluctuations)
+    # now dint_auto is an array [error_down, error_up]
+
+    print (dint_auto)
+    #dint_auto = np.array(list(zip(dint_auto[0], dint_auto[1]))).T
+
+
 ##############################################################
 #### making SC plot (spatial coherence) via integral data ####
 ##############################################################
@@ -364,6 +401,13 @@ out = odr.run()
 # Fit parameters
 popt_odr = out.beta
 perr_odr = out.sd_beta
+chi_odr = out.res_var
+print('CHIIII= {}'.format(out.res_var))
+
+
+# evaluating chi squared reduced
+chi, chi_red = uti.chi_squared(ints_fixed, uti.spatial_coherence(baselines, *popt_odr), error=dints_fixed, N=len(ints_fixed), par=2)
+print('CHI= {} & reduced= {}'.format(chi, chi_red))
 #--------------------#
 
 deltas_sc_avg = []
@@ -371,6 +415,7 @@ for i in xplot:
     deltas_sc_avg.append( np.abs(uti.delta_spatial_coherence(x=i, A=poptavg[0],dA=perravg[0], phi=poptavg[1], dphi=perravg[1])) )
 print ("Angular diameter AVG (fixed): {:.2f} +/- {:.2f} (mas)".format(uti.rad2mas(poptavg[1]),  uti.rad2mas(perravg[1])))
 print ("Angular diameter AVG (odr)  : {:.2f} +/- {:.2f} (mas)".format(uti.rad2mas(popt_odr[1]), uti.rad2mas(perr_odr[1])))
+print ("Zero baseline correlation   : {:.2f} +/- {:.2f} (fs)".format(popt_odr[0], perr_odr[0]))
 
 ####################################################
 # plot datapoints in SC plot and fit to all points #
@@ -381,7 +426,7 @@ for i in range (0,len(baselines)):
     #plt.text(baselines[i]+1,ints_fixed[i]+0.5,ephem.Date(data[:,0][i]), color=colors[i])
 #plt.plot(xplot, uti.spatial_coherence(xplot,*poptavg),   label="fit", color="red", linewidth=2)
 
-np.savetxt("spatial_coherence/{}_sc_data.txt".format(star), np.c_[baselines, dbaselines, ints_fixed, dints_fixed])
+np.savetxt("spatial_coherence/{}_sc_data.txt".format(star), np.c_[baselines, dbaselines, ints_fixed, dints_fixed], header="{} {} \nbl\tdbl\tscA\tdscA".format(popt_odr[0], popt_odr[1]))
 
 # Obtain values for error band
 lower = []; upper = []
@@ -399,7 +444,7 @@ ax_sc.set_ylim(0,)
 # Special treatment of Acrux: do not fit into the spatial coherence data, instead zoom in
 if star != "Acrux":
     ax_sc.fill_between(xplot, lower, upper, color="#003366", alpha=0.15)
-    ax_sc.plot(xplot, uti.spatial_coherence(xplot,*popt_odr),   label="ODR fit", color="#003366", linewidth=2)
+    ax_sc.plot(xplot, uti.spatial_coherence(xplot,*popt_odr),   label="ODR fit, $\chi^2$/dof={:.2f}".format(chi_odr), color="#003366", linewidth=2)
     ax_sc.text(75, 38, "Angular diameter: {:.2f} +/- {:.2f} mas".format(uti.rad2mas(popt_odr[1]), uti.rad2mas(perr_odr[1])), color="#003366", fontsize=10)
     ax_sc.set_xlim(-15,250)
     ax_sc.legend(loc="upper right")
