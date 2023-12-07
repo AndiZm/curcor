@@ -22,15 +22,15 @@ lam_old = 465e-9
 
 
 # Open text file with SC values for Nunki 2022
-f = open("Nunki/{}_sc_data_2022.txt".format(star))
+f = open("{}/{}_sc_data_2022.txt".format(star,star))
 header = f.readline()
 amp_A_old = header.split(' ')[1]
 ang_A_old = header.split(' ')[2]
 
-baselines_old    = np.loadtxt("Nunki/{}_sc_data_2022.txt".format(star)) [:,0]
-dbaselines_old   = np.loadtxt("Nunki/{}_sc_data_2022.txt".format(star)) [:,1]
-ints_fixedA_old  = np.loadtxt("Nunki/{}_sc_data_2022.txt".format(star)) [:,2]
-dints_fixedA_old = np.loadtxt("Nunki/{}_sc_data_2022.txt".format(star)) [:,3]
+baselines_old    = np.loadtxt("{}/{}_sc_data_2022.txt".format(star,star)) [:,0]
+dbaselines_old   = np.loadtxt("{}/{}_sc_data_2022.txt".format(star,star)) [:,1]
+ints_fixedA_old  = np.loadtxt("{}/{}_sc_data_2022.txt".format(star,star)) [:,2]
+dints_fixedA_old = np.loadtxt("{}/{}_sc_data_2022.txt".format(star,star)) [:,3]
 
 ints_fixedA_old_scaled = []; dints_fixedA_old_scaled = []
 for i in range(0,len(baselines_old)):
@@ -75,8 +75,8 @@ plt.axhline(y=0.0, color='black', linestyle='--')
 #plt.xlim(0,200)
 
 plt.legend()
-plt.savefig("Nunki/{}_sc_scaled.pdf".format(star))
-plt.savefig("Nunki/{}_sc_scaled.png".format(star))
+plt.savefig("images/{}/{}_sc_scaled.pdf".format(star,star))
+plt.savefig("images/{}/{}_sc_scaled.png".format(star,star))
 plt.show()
 
 
@@ -108,8 +108,8 @@ plt.axhline(y=0.0, color='black', linestyle='--')
 #plt.xlim(0,200)
 
 plt.legend()
-plt.savefig("Nunki/{}_sc_scaled_lamindependent.pdf".format(star))
-plt.savefig("Nunki/{}_sc_scaled_lamindependent.png".format(star))
+plt.savefig("images/{}/{}_sc_scaled_lamindependent.pdf".format(star,star))
+plt.savefig("images/{}/{}_sc_scaled_lamindependent.png".format(star,star))
 plt.show()
 
 
@@ -134,8 +134,8 @@ plt.axhline(y=0.0, color='black', linestyle='--')
 #plt.xlim(0,200)
 
 plt.legend()
-plt.savefig("Nunki/{}_sc_unscaled_lamdependent.pdf".format(star))
-plt.savefig("Nunki/{}_sc_unscaled_lamdependent.png".format(star))
+plt.savefig("images/{}/{}_sc_unscaled_lamdependent.pdf".format(star,star))
+plt.savefig("images/{}/{}_sc_unscaled_lamdependent.png".format(star,star))
 plt.show()
 
 
@@ -159,7 +159,7 @@ plt.axhline(y=0.0, color='black', linestyle='--')
 #plt.xlim(0,200)
 
 plt.legend()
-plt.savefig("Nunki/{}_sc_unscaled_lamindependent.pdf".format(star))
-plt.savefig("Nunki/{}_sc_unscaled_lamindependent.png".format(star))
+plt.savefig("images/{}/{}_sc_unscaled_lamindependent.pdf".format(star,star))
+plt.savefig("images/{}/{}_sc_unscaled_lamindependent.png".format(star,star))
 plt.show()
 

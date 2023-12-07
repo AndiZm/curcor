@@ -15,7 +15,7 @@ import utilities as uti
 import corrections as cor
 import geometry as geo
 
-star = 'Nunki'
+star = sys.argv[1]
 
 # make colors for plotting
 colorA14 = uti.color_chA
@@ -23,13 +23,30 @@ colorB14 = uti.color_chB
 colorA34 = 'limegreen'
 colorB34 = 'deepskyblue'
 
+bl_HBT = []
+# Open text file with star data from HBT
+f = open("stars_HBT.txt")
+# Find line for the star
+line = f.readline()
+while star not in line:
+    line = f.readline()
+lam_HBT = line.split()[1]
+ang_HBT = uti.mas2rad(float(line.split()[2]))
+line = f.readline()
+while "[end]" not in line:
+    bl_HBT.append(float(line.split()[0]))
+    line = f.readline()
+f.close()
+
+
+
 ################################################
 #### Analysis over whole measurement time #####
 ################################################
 def par_fixing(star, telcombi):
     # Read in the data g2 functions
-    chAs    = np.loadtxt("g2_functions/weight_rms_squared/{}/ChA.txt".format(star))     
-    chBs    = np.loadtxt("g2_functions/weight_rms_squared/{}/ChB.txt".format(star))      
+    chAs    = np.loadtxt("g2_functions/weight_rms_squared/{}/{}/ChA.txt".format(star, telcombi))     
+    chBs    = np.loadtxt("g2_functions/weight_rms_squared/{}/{}/ChB.txt".format(star, telcombi))      
     labelA = str(telcombi) + 'A'
     labelB = str(telcombi) + 'B'
 
@@ -47,8 +64,26 @@ def par_fixing(star, telcombi):
         g2_allB += chBs[i]/len(chBs)
 
     # Fit for gaining mu and sigma to fix these parameters for different baseline combis
-    if telcombi == 34:
-        plt.subplot(111)
+    if telcombi == 14:
+        plt.subplot(211)
+        plt.title("Cross correlation data of {} for {}".format(star, telcombi))
+        print("Fixed parameters")
+        xplot, popt, perr = uti.fit(g2_allA, x, -50, +50)
+        mu_A = popt[1]; sigma_A = popt[2]
+        integral, dintegral = uti.integral(popt, perr)
+        print("{}A 470nm mean: {:.2f} +/- {:.2f} ns \t sigma: {:.2f} +/- {:.2f} ns \t integral: {:.2f} +/- {:.2f} fs".format(telcombi,mu_A, perr[1],sigma_A,perr[2],1e6*integral,1e6*dintegral))
+        plt.plot(x, g2_allA, label=labelA, color=colorA14)
+        plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--")
+
+        xplot, popt, perr = uti.fit(g2_allB, x, -50, +50)
+        mu_B = popt[1]; sigma_B = popt[2]
+        integral, dintegral = uti.integral(popt, perr)
+        print ("{}B 375nm mean: {:.2f} +/- {:.2f} ns \t sigma: {:.2f} +/- {:.2f} ns \t integral: {:.2f} +/- {:.2f} fs".format(telcombi,mu_B,perr[1],sigma_B,perr[2],1e6*integral,1e6*dintegral))
+        plt.plot(x, g2_allB, label=labelB, color=colorB14)
+        plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--")
+
+    elif telcombi == 34:
+        plt.subplot(212)
         plt.title("Cross correlation data of {} for {}".format(star, telcombi))
         print("Fixed parameters")
         xplot, popt, perr = uti.fit(g2_allA, x, -50, +50)
@@ -70,7 +105,7 @@ def par_fixing(star, telcombi):
     plt.xlabel("Time delay (ns)"); plt.ylabel("$g^{(2)}$")
     plt.tight_layout()
     plt.plot()
-    np.savetxt("g2_functions/fixed_parameters/{}/mu_sig.txt".format(star), np.c_[mu_A, sigma_A, mu_B, sigma_B], header="muA, sigA, muB, sigB")
+    np.savetxt("g2_functions/fixed_parameters/{}/mu_sig_{}.txt".format(star,telcombi), np.c_[mu_A, sigma_A, mu_B, sigma_B], header="muA, sigA, muB, sigB")
 
 #########################################
 ###### Chunk analysis ###################
@@ -87,10 +122,10 @@ def chunk_ana(star, telcombi):
     # initialize cleaned arrays and read in mu and sigma
     chA_clean = []; chB_clean = []; ampA = []; ampB = []; muA = []; muB =[] ; chiA =[]; chiB = []; dmuA = []; dmuB =[]
     ffts = []
-    chAs    = np.loadtxt("g2_functions/weight_rms_squared/{}/ChA.txt".format(star))
-    chBs    = np.loadtxt("g2_functions/weight_rms_squared/{}/ChB.txt".format(star))     
-    mu_A, sig_A, mu_B, sig_B = np.loadtxt("g2_functions/fixed_parameters/{}/mu_sig.txt".format(star))
-    data      = np.loadtxt("g2_functions/weight_rms_squared/{}/baseline.txt".format(star))
+    chAs    = np.loadtxt("g2_functions/weight_rms_squared/{}/{}/ChA.txt".format(star, telcombi))
+    chBs    = np.loadtxt("g2_functions/weight_rms_squared/{}/{}/ChB.txt".format(star, telcombi))     
+    mu_A, sig_A, mu_B, sig_B = np.loadtxt("g2_functions/fixed_parameters/{}/mu_sig_{}.txt".format(star,telcombi))
+    data      = np.loadtxt("g2_functions/weight_rms_squared/{}/{}/baseline.txt".format(star, telcombi))
     baselines = data[:,1]; dbaselines = data[:,2]
 
     # Demo function for initializing x axis and some stuff
@@ -188,74 +223,25 @@ def chunk_ana(star, telcombi):
         chiA.append(chi_A); chiB.append(chi_B)
 
     # store cleaned data
-    np.savetxt("g2_functions/weight_rms_squared/{}/ChA_clean.txt".format(star), np.c_[chA_clean], header="{} Channel A cleaned".format(star) )
-    np.savetxt("g2_functions/weight_rms_squared/{}/ChB_clean.txt".format(star), np.c_[chB_clean], header="{} Channel B cleaned".format(star) )
-    np.savetxt("g2_functions/fixed_parameters/{}/mu_sig_individual.txt".format(star), np.c_[muA, dmuA, ampA, muB, dmuB, ampB, timestrings], header="muA, dmuA, ampA, muB, dmuB, ampB, timestrings")
-    np.savetxt("g2_functions/fixed_parameters/{}/chi_squared.txt".format(star), np.c_[chiA, chiB], header="chiA, chiB")
+    np.savetxt("g2_functions/weight_rms_squared/{}/{}/ChA_clean.txt".format(star,telcombi), np.c_[chA_clean], header="{} Channel A cleaned".format(star) )
+    np.savetxt("g2_functions/weight_rms_squared/{}/{}/ChB_clean.txt".format(star,telcombi), np.c_[chB_clean], header="{} Channel B cleaned".format(star) )
+    np.savetxt("g2_functions/fixed_parameters/{}/mu_sig_individual_{}.txt".format(star, telcombi), np.c_[muA, dmuA, ampA, muB, dmuB, ampB, timestrings], header="muA, dmuA, ampA, muB, dmuB, ampB, timestrings")
+    np.savetxt("g2_functions/fixed_parameters/{}/chi_squared_{}.txt".format(star, telcombi), np.c_[chiA, chiB], header="chiA, chiB")
     np.savetxt("g2_functions/fixed_parameters/{}/xplot.txt".format(star), np.c_[xplotf])
-    np.savetxt("spatial_coherence/{}/{}_data.sc".format(star,star), np.c_[baselines, dbaselines, ints_fixedA, dints_fixedA, ints_fixedB, dints_fixedB])
-    np.savetxt("spatial_coherence/{}/{}_data_fixed.sc".format(star,star), np.c_[baselines, dbaselines, ints_fixedA1, dints_fixedA1, ints_fixedB1, dints_fixedB1])
+    np.savetxt("spatial_coherence/{}/{}_{}_data.sc".format(star,star,telcombi), np.c_[baselines, dbaselines, ints_fixedA, dints_fixedA, ints_fixedB, dints_fixedB])
+    np.savetxt("spatial_coherence/{}/{}_{}_data_fixed.sc".format(star,star,telcombi), np.c_[baselines, dbaselines, ints_fixedA1, dints_fixedA1, ints_fixedB1, dints_fixedB1])
 
     print("DONE Chunks {}".format(telcombi))
 
-    #--------------------#
-    # Try fitting with ods
-    # Model object
-    from scipy import odr
-    
-    sc_modelG = odr.Model(uti.spatial_coherence_odrG)
-    # RealData object
-    rdataG = odr.RealData( baselines, ints_fixedA, sx=dbaselines, sy=dints_fixedA )
-    # Set up ODR with model and data
-    odrODRG = odr.ODR(rdataG, sc_modelG, beta0=[25,2.2e-9])
-    # Run the regression
-    outG = odrODRG.run()
-    # Fit parameters
-    popt_odrA = outG.beta
-    perr_odrA = outG.sd_beta
-    chi_odrA = outG.res_var # chi squared value
-    
-    sc_modelUV = odr.Model(uti.spatial_coherence_odrUV)
-    # RealData object
-    rdataUV = odr.RealData( baselines, ints_fixedB, sx=dbaselines, sy=dints_fixedB )
-    # Set up ODR with model and data
-    odrODRUV = odr.ODR(rdataUV, sc_modelUV, beta0=[20,3.2e-9])
-    # Run the regression
-    outUV = odrODRUV.run()
-    # Fit parameters
-    popt_odrB = outUV.beta
-    perr_odrB = outUV.sd_beta
-    chi_odrB = outUV.res_var # chi squared value
-    #--------------------#
-    print("SC fits")
-    print("{}A 470nm: Angular diameter: {:.2f} +/- {:.2f} (mas)\t Amplitude: {:.2f} +/- {:.2f}\t Chi^2 reduced: {:.2f}".format(telcombi, uti.rad2mas(popt_odrA[1]), uti.rad2mas(perr_odrA[1]), popt_odrA[0], perr_odrA[0], chi_odrA))
-    print("{}B 375nm: Angular diameter: {:.2f} +/- {:.2f} (mas)\t Amplitude: {:.2f} +/- {:.2f}\t Chi^2 reduced: {:.2f}".format(telcombi, uti.rad2mas(popt_odrB[1]), uti.rad2mas(perr_odrB[1]), popt_odrB[0], perr_odrB[0], chi_odrB))
-    # save fitted amplitude
-    amplitudes_odr = []
-    amplitudes_odr.append(popt_odrA[0]); amplitudes_odr.append(perr_odrA[0])
-    amplitudes_odr.append(popt_odrB[0]) ; amplitudes_odr.append(perr_odrB[0])
-    np.savetxt('spatial_coherence/{}/amplitudes_odr.sc'.format(star), np.c_[amplitudes_odr], header='ampA, dampA, ampB, dampB')
-
-    # Make additional scaled parameters
-    ints_fixedA_scaled = []; dints_fixedA_scaled = []; ints_fixedB_scaled = []; dints_fixedB_scaled = []
-    for k in range (0,len(ints_fixedA)):
-        ints_fixedA_scaled.append(ints_fixedA[k]  / popt_odrA[0])
-        dints_fixedA_scaled.append(dints_fixedA[k] / popt_odrA[0])
-    
-        ints_fixedB_scaled.append(ints_fixedB[k]  / popt_odrB[0])
-        dints_fixedB_scaled.append(dints_fixedB[k] / popt_odrB[0])
-        np.savetxt("spatial_coherence/{}/{}_scaled.sc".format(star,star), np.c_[ints_fixedA_scaled, dints_fixedA_scaled, ints_fixedB_scaled, dints_fixedB_scaled], header="{} {} {} {}\n scA \t dscA \t scB \t dscB".format(popt_odrA[0], popt_odrB[0], popt_odrA[1],popt_odrB[1]))
-
-
 def plotting(star):
     telcombis = [14,34]
-    ticks = []; amplitudes_odr = []
+    ticks = []; amplitudes_odr = []; ang_odr = []
     ints_fixed_all = []; dints_fixed_all = []; baselines_all = []; dbaselines_all = []
 
     # Define figure which will show individual g2 cross correlations
     crossfigure = plt.figure(figsize=(12,8))
     # cross correlations for telcombis
-    ax_cross1 = crossfigure.add_subplot(211); ax_cross1.set_title("Cross correlations of {} for {}".format(star, telcombis[0]))
+    ax_cross1 = crossfigure.add_subplot(211); ax_cross1.set_title("1Cross correlations of {} for {}".format(star, telcombis[0]))
     ax_cross1.set_xlabel("Time difference (ns)"); ax_cross1.set_ylabel("$g^{(2)}$"); ax_cross1.ticklabel_format(useOffset=False)
     ax_cross1.set_xlim(-100,100)
     ax_cross2 = crossfigure.add_subplot(212); ax_cross2.set_title("Cross correlations of {} for {}".format(star, telcombis[1]))
@@ -369,8 +355,10 @@ def plotting(star):
         print("{}B 375nm: Angular diameter: {:.2f} +/- {:.2f} (mas)\t Amplitude: {:.2f} +/- {:.2f}\t Chi^2 reduced: {:.2f}".format(telcombis[i], uti.rad2mas(popt_odrB[1]), uti.rad2mas(perr_odrB[1]), popt_odrB[0], perr_odrB[0], chi_odrB))
 
         # save fitted amplitude
-        amplitudes_odr.append(popt_odrA[0])
-        amplitudes_odr.append(popt_odrB[0])
+        amplitudes_odr.append(popt_odrA[0]); amplitudes_odr.append(perr_odrA[0])
+        amplitudes_odr.append(popt_odrB[0]); amplitudes_odr.append(perr_odrB[0])
+        ang_odr.append(popt_odrA[1]); ang_odr.append(perr_odrA[1])
+        ang_odr.append(popt_odrB[1]); ang_odr.append(perr_odrB[1])
 
         # Make additional scaled parameters
         ints_fixedA_scaled = []; dints_fixedA_scaled = []; ints_fixedB_scaled = []; dints_fixedB_scaled = []
@@ -435,7 +423,7 @@ def plotting(star):
             labelB = '{}B 375nm, $\chi^2$/dof={:.2f}'.format(telcombis[i], chi_odrB) 
             # Define figure which will show individual g2 cross correlations for channel A
             crfigureA = plt.figure(figsize=(20,15))
-            crfigureA.suptitle("Cross correlations of {} for {}".format(star, labelA),fontweight="bold")
+            crfigureA.suptitle("2Cross correlations of {} for {}".format(star, labelA),fontweight="bold")
             crfigureA.supxlabel("Time difference (ns)", fontweight="bold", ha='center', va='center'); crfigureA.supylabel("$g^{(2)}$", fontweight="bold")
             plt.tight_layout()
             # for loop over all chunks to show individual g2 fcts
@@ -458,7 +446,9 @@ def plotting(star):
             crfigureB.supxlabel("Time difference (ns)", fontweight="bold"); crfigureB.supylabel("$g^{(2)}$", fontweight="bold")
             plt.tight_layout()
             # for loop over all chunks to show individual g2 fcts
-            for n, A in enumerate(chBs):    
+            for n, A in enumerate(chBs): 
+                timestring = ephem.Date(timestrings[n])
+                tstring_short = str(timestring)[5:-3]   
                 ax_crB = plt.subplot(5,3,n+1)
                 ax_crB.errorbar(xnew, chBs[n], yerr=errorB[n], linestyle="-", color = colorB14,   alpha=0.7)
                 ax_crB.plot(xplotf, uti.gauss_fixed(x=xplotf,  a=ampB[n], mu=muB[n], sigma=sigB), color='red', linestyle="--", zorder=4, label='fit mu free')
@@ -517,8 +507,8 @@ def plotting(star):
             ax_sc1.axvline(x=nsA/lam_g, color=colorA14, ymax=0.3); ax_sc3.axvline(x=nsB/lam_uv, color=colorB14, ymax=0.4)
             ax_sc1.text(x=xplot_g[1000], y=20, s='Angular diameter: {:.3f} +/- {:.3f} (mas)'.format(uti.rad2mas(popt_odrA[1]), uti.rad2mas(perr_odrA[1])), color=colorA14)
             ax_sc1.text(x=xplot_g[1000], y=18, s='Amplitude: {:.3f} +/- {:.3f}'.format(popt_odrA[0], perr_odrA[0]), color=colorA14)
-            ax_sc3.text(x=xplot_uv[800], y=10, s='Angular diameter: {:.3f} +/- {:.3f} (mas)'.format(uti.rad2mas(popt_odrB[1]), uti.rad2mas(perr_odrB[1])), color=colorB14, bbox=dict(boxstyle="round", ec="white", fc="white", alpha=0.75))
-            ax_sc3.text(x=xplot_uv[800], y=9, s='Amplitude: {:.3f} +/- {:.3f}'.format(popt_odrB[0], perr_odrB[0]), color=colorB14, bbox=dict(boxstyle="round", ec="white", fc="white", alpha=0.75))
+            ax_sc3.text(x=xplot_uv[800], y=20, s='Angular diameter: {:.3f} +/- {:.3f} (mas)'.format(uti.rad2mas(popt_odrB[1]), uti.rad2mas(perr_odrB[1])), color=colorB14, bbox=dict(boxstyle="round", ec="white", fc="white", alpha=0.75))
+            ax_sc3.text(x=xplot_uv[800], y=18, s='Amplitude: {:.3f} +/- {:.3f}'.format(popt_odrB[0], perr_odrB[0]), color=colorB14, bbox=dict(boxstyle="round", ec="white", fc="white", alpha=0.75))
             
         # Subplot for all cross correlations for telcombi 34
         elif telcombis[i] == 34:
@@ -549,7 +539,9 @@ def plotting(star):
             crfigureB2.supxlabel("Time difference (ns)", fontweight="bold"); crfigureB2.supylabel("$g^{(2)}$", fontweight="bold")
             plt.tight_layout()
             # for loop over all chunks to show individual g2 fcts
-            for n, A in enumerate(chBs):    
+            for n, A in enumerate(chBs):
+                timestring = ephem.Date(timestrings[n])
+                tstring_short = str(timestring)[5:-3]    
                 ax_crB2 = plt.subplot(5,3,n+1)
                 ax_crB2.errorbar(xnew, chBs[n], yerr=errorB[n], linestyle="-", color = colorB34,   alpha=0.7)
                 ax_crB2.plot(xplotf, uti.gauss_fixed(x=xplotf,  a=ampB[n], mu=muB[n], sigma=sigB), color='red', linestyle="--", zorder=4, label='fit mu free')
@@ -608,8 +600,8 @@ def plotting(star):
             ax_sc1.axvline(x=nsA/lam_g, color=colorA34,ymax=0.4); ax_sc3.axvline(x=nsB/lam_uv, color=colorB34, ymax=0.4)
             ax_sc1.text(x=xplot_g[1000], y=16, s='Angular diameter: {:.3f} +/- {:.3f} (mas)'.format(uti.rad2mas(popt_odrA[1]), uti.rad2mas(perr_odrA[1])), color=colorA34)
             ax_sc1.text(x=xplot_g[1000], y=14, s='Amplitude: {:.3f} +/- {:.3f}'.format(popt_odrA[0], perr_odrA[0]), color=colorA34)
-            ax_sc3.text(x=xplot_uv[800], y=8, s='Angular diameter: {:.3f} +/- {:.3f} (mas)'.format(uti.rad2mas(popt_odrB[1]), uti.rad2mas(perr_odrB[1])), color=colorB34, bbox=dict(boxstyle="round", ec="white", fc="white", alpha=0.75))
-            ax_sc3.text(x=xplot_uv[800], y=7, s='Amplitude: {:.3f} +/- {:.3f}'.format(popt_odrB[0], perr_odrB[0]), color=colorB34, bbox=dict(boxstyle="round", ec="white", fc="white", alpha=0.75))
+            ax_sc3.text(x=xplot_uv[800], y=16, s='Angular diameter: {:.3f} +/- {:.3f} (mas)'.format(uti.rad2mas(popt_odrB[1]), uti.rad2mas(perr_odrB[1])), color=colorB34, bbox=dict(boxstyle="round", ec="white", fc="white", alpha=0.75))
+            ax_sc3.text(x=xplot_uv[800], y=14, s='Amplitude: {:.3f} +/- {:.3f}'.format(popt_odrB[0], perr_odrB[0]), color=colorB34, bbox=dict(boxstyle="round", ec="white", fc="white", alpha=0.75))
     
     # add HBT curve and making plot pretty        
     ax_sc2.plot(xplot, uti.spatial_coherence(xplot,1, ang_HBT, float(lam_HBT)), label="HBT {}nm".format(lam_HBT[0:3]), color="red", linewidth=2)
@@ -624,7 +616,8 @@ def plotting(star):
     ax_chi.axhline(0.0, color='black', linestyle='--')
 
     print(amplitudes_odr)
-    np.savetxt('spatial_coherence/{}/amplitudes_odr.sc'.format(star), np.c_[amplitudes_odr], header='ampA_14, ampB_14, ampA_34, ampB_34')
+    np.savetxt('spatial_coherence/{}/amplitudes_odr.sc'.format(star), np.c_[amplitudes_odr], header='14: ampA, dampA, ampB, dampB/n 34: ampA, dampA, ampB, dampB')
+    np.savetxt('spatial_coherence/{}/angular_dia_odr.sc'.format(star), np.c_[ang_odr], header='14: angA, dangA, angB, dangB/n 34: angA, dangA, angB, dangB')
 
     '''
     #--------------------#
@@ -659,8 +652,10 @@ def plotting(star):
     plt.show()
 
 plt.figure(figsize=(6,7))
+par_fixing(star, 14)
 par_fixing(star, 34)
 plt.savefig("images/{}/{}_fixed_par.pdf".format(star,star))
+chunk_ana(star, 14)
 chunk_ana(star, 34)
-#plotting(star)
+plotting(star)
 

@@ -133,6 +133,9 @@ def spatial_coherenceG(x, amp, ang, lam=470e-9):
     return amp * (2*scp.j1(np.pi * x * ang/lam) / (np.pi* x * ang/lam))**2
 def spatial_coherenceUV(x, amp, ang, lam=375e-9):
     return amp * (2*scp.j1(np.pi * x * ang/lam) / (np.pi* x * ang/lam))**2
+def SC_limb_darkening(x,amp,ang,lam,u):
+    return amp * ( (1-u)/2 + u/3 )**(-2) * ( (1-u)/2 * scp.j1(np.pi * x * ang/lam) / (np.pi* x * ang/lam) + (u*(np.pi/2)**0.5) * bessel32(ang, x, lam) / ((np.pi*x*ang/lam)))**2
+
 # Calculate error band numerically
 def get_error_numerical(x, amp, damp, ang, dang):
     sc_vals = []
@@ -149,6 +152,10 @@ def spatial_coherence_odr(p, x):
     lam=422.5e-9
     amp, ang = p
     return amp * (2*scp.j1(np.pi * x * ang/lam) / (np.pi* x * ang/lam))**2
+def spatial_coherence_odr_scaled(ang, x):
+    lam=422.5e-9
+    amp = 1
+    return amp * (2*scp.j1(np.pi * x * ang/lam) / (np.pi* x * ang/lam))**2
 def spatial_coherence_odrG(p, x):
     lam=470e-9
     amp, ang = p
@@ -157,6 +164,16 @@ def spatial_coherence_odrUV(p, x):
     lam=375e-9
     amp, ang = p
     return amp * (2*scp.j1(np.pi * x * ang/lam) / (np.pi* x * ang/lam))**2
+
+def SC_limb_darkening_odr(ang,x):
+    lam=422.5e-9
+    u = 0.8
+    amp = 1
+    return amp * ( (1-u)/2 + u/3 )**(-2) * ( (1-u)/2 * scp.j1(np.pi * x * ang/lam) / (np.pi* x * ang/lam) + (u*(np.pi/2)**0.5) * bessel32(ang, x, lam) / ((np.pi*x*ang/lam)**(3/2)))
+
+def bessel32(phi, baseline, lam):
+    x = np.pi * baseline * phi/lam
+    return np.sqrt(2/(np.pi*x**3)) * (np.sin(x) - x*np.cos(x))
 def bessel(phi, baseline, lam=470e-9):
     return scp.j1(np.pi*baseline*phi/lam)
 def besselUV(phi, baseline, lam=375e-9):
