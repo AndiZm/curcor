@@ -92,6 +92,18 @@ def integral_fixed(fitpar, fitpar_err, sigma):
     # Use the formula from Master thesis
     #dInt = 2 * rms * np.sqrt(1.6e-9 * sigma)
     return Int, dInt
+# For additional zero-baseline systematic
+def integral_systematic(fitpar, fitpar_err, systematics):
+    a = fitpar[0]; d_a = np.abs(fitpar_err[0])
+    s = np.abs(fitpar[2]); d_s = fitpar_err[2]
+    syst_down = systematics[0]; syst_up = systematics[1]
+    Int = a*s*np.sqrt(2*np.pi)
+    dInt = np.sqrt(2*np.pi)*np.sqrt((a*d_s)**2 + (s*d_a)**2)
+
+    dInt_down = np.sqrt(2*np.pi)*np.sqrt((a*d_s)**2 + (s* (d_a+syst_down)  )**2)
+    dInt_up   = np.sqrt(2*np.pi)*np.sqrt((a*d_s)**2 + (s* (d_a+syst_up)    )**2)
+    dInt = np.max([dInt_down, dInt_up]) # Simple way: just use symmetrical errorbar with maximum error
+    return Int, dInt
 
 def calc_array_mean(array, darray):
     mean = np.mean(array)

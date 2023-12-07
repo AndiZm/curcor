@@ -16,6 +16,10 @@ import geometry as geo
 
 star = sys.argv[1]
 
+# Add error on the zero baseline from fluctuations in Acrux autocorrelation data
+zero_baseline_systematic = True
+zero_baseline_fluctuations = np.loadtxt("oscillations.txt")
+
 # Get the timebin shift of the specific measurement from the time difference
 def timebin(tdiff):
     return int(1.0* np.floor((tdiff+0.8)/1.6))
@@ -153,6 +157,9 @@ colors = [cm.viridis(x) for x in cm_sub]
 # Define total figure which will show individual g2 cross correlations and averaged auto correlation
 # and also the spatial coherence curve (baseline vs. g2 integral)
 bigfigure = plt.figure(figsize=(12,7))
+grid = GridSpec (10, 2, left=0.1, bottom=0.15, right=0.94, top=0.94, wspace=0.1, hspace=0.3)
+
+
 # cross correlations
 ax_cross = bigfigure.add_subplot(121); ax_cross.set_title("Cross correlations of {}".format(star))
 ax_cross.set_xlabel("Time difference (ns)"); ax_cross.set_ylabel("$g^{(2)}$"); ax_cross.ticklabel_format(useOffset=False)
@@ -341,6 +348,22 @@ ax_auto.plot(x_auto, c_auto, "o-", color="black", alpha=0.5)
 ax_auto.plot(xplotf, uti.gauss(xplotf, *popt_avg_free), linestyle="--", color="red")
 ax_auto.set_ylim(1-1*popt_avg_free[0] , 1+2*popt_avg_free[0])
 
+# Add systematic error
+lower_error = [zero_baseline_fluctuations[0]]
+upper_error = [zero_baseline_fluctuations[1]]
+if zero_baseline_systematic == True:
+    asymmetric_error = np.array(list(zip(lower_error, upper_error))).T
+    #ax_auto.errorbar(x=popt_avg_free[1], y=uti.gauss(popt_avg_free[1], *popt_avg_free), yerr=asymmetric_error, marker="^", color="red")
+    ax_auto.fill_between(x=xplotf, y1=uti.gauss(xplotf, popt_avg_free[0]-lower_error, popt_avg_free[1], popt_avg_free[2], popt_avg_free[3]) , y2=uti.gauss(xplotf, popt_avg_free[0]+upper_error, popt_avg_free[1], popt_avg_free[2], popt_avg_free[3]), color="red", alpha=0.4, label="systematic amplitude uncertainty")
+    ax_auto.legend()
+
+    int_auto, dint_auto = uti.integral_systematic(popt_avg_free, perr_avg_free, zero_baseline_fluctuations)
+    # now dint_auto is an array [error_down, error_up]
+
+    print (dint_auto)
+    #dint_auto = np.array(list(zip(dint_auto[0], dint_auto[1]))).T
+
+
 ##############################################################
 #### making SC plot (spatial coherence) via integral data ####
 ##############################################################
@@ -392,6 +415,7 @@ for i in xplot:
     deltas_sc_avg.append( np.abs(uti.delta_spatial_coherence(x=i, A=poptavg[0],dA=perravg[0], phi=poptavg[1], dphi=perravg[1])) )
 print ("Angular diameter AVG (fixed): {:.2f} +/- {:.2f} (mas)".format(uti.rad2mas(poptavg[1]),  uti.rad2mas(perravg[1])))
 print ("Angular diameter AVG (odr)  : {:.2f} +/- {:.2f} (mas)".format(uti.rad2mas(popt_odr[1]), uti.rad2mas(perr_odr[1])))
+print ("Zero baseline correlation   : {:.2f} +/- {:.2f} (fs)".format(popt_odr[0], perr_odr[0]))
 
 ####################################################
 # plot datapoints in SC plot and fit to all points #

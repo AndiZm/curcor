@@ -109,6 +109,7 @@ for i in range(0,len(ct3s)):
     print("{}".format(i), timestring, Int, dInt)
 
     the_shift = ( len(ct3s)-i-2 ) * 0.5e-6
+    #the_shift = 0
     
 
     if i%3 == 0:
