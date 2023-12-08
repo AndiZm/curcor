@@ -80,20 +80,46 @@ N = 2 * 1024**3        # 2G sample file
 folderpath = "C:/Users/ii/Documents/curcor/corr_results/results_HESS"
 
 def corr_parts(folder, start, stop, telcombi):
+    # Define the filetype based on the telcombi. Historically, measurements with two telescopes have the filetype "fcorr6", while measurements with 3 telescopes have "fcorr3T"
+    if len(telcombi) == 2:
+        filetype = "fcorr6"
+    elif len(telcombi) == 3:
+        filetype = "fcorr3T"
+    elif:
+        print ("Arrrgh! The filetype for your telcombi does not exist!")
+        exit(0)
+
     # Define files to be analized for a single g2 function
     files = []
     for i in range (start, stop): 
-        files.append("{}/{}/size10000/{}_{:05d}.fcorr6".format(folderpath, folder, star_small, i))
+        files.append("{}/{}/size10000/{}_{:05d}.{}".format(folderpath, folder, star_small, i, filetype))
 
     # Initialize g2 functions for channel A and B which will be filled in for loop
     len_data = len( np.loadtxt(files[0])[:,2] )
-    g2_sum_A = np.zeros(len_data)
-    g2_sum_B = np.zeros(len_data)
-    #g2_sum_3 = np.zeros(len_data)
-    #g2_sum_4 = np.zeros(len_data)
-    times = []; baseline_values = []
 
-    # Read offset data for offset correction
+    # We creat a matrix of g2 functions for each telescope combination. To access a combination, e.g. 13, do g2_sumA[1,3]
+    # To avoid having CT1 as entry 0, the array will be 5 elements x 5 elements, with the 0th row and column remain empty
+    g2_sum_A = np.array(5,5, dtype=object)
+    g2_sum_B = np.array(5,5, dtype=object)
+   
+    # Initialize array of offsets
+    off_A = [0,0,0,0,0]
+    off_B = [0,0,0,0,0]
+    # Fill the relevant entries
+    for i in range(1,5):
+        # Read offset data for offset correction
+        if str(i) in telcombi:
+            off_A[i]
+            hier weiter
+        for j in range (1,5):
+            if j > i and str(i) in telcombi and str(j) in telcombi:
+                g2_sum_A[i,j] = np.zeros(len_data)
+                g2_sum_B[i,j] = np.zeros(len_data)
+
+
+    times = []; baseline_values = [] # TODO: aendern
+
+
     off3A = np.loadtxt( folderpath + "/" + folder + "/calibs_ct{}/off.off".format(telcombi[0]) )[0]
     off3B = np.loadtxt( folderpath + "/" + folder + "/calibs_ct{}/off.off".format(telcombi[0]) )[1]
     off4A = np.loadtxt( folderpath + "/" + folder + "/calibs_ct{}/off.off".format(telcombi[1]) )[0]
