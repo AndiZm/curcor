@@ -535,7 +535,7 @@ def plotting(star):
     chi_odr_all_sc  = out_sc.res_var # chi squared value
 
     print("SC fit all")
-    print("Angular diameter AVG (odr): {:.3f} +/- {:.3f} (mas)".format(uti.rad2mas(popt_odr_all_sc[1]), uti.rad2mas(perr_odr_all_sc[1])))
+    print("Angular diameter AVG (odr): {:.3f} +/- {:.3f} (mas)".format(uti.rad2mas(popt_odr_all_sc[0]), uti.rad2mas(perr_odr_all_sc[0])))
     #print("Amplitude: {:.3f} +/- {:.3f}".format(popt_odr_all[0], perr_odr_all[0]))
     
     ax_combi.plot(xplot_all, uti.spatial_coherence(xplot,1,popt_odr_all_sc, lam_all), color='red', linewidth=2)
