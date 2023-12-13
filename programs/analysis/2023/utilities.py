@@ -56,6 +56,37 @@ def get_baseline(date, star):
     #print (baseline)
     return baseline13, baseline14, baseline34
 
+# GET_BASELINE function for cross analysis
+def get_baseline3T(date, star, telcombi):
+    starname_big = star[0].upper() + star[1:]
+    timestring = ephem.Date(date)
+    # Split time string a la 2022/4/20 23:15:07
+    year, month, day, hour, minute, second = timestring.tuple()
+    datestring1 = str(year) + str("{:02d}".format(month)) + str("{:02d}".format(day))
+    datestring2 = str(year) + str("{:02d}".format(month)) + str("{:02d}".format(day-1))
+    # Decide which part of the night
+    if hour > 12: # before midnight
+        filename = "stardata/{}/{}_{}_baselines.txt".format(starname_big, starname_big, datestring1)
+    elif hour <= 12: # after midnight
+        filename = "stardata/{}/{}_{}_baselines.txt".format(starname_big, starname_big, datestring2)
+    #print (filename)
+    # Try open the file
+    file = np.loadtxt(filename)
+    hours     = file[:,3]
+    minutes   = file[:,4]
+    if telcombi == "13":
+        baseline = file[:,6]
+    if telcombi == "14":
+        baseline = file[:,7]
+    if telcombi == "34":
+        baseline = file[:,8]
+    lineindex = 0
+    while ( hours[lineindex] != hour or minutes[lineindex] != minute ):
+        lineindex += 1
+    baseline = baseline[lineindex]
+    print ("Baseline from Buechele: {}".format(baseline))
+    return baseline
+
 
 # Some utility functions for the final analysis
 def gauss(x, a, x0, sigma, d):

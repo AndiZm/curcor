@@ -23,39 +23,62 @@ ct3 = [0., 0., 0.]
 ct4 = [84.76, -85.28, 0.34]
 
 # Difference vectors
-ct13 = [-170.08, 0.4, -1.79]
-ct14 = [-85.32, -84.88, -1.45]
-ct34 = [84.76, -85.28, 0.34]
+ct13 = np.subtract(ct3, ct1)
+ct14 = np.subtract(ct4, ct1)
+ct34 = np.subtract(ct4, ct3)
 
-# Define plane of incident light from star by normal vector from CT3 in direction of star
-n_vec = []
+# Define plane of incident light from star by normal vector from the telescopes in direction of star
+# For the baseline, we define the plane perpendicular to that one
+n_vec   = [] # for the optical path delay
 def get_plane_vector(az,alt):
 	global n_vec
 	phi = np.pi - az
+
+	# -- First for the optical path delay -- #
 	x = + np.sin(phi)
 	y = - np.cos(phi)
-	z = np.tan(alt)
+	z = + np.tan(alt)
 	# Normalize normal vector
 	length = np.sqrt(x**2+y**2+z**2)
 	x /= length; y /= length; z /= length
 	n_vec = [x,y,z]
 
+
 # Calculate distance of point T2 to plane == distance difference of travelled light
 def get_distance():
 	# Distance is scalar product of normal vector and T2 vector
-	d13 = -1 * ( n_vec[0] * ct13[0] + n_vec[1] * ct13[1] + n_vec[2] * ct13[2] )
-	d14 = -1 * ( n_vec[0] * ct14[0] + n_vec[1] * ct14[1] + n_vec[2] * ct14[2] )
-	d34 = -1 * ( n_vec[0] * ct34[0] + n_vec[1] * ct34[1] + n_vec[2] * ct34[2] )
+	d13 = -1 * np.dot(n_vec, ct13)
+	d14 = -1 * np.dot(n_vec, ct14)
+	d34 = -1 * np.dot(n_vec, ct34)
 	# ... but here for d>0 light is incident on T2 first, therefore the -1
 	# Now, negative d means light is incident on T2 first, positive d means light is incident on T1 first
 	return d13, d14, d34
+
+# Calculate the projected baseline
+def get_baseline():
+
+	# Projection of vector onto plane
+	# Start with the projection of a vector onto the norm vector
+	proj_13 = np.multiply( np.dot(ct13, n_vec),n_vec )
+	proj_14 = np.multiply( np.dot(ct14, n_vec),n_vec )
+	proj_34 = np.multiply( np.dot(ct34, n_vec),n_vec )
+	# The projection onto the plane is the vector minus the projection
+	projP_13 = np.subtract(ct13, proj_13)
+	projP_14 = np.subtract(ct14, proj_14)
+	projP_34 = np.subtract(ct34, proj_34)
+	# normalize
+	b13 = np.linalg.norm(projP_13)
+	b14 = np.linalg.norm(projP_14)
+	b34 = np.linalg.norm(projP_34)
+	
+	return b13, b14, b34
 
 # Time delay between the two telescopes at any UTC time
 def get_time_delay_azalt(az, alt):
 	get_plane_vector(az, alt)
 	d = get_distance()
-	#print ("Distance " + str(d))
-	#print ("distance = {}".format(d))
+	b = get_baseline()
+	#print ("\nOwn baseline calculation: {}".format(b))
 	# Time difference
 	t = []
 	t.append(1e9*d[0]/299792458) # nanoseconds
@@ -119,3 +142,30 @@ def get_params_manual(file, ra, dec, telcombi):
 	tdiff = get_time_delay_azalt(the_star.az, the_star.alt)[get_baseline_entry(telcombi)]
 
 	return tdiff, mean_1, mean_2, mean_3, mean_4, 180*the_star.az/np.pi, 180*the_star.alt/np.pi, time
+
+
+# 3 Telescopes
+
+def get_params3T(time, starname, telcombi):
+	# Star coordinates
+	the_star = ephem.star(starname)
+	hess.date = ephem.date(time)
+
+	the_star.compute(hess)
+	# Time delay between the telescopes
+	tdiff = get_time_delay_azalt(the_star.az, the_star.alt)[get_baseline_entry(telcombi)]
+
+	return tdiff, 180*the_star.az/np.pi, 180*the_star.alt/np.pi
+
+def get_params_manual3T(time, ra, dec, telcombi):
+	# Star coordinates
+	the_star = ephem.FixedBody()
+	the_star._ra  = ephem.hours("{}:{}:{}".format(ra[0],ra[1],ra[2]))
+	the_star._dec = ephem.degrees("{}:{}:{}".format(dec[0],dec[1],dec[2]))
+	hess.date = ephem.date(time)
+
+	the_star.compute(hess)
+	# Time delay between the telescopes
+	tdiff = get_time_delay_azalt(the_star.az, the_star.alt)[get_baseline_entry(telcombi)]
+
+	return tdiff, 180*the_star.az/np.pi, 180*the_star.alt/np.pi
