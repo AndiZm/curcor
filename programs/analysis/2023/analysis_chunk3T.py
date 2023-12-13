@@ -167,48 +167,33 @@ def corr_parts(folder, start, stop, telcombi):
 
             # Store baseline
             baselines[pair[0],pair[1]].append( uti.get_baseline3T(date=time, star=star, telcombi=pairstring) )
-
         
-        # hier weiter!
-        # Apply optical path length correction for cross correlations
-        binshift = timebin(tdiff)
-        crossA = shift_bins(crossA, binshift)
-        crossB = shift_bins(crossB, binshift)
+            # Apply optical path length correction for cross correlations
+            binshift = timebin(tdiff)
+            crossA = shift_bins(crossA, binshift)
+            crossB = shift_bins(crossB, binshift)
         
-        #################################
-        # Averaging of the g2 functions #
-        #################################
-        #--  Autocorrelations --#
-        #rms = np.std(auto3[0:4500])
-        #g2_for_averaging = auto3/rms**2
-        ## Adding the new data to the total g2 function
-        #g2_sum_3 += g2_for_averaging
+            #-- Averaging of the g2 functions --#
+            rms = np.std(crossA)
+            g2_for_averaging = crossA/rms**2
+            # Adding the new data to the total g2 function
+            g2_sum_A[pair[0],pair[1]] += g2_for_averaging
+            
+            rms = np.std(crossB)
+            g2_for_averaging = crossB/rms**2
+            # Adding the new data to the total g2 function
+            g2_sum_B[pair[0],pair[1]] += g2_for_averaging
 
-        #rms = np.std(auto4[0:4500])
-        #g2_for_averaging = auto4/rms**2
-        ## Adding the new data to the total g2 function
-        #g2_sum_4 += g2_for_averaging
+    ##################################
+    # Finish things up for the chunk #
+    ##################################
+    time_mean = np.mean(times)
 
-
-        #-- Crosscorrelations --#
-        rms = np.std(crossA)
-        g2_for_averaging = crossA/rms**2
-        # Adding the new data to the total g2 function
-        g2_sum_A += g2_for_averaging
-    
-        rms = np.std(crossB)
-        g2_for_averaging = crossB/rms**2
-        # Adding the new data to the total g2 function
-        g2_sum_B += g2_for_averaging
-
-
+    # hier weiter: das für jedes element machen
     # Re-normalize for proper g2 function
-    #g2_sum_3 = g2_sum_3/np.mean(g2_sum_3)
-    #g2_sum_4 = g2_sum_4/np.mean(g2_sum_4)
     g2_sum_A = g2_sum_A/np.mean(g2_sum_A)
     g2_sum_B = g2_sum_B/np.mean(g2_sum_B)
-
-    time_mean = np.mean(times)
+    
     # Calculate mean baseline and baseline error
     baseline  = np.mean(baseline_values)
     dbaseline = np.std(baseline_values)

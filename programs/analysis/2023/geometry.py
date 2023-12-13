@@ -78,7 +78,6 @@ def get_time_delay_azalt(az, alt):
 	get_plane_vector(az, alt)
 	d = get_distance()
 	b = get_baseline()
-	#print ("\nOwn baseline calculation: {}".format(b))
 	# Time difference
 	t = []
 	t.append(1e9*d[0]/299792458) # nanoseconds

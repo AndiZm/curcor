@@ -84,7 +84,7 @@ def get_baseline3T(date, star, telcombi):
     while ( hours[lineindex] != hour or minutes[lineindex] != minute ):
         lineindex += 1
     baseline = baseline[lineindex]
-    print ("Baseline from Buechele: {}".format(baseline))
+    #print ("Baseline from Buechele: {}".format(baseline))
     return baseline
 
 
