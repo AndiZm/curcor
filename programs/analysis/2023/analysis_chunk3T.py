@@ -7,6 +7,7 @@ from tqdm import tqdm
 from datetime import datetime, timezone
 import ephem
 import sys
+import os
 
 import geometry as geo
 import corrections as cor
@@ -64,15 +65,26 @@ def get_baseline_entry(telcombi):
     elif telcombi == "34":
         return int(2)
 
-# Initialize parameter arrays for data storing
-g2_3s = []
-g2_4s = []
-g2_As_14 = []; g2_As_34 = []
-g2_Bs_14 = []; g2_Bs_34 = []
-#g2_3Ax4Bs = []
-#g2_4Ax3Bs = []
-baselines14 = []; dbaselines14 = []; baselines34 =[]; dbaselines34 =[]
-time_means14 = []; time_means34 = []
+# -------------------------------------------------- #
+# -- Initialize parameter arrays for data storing -- #
+# g2 functions for each telescope combination
+g2_A = np.zeros((5,5), dtype=object)
+g2_B = np.zeros((5,5), dtype=object) 
+# Baselines and uncertainties for each telescope combination
+baselines  = np.zeros((5,5), dtype=object)
+dbaselines = np.zeros((5,5), dtype=object)
+# Acquisition times
+ac_times = np.zeros((5,5), dtype=object)
+# Every index is an empty list at the beginning
+for i in range(5):
+    for j in range(5):
+        g2_A[i,j] = []
+        g2_B[i,j] = []
+        baselines[i,j] = []
+        dbaselines[i,j] = []
+        ac_times[i,j] = []
+# -------------------------------------------------- #
+
 
 # Number of datapoints
 N = 2 * 1024**3        # 2G sample file
@@ -92,7 +104,8 @@ def corr_parts(folder, start, stop, telcombi):
     # Define files to be analized for a single g2 function. We are creating the list of header files here
     files = []
     for i in range (start, stop): 
-        files.append("{}/{}/size10000/{}_{:05d}.header".format(folderpath, folder, star_small, i))
+        #files.append("{}/{}/size10000/{}_{:05d}.header".format(folderpath, folder, star_small, i))
+        files.append("{}/{}/{}_{:05d}.header".format(folderpath, folder, star, i))
 
     # Initialize g2 functions for channel A and B which will be filled in for loop
     # We create a matrix of g2 functions for each telescope combination. To access a combination, e.g. 13, do g2_sumA[1,3]
@@ -116,7 +129,8 @@ def corr_parts(folder, start, stop, telcombi):
                 print ("\tIntialize telescope combination {}-{}".format(i,j))
                 telpairs.append([i,j])
 
-                len_data = len( np.loadtxt("{}/{}/size10000/{}{}/{}_{:05d}.fcorrAB".format(folderpath, folder, i,j, star_small, start))[:,0] )
+                len_data = len( np.loadtxt("{}/{}/{}{}/{}_{:05d}.fcorrAB".format(folderpath, folder, i,j, star, start))[:,0] )
+                #len_data = len( np.loadtxt("{}/{}/size10000/{}{}/{}_{:05d}.fcorrAB".format(folderpath, folder, i,j, star_small, start))[:,0] )
                 g2_sum_A[i,j] = np.zeros(len_data)
                 g2_sum_B[i,j] = np.zeros(len_data)
 
@@ -125,10 +139,12 @@ def corr_parts(folder, start, stop, telcombi):
     baseline_values = [] # TODO: wahrscheinlich aendern
 
     # Initialize baseline matrix
-    baselines = np.zeros((5,5), dtype=object)
+    baseline  = np.zeros((5,5), dtype=object)
+    dbaseline = np.zeros((5,5), dtype=object) # for the uncertainties
     for k in range(0,5):
         for l in range(0,5):
-            baselines[k,l] = []
+            baseline[k,l]  = []
+            dbaseline[k,l] = []
 
     # Loop over every file
     for i in tqdm(range ( 0,len(files) )):
@@ -141,7 +157,7 @@ def corr_parts(folder, start, stop, telcombi):
         # Loop over every telescope pair
         for pair in telpairs:
             pairstring = str(pair[0]) + str(pair[1])
-            file = "{}/{}/size10000/{}/{}_{:05d}.fcorrAB".format(folderpath, folder, pairstring, star_small, i)
+            file = "{}/{}/{}/{}_{:05d}.fcorrAB".format(folderpath, folder, pairstring, star_small, i)
 
             # Read in data
             crossA = np.loadtxt(file)[:,0] # crosscorrelation G2 chA
@@ -166,7 +182,7 @@ def corr_parts(folder, start, stop, telcombi):
                 tdiff, az, alt = geo.get_params3T(time, starname=star, telcombi=pairstring)
 
             # Store baseline
-            baselines[pair[0],pair[1]].append( uti.get_baseline3T(date=time, star=star, telcombi=pairstring) )
+            baseline[pair[0],pair[1]].append( uti.get_baseline3T(date=time, star=star, telcombi=pairstring) )
         
             # Apply optical path length correction for cross correlations
             binshift = timebin(tdiff)
@@ -188,41 +204,35 @@ def corr_parts(folder, start, stop, telcombi):
     # Finish things up for the chunk #
     ##################################
     time_mean = np.mean(times)
-
-    # hier weiter: das für jedes element machen
-    # Re-normalize for proper g2 function
-    g2_sum_A = g2_sum_A/np.mean(g2_sum_A)
-    g2_sum_B = g2_sum_B/np.mean(g2_sum_B)
-    
-    # Calculate mean baseline and baseline error
-    baseline  = np.mean(baseline_values)
-    dbaseline = np.std(baseline_values)
-    print ("Telescope combination =  {}".format(telcombi))
-    print ("Baseline =  {:.1f} +/- {:.1f}  m".format(baseline, dbaseline))
     print ("Central time = {}".format(ephem.Date(time_mean)))
 
-    # save data into correct tel combi folders
-    if telcombi == '14':
-        # Save the data of this correlation to the arrays
-        #g2_3s.append(g2_sum_3)
-        #g2_4s.append(g2_sum_4)
-        g2_As_14.append(g2_sum_A)
-        g2_Bs_14.append(g2_sum_B)
-        baselines14.append(baseline)
-        dbaselines14.append(dbaseline)
-        time_means14.append(time_mean) 
-        print('DONE 14')
+    # Re-normalize for proper g2 function: nanmean takes into account that there may be nan entries
+    for i in range(5):
+        for j in range(5):
+            g2_sum_A[i,j] /= np.nanmean(g2_sum_A[i,j])
+            g2_sum_B[i,j] /= np.nanmean(g2_sum_B[i,j])
+    
+    # Calculate mean baseline and baseline error
+    for i in range(5):
+        for j in range(5):
+            dbaseline[i,j] = np.nanstd(baseline[i,j])  # first the error, bc the baseline array will be changed in the next line
+            baseline[i,j]  = np.nanmean(baseline[i,j]) # this transfers the array of lists into a simple array with the mean baseline
 
-    elif telcombi == '34':
-        # Save the data of this correlation to the arrays
-        #g2_3s.append(g2_sum_3)
-        #g2_4s.append(g2_sum_4)
-        g2_As_34.append(g2_sum_A)
-        g2_Bs_34.append(g2_sum_B)
-        baselines34.append(baseline)
-        dbaselines34.append(dbaseline)
-        time_means34.append(time_mean) 
-        print('DONE 34')
+    print ("Baselines:")
+    print (baseline)
+    print ("Baseline errors:")
+    print (dbaseline)
+
+    # save data into correct arrays
+    for pair in telpairs:
+        # append the g2 arrays to the matrix of telescope g2 lists
+        g2_A[pair[0],pair[1]].append(g2_sum_A[pair[0],pair[1]])
+        g2_B[pair[0],pair[1]].append(g2_sum_B[pair[0],pair[1]])
+        # append baselines and uncertainties to the matrix of telescope baseline lists
+        baselines[pair[0],pair[1]].append(baseline[pair[0],pair[1]])
+        dbaselines[pair[0],pair[1]].append(dbaseline[pair[0],pair[1]])
+        # append acquisition times array. Even though they are the same for each combination in this chunk, there may be different runs with different telescope combinations
+        ac_times[pair[0],pair[1]].append(time_mean)
 
 ##########################################
 # Add the number of files to be analyzed #
@@ -237,13 +247,20 @@ for i in range(len(folders)):
         start = steps[j]
         stop = steps[j+1]
         corr_parts(folder, start, stop, telcombi)
-    print(len(baselines14))
 
-#np.savetxt("g2_functions/weight_rms_squared/{}/{}/CT3.txt".format(star,telcombi), np.c_[g2_3s], header="{} CT3".format(star))
-#np.savetxt("g2_functions/weight_rms_squared/{}/{}/CT4.txt".format(star,telcombi), np.c_[g2_4s], header="{} CT4".format(star))
-np.savetxt("g2_functions/weight_rms_squared/{}/{}/ChA.txt".format(star,telcombis[0]), np.c_[g2_As_14], header="{} Channel A".format(star) )
-np.savetxt("g2_functions/weight_rms_squared/{}/{}/ChB.txt".format(star,telcombis[0]), np.c_[g2_Bs_14], header="{} Channel B".format(star) )
-np.savetxt("g2_functions/weight_rms_squared/{}/{}/baseline.txt".format(star,telcombis[0]), np.c_[time_means14, baselines14, dbaselines14], header="14: Time, baseline, baseline error" )
-np.savetxt("g2_functions/weight_rms_squared/{}/{}/ChA.txt".format(star,telcombis[1]), np.c_[g2_As_34], header="{} Channel A".format(star) )
-np.savetxt("g2_functions/weight_rms_squared/{}/{}/ChB.txt".format(star,telcombis[1]), np.c_[g2_Bs_34], header="{} Channel B".format(star) )
-np.savetxt("g2_functions/weight_rms_squared/{}/{}/baseline.txt".format(star,telcombis[1]), np.c_[time_means34, baselines34, dbaselines34], header="34: Time, baseline, baseline error" )
+
+
+# Create folder for stars, if not already existing
+os.makedirs("g2_functions/{}".format(star), exist_ok=True)
+
+for i in range(5):
+    for j in range(5):
+        if len( ac_times[i,j] ) > 0: # this combination exists
+            # create combination folder, if not already existing
+            os.makedirs("g2_functions/{}/{}{}".format(star,i,j), exist_ok=True)
+            # save all the data
+            np.savetxt("g2_functions/{}/{}{}/ac_times.txt".format(star,i,j), np.c_[ ac_times[i,j] ])
+            np.savetxt("g2_functions/{}/{}{}/baselines.txt".format(star,i,j), np.c_[ baselines[i,j] ])
+            np.savetxt("g2_functions/{}/{}{}/dbaselines.txt".format(star,i,j), np.c_[ dbaselines[i,j] ])
+            np.savetxt("g2_functions/{}/{}{}/chA.g2".format(star,i,j), np.c_[ g2_A[i,j] ])
+            np.savetxt("g2_functions/{}/{}{}/chB.g2".format(star,i,j), np.c_[ g2_B[i,j] ])
