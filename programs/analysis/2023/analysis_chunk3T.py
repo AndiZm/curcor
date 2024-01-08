@@ -85,128 +85,115 @@ def corr_parts(folder, start, stop, telcombi):
         filetype = "fcorr6"
     elif len(telcombi) == 3:
         filetype = "fcorr3T"
-    elif:
+    else:
         print ("Arrrgh! The filetype for your telcombi does not exist!")
         exit(0)
 
-    # Define files to be analized for a single g2 function
+    # Define files to be analized for a single g2 function. We are creating the list of header files here
     files = []
     for i in range (start, stop): 
-        files.append("{}/{}/size10000/{}_{:05d}.{}".format(folderpath, folder, star_small, i, filetype))
+        files.append("{}/{}/size10000/{}_{:05d}.header".format(folderpath, folder, star_small, i))
 
     # Initialize g2 functions for channel A and B which will be filled in for loop
-    len_data = len( np.loadtxt(files[0])[:,2] )
-
-    # We creat a matrix of g2 functions for each telescope combination. To access a combination, e.g. 13, do g2_sumA[1,3]
+    # We create a matrix of g2 functions for each telescope combination. To access a combination, e.g. 13, do g2_sumA[1,3]
     # To avoid having CT1 as entry 0, the array will be 5 elements x 5 elements, with the 0th row and column remain empty
-    g2_sum_A = np.array(5,5, dtype=object)
-    g2_sum_B = np.array(5,5, dtype=object)
-   
+    g2_sum_A = np.zeros((5,5), dtype=object); g2_sum_A[:] = np.nan
+    g2_sum_B = np.zeros((5,5), dtype=object); g2_sum_B[:] = np.nan 
     # Initialize array of offsets
-    off_A = [0,0,0,0,0]
-    off_B = [0,0,0,0,0]
+    off_A = [np.nan,np.nan,np.nan,np.nan,np.nan]
+    off_B = [np.nan,np.nan,np.nan,np.nan,np.nan]
     # Fill the relevant entries
+    telpairs = [] # This will be a list of the existing telescope combinations. For "134" e.g. the list will be [[1,3],[1,4],[3,4]]
     for i in range(1,5):
         # Read offset data for offset correction
         if str(i) in telcombi:
-            off_A[i]
-            hier weiter
+            print ("Read offsets for telescope {}".format(i))
+            off_A[i] = np.loadtxt( folderpath + "/" + folder + "/calibs_ct{}/off.off".format(i) )[0]
+            off_B[i] = np.loadtxt( folderpath + "/" + folder + "/calibs_ct{}/off.off".format(i) )[1]
+        # Now initialize the g2 functions of the participating telescope pairs
         for j in range (1,5):
             if j > i and str(i) in telcombi and str(j) in telcombi:
+                print ("\tIntialize telescope combination {}-{}".format(i,j))
+                telpairs.append([i,j])
+
+                len_data = len( np.loadtxt("{}/{}/size10000/{}{}/{}_{:05d}.fcorrAB".format(folderpath, folder, i,j, star_small, start))[:,0] )
                 g2_sum_A[i,j] = np.zeros(len_data)
                 g2_sum_B[i,j] = np.zeros(len_data)
 
 
-    times = []; baseline_values = [] # TODO: aendern
+    times = [] # Will be filled with individual time stampes to find the central acquisition time for the chunk
+    baseline_values = [] # TODO: wahrscheinlich aendern
 
-
-    off3A = np.loadtxt( folderpath + "/" + folder + "/calibs_ct{}/off.off".format(telcombi[0]) )[0]
-    off3B = np.loadtxt( folderpath + "/" + folder + "/calibs_ct{}/off.off".format(telcombi[0]) )[1]
-    off4A = np.loadtxt( folderpath + "/" + folder + "/calibs_ct{}/off.off".format(telcombi[1]) )[0]
-    off4B = np.loadtxt( folderpath + "/" + folder + "/calibs_ct{}/off.off".format(telcombi[1]) )[1]
+    # Initialize baseline matrix
+    baselines = np.zeros((5,5), dtype=object)
+    for k in range(0,5):
+        for l in range(0,5):
+            baselines[k,l] = []
 
     # Loop over every file
     for i in tqdm(range ( 0,len(files) )):
-        file = files[i]
+        # Read in the header information
+        data = np.loadtxt(files[i])
+        time = datetime.utcfromtimestamp(data[0]); times.append( ephem.Date(time) )
+        mean_A = [np.nan, data[1], data[3], data[5], data[7]] # Array of waveform means of each telescope chA (unused telescopes have "nan" entries)
+        mean_B = [np.nan, data[2], data[4], data[6], data[8]] # Array of waveform means of each telescope chB (unused telescopes have "nan" entries)
 
-        # Read in data
-        #auto3  = np.loadtxt(file)[:,0] # G2 of CT3 A x CT3 B (autocorrelations)
-        #auto4  = np.loadtxt(file)[:,1] # G2 of CT4 A x CT4 B (autocorrelations)
-        crossA = np.loadtxt(file)[:,2] # G2 of CT3 A x CT4 A (crosscorrelations)
-        crossB = np.loadtxt(file)[:,3] # G2 of CT3 B x CT4 B (crosscorrelations)
+        # Loop over every telescope pair
+        for pair in telpairs:
+            pairstring = str(pair[0]) + str(pair[1])
+            file = "{}/{}/size10000/{}/{}_{:05d}.fcorrAB".format(folderpath, folder, pairstring, star_small, i)
 
-        # Read mean waveform values
-        f = open(file)
-        line_params = f.readline()[:-1].split(" ") # Read header of fcorr file
-        mean3A = float(line_params[2])
-        mean3B = float(line_params[3])
-        mean4A = float(line_params[4])
-        mean4B = float(line_params[5])
+            # Read in data
+            crossA = np.loadtxt(file)[:,0] # crosscorrelation G2 chA
+            crossB = np.loadtxt(file)[:,1] # crosscorrelation G2 chB
 
-        # Apply offset correction
-        #auto3  -= N * ( mean3A*off3B + mean3B*off3A - off3A*off3B ) # Only CT 3 both channels
-        #auto4  -= N * ( mean4A*off4B + mean4B*off4A - off4A*off4B ) # Only CT 4 both channels        
-        crossA -= N * ( mean3A*off4A + mean4A*off3A - off3A*off4A ) # Only CH A, but CT3 and CT4
-        crossB -= N * ( mean3B*off4B + mean4B*off3B - off3B*off4B ) # Only CH B, but CT3 and CT4
+            # Apply offset correction (for details see eq (7) in https://doi.org/10.1093/mnras/stab3058)
+            crossA -= N * ( mean_A[pair[0]]*off_A[pair[1]] + mean_A[pair[1]]*off_A[pair[0]] - off_A[pair[0]]*off_A[pair[1]] )
+            crossB -= N * ( mean_B[pair[0]]*off_B[pair[1]] + mean_B[pair[1]]*off_B[pair[0]] - off_B[pair[0]]*off_B[pair[1]] )
 
-        # Apply pattern correction
-        #auto3  = cor.pattern_correction(auto3) # data already normalized
-        #auto4  = cor.pattern_correction(auto4) # data already normalized
-        crossA = cor.pattern_correction(crossA) # data already normalized
-        crossB = cor.pattern_correction(crossB) # data already normalized
+            # Apply pattern correction
+            crossA = cor.pattern_correction(crossA) # data already normalized
+            crossB = cor.pattern_correction(crossB) # data already normalized
     
-        # Get file parameters from header and ephem calculations
-        if star == "Regor":
-            tdiff, mean_1, mean_2, mean_3, mean_4, az, alt, time = geo.get_params_manual(file, ra=[8,10,12.5], dec=[-47,24,22.2], telcombi=telcombi)
-        elif star == "Etacen":
-            tdiff, mean_1, mean_2, mean_3, mean_4, az, alt, time = geo.get_params_manual(file, ra=[14,35,30.42], dec=[-42,9,28.17], telcombi=telcombi)
-        elif star == "Dschubba":
-            tdiff, mean_1, mean_2, mean_3, mean_4, az, alt, time = geo.get_params_manual(file, ra=[16,0,20], dec=[-22,37,18.14], telcombi=telcombi)
-        else:
-            tdiff, mean_1, mean_2, mean_3, mean_4, az, alt, time = geo.get_params(file, starname=star, telcombi=telcombi)
-        # Store acquisition times and corresponding baselines for sc plot
-        times.append(ephem.Date(time))
-        baseline_values.append(uti.get_baseline(date=time, star=star)[get_baseline_entry(telcombi=telcombi)])
+            # Get file parameters from header and ephem calculations
+            if star == "Regor":
+                tdiff, az, alt = geo.get_params_manual3T(time, ra=[8,10,12.5], dec=[-47,24,22.2], telcombi=pairstring)
+            elif star == "Etacen":
+                tdiff, az, alt = geo.get_params_manual3T(time, ra=[14,35,30.42], dec=[-42,9,28.17], telcombi=pairstring)
+            elif star == "Dschubba":
+                tdiff, az, alt = geo.get_params_manual3T(time, ra=[16,0,20], dec=[-22,37,18.14], telcombi=pairstring)
+            else:
+                tdiff, az, alt = geo.get_params3T(time, starname=star, telcombi=pairstring)
 
-        # Apply optical path length correction for cross correlations
-        binshift = timebin(tdiff)
-        crossA = shift_bins(crossA, binshift)
-        crossB = shift_bins(crossB, binshift)
+            # Store baseline
+            baselines[pair[0],pair[1]].append( uti.get_baseline3T(date=time, star=star, telcombi=pairstring) )
         
-        #################################
-        # Averaging of the g2 functions #
-        #################################
-        #--  Autocorrelations --#
-        #rms = np.std(auto3[0:4500])
-        #g2_for_averaging = auto3/rms**2
-        ## Adding the new data to the total g2 function
-        #g2_sum_3 += g2_for_averaging
+            # Apply optical path length correction for cross correlations
+            binshift = timebin(tdiff)
+            crossA = shift_bins(crossA, binshift)
+            crossB = shift_bins(crossB, binshift)
+        
+            #-- Averaging of the g2 functions --#
+            rms = np.std(crossA)
+            g2_for_averaging = crossA/rms**2
+            # Adding the new data to the total g2 function
+            g2_sum_A[pair[0],pair[1]] += g2_for_averaging
+            
+            rms = np.std(crossB)
+            g2_for_averaging = crossB/rms**2
+            # Adding the new data to the total g2 function
+            g2_sum_B[pair[0],pair[1]] += g2_for_averaging
 
-        #rms = np.std(auto4[0:4500])
-        #g2_for_averaging = auto4/rms**2
-        ## Adding the new data to the total g2 function
-        #g2_sum_4 += g2_for_averaging
+    ##################################
+    # Finish things up for the chunk #
+    ##################################
+    time_mean = np.mean(times)
 
-
-        #-- Crosscorrelations --#
-        rms = np.std(crossA)
-        g2_for_averaging = crossA/rms**2
-        # Adding the new data to the total g2 function
-        g2_sum_A += g2_for_averaging
-    
-        rms = np.std(crossB)
-        g2_for_averaging = crossB/rms**2
-        # Adding the new data to the total g2 function
-        g2_sum_B += g2_for_averaging
-
-
+    # hier weiter: das für jedes element machen
     # Re-normalize for proper g2 function
-    #g2_sum_3 = g2_sum_3/np.mean(g2_sum_3)
-    #g2_sum_4 = g2_sum_4/np.mean(g2_sum_4)
     g2_sum_A = g2_sum_A/np.mean(g2_sum_A)
     g2_sum_B = g2_sum_B/np.mean(g2_sum_B)
-
-    time_mean = np.mean(times)
+    
     # Calculate mean baseline and baseline error
     baseline  = np.mean(baseline_values)
     dbaseline = np.std(baseline_values)
