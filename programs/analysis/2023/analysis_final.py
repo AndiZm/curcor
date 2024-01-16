@@ -105,7 +105,7 @@ def par_fixing(star, telcombi):
     plt.xlabel("Time delay (ns)"); plt.ylabel("$g^{(2)}$")
     plt.tight_layout()
     plt.plot()
-    np.savetxt("g2_functions/fixed_parameters/{}/mu_sig_{}.txt".format(star,telcombi), np.c_[mu_A, sigma_A, mu_B, sigma_B], header="muA, sigA, muB, sigB")
+    np.savetxt("g2_functions/fixed_parameters/{}/{}/mu_sig_{}.txt".format(star,telcombi, telcombi), np.c_[mu_A, sigma_A, mu_B, sigma_B], header="muA, sigA, muB, sigB")
 
 #########################################
 ###### Chunk analysis ###################
@@ -115,17 +115,17 @@ def chunk_ana(star, telcombi):
     intsB = []; dintsB = []
     ints_fixedA = []; dints_fixedA = []
     ints_fixedB = []; dints_fixedB = []
-    timestrings = []
+    
     
     # initialize cleaned arrays and read in mu and sigma
     chA_clean = []; chB_clean = []; ampA = []; ampB = []; muA = []; muB =[] ; chiA =[]; chiB = []; dmuA = []; dmuB =[]
     ffts = []
     chAs    = np.loadtxt("g2_functions/weight_rms_squared/{}/{}/ChA.txt".format(star, telcombi))
-    chBs    = np.loadtxt("g2_functions/weight_rms_squared/{}/{}/ChB.txt".format(star, telcombi))     
-    mu_A, sig_A, mu_B, sig_B = np.loadtxt("g2_functions/fixed_parameters/{}/mu_sig_{}.txt".format(star,telcombi))
+    chBs    = np.loadtxt("g2_functions/weight_rms_squared/{}/{}/ChB.txt".format(star, telcombi)) 
     data      = np.loadtxt("g2_functions/weight_rms_squared/{}/{}/baseline.txt".format(star, telcombi))
-    baselines = data[:,1]; dbaselines = data[:,2]
-
+    timestrings = data [:,0] ; baselines = data[:,1]; dbaselines = data[:,2]    
+    mu_A, sig_A, mu_B, sig_B = np.loadtxt("g2_functions/fixed_parameters/{}/{}/mu_sig_{}.txt".format(star,telcombi,telcombi))
+    
     # Demo function for initializing x axis and some stuff
     demo = chAs[0]
     x = np.arange(-1.6*len(demo)//2,+1.6*len(demo)//2,1.6)
@@ -194,11 +194,8 @@ def chunk_ana(star, telcombi):
     
         # Check acquisition time of original data
         timestring = ephem.Date(data[:,0][i])
-        timestrings.append(timestring)
         print("{}".format(i), timestring, Int, dInt)
-        # Shorter timestring for plotting, not showing year and seconds
-        tstring_short = str(timestring)[5:-3]
-
+        
         # save cleaned data and fit parameter
         chA_clean.append(chA)
         chB_clean.append(chB)
@@ -206,11 +203,11 @@ def chunk_ana(star, telcombi):
         
 
     # store cleaned data
-    np.savetxt("g2_functions/weight_rms_squared/{}/{}/ChA_clean.txt".format(star,telcombi), np.c_[chA_clean], header="{} Channel A cleaned".format(star) )
-    np.savetxt("g2_functions/weight_rms_squared/{}/{}/ChB_clean.txt".format(star,telcombi), np.c_[chB_clean], header="{} Channel B cleaned".format(star) )
-    np.savetxt("g2_functions/fixed_parameters/{}/xplot.txt".format(star), np.c_[xplotf])
-    np.savetxt("g2_functions/fixed_parameters/{}/amps.txt".format(star), np.c_[ampA, ampB, timestrings], header='ampA, ampB, timestrings')
-    np.savetxt("spatial_coherence/{}/{}_{}_data_fixed.sc".format(star,star,telcombi), np.c_[baselines, dbaselines, ints_fixedA, dints_fixedA, ints_fixedB, dints_fixedB])
+    np.savetxt("g2_functions/fixed_parameters/{}/{}/ChA_clean.txt".format(star,telcombi), np.c_[chA_clean], header="{} Channel A cleaned".format(star) )
+    np.savetxt("g2_functions/fixed_parameters/{}/{}/ChB_clean.txt".format(star,telcombi), np.c_[chB_clean], header="{} Channel B cleaned".format(star) )
+    np.savetxt("g2_functions/fixed_parameters/{}/{}/xplot.txt".format(star,telcombi), np.c_[xplotf])
+    np.savetxt("g2_functions/fixed_parameters/{}/{}/amps.txt".format(star,telcombi), np.c_[ampA, ampB], header='ampA, ampB')
+    np.savetxt("spatial_coherence/{}/{}_{}_data_fixed.sc".format(star,star,telcombi), np.c_[timestrings,baselines, dbaselines, ints_fixedA, dints_fixedA, ints_fixedB, dints_fixedB])
 
     print("DONE Chunks {}".format(telcombi))
 
@@ -265,19 +262,19 @@ def plotting(star):
     # for loop over telescope combinations
     for i in range(len(telcombis)):
         # read in all necessary data and parameters
-        chAs_clean = np.loadtxt("g2_functions/weight_rms_squared/{}/{}/ChA_clean.txt".format(star,telcombis[i]))
-        chBs_clean = np.loadtxt("g2_functions/weight_rms_squared/{}/{}/ChB_clean.txt".format(star,telcombis[i]))
-        mu_A, sigA, mu_B, sigB = np.loadtxt("g2_functions/fixed_parameters/{}/mu_sig_{}.txt".format(star,telcombis[i]))
-        ampA = np.loadtxt("g2_functions/fixed_parameters/{}/amps.txt".format(star,telcombis[i]))[:,0]
-        ampB = np.loadtxt("g2_functions/fixed_parameters/{}/amps.txt".format(star,telcombis[i]))[:,1]
-        timestrings = np.loadtxt("g2_functions/fixed_parameters/{}/amps.txt".format(star,telcombis[i]))[:,2]
-        xplotf = np.loadtxt("g2_functions/fixed_parameters/{}/xplot.txt".format(star))
-        baselines    = np.loadtxt("spatial_coherence/{}/{}_{}_data_fixed.sc".format(star,star,telcombis[i])) [:,0]
-        dbaselines   = np.loadtxt("spatial_coherence/{}/{}_{}_data_fixed.sc".format(star,star,telcombis[i])) [:,1]
-        ints_fixedA  = np.loadtxt("spatial_coherence/{}/{}_{}_data_fixed.sc".format(star,star,telcombis[i])) [:,2]
-        dints_fixedA = np.loadtxt("spatial_coherence/{}/{}_{}_data_fixed.sc".format(star,star,telcombis[i])) [:,3]
-        ints_fixedB  = np.loadtxt("spatial_coherence/{}/{}_{}_data_fixed.sc".format(star,star,telcombis[i])) [:,4]
-        dints_fixedB = np.loadtxt("spatial_coherence/{}/{}_{}_data_fixed.sc".format(star,star,telcombis[i])) [:,5]
+        chAs_clean = np.loadtxt("g2_functions/fixed_parameters/{}/{}/ChA_clean.txt".format(star,telcombis[i]))
+        chBs_clean = np.loadtxt("g2_functions/fixed_parameters/{}/{}/ChB_clean.txt".format(star,telcombis[i]))
+        mu_A, sigA, mu_B, sigB = np.loadtxt("g2_functions/fixed_parameters/{}/{}/mu_sig_{}.txt".format(star,telcombis[i],telcombis[i]))
+        ampA = np.loadtxt("g2_functions/fixed_parameters/{}/{}/amps.txt".format(star,telcombis[i]))[:,0]
+        ampB = np.loadtxt("g2_functions/fixed_parameters/{}/{}/amps.txt".format(star,telcombis[i]))[:,1]
+        xplotf = np.loadtxt("g2_functions/fixed_parameters/{}/{}/xplot.txt".format(star,telcombis[i]))
+        timestrings  = np.loadtxt("spatial_coherence/{}/{}_{}_data_fixed.sc".format(star,star,telcombis[i])) [:,0]
+        baselines    = np.loadtxt("spatial_coherence/{}/{}_{}_data_fixed.sc".format(star,star,telcombis[i])) [:,1]
+        dbaselines   = np.loadtxt("spatial_coherence/{}/{}_{}_data_fixed.sc".format(star,star,telcombis[i])) [:,2]
+        ints_fixedA  = np.loadtxt("spatial_coherence/{}/{}_{}_data_fixed.sc".format(star,star,telcombis[i])) [:,3]
+        dints_fixedA = np.loadtxt("spatial_coherence/{}/{}_{}_data_fixed.sc".format(star,star,telcombis[i])) [:,4]
+        ints_fixedB  = np.loadtxt("spatial_coherence/{}/{}_{}_data_fixed.sc".format(star,star,telcombis[i])) [:,5]
+        dints_fixedB = np.loadtxt("spatial_coherence/{}/{}_{}_data_fixed.sc".format(star,star,telcombis[i])) [:,6]
 
         # add data of all tel combis to one list
         ints_fixed_all.append(ints_fixedA); ints_fixed_all.append(ints_fixedB); dints_fixed_all.append(dints_fixedA); dints_fixed_all.append(dints_fixedB)
@@ -504,13 +501,17 @@ def plotting(star):
 
     np.savetxt('spatial_coherence/{}/amplitudes_odr.sc'.format(star), np.c_[amplitudes_odr], header='14: ampA, dampA, ampB, dampB/n 34: ampA, dampA, ampB, dampB')
     np.savetxt('spatial_coherence/{}/angular_dia_odr.sc'.format(star), np.c_[ang_odr], header='14: angA, dangA, angB, dangB/n 34: angA, dangA, angB, dangB')
-
- 
+    
+    print(baselines_all)
+    print(ints_fixed_all_scaled)
+    print(len(baselines_all))
+    print(len(ints_fixed_all_scaled))
+    print(len(baselines_all[0]), len(ints_fixed_all_scaled[0]))
     #--------------------#
     # Try fitting with ods
     # Model object
     from scipy import odr
-    
+    '''
     sc_model = odr.Model(uti.spatial_coherence_odr)
     # RealData object
     rdata = odr.RealData( baselines_all, ints_fixed_all_scaled, sx=dbaselines_all, sy=dints_fixed_all_scaled )
@@ -522,9 +523,11 @@ def plotting(star):
     popt_odr_all = out.beta
     perr_odr_all = out.sd_beta
     chi_odr_all  = out.res_var # chi squared value
-
+    '''
     # scaled ods model
     sc_model_sc = odr.Model(uti.spatial_coherence_odr_scaled)
+    # RealData object
+    rdata = odr.RealData( baselines_all, ints_fixed_all_scaled, sx=dbaselines_all, sy=dints_fixed_all_scaled )
     # Set up ODR with model and data
     odrODR_sc = odr.ODR(rdata, sc_model_sc, beta0=[2.7e-9])
     # Run the regression
@@ -535,7 +538,7 @@ def plotting(star):
     chi_odr_all_sc  = out_sc.res_var # chi squared value
 
     print("SC fit all")
-    print("Angular diameter AVG (odr): {:.3f} +/- {:.3f} (mas)".format(uti.rad2mas(popt_odr_all_sc[1]), uti.rad2mas(perr_odr_all_sc[1])))
+    print("Angular diameter AVG (odr): {:.3f} +/- {:.3f} (mas)".format(uti.rad2mas(popt_odr_all_sc[0]), uti.rad2mas(perr_odr_all_sc[0])))
     #print("Amplitude: {:.3f} +/- {:.3f}".format(popt_odr_all[0], perr_odr_all[0]))
     
     ax_combi.plot(xplot_all, uti.spatial_coherence(xplot,1,popt_odr_all_sc, lam_all), color='red', linewidth=2)
@@ -545,7 +548,7 @@ def plotting(star):
     ax_combi.axhline(0.0, color='black', linestyle='--') 
     ax_combi.legend()
 
-
+    '''
     #--------------------#
     # Try fitting with ods
     # Limb darkening model object
@@ -573,7 +576,7 @@ def plotting(star):
     ax_limb.legend()
 
 
-
+    '''
 
 
 

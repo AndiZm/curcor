@@ -76,7 +76,8 @@ time_means14 = []; time_means34 = []
 
 # Number of datapoints
 N = 2 * 1024**3        # 2G sample file
-folderpath = "D:/results_HESS"
+#folderpath = "D:/results_HESS"
+folderpath = "C:/Users/ii/Documents/curcor/corr_results/results_HESS"
 
 def corr_parts(folder, start, stop, telcombi):
     # Define files to be analized for a single g2 function
