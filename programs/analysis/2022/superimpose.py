@@ -459,4 +459,29 @@ plt.savefig("images/{}_sc.png".format(star))
 ## Pad the saved area by 10% in the x-direction and 20% in the y-direction
 #fig.savefig('ax2_figure_expanded.png', bbox_inches=extent.expanded(1.1, 1.2))
 
+
+### make only SC plot ###
+fig, ax = plt.subplots()
+# spatial coherence
+for i in range (0,len(baselines)):
+    ax.errorbar(baselines[i], ints_fixed[i], yerr=dints_fixed[i], xerr=dbaselines[i], marker="o", linestyle="", color=colors[i])
+if star != "Acrux":
+    ax.fill_between(xplot, lower, upper, color="#003366", alpha=0.15)
+    ax.plot(xplot, uti.spatial_coherence(xplot,*popt_odr),   label="ODR fit, $\chi^2$/dof={:.2f}".format(chi_odr), color="#003366", linewidth=2)
+    ax.text(75, 38, "Angular diameter: {:.2f} +/- {:.2f} mas".format(uti.rad2mas(popt_odr[1]), uti.rad2mas(perr_odr[1])), color="#003366", fontsize=10)
+    ax.set_xlim(-15,250)
+    ax.legend(loc="upper right")
+    plt.tight_layout()
+
+plt.title("{}".format(star))
+plt.xlabel("Projected baseline (m)")
+plt.ylabel("Spatial coherence (fs)")
+ax.axhline(y=0.0, color='black', linestyle='--')
+#plt.xlim(0,200)
+
+plt.legend()
+plt.tight_layout()
+plt.savefig("images/{}_sc_only.pdf".format(star))
+plt.savefig("images/{}_sc_only.png".format(star))
+
 plt.show()
