@@ -130,11 +130,11 @@ def integral(fitpar, fitpar_err):
     Int = a*s*np.sqrt(2*np.pi)
     dInt = np.sqrt(2*np.pi)*np.sqrt((a*d_s)**2 + (s*d_a)**2)
     return Int, dInt
-def integral_fixed(fitpar, fitpar_err, sigma):
+def integral_fixed(fitpar, fitpar_err, sigma, factor=1):
     a = fitpar[0]; d_a = fitpar_err[0]
     s = np.abs(sigma); d_s = 0
     Int = a*s*np.sqrt(2*np.pi)
-    dInt = np.sqrt(2*np.pi)*np.sqrt((a*d_s)**2 + (s*d_a)**2)
+    dInt = factor * np.sqrt(2*np.pi)*np.sqrt((a*d_s)**2 + (s*d_a)**2)
     # Use the formula from Master thesis
     #dInt = 2 * rms * np.sqrt(1.6e-9 * sigma)
     return Int, dInt
@@ -164,8 +164,8 @@ def spatial_coherenceG(x, amp, ang, lam=470e-9):
     return amp * (2*scp.j1(np.pi * x * ang/lam) / (np.pi* x * ang/lam))**2
 def spatial_coherenceUV(x, amp, ang, lam=375e-9):
     return amp * (2*scp.j1(np.pi * x * ang/lam) / (np.pi* x * ang/lam))**2
-def SC_limb_darkening(x,amp,ang,lam,u):
-    return amp * ( (1-u)/2 + u/3 )**(-2) * ( (1-u)/2 * scp.j1(np.pi * x * ang/lam) / (np.pi* x * ang/lam) + (u*(np.pi/2)**0.5) * bessel32(ang, x, lam) / ((np.pi*x*ang/lam)))**2
+def spatial_coherence_LD(x,amp,ang,lam,u):
+    return amp * ( (1-u)/2 + u/3 )**(-2) * ( (1-u) * scp.j1(np.pi * x * ang/lam) / (np.pi* x * ang/lam) + (u*(np.pi/2)**0.5) * bessel32(ang, x, lam) / ((np.pi*x*ang/lam)**(3/2)))**2
 
 # Calculate error band numerically
 def get_error_numerical(x, amp, damp, ang, dang):
@@ -196,11 +196,11 @@ def spatial_coherence_odrUV(p, x):
     amp, ang = p
     return amp * (2*scp.j1(np.pi * x * ang/lam) / (np.pi* x * ang/lam))**2
 
-def SC_limb_darkening_odr(ang,x):
-    lam=422.5e-9
-    u = 0.8
-    amp = 1
-    return amp * ( (1-u)/2 + u/3 )**(-2) * ( (1-u)/2 * scp.j1(np.pi * x * ang/lam) / (np.pi* x * ang/lam) + (u*(np.pi/2)**0.5) * bessel32(ang, x, lam) / ((np.pi*x*ang/lam)**(3/2)))
+def spatial_coherence_odrG_LD(p,x):
+    lam=470e-9
+    u = 0.37 # Mimosa
+    amp, ang = p
+    return amp * ( (1-u)/2 + u/3 )**(-2) * ( (1-u) * scp.j1(np.pi * x * ang/lam) / (np.pi* x * ang/lam) + (u*(np.pi/2)**0.5) * bessel32(ang, x, lam) / ((np.pi*x*ang/lam)**(3/2)))**2
 
 def bessel32(phi, baseline, lam):
     x = np.pi * baseline * phi/lam
