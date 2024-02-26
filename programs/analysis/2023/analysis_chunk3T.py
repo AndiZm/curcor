@@ -102,10 +102,10 @@ def corr_parts(folder, start, stop, telcombi):
         exit(0)
 
     # Define files to be analized for a single g2 function. We are creating the list of header files here
-    files = []
-    for i in range (start, stop): 
-        #files.append("{}/{}/size10000/{}_{:05d}.header".format(folderpath, folder, star_small, i))
-        files.append("{}/{}/{}_{:05d}.header".format(folderpath, folder, star, i))
+    #del# files = []
+    #del# for i in range (start, stop): 
+    #del#     #files.append("{}/{}/size10000/{}_{:05d}.header".format(folderpath, folder, star_small, i))
+    #del#     files.append("{}/{}/{}_{:05d}.header".format(folderpath, folder, star, i))
 
     # Initialize g2 functions for channel A and B which will be filled in for loop
     # We create a matrix of g2 functions for each telescope combination. To access a combination, e.g. 13, do g2_sumA[1,3]
@@ -130,7 +130,6 @@ def corr_parts(folder, start, stop, telcombi):
                 telpairs.append([i,j])
 
                 len_data = len( np.loadtxt("{}/{}/{}{}/{}_{:05d}.fcorrAB".format(folderpath, folder, i,j, star, start))[:,0] )
-                #len_data = len( np.loadtxt("{}/{}/size10000/{}{}/{}_{:05d}.fcorrAB".format(folderpath, folder, i,j, star_small, start))[:,0] )
                 g2_sum_A[i,j] = np.zeros(len_data)
                 g2_sum_B[i,j] = np.zeros(len_data)
 
@@ -147,9 +146,11 @@ def corr_parts(folder, start, stop, telcombi):
             dbaseline[k,l] = []
 
     # Loop over every file
-    for i in tqdm(range ( 0,len(files) )):
+    #del# for i in tqdm(range ( 0,len(files) )):
+    for i in tqdm(range ( start, stop )):
         # Read in the header information
-        data = np.loadtxt(files[i])
+        #del# data = np.loadtxt(files[i])
+        data = np.loadtxt("{}/{}/{}_{:05d}.header".format(folderpath, folder, star, i))
         time = datetime.utcfromtimestamp(data[0]); times.append( ephem.Date(time) )
         mean_A = [np.nan, data[1], data[3], data[5], data[7]] # Array of waveform means of each telescope chA (unused telescopes have "nan" entries)
         mean_B = [np.nan, data[2], data[4], data[6], data[8]] # Array of waveform means of each telescope chB (unused telescopes have "nan" entries)
@@ -158,6 +159,7 @@ def corr_parts(folder, start, stop, telcombi):
         for pair in telpairs:
             pairstring = str(pair[0]) + str(pair[1])
             file = "{}/{}/{}/{}_{:05d}.fcorrAB".format(folderpath, folder, pairstring, star_small, i)
+            #print ("\tread {}".format(file))
 
             # Read in data
             crossA = np.loadtxt(file)[:,0] # crosscorrelation G2 chA
