@@ -69,7 +69,7 @@ def get_time_delay_azalt(az, alt, telcombi):
 	b = get_baseline(telcombi)
 	# Time difference
 	t = 1e9*d/299792458 # nanoseconds
-	return t # nanoseconds
+	return t,b # nanoseconds
 
 #########################
 ### STAR CALCULATIONS ###
@@ -82,65 +82,19 @@ hess.lat  = ephem.degrees("-23.271778")
 hess.long = ephem.degrees(" 16.50022")
 #hess.date = ephem.now()
 
-def get_params(file, starname, telcombi):
-	# Open file
-	f = open(file)
-	# Read in header, which is the first line of the file
-	header = f.readline().split(" ")
-	ctime  = float(header[1])
-	mean_1 = float(header[2])
-	mean_2 = float(header[3])
-	mean_3 = float(header[4])
-	mean_4 = float(header[5])
-	f.close()
-	# Star coordinates
-	the_star = ephem.star(starname)
-	time = datetime.utcfromtimestamp(ctime)
-	hess.date = ephem.date(time)
-
-	the_star.compute(hess)
-	# Time delay between the telescopes
-	tdiff = get_time_delay_azalt(the_star.az, the_star.alt)[get_baseline_entry(telcombi)]
-
-	return tdiff, mean_1, mean_2, mean_3, mean_4, 180*the_star.az/np.pi, 180*the_star.alt/np.pi, time
-
-def get_params_manual(file, ra, dec, telcombi):
-	# Open file
-	f = open(file)
-	# Read in header, which is the first line of the file
-	header = f.readline().split(" ")
-	ctime  = float(header[1])
-	mean_1 = float(header[2])
-	mean_2 = float(header[3])
-	mean_3 = float(header[4])
-	mean_4 = float(header[5])
-	f.close()
-	# Star coordinates
-	the_star = ephem.FixedBody()
-	the_star._ra  = ephem.hours("{}:{}:{}".format(ra[0],ra[1],ra[2]))
-	the_star._dec = ephem.degrees("{}:{}:{}".format(dec[0],dec[1],dec[2]))
-	time = datetime.utcfromtimestamp(ctime)
-	hess.date = ephem.date(time)
-
-	the_star.compute(hess)
-	# Time delay between the telescopes
-	tdiff = get_time_delay_azalt(the_star.az, the_star.alt)[get_baseline_entry(telcombi)]
-
-	return tdiff, mean_1, mean_2, mean_3, mean_4, 180*the_star.az/np.pi, 180*the_star.alt/np.pi, time
-
-
 # 3 Telescopes
 
 def get_params3T(time, starname, telcombi):
+	
 	# Star coordinates
 	the_star = ephem.star(starname)
 	hess.date = ephem.date(time)
 
 	the_star.compute(hess)
 	# Time delay between the telescopes
-	tdiff = get_time_delay_azalt(the_star.az, the_star.alt)[get_baseline_entry(telcombi)]
+	tdiff, baseline = get_time_delay_azalt(the_star.az, the_star.alt, telcombi)
 
-	return tdiff, 180*the_star.az/np.pi, 180*the_star.alt/np.pi
+	return tdiff, baseline, 180*the_star.az/np.pi, 180*the_star.alt/np.pi
 
 def get_params_manual3T(time, ra, dec, telcombi):
 	# Star coordinates
@@ -151,6 +105,6 @@ def get_params_manual3T(time, ra, dec, telcombi):
 
 	the_star.compute(hess)
 	# Time delay between the telescopes
-	tdiff = get_time_delay_azalt(the_star.az, the_star.alt)[get_baseline_entry(telcombi)]
+	tdiff, baseline = get_time_delay_azalt(the_star.az, the_star.alt, telcombi)
 
-	return tdiff, 180*the_star.az/np.pi, 180*the_star.alt/np.pi
+	return tdiff, baseline, 180*the_star.az/np.pi, 180*the_star.alt/np.pi

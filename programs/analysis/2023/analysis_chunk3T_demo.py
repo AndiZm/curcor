@@ -10,6 +10,7 @@ import sys
 import os
 
 import geometry as geo
+import geometry_3T as geo3T
 import corrections as cor
 import utilities as uti
 
@@ -70,13 +71,18 @@ def get_baseline_entry(telcombi):
 # Baselines and uncertainties for each telescope combination
 baselines  = np.zeros((5,5), dtype=object)
 dbaselines = np.zeros((5,5), dtype=object)
+
+baselines3T  = np.zeros((5,5), dtype=object)
+dbaselines3T = np.zeros((5,5), dtype=object)
 # Acquisition times
 ac_times = np.zeros((5,5), dtype=object)
 # Every index is an empty list at the beginning
 for i in range(5):
     for j in range(5):
         baselines[i,j] = []
+        baselines3T[i,j] = []
         dbaselines[i,j] = []
+        dbaselines3T[i,j] = []
         ac_times[i,j] = []
 # -------------------------------------------------- #
 
@@ -105,15 +111,18 @@ def corr_parts(folder, start, stop, telcombi):
                 telpairs.append([i,j])
 
     times = [] # Will be filled with individual time stampes to find the central acquisition time for the chunk
-    baseline_values = [] # TODO: wahrscheinlich aendern
 
     # Initialize baseline matrix
     baseline  = np.zeros((5,5), dtype=object)
     dbaseline = np.zeros((5,5), dtype=object) # for the uncertainties
+    baseline3T  = np.zeros((5,5), dtype=object)
+    dbaseline3T = np.zeros((5,5), dtype=object) # for the uncertainties
     for k in range(0,5):
         for l in range(0,5):
             baseline[k,l]  = []
+            baseline3T[k,l]  = []
             dbaseline[k,l] = []
+            dbaseline3T[k,l] = []
 
     # Loop over every file
     #del# for i in tqdm(range ( 0,len(files) )):
@@ -128,16 +137,17 @@ def corr_parts(folder, start, stop, telcombi):
     
             # Get file parameters from header and ephem calculations
             if star == "Regor":
-                tdiff, az, alt = geo.get_params_manual3T(time, ra=[8,10,12.5], dec=[-47,24,22.2], telcombi=pairstring)
+                tdiff, bl3T, az, alt = geo3T.get_params_manual3T(time, ra=[8,10,12.5], dec=[-47,24,22.2], telcombi=[pair[0],pair[1]])
             elif star == "Etacen":
-                tdiff, az, alt = geo.get_params_manual3T(time, ra=[14,35,30.42], dec=[-42,9,28.17], telcombi=pairstring)
+                tdiff, bl3T, az, alt = geo3T.get_params_manual3T(time, ra=[14,35,30.42], dec=[-42,9,28.17], telcombi=[pair[0],pair[1]])
             elif star == "Dschubba":
-                tdiff, az, alt = geo.get_params_manual3T(time, ra=[16,0,20], dec=[-22,37,18.14], telcombi=pairstring)
+                tdiff, bl3T, az, alt = geo3T.get_params_manual3T(time, ra=[16,0,20], dec=[-22,37,18.14], telcombi=[pair[0],pair[1]])
             else:
-                tdiff, az, alt = geo.get_params3T(time, starname=star, telcombi=pairstring)
+                tdiff, bl3T, az, alt = geo3T.get_params3T(time, starname=star, telcombi=[pair[0],pair[1]])
 
             # Store baseline
             baseline[pair[0],pair[1]].append( uti.get_baseline3T(date=time, star=star, telcombi=pairstring) )
+            baseline3T[pair[0],pair[1]].append( bl3T )
         
 
     ##################################
@@ -152,6 +162,9 @@ def corr_parts(folder, start, stop, telcombi):
             dbaseline[i,j] = np.nanstd(baseline[i,j])  # first the error, bc the baseline array will be changed in the next line
             baseline[i,j]  = np.nanmean(baseline[i,j]) # this transfers the array of lists into a simple array with the mean baseline
 
+            dbaseline3T[i,j] = np.nanstd(baseline3T[i,j])  # first the error, bc the baseline array will be changed in the next line
+            baseline3T[i,j]  = np.nanmean(baseline3T[i,j]) # this transfers the array of lists into a simple array with the mean baseline
+
     print ("Baselines:")
     print (baseline)
     print ("Baseline errors:")
@@ -161,7 +174,9 @@ def corr_parts(folder, start, stop, telcombi):
     for pair in telpairs:
         # append baselines and uncertainties to the matrix of telescope baseline lists
         baselines[pair[0],pair[1]].append(baseline[pair[0],pair[1]])
+        baselines3T[pair[0],pair[1]].append(baseline3T[pair[0],pair[1]])
         dbaselines[pair[0],pair[1]].append(dbaseline[pair[0],pair[1]])
+        dbaselines3T[pair[0],pair[1]].append(dbaseline3T[pair[0],pair[1]])
         # append acquisition times array. Even though they are the same for each combination in this chunk, there may be different runs with different telescope combinations
         ac_times[pair[0],pair[1]].append(time_mean)
 
@@ -192,4 +207,6 @@ for i in range(5):
             # save all the data
             np.savetxt("testing/g2_functions/{}/{}{}/ac_times.txt".format(star,i,j), np.c_[ ac_times[i,j] ])
             np.savetxt("testing/g2_functions/{}/{}{}/baselines.txt".format(star,i,j), np.c_[ baselines[i,j] ])
+            np.savetxt("testing/g2_functions/{}/{}{}/baselines3T.txt".format(star,i,j), np.c_[ baselines3T[i,j] ])
             np.savetxt("testing/g2_functions/{}/{}{}/dbaselines.txt".format(star,i,j), np.c_[ dbaselines[i,j] ])
+            np.savetxt("testing/g2_functions/{}/{}{}/dbaselines3T.txt".format(star,i,j), np.c_[ dbaselines3T[i,j] ])
