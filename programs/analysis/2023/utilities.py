@@ -5,6 +5,8 @@ from scipy.optimize import curve_fit
 import scipy.special as scp
 import scipy.stats as stats
 import random
+import matplotlib.pyplot as plt
+import scipy
 
 # Define colors of the different channels for usage in all the plottings
 color_3A = "#8f0303"
@@ -247,3 +249,65 @@ def fourier(data):
     fft  = np.abs(np.fft.fft(data-1))
     xfft = np.linspace(0,1/1.6,len(data),endpoint=True)
     return xfft, fft
+
+
+# Function for extrapolating the limb darkening coefficient
+def get_u(temp_star, logg_star):
+    # read in table with LD coefficients
+    table = np.loadtxt("tableu.txt", delimiter=' ', dtype={'names': ('logg', 'temp', 'Z', 'xi', 'u', 'Filt', 'Met'), 'formats': (np.float, np.float, np.float, np.float, np.float, '|S15', '|S15')}, usecols=(1,2,3,4,5,6,7))
+    # shorten table to interesting values (z=0, xi=2, filter=B, method=L)
+    tables = []
+    for i in range(len(table)):
+        if table[i][2] == 0.0 and table[i][3] == 2.0 and table[i][5] == b'B' and table[i][6] == b'L':
+            tables.append(table[i])
+
+    logg = []; temp = []; u = []
+    logg1 = []; u1 = []; logg2 = []; u2 = []
+    for i in range(len(tables)):
+        if tables[i][1] == temp_star:  # if star temp exists in table
+            logg.append(tables[i][0])
+            u.append(tables[i][4])
+        elif tables[i][1] != temp_star: # if star temp does not exist in table
+            # round to 10.000 number
+            temp1 = round(temp_star, -3)
+            # get higher or lower 10.000 number
+            if temp_star <= temp1:
+                temp2 = temp1 - 1000
+            elif temp_star >= temp1:
+                temp2 = temp1 + 1000
+            # get logg and u for those temps    
+            if tables[i][1] == temp1: 
+                logg1.append(tables[i][0])
+                u1.append(tables[i][4])
+            if tables[i][1] == temp2:
+                logg2.append(tables[i][0])
+                u2.append(tables[i][4])
+
+    xnew = np.arange(0.0, 5.0, 0.01)
+    plt.figure('LD coefficient')
+    plt.title('Limb darkening coefficient'); plt.xlabel('logg'); plt.ylabel('u')
+    if len(logg) > 0:
+        plt.plot(logg, u, marker='o',linestyle='', color='green', label=str(temp_star))
+        f = scipy.interpolate.interp1d(logg, u,'cubic', bounds_error=False, fill_value='extrapolate')
+        ynew = f(xnew)
+        plt.plot(xnew, ynew, color='green')
+        x_want = round(float(f(logg_star)),2)
+        
+    elif len(logg) == 0:
+        plt.plot(logg1, u1, marker='o',linestyle='', color='green', label=str(temp1))
+        plt.plot(logg2, u2, marker='x',linestyle='', color='blue', label=str(temp2))
+        f1 = scipy.interpolate.interp1d(logg1, u1,'cubic', bounds_error=False, fill_value='extrapolate')
+        f2 = scipy.interpolate.interp1d(logg2, u2,'cubic', bounds_error=False, fill_value='extrapolate')
+        y1new = f1(xnew)
+        y2new = f2(xnew)
+        plt.plot(xnew, y1new, color='green')
+        plt.plot(xnew, y2new, color='blue')
+        x1_want = f1(logg_star)
+        x2_want = f2(logg_star)
+        print(round(float(x1_want),2))
+        print(round(float(x2_want),2))
+        x_want = round(float(np.mean([x1_want, x2_want])),2)
+    plt.legend()    
+    return(x_want)
+
+    

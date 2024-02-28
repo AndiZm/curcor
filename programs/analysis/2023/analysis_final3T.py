@@ -22,20 +22,22 @@ import geometry as geo
 star = sys.argv[1]
 
 
-#bl_HBT = []
-## Open text file with star data from HBT
-#f = open("stars_HBT.txt")
-## Find line for the star
-#line = f.readline()
-#while star not in line:
-#    line = f.readline()
-#lam_HBT = line.split()[1]
-#ang_HBT = uti.mas2rad(float(line.split()[2]))
-#line = f.readline()
-#while "[end]" not in line:
-#    bl_HBT.append(float(line.split()[0]))
-#    line = f.readline()
-#f.close()
+bl_HBT = []
+# Open text file with star data from HBT
+f = open("stars_HBT.txt")
+# Find line for the star
+line = f.readline()
+while star not in line:
+    line = f.readline()
+lam_HBT = line.split()[1]
+ang_HBT = uti.mas2rad(float(line.split()[2]))
+logg_star = line.split()[3]
+temp_star = int(line.split()[4])
+line = f.readline()
+while "[end]" not in line:
+    bl_HBT.append(float(line.split()[0]))
+    line = f.readline()
+f.close()
 
 
 combicolors = np.zeros((5,5), dtype=object); combicolors[:] = np.nan
@@ -54,6 +56,8 @@ amp_B = np.zeros((5,5)); amp_B[:] = np.nan
 lam_g = 470e-9
 lam_uv = 375e-9
 lam_all = 422.5e-9
+
+ratioA = []; ratioB = []
 
 ################################################
 #### Analysis over whole measurement time #####
@@ -91,9 +95,8 @@ def par_fixing(star, telcombi):
     amp_A[c1][c2] = popt[0]*1e7
     noise_A = np.std(g2_allA)*1e7
     integral, dintegral = uti.integral(popt, perr)
-    print("{} A 470nm amp: {:.2f}e-7 +/- {:.2f}e-7 \t mean: {:.2f} +/- {:.2f} ns \t sigma: {:.2f} +/- {:.2f} ns \t integral: {:.2f} +/- {:.2f} fs".format(telstring, amp_A[c1][c2], perr[0]*1e7, mu_A[c1][c2], perr[1],sigma_A[c1][c2],perr[2],1e6*integral,1e6*dintegral))
-    print("A Noise: {:.2f}".format(noise_A))
-    print("Ratio: {:.2f}".format(amp_A[c1][c2]/noise_A))
+    print("{} A 470nm amp: {:.2f}e-7 +/- {:.2f}e-7 \t mean: {:.2f} +/- {:.2f} ns \t sigma: {:.2f} +/- {:.2f} ns \t integral: {:.2f} +/- {:.2f} fs \t A Noise: {:.2f} \t Ratio: {:.2f}".format(telstring, amp_A[c1][c2], perr[0]*1e7, mu_A[c1][c2], perr[1],sigma_A[c1][c2],perr[2],1e6*integral,1e6*dintegral, noise_A, amp_A[c1][c2]/noise_A))
+    ratioA.append(amp_A[c1][c2]/noise_A)
     plt.plot(x, g2_allA, label=telstring + "A", color="green")
     plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--")
     # Channel B
@@ -102,9 +105,8 @@ def par_fixing(star, telcombi):
     amp_B[c1][c2] = popt[0]*1e7
     noise_B = np.std(g2_allB)*1e7
     integral, dintegral = uti.integral(popt, perr)
-    print ("{} B 375nm amp: {:.2f}e-7 +/- {:.2f}e-7 \t mean: {:.2f} +/- {:.2f} ns \t sigma: {:.2f} +/- {:.2f} ns \t integral: {:.2f} +/- {:.2f} fs".format(telstring,amp_B[c1][c2], perr[0]*1e7, mu_B[c1][c2],perr[1],sigma_B[c1][c2],perr[2],1e6*integral,1e6*dintegral))
-    print("B Noise: {:.2f}".format(noise_B))
-    print("Ratio: {:.2f}".format(amp_B[c1][c2]/noise_B))
+    print ("{} B 375nm amp: {:.2f}e-7 +/- {:.2f}e-7 \t mean: {:.2f} +/- {:.2f} ns \t sigma: {:.2f} +/- {:.2f} ns \t integral: {:.2f} +/- {:.2f} fs \t B Noise: {:.2f} \t Ratio: {:.2f}".format(telstring,amp_B[c1][c2], perr[0]*1e7, mu_B[c1][c2],perr[1],sigma_B[c1][c2],perr[2],1e6*integral,1e6*dintegral, noise_B, amp_B[c1][c2]/noise_B))
+    ratioB.append(amp_B[c1][c2]/noise_B)
     plt.plot(x, g2_allB, label=telstring + "B", color="blue")
     plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--")
     
@@ -117,11 +119,6 @@ def par_fixing(star, telcombi):
 ##########################################
 ####### Chunk analysis ###################
 ##########################################
-#plt.figure("baselines")
-#plt.title("{}".format(star))
-#plt.xlabel("Acquisition time")
-#plt.ylabel("Telescope baseline (m)")
-
 plt.figure('SC', figsize=(12,8))
 plt.suptitle("Spatial coherence of {}".format(star))
 
@@ -131,8 +128,11 @@ ints_fixedA = []; dints_fixedA = []
 ints_fixedB = []; dints_fixedB = []
 baselines_all = []; dbaselines_all = []
 time_all = [] ; telstrings =[]
+baselinesA = []; dbaselinesA = []
+baselinesB = []; dbaselinesB = []
 
-def chunk_ana(star, telcombi):
+
+def chunk_ana(star, telcombi, ratioA, ratioB):
     c1 = telcombi[0]
     c2 = telcombi[1]
     telstring = "{}{}".format(c1,c2)  
@@ -162,10 +162,6 @@ def chunk_ana(star, telcombi):
         baselines_all.append(baseline); dbaselines_all.append(dbaseline)
         time_all.append(timestring)
         telstrings.append(telstring)  
-    
-        #plt.figure('baselines')
-        #plt.errorbar(x=tstring_short, y=baseline, yerr=dbaseline, marker="o", linestyle="", label=telstring, color=combicolors[c1][c2])
-        #plt.xticks(rotation=45)
     
         # Read g2 function
         chA = chAs[i]
@@ -214,28 +210,36 @@ def chunk_ana(star, telcombi):
         plt.close()
         '''    
 
-        # Fit with fixed mu and sigma
-        xplotf, popt_A, perr_A = uti.fit_fixed(chA, x, -50, 50, mu_A[c1][c2], sigma_A[c1][c2])
-        Int, dInt = uti.integral_fixed(popt_A, perr_A, sigma_A[c1][c2], factor=2.3)
-        #dInt = np.sqrt( dInt**2 + (np.std(chA)*sigma_A[c1][c2]*np.sqrt(2*np.pi))**2 ) # this is the empirical formula from the simulations
-        ints_fixedA.append(1e6*Int); dints_fixedA.append(1e6*dInt)# in femtoseconds
+        if ratioA[-1] >= 2.5:
+            # Fit with fixed mu and sigma
+            xplotf, popt_A, perr_A = uti.fit_fixed(chA, x, -50, 50, mu_A[c1][c2], sigma_A[c1][c2])
+            Int, dInt = uti.integral_fixed(popt_A, perr_A, sigma_A[c1][c2], factor=2.3)
+            #dInt = np.sqrt( dInt**2 + (np.std(chA)*sigma_A[c1][c2]*np.sqrt(2*np.pi))**2 ) # this is the empirical formula from the simulations
+            ints_fixedA.append(1e6*Int); dints_fixedA.append(1e6*dInt)# in femtoseconds
 
-        plt.figure('SC')
-        plt.subplot(121)
-        plt.title("470nm")
-        plt.errorbar(x=baseline, xerr=dbaseline, y=1e6*Int, yerr=1e6*dInt, marker='o', color=combicolors[c1][c2], label=telstring)
+            baselinesA.append(baseline); dbaselinesA.append(dbaseline)
+            
+            plt.figure('SC')
+            plt.subplot(121)
+            plt.title("470nm")
+            plt.errorbar(x=baseline, xerr=dbaseline, y=1e6*Int, yerr=1e6*dInt, marker='o', color=combicolors[c1][c2], label=telstring)
+            print("{}".format(i), timestring, Int, dInt) 
         
-        xplotf, popt_B, perr_B = uti.fit_fixed(chB, x, -50, 50, mu_B[c1][c2], sigma_B[c1][c2])
-        Int, dInt = uti.integral_fixed(popt_B, perr_B, sigma_B[c1][c2], factor=2.38)
-        #dInt = np.sqrt( dInt**2 + (np.std(chB)*sigma_B[c1][c2]*np.sqrt(2*np.pi))**2 ) # this is the empirical formula from the simulations
-        ints_fixedB.append(1e6*Int); dints_fixedB.append(1e6*dInt)# in femtoseconds
+        if ratioB[-1] >= 2.5:
+            xplotf, popt_B, perr_B = uti.fit_fixed(chB, x, -50, 50, mu_B[c1][c2], sigma_B[c1][c2])
+            Int, dInt = uti.integral_fixed(popt_B, perr_B, sigma_B[c1][c2], factor=2.38)
+            #dInt = np.sqrt( dInt**2 + (np.std(chB)*sigma_B[c1][c2]*np.sqrt(2*np.pi))**2 ) # this is the empirical formula from the simulations
+            ints_fixedB.append(1e6*Int); dints_fixedB.append(1e6*dInt)# in femtoseconds
+            
+            baselinesB.append(baseline); dbaselinesB.append(dbaseline)
 
-        plt.figure("SC")
-        plt.subplot(122)
-        plt.title("375nm")
-        plt.errorbar(x=baseline, xerr=dbaseline, y=1e6*Int, yerr=1e6*dInt, marker='o', color=combicolors[c1][c2], label=telstring)
+            plt.figure("SC")
+            plt.subplot(122)
+            plt.title("375nm")
+            plt.errorbar(x=baseline, xerr=dbaseline, y=1e6*Int, yerr=1e6*dInt, marker='o', color=combicolors[c1][c2], label=telstring)
+            print("{}".format(i), timestring, Int, dInt) 
 
-        print("{}".format(i), timestring, Int, dInt) 
+        #print("{}".format(i), timestring, Int, dInt) 
 
 
 #        # save cleaned data and fit parameter
@@ -257,7 +261,10 @@ def chunk_ana(star, telcombi):
     #plt.legend(by_label.values(), by_label.keys()); plt.tight_layout()
 
 
-def plotting(star):
+def plotting(star): 
+    ##### plot baselines vs time #####
+    print('Start plotting')
+    print('BASELINES')
     plt.figure("baselines")
     plt.title("{}".format(star))
     plt.xlabel("Acquisition time")
@@ -293,14 +300,14 @@ def plotting(star):
     handles, labels = plt.gca().get_legend_handles_labels()
     by_label = OrderedDict(zip(labels, handles)) 
     plt.legend(by_label.values(), by_label.keys()); plt.tight_layout()
-
+    print('LENGTHS', len(baselinesA), len(ints_fixedA), len(baselinesB), len(ints_fixedB))
 
     #--------------------#
     # Try fitting with ods
     # Uniform disk model object    
     sc_modelG = odr.Model(uti.spatial_coherence_odrG)
     # RealData object
-    rdataG = odr.RealData( baselines_all, ints_fixedA, sx=dbaselines_all, sy=dints_fixedA )
+    rdataG = odr.RealData( baselinesA, ints_fixedA, sx=dbaselinesA, sy=dints_fixedA )
     # Set up ODR with model and data
     odrODRG = odr.ODR(rdataG, sc_modelG, beta0=[15,2.2e-9])
     # Run the regression
@@ -312,7 +319,7 @@ def plotting(star):
     
     sc_modelUV = odr.Model(uti.spatial_coherence_odrUV)
     # RealData object
-    rdataUV = odr.RealData( baselines_all, ints_fixedB, sx=dbaselines_all, sy=dints_fixedB )
+    rdataUV = odr.RealData( baselinesB, ints_fixedB, sx=dbaselinesB, sy=dints_fixedB )
     # Set up ODR with model and data
     odrODRUV = odr.ODR(rdataUV, sc_modelUV, beta0=[10,3.2e-9])
     # Run the regression
@@ -326,6 +333,23 @@ def plotting(star):
     print("SC fits")
     print("A 470nm: Angular diameter: {:.2f} +/- {:.2f} (mas)\t Amplitude: {:.2f} +/- {:.2f}\t Chi^2 reduced: {:.2f}".format(uti.rad2mas(popt_odrA[1]), uti.rad2mas(perr_odrA[1]), popt_odrA[0], perr_odrA[0], chi_odrA))
     print("B 375nm: Angular diameter: {:.2f} +/- {:.2f} (mas)\t Amplitude: {:.2f} +/- {:.2f}\t Chi^2 reduced: {:.2f}".format(uti.rad2mas(popt_odrB[1]), uti.rad2mas(perr_odrB[1]), popt_odrB[0], perr_odrB[0], chi_odrB))
+    
+    #--------------------#
+    # Try fitting with ods
+    # Limb darkening model object
+    sc_model_ld = odr.Model(uti.spatial_coherence_odrG_LD)
+    # Set up ODR with model and data
+    odrODR_ld = odr.ODR(rdataG, sc_model_ld, beta0=[15,2.7e-9])
+    # Run the regression
+    out_ld = odrODR_ld.run()
+    # Fit parameters
+    popt_odrG_LD = out_ld.beta
+    perr_odrG_LD = out_ld.sd_beta
+    chi_odrG_LD  = out_ld.res_var # chi squared value
+    #--------------------#
+
+    print("SC fit limb darkening")
+    print("A 470nm: Angular diameter: {:.2f} +/- {:.2f} (mas)\t Amplitude: {:.2f} +/- {:.2f}\t Chi^2 reduced: {:.2f}".format(uti.rad2mas(popt_odrG_LD[1]), uti.rad2mas(perr_odrG_LD[1]), popt_odrG_LD[0], perr_odrG_LD[0], chi_odrG_LD))
 
 #
 #        # save fitted amplitude
@@ -362,59 +386,35 @@ def plotting(star):
     plt.subplot(121)
     plt.plot(xplot, uti.spatial_coherence(xplot,*popt_odrA, lam_g), linewidth=2, color='darkgrey', label='uniform disk')
     plt.fill_between(xplot, uti.spatial_coherence(xplot,popt_odrA[0]+perr_odrA[0],popt_odrA[1]-perr_odrA[1], lam_g), uti.spatial_coherence(xplot,popt_odrA[0]-perr_odrA[0],popt_odrA[1]+perr_odrA[1], lam_g), alpha=0.3, color='darkgrey')
+    # get LD coeff
+    u = uti.get_u(temp_star, logg_star)
+    print(u)
     # plot limb darkening fit
-    #plt.plot(xplot, uti.spatial_coherence_LD(xplot,*popt_odrA, lam_g, u=0.2), linewidth=2, color='orange', label='limb darkening')
+    plt.figure("SC")
+    plt.subplot(121)
+    plt.plot(xplot, uti.spatial_coherence_LD(xplot,*popt_odrG_LD, lam_g, u=u), linewidth=2, color='orange', label='limb darkening')
+    plt.fill_between(xplot, uti.spatial_coherence_LD(xplot,popt_odrG_LD[0]+perr_odrG_LD[0],popt_odrG_LD[1]-perr_odrG_LD[1], lam_g, u=u), uti.spatial_coherence_LD(xplot,popt_odrG_LD[0]-perr_odrG_LD[0],popt_odrG_LD[1]+perr_odrG_LD[1], lam_g, u=0.37), alpha=0.3, color='orange')
     plt.xlabel("Baseline (m)")
     plt.ylabel("Spatial coherence (fs)")
-    #plt.xlim(0,200)
     plt.axhline(y=0, color="black", linestyle="--")  
-    
-    # text
-    ymin, ymax = plt.gca().get_ylim()
-    plt.text(80, ymax-3.5, s='Angular diameter: {:.3f} +/- {:.3f} (mas)'.format(uti.rad2mas(popt_odrA[1]), uti.rad2mas(perr_odrA[1])), color='grey')
-    plt.text(80, ymax-4, s='$\chi^2$/dof={:.2f}'.format(chi_odrA), color='grey')
-    #plt.text(80, ymax-4.5, s='Angular diameter: {:.3f} +/- {:.3f} (mas)'.format(uti.rad2mas(popt_odrG_LD[1]), uti.rad2mas(perr_odrG_LD[1])), color='orange')
-    #plt.text(80, ymax-5, s='$\chi^2$/dof={:.2f}'.format(chi_odrG_LD), color='orange')
-    plt.tight_layout()
-
-    ### Mimosa ###
-    if star == 'Mimosa':
-        #--------------------#
-        # Try fitting with ods
-        # Limb darkening model object
-        sc_model_ld = odr.Model(uti.spatial_coherence_odrG_LD)
-        # Set up ODR with model and data
-        odrODR_ld = odr.ODR(rdataG, sc_model_ld, beta0=[15,2.7e-9])
-        # Run the regression
-        out_ld = odrODR_ld.run()
-        # Fit parameters
-        popt_odrG_LD = out_ld.beta
-        perr_odrG_LD = out_ld.sd_beta
-        chi_odrG_LD  = out_ld.res_var # chi squared value
-        
-        print("SC fit limb darkening")
-        print("A 470nm: Angular diameter: {:.2f} +/- {:.2f} (mas)\t Amplitude: {:.2f} +/- {:.2f}\t Chi^2 reduced: {:.2f}".format(uti.rad2mas(popt_odrG_LD[1]), uti.rad2mas(perr_odrG_LD[1]), popt_odrG_LD[0], perr_odrG_LD[0], chi_odrG_LD))
-
-        # plot SC fit and error band Limb darkening
-        plt.figure("SC")
-        plt.subplot(121)
-        plt.plot(xplot, uti.spatial_coherence_LD(xplot,*popt_odrG_LD, lam_g, u=0.37), linewidth=2, color='orange', label='limb darkening')
-        plt.fill_between(xplot, uti.spatial_coherence_LD(xplot,popt_odrG_LD[0]+perr_odrG_LD[0],popt_odrG_LD[1]-perr_odrG_LD[1], lam_g, u=0.37), uti.spatial_coherence_LD(xplot,popt_odrG_LD[0]-perr_odrG_LD[0],popt_odrG_LD[1]+perr_odrG_LD[1], lam_g, u=0.37), alpha=0.3, color='orange')
-        plt.text(80, ymax-4.5, s='Angular diameter: {:.3f} +/- {:.3f} (mas)'.format(uti.rad2mas(popt_odrG_LD[1]), uti.rad2mas(perr_odrG_LD[1])), color='orange')
-        plt.text(80, ymax-5, s='$\chi^2$/dof={:.2f}'.format(chi_odrG_LD), color='orange')
-        plt.tight_layout()
     # legend 
     handles, labels = plt.gca().get_legend_handles_labels()
     by_label = OrderedDict(zip(labels, handles)) 
     plt.legend(by_label.values(), by_label.keys())
+    # text
+    ymin, ymax = plt.gca().get_ylim()
+    plt.text(90, ymax-3.5, s='Angular diameter: {:.3f} +/- {:.3f} (mas)'.format(uti.rad2mas(popt_odrA[1]), uti.rad2mas(perr_odrA[1])), color='grey')
+    plt.text(90, ymax-4, s='$\chi^2$/dof={:.2f}'.format(chi_odrA), color='grey')
+    plt.text(90, ymax-4.5, s='Angular diameter: {:.3f} +/- {:.3f} (mas)'.format(uti.rad2mas(popt_odrG_LD[1]), uti.rad2mas(perr_odrG_LD[1])), color='orange')
+    plt.text(90, ymax-5, s='$\chi^2$/dof={:.2f}'.format(chi_odrG_LD), color='orange')
+    plt.tight_layout()
 
     # plot channel B 375nm uv
     plt.subplot(122)
-    plt.plot(xplot, uti.spatial_coherence(xplot,*popt_odrB, lam_uv), linewidth=2, color='darkgrey')
+    plt.plot(xplot, uti.spatial_coherence(xplot,*popt_odrB, lam_uv), linewidth=2, color='darkgrey', label='uniform disk')
     plt.fill_between(xplot, uti.spatial_coherence(xplot,popt_odrB[0]+perr_odrB[0],popt_odrB[1]-perr_odrB[1], lam_uv), uti.spatial_coherence(xplot,popt_odrB[0]-perr_odrB[0],popt_odrB[1]+perr_odrB[1], lam_uv), alpha=0.2, color='darkgrey')
     plt.xlabel("Baseline (m)")
     plt.ylabel("Spatial coherence (fs)")
-    #plt.xlim(0,200)
     plt.axhline(y=0, color='black', linestyle="--")
     # legend
     handles, labels = plt.gca().get_legend_handles_labels()
@@ -429,7 +429,7 @@ def plotting(star):
 
     
 
-
+'''
     # Make additional scaled parameters
     ints_fixedA_scaled = []; dints_fixedA_scaled = []; ints_fixedB_scaled = []; dints_fixedB_scaled = []
     #ints_fixed_all_scaled = []; dints_fixed_all_scaled = []
@@ -469,7 +469,7 @@ def plotting(star):
     plt.fill_between(xplot_uv, uti.spatial_coherence(xplot, 1, popt_odrB[1]+perr_odrB[1], lam_uv), uti.spatial_coherence(xplot, 1, popt_odrB[1]-perr_odrB[1], lam_uv), alpha=0.3, color='blue')
     plt.legend()
 
-
+'''
 
 #    #--------------------#
 #    # Try fitting with ods
@@ -519,7 +519,7 @@ for c1 in range (1,5):
             telcombi = [c1,c2]
             print ("Found telescope combination {}".format(telcombi))
             par_fixing(star, telcombi)
-            chunk_ana(star, telcombi)
+            chunk_ana(star, telcombi, ratioA, ratioB)
 plotting(star)
 
 
