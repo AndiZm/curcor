@@ -43,7 +43,7 @@ f.close()
 combicolors = np.zeros((5,5), dtype=object); combicolors[:] = np.nan
 combicolors[1,3] = "blue"
 combicolors[1,4] = "fuchsia"
-combicolors[3,4] = "green"
+combicolors[3,4] = "turquoise"
 
 # Create array of fixed parameters
 mu_A = np.zeros((5,5)); mu_A[:] = np.nan
@@ -392,28 +392,29 @@ def plotting(star):
     # plot limb darkening fit
     plt.figure("SC")
     plt.subplot(121)
-    plt.plot(xplot, uti.spatial_coherence_LD(xplot,*popt_odrG_LD, lam_g, u=u), linewidth=2, color='orange', label='limb darkening')
-    plt.fill_between(xplot, uti.spatial_coherence_LD(xplot,popt_odrG_LD[0]+perr_odrG_LD[0],popt_odrG_LD[1]-perr_odrG_LD[1], lam_g, u=u), uti.spatial_coherence_LD(xplot,popt_odrG_LD[0]-perr_odrG_LD[0],popt_odrG_LD[1]+perr_odrG_LD[1], lam_g, u=0.37), alpha=0.3, color='orange')
-    plt.xlabel("Baseline (m)")
-    plt.ylabel("Spatial coherence (fs)")
-    plt.axhline(y=0, color="black", linestyle="--")  
+    #plt.plot(xplot, uti.spatial_coherence_LD(xplot,*popt_odrG_LD, lam_g, u=u), linewidth=2, color='orange', label='limb darkening')
+    #plt.fill_between(xplot, uti.spatial_coherence_LD(xplot,popt_odrG_LD[0]+perr_odrG_LD[0],popt_odrG_LD[1]-perr_odrG_LD[1], lam_g, u=u), uti.spatial_coherence_LD(xplot,popt_odrG_LD[0]-perr_odrG_LD[0],popt_odrG_LD[1]+perr_odrG_LD[1], lam_g, u=0.37), alpha=0.3, color='orange')
     # legend 
     handles, labels = plt.gca().get_legend_handles_labels()
     by_label = OrderedDict(zip(labels, handles)) 
     plt.legend(by_label.values(), by_label.keys())
     # text
     ymin, ymax = plt.gca().get_ylim()
-    plt.text(90, ymax-3.5, s='Angular diameter: {:.3f} +/- {:.3f} (mas)'.format(uti.rad2mas(popt_odrA[1]), uti.rad2mas(perr_odrA[1])), color='grey')
-    plt.text(90, ymax-4, s='$\chi^2$/dof={:.2f}'.format(chi_odrA), color='grey')
-    plt.text(90, ymax-4.5, s='Angular diameter: {:.3f} +/- {:.3f} (mas)'.format(uti.rad2mas(popt_odrG_LD[1]), uti.rad2mas(perr_odrG_LD[1])), color='orange')
-    plt.text(90, ymax-5, s='$\chi^2$/dof={:.2f}'.format(chi_odrG_LD), color='orange')
+    plt.text(85, ymax-3.5, s='Angular diameter: {:.3f} +/- {:.3f} (mas)'.format(uti.rad2mas(popt_odrA[1]), uti.rad2mas(perr_odrA[1])), color='grey')
+    plt.text(85, ymax-4, s='$\chi^2$/dof={:.2f}'.format(chi_odrA), color='grey')
+    #plt.text(85, ymax-4.5, s='Angular diameter: {:.3f} +/- {:.3f} (mas)'.format(uti.rad2mas(popt_odrG_LD[1]), uti.rad2mas(perr_odrG_LD[1])), color='orange')
+    #plt.text(85, ymax-5, s='$\chi^2$/dof={:.2f}'.format(chi_odrG_LD), color='orange')
+    plt.xlim(0,200)
+    plt.xlabel("Projected baseline (m)")
+    plt.ylabel("Spatial coherence (fs)")
+    plt.axhline(y=0, color="black", linestyle="--")  
     plt.tight_layout()
 
     # plot channel B 375nm uv
     plt.subplot(122)
     plt.plot(xplot, uti.spatial_coherence(xplot,*popt_odrB, lam_uv), linewidth=2, color='darkgrey', label='uniform disk')
     plt.fill_between(xplot, uti.spatial_coherence(xplot,popt_odrB[0]+perr_odrB[0],popt_odrB[1]-perr_odrB[1], lam_uv), uti.spatial_coherence(xplot,popt_odrB[0]-perr_odrB[0],popt_odrB[1]+perr_odrB[1], lam_uv), alpha=0.2, color='darkgrey')
-    plt.xlabel("Baseline (m)")
+    plt.xlabel("Projected baseline (m)")
     plt.ylabel("Spatial coherence (fs)")
     plt.axhline(y=0, color='black', linestyle="--")
     # legend
@@ -424,6 +425,7 @@ def plotting(star):
     ymin, ymax = plt.gca().get_ylim()
     plt.text(80, ymax-3.5, s='Angular diameter: {:.3f} +/- {:.3f} (mas)'.format(uti.rad2mas(popt_odrB[1]), uti.rad2mas(perr_odrB[1])), color='grey')
     plt.text(80, ymax-4, s='$\chi^2$/dof={:.2f}'.format(chi_odrB), color='grey')
+    plt.xlim(0,200)
     plt.tight_layout()
 
 

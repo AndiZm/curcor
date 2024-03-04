@@ -18,8 +18,8 @@ color_4B = "#98cced"
 color_CT3   = "#c35446"
 color_CT4   = "#4c80aa"
 
-color_chA   = "green"
-color_chB   = "blue"
+color_chA   = "deepskyblue"
+color_chB   = "darkviolet"
 color_c3A4B = "#581894"
 color_c4A3B = "#d980ff"
 

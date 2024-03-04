@@ -182,15 +182,15 @@ def chunk_ana(star, telcombi):
 
         # Fit with fixed mu and sigma
         xplotf, popt_A, perr_A = uti.fit_fixed(chA, x, -50, 50, mu_A, sig_A)
-        Int, dInt = uti.integral_fixed(popt_A, perr_A, sig_A)
+        Int, dInt = uti.integral_fixed(popt_A, perr_A, sig_A, factor=2.3)
         #dInt = np.sqrt( dInt**2 + (np.std(chA)*sig_A*np.sqrt(2*np.pi))**2 ) # this is the empirical formula from the simulations
-        dInt = 2.20*dInt # this is the empirical formula from the simulations which has changed form 2022 to 2023
+        #dInt = 2.2*dInt # this is the empirical formula from the simulations which has changed form 2022 to 2023
         ints_fixedA.append(1e6*Int); dints_fixedA.append(1e6*dInt)# in femtoseconds
         
         xplotf, popt_B, perr_B = uti.fit_fixed(chB, x, -50, 50, mu_B, sig_B)
-        Int, dInt = uti.integral_fixed(popt_B, perr_B, sig_B)
+        Int, dInt = uti.integral_fixed(popt_B, perr_B, sig_B, factor=2.38)
         #dInt = np.sqrt( dInt**2 + (np.std(chB)*sig_B*np.sqrt(2*np.pi))**2 ) # this is the empirical formula from the simulations
-        dInt = 2.20*dInt # this is the empirical formula from the simulations which has changed from 2022 to 2023
+        #dInt = 2.2*dInt # this is the empirical formula from the simulations which has changed from 2022 to 2023
         ints_fixedB.append(1e6*Int); dints_fixedB.append(1e6*dInt)# in femtoseconds
 
     

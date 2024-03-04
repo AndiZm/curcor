@@ -72,9 +72,9 @@ dints_fixedB_scaled = np.loadtxt("spatial_coherence/{}/{}_{}_scaled.sc".format(s
 for i in range (0,len(baselines)):
     plt.errorbar(baselines[i], ints_fixedA_scaled[i], yerr=dints_fixedA_scaled[i], xerr=dbaselines[i], marker="o", linestyle="", color=uti.color_chA)
     plt.errorbar(baselines[i], ints_fixedB_scaled[i], yerr=dints_fixedB_scaled[i], xerr=dbaselines[i], marker="o", linestyle="", color=uti.color_chB)
-plt.plot(xplot, uti.spatial_coherence(xplot,1, float(ang_A), lam_g),   label="470 nm", color="green", linewidth=2)
-plt.plot(xplot, uti.spatial_coherence(xplot,1, float(ang_B), lam_uv), label="375 nm", color="blue",  linewidth=2)
-plt.plot(xplot, uti.spatial_coherence(xplot,1, ang_HBT, float(lam_HBT)), label="HBT {}nm".format(lam_HBT[0:3]), color="red", linewidth=2)
+plt.plot(xplot, uti.spatial_coherence(xplot,1, float(ang_A), lam_g),   label="470 nm", color=uti.color_chA, linewidth=2)
+plt.plot(xplot, uti.spatial_coherence(xplot,1, float(ang_B), lam_uv), label="375 nm", color=uti.color_chB,  linewidth=2)
+plt.plot(xplot, uti.spatial_coherence(xplot,1, ang_HBT, float(lam_HBT)), label="HBT {}nm".format(lam_HBT[0:3]), color="grey", linewidth=2)
 
 plt.title("{}".format(star))
 plt.xlabel("Projected baseline (m)")
@@ -111,15 +111,15 @@ fig, ax = plt.subplots()
 for i in range (0,len(baselines)):
     ax.errorbar(baselines[i]/lam_g, ints_fixedA_scaled[i], yerr=dints_fixedA_scaled[i], xerr=dbaselines[i]/lam_g, marker="o", linestyle="", color=uti.color_chA)
     ax.errorbar(baselines[i]/lam_uv, ints_fixedB_scaled[i], yerr=dints_fixedB_scaled[i], xerr=dbaselines[i]/lam_uv, marker="o", linestyle="", color=uti.color_chB)
-ax.plot(xplot_g, uti.spatial_coherence(xplot,1, float(ang_A), lam_g),   label="470 nm", color="green", linewidth=2)
-ax.plot(xplot_uv, uti.spatial_coherence(xplot,1, float(ang_B), lam_uv), label="375 nm", color="blue",  linewidth=2)
-ax.plot(xplot_HBT, uti.spatial_coherence(xplot,1, ang_HBT, float(lam_HBT)), label="HBT {}nm".format(lam_HBT[0:3]), color="red",  linewidth=2)
+ax.plot(xplot_g, uti.spatial_coherence(xplot,1, float(ang_A), lam_g),   label="470 nm", color=uti.color_chA, linewidth=2)
+ax.plot(xplot_uv, uti.spatial_coherence(xplot,1, float(ang_B), lam_uv), label="375 nm", color=uti.color_chB,  linewidth=2)
+ax.plot(xplot_HBT, uti.spatial_coherence(xplot,1, ang_HBT, float(lam_HBT)), label="HBT {}nm".format(lam_HBT[0:3]), color="grey",  linewidth=2)
 
 plt.title("{}".format(star))
 plt.xlabel("Projected baseline/Wavelength")
 plt.ylabel("Spatial coherence")
 ax.axhline(y=0.0, color='black', linestyle='--')
-#plt.xlim(0,200)
+plt.xlim(0,4e8)
 ### label with preliminary watermark ###
 #ax.text(0.65, 0.5, 'preliminary', transform=ax.transAxes,
 #        fontsize=40, color='gray', alpha=0.5,
@@ -139,8 +139,8 @@ plt.show()
 for i in range (0,len(baselines)):
     plt.errorbar(baselines[i], ints_fixedA[i], yerr=dints_fixedA[i], xerr=dbaselines[i], marker="o", linestyle="", color=uti.color_chA)
     plt.errorbar(baselines[i], ints_fixedB[i], yerr=dints_fixedB[i], xerr=dbaselines[i], marker="o", linestyle="", color=uti.color_chB)
-plt.plot(xplot, uti.spatial_coherence(xplot,float(amp_A), float(ang_A), lam_g),   label="470 nm", color="green", linewidth=2)
-plt.plot(xplot, uti.spatial_coherence(xplot,float(amp_B),float(ang_B), lam_uv), label="375 nm", color="blue",  linewidth=2)
+plt.plot(xplot, uti.spatial_coherence(xplot,float(amp_A), float(ang_A), lam_g),   label="470 nm", color=uti.color_chA, linewidth=2)
+plt.plot(xplot, uti.spatial_coherence(xplot,float(amp_B),float(ang_B), lam_uv), label="375 nm", color=uti.color_chB,  linewidth=2)
 
 plt.title("{}".format(star))
 plt.xlabel("Projected baseline (m)")
@@ -175,8 +175,8 @@ for i in range(0,len(xplot)):
 for i in range (0,len(baselines)):
     plt.errorbar(baselines[i]/(lam_g), ints_fixedA[i], yerr=dints_fixedA[i], xerr=dbaselines[i]/(lam_g), marker="o", linestyle="", color=uti.color_chA)
     plt.errorbar(baselines[i]/(lam_uv), ints_fixedB[i], yerr=dints_fixedB[i], xerr=dbaselines[i]/(lam_uv), marker="o", linestyle="", color=uti.color_chB)
-plt.plot(xplot_g, uti.spatial_coherence(xplot,float(amp_A), float(ang_A), lam_g),   label="470 nm", color="green", linewidth=2)
-plt.plot(xplot_uv, uti.spatial_coherence(xplot,float(amp_B),float(ang_B), lam_uv), label="375 nm", color="blue",  linewidth=2)
+plt.plot(xplot_g, uti.spatial_coherence(xplot,float(amp_A), float(ang_A), lam_g),   label="470 nm", color=uti.color_chA, linewidth=2)
+plt.plot(xplot_uv, uti.spatial_coherence(xplot,float(amp_B),float(ang_B), lam_uv), label="375 nm", color=uti.color_chB,  linewidth=2)
 
 plt.title("{}".format(star))
 plt.xlabel("Projected baseline/Wavelength")
@@ -228,16 +228,16 @@ if sys.argv[3] == 'Etacen':
         ax1.errorbar(baselines[i], ints_fixedA[i], yerr=dints_fixedA[i], xerr=dbaselines[i], marker="o", linestyle="", color=uti.color_chA)
     for i in range (0,len(baselines2)):
         ax1.errorbar(baselines2[i], ints_fixedA2[i], yerr=dints_fixedA2[i], xerr=dbaselines2[i], marker="o", linestyle="", color=uti.color_chB)
-    p1, = ax1.plot(xplot, uti.spatial_coherence(xplot,float(amp_A), float(ang_A), lam_g),   label="{}".format(star), color="green", linewidth=2)
-    p2, = ax1.plot(xplot, uti.spatial_coherence(xplot,float(amp_A2),float(ang_A2),lam_g ), label="{}".format(star2), color="blue",  linewidth=2)
+    p1, = ax1.plot(xplot, uti.spatial_coherence(xplot,float(amp_A), float(ang_A), lam_g),   label="{}".format(star), color=uti.color_chA, linewidth=2)
+    p2, = ax1.plot(xplot, uti.spatial_coherence(xplot,float(amp_A2),float(ang_A2),lam_g ), label="{}".format(star2), color=uti.color_chB,  linewidth=2)
     
     # spatial coherence for 375nm
     for i in range (0,len(baselines)):
         ax2.errorbar(baselines[i], ints_fixedB[i], yerr=dints_fixedB[i], xerr=dbaselines[i], marker="o", linestyle="", color=uti.color_chA)
     for i in range (0,len(baselines2)):
         ax2.errorbar(baselines2[i], ints_fixedB2[i], yerr=dints_fixedB2[i], xerr=dbaselines2[i], marker="o", linestyle="", color=uti.color_chB)
-    p3, = ax2.plot(xplot, uti.spatial_coherence(xplot,float(amp_B), float(ang_B) , lam_uv),   label="{}".format(star), color="green", linewidth=2)
-    p4, = ax2.plot(xplot, uti.spatial_coherence(xplot,float(amp_B2),float(ang_B2), lam_uv), label="{}".format(star2), color="blue",  linewidth=2)
+    p3, = ax2.plot(xplot, uti.spatial_coherence(xplot,float(amp_B), float(ang_B) , lam_uv),   label="{}".format(star), color=uti.color_chA, linewidth=2)
+    p4, = ax2.plot(xplot, uti.spatial_coherence(xplot,float(amp_B2),float(ang_B2), lam_uv), label="{}".format(star2), color=uti.color_chB,  linewidth=2)
     
     ax1.tick_params(labelsize=13)
     ax2.tick_params(labelsize=13)
@@ -274,16 +274,16 @@ if sys.argv[3] == 'Etacen':
         ax1.errorbar(baselines[i], ints_fixedA[i], yerr=dints_fixedA[i], xerr=dbaselines[i], marker="o", linestyle="", color=uti.color_chA)
     for i in range (0,len(baselines2)):
         ax1.errorbar(baselines2[i], ints_fixedA2[i], yerr=dints_fixedA2[i], xerr=dbaselines2[i], marker="o", linestyle="", color=uti.color_chB)
-    p1 ,= ax1.plot(xplot, uti.spatial_coherence(xplot,1, float(ang_A), lam_g),   label="{}".format(star), color="green", linewidth=2)
-    p2, = ax1.plot(xplot, uti.spatial_coherence(xplot,1,float(ang_A2), lam_g), label="{}".format(star2), color="blue",  linewidth=2)
+    p1 ,= ax1.plot(xplot, uti.spatial_coherence(xplot,1, float(ang_A), lam_g),   label="{}".format(star), color=uti.color_chA, linewidth=2)
+    p2, = ax1.plot(xplot, uti.spatial_coherence(xplot,1,float(ang_A2), lam_g), label="{}".format(star2), color=uti.color_chB,  linewidth=2)
     
     # spatial coherence for 375nm
     for i in range (0,len(baselines)):
         ax2.errorbar(baselines[i], ints_fixedB[i], yerr=dints_fixedB[i], xerr=dbaselines[i], marker="o", linestyle="", color=uti.color_chA)
     for i in range (0,len(baselines2)):
         ax2.errorbar(baselines2[i], ints_fixedB2[i], yerr=dints_fixedB2[i], xerr=dbaselines2[i], marker="o", linestyle="", color=uti.color_chB)
-    p3, = ax2.plot(xplot, uti.spatial_coherence(xplot,1, float(ang_B), lam_uv),   label="{}".format(star), color="green", linewidth=2)
-    p4, = ax2.plot(xplot, uti.spatial_coherence(xplot,1,float(ang_B2), lam_uv), label="{}".format(star2), color="blue",  linewidth=2)
+    p3, = ax2.plot(xplot, uti.spatial_coherence(xplot,1, float(ang_B), lam_uv),   label="{}".format(star), color=uti.color_chA, linewidth=2)
+    p4, = ax2.plot(xplot, uti.spatial_coherence(xplot,1,float(ang_B2), lam_uv), label="{}".format(star2), color=uti.color_chB,  linewidth=2)
     
     
     ax1.tick_params(labelsize=13)
