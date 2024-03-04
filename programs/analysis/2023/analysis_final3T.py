@@ -14,12 +14,23 @@ import os
 from scipy import odr
 from collections import OrderedDict
 from matplotlib.offsetbox import AnchoredText
+from optparse import OptionParser
 
 import utilities as uti
 import corrections as cor
 import geometry as geo
 
 star = sys.argv[1]
+
+# Option parser for options
+parser = OptionParser()
+parser.add_option("-o", "--only", dest="onlys", help="only telescope combinations")
+
+(options, args) = parser.parse_args()
+onlys = str(options.onlys)
+
+if onlys != "None":
+    onlys = onlys.split(",")
 
 
 bl_HBT = []
@@ -519,9 +530,11 @@ for c1 in range (1,5):
     for c2 in range(1,5):
         if os.path.isfile("g2_functions/{}/{}{}/ac_times.txt".format(star,c1,c2,)):
             telcombi = [c1,c2]
+            telcombistring = str(c1) + str(c2)
             print ("Found telescope combination {}".format(telcombi))
-            par_fixing(star, telcombi)
-            chunk_ana(star, telcombi, ratioA, ratioB)
+            if telcombistring in onlys or onlys == "None":
+                par_fixing(star, telcombi)
+                chunk_ana(star, telcombi, ratioA, ratioB)
 plotting(star)
 
 
