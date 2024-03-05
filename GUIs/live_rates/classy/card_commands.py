@@ -134,11 +134,23 @@ class card(object):
         if x == 6.4e-9:
             spcm_dwSetParam_i64 (self.hCard, SPC_SAMPLERATE, KILO(156250))
     def set_clockmode(self, x):
-        if x == 1:
+        if x == 1: # internal clock
+            self.set_clockout_off()
             spcm_dwSetParam_i32 (self.hCard, SPC_CLOCKMODE, SPC_CM_INTPLL)
-        if x == 2:
+        if x == 2: # external clock with 10 MHz
+            self.set_clockout_off()
             spcm_dwSetParam_i32 (self.hCard, SPC_CLOCKMODE, SPC_CM_EXTREFCLOCK)
             spcm_dwSetParam_i32 (self.hCard, SPC_REFERENCECLOCK, 10000000)
+        if x == 3: # use internal clock, and enable clock output
+            spcm_dwSetParam_i32 (self.hCard, SPC_CLOCKMODE, SPC_CM_INTPLL)
+            self.set_clockout_on()
+
+    def set_clockout_on(self):
+            spcm_dwSetParam_i32 (self.hCard, SPC_CLOCKOUT,       1)
+            sys.stdout.write("{0} sn {1:05d} - Clockout ON\n".format(self.sCardName,self.lSerialNumber.value))
+    def set_clockout_off(self):
+            spcm_dwSetParam_i32 (self.hCard, SPC_CLOCKOUT,       0)
+            sys.stdout.write("{0} sn {1:05d} - Clockout OFF\n".format(self.sCardName,self.lSerialNumber.value))
     def set_triggermode(self, x):
         if x == True:
             spcm_dwSetParam_i32 (self.hCard, SPC_TRIG_ORMASK,    SPC_TMASK_EXT0)         # trigger set to extern
@@ -146,7 +158,8 @@ class card(object):
             spcm_dwSetParam_i32 (self.hCard, SPC_TRIG_EXT0_ACDC, 0)                      # DC coupling
             spcm_dwSetParam_i32 (self.hCard, SPC_TRIG_EXT0_LEVEL0, 700)                  # Trigger level 700 mV
             spcm_dwSetParam_i32 (self.hCard, SPC_TRIG_EXT0_MODE, SPC_TM_POS)             # Trigger set on positive edge
-            spcm_dwSetParam_i32 (self.hCard, SPC_TRIG_ANDMASK,   0) 
+            spcm_dwSetParam_i32 (self.hCard, SPC_TRIG_ANDMASK,   0)
+
         if x == False:
             spcm_dwSetParam_i32 (self.hCard, SPC_TRIG_ORMASK,    SPC_TMASK_SOFTWARE)     # trigger set to software
             spcm_dwSetParam_i32 (self.hCard, SPC_TRIG_ANDMASK,   0)                      # ...

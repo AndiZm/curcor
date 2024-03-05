@@ -92,6 +92,7 @@ N = 2 * 1024**3        # 2G sample file
 folderpath = "C:/Users/ii/Documents/curcor/corr_results/results_HESS"
 
 def corr_parts(folder, start, stop, telcombi):
+    print ("\n")
     # Define the filetype based on the telcombi. Historically, measurements with two telescopes have the filetype "fcorr6", while measurements with 3 telescopes have "fcorr3T"
     if len(telcombi) == 2:
         filetype = "fcorr6"
@@ -159,13 +160,12 @@ def corr_parts(folder, start, stop, telcombi):
         for pair in telpairs:
             pairstring = str(pair[0]) + str(pair[1])
             file = "{}/{}/{}/{}_{:05d}.fcorrAB".format(folderpath, folder, pairstring, star_small, i)
-            #print ("\tread {}".format(file))
 
             # Read in data
             crossA = np.loadtxt(file)[:,0] # crosscorrelation G2 chA
             crossB = np.loadtxt(file)[:,1] # crosscorrelation G2 chB
 
-            # Apply offset correction (for details see eq (7) in https://doi.org/10.1093/mnras/stab3058)
+            # Apply offset correction ( for details see eq (7) in https://doi.org/10.1093/mnras/stab3058 )
             crossA -= N * ( mean_A[pair[0]]*off_A[pair[1]] + mean_A[pair[1]]*off_A[pair[0]] - off_A[pair[0]]*off_A[pair[1]] )
             crossB -= N * ( mean_B[pair[0]]*off_B[pair[1]] + mean_B[pair[1]]*off_B[pair[0]] - off_B[pair[0]]*off_B[pair[1]] )
 
@@ -220,10 +220,10 @@ def corr_parts(folder, start, stop, telcombi):
             dbaseline[i,j] = np.nanstd(baseline[i,j])  # first the error, bc the baseline array will be changed in the next line
             baseline[i,j]  = np.nanmean(baseline[i,j]) # this transfers the array of lists into a simple array with the mean baseline
 
-    print ("Baselines:")
-    print (baseline)
-    print ("Baseline errors:")
-    print (dbaseline)
+    #print ("Baselines:")
+    #print (baseline)
+    #print ("Baseline errors:")
+    #print (dbaseline)
 
     # save data into correct arrays
     for pair in telpairs:

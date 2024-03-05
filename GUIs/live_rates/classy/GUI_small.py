@@ -286,6 +286,7 @@ class telescope(object):
 		self.clockmode = IntVar(); self.clockmode.set(2)
 		self.clockInternButton = Radiobutton(self.clockFrame, width=8, text="Internal", indicatoron=False, variable=self.clockmode, value=1, command=self.new_clockmode); self.clockInternButton.grid(row=0,column=1)
 		self.clockExternButton = Radiobutton(self.clockFrame, width=8, text="External", indicatoron=False, variable=self.clockmode, value=2, command=self.new_clockmode); self.clockExternButton.grid(row=0,column=2)
+		self.clockOutButton    = Radiobutton(self.clockFrame, width=8, text="Clk Out",  indicatoron=False, variable=self.clockmode, value=3, command=self.new_clockmode); self.clockOutButton.grid(row=0,column=3)
 
 		# Trigger
 		self.triggerFrame = Frame(self.coptionFrame); self.triggerFrame.grid(row=6,column=0)
