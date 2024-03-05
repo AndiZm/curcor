@@ -12,7 +12,7 @@ def get_baseline_entry(telcombi):
         return int(2)
 
 # We are going to cartesian coordinates
-# HESS coordinates (already transfered so that x is west-east and y is south-north)
+# HESS coordinates (already transfered so that x is west -> east and y is south -> north)
 ct1 = [ 85.04, -0.16,  0.97]
 ct2 = [  0.37, 85.07,  0.33]
 ct3 = [-85.04,  0.24, -0.82]
@@ -75,14 +75,9 @@ def get_time_delay_azalt(az, alt, telcombi):
 ### STAR CALCULATIONS ###
 #########################
 # Ephem parameters
-#the_star = ephem.star("Shaula")
-
 hess = ephem.Observer()
 hess.lat  = ephem.degrees("-23.271778")
 hess.long = ephem.degrees(" 16.50022")
-#hess.date = ephem.now()
-
-# 3 Telescopes
 
 def get_params3T(time, starname, telcombi):
 	
