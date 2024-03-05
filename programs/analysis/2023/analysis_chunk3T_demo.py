@@ -125,7 +125,6 @@ def corr_parts(folder, start, stop, telcombi):
             dbaseline3T[k,l] = []
 
     # Loop over every file
-    #del# for i in tqdm(range ( 0,len(files) )):
     for i in tqdm(range ( start, stop )):
         # Read in the header information
         data = np.loadtxt("{}/{}/{}_{:05d}.header".format(folderpath, folder, star, i))

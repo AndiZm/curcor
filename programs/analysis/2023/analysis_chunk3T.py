@@ -9,7 +9,7 @@ import ephem
 import sys
 import os
 
-import geometry as geo
+import geometry_3T as geo3T
 import corrections as cor
 import utilities as uti
 
@@ -102,12 +102,6 @@ def corr_parts(folder, start, stop, telcombi):
         print ("Arrrgh! The filetype for your telcombi does not exist!")
         exit(0)
 
-    # Define files to be analized for a single g2 function. We are creating the list of header files here
-    #del# files = []
-    #del# for i in range (start, stop): 
-    #del#     #files.append("{}/{}/size10000/{}_{:05d}.header".format(folderpath, folder, star_small, i))
-    #del#     files.append("{}/{}/{}_{:05d}.header".format(folderpath, folder, star, i))
-
     # Initialize g2 functions for channel A and B which will be filled in for loop
     # We create a matrix of g2 functions for each telescope combination. To access a combination, e.g. 13, do g2_sumA[1,3]
     # To avoid having CT1 as entry 0, the array will be 5 elements x 5 elements, with the 0th row and column remain empty
@@ -147,10 +141,8 @@ def corr_parts(folder, start, stop, telcombi):
             dbaseline[k,l] = []
 
     # Loop over every file
-    #del# for i in tqdm(range ( 0,len(files) )):
     for i in tqdm(range ( start, stop )):
         # Read in the header information
-        #del# data = np.loadtxt(files[i])
         data = np.loadtxt("{}/{}/{}_{:05d}.header".format(folderpath, folder, star, i))
         time = datetime.utcfromtimestamp(data[0]); times.append( ephem.Date(time) )
         mean_A = [np.nan, data[1], data[3], data[5], data[7]] # Array of waveform means of each telescope chA (unused telescopes have "nan" entries)
@@ -175,16 +167,16 @@ def corr_parts(folder, start, stop, telcombi):
     
             # Get file parameters from header and ephem calculations
             if star == "Regor":
-                tdiff, az, alt = geo.get_params_manual3T(time, ra=[8,10,12.5], dec=[-47,24,22.2], telcombi=pairstring)
+                tdiff, bl, az, alt = geo3T.get_params_manual3T(time, ra=[8,10,12.5], dec=[-47,24,22.2], telcombi=[pair[0],pair[1]])
             elif star == "Etacen":
-                tdiff, az, alt = geo.get_params_manual3T(time, ra=[14,35,30.42], dec=[-42,9,28.17], telcombi=pairstring)
+                tdiff, bl, az, alt = geo3T.get_params_manual3T(time, ra=[14,35,30.42], dec=[-42,9,28.17], telcombi=[pair[0],pair[1]])
             elif star == "Dschubba":
-                tdiff, az, alt = geo.get_params_manual3T(time, ra=[16,0,20], dec=[-22,37,18.14], telcombi=pairstring)
+                tdiff, bl, az, alt = geo3T.get_params_manual3T(time, ra=[16,0,20], dec=[-22,37,18.14], telcombi=[pair[0],pair[1]])
             else:
-                tdiff, az, alt = geo.get_params3T(time, starname=star, telcombi=pairstring)
+                tdiff, bl, az, alt = geo3T.get_params3T(time, starname=star, telcombi=[pair[0],pair[1]])
 
             # Store baseline
-            baseline[pair[0],pair[1]].append( uti.get_baseline3T(date=time, star=star, telcombi=pairstring) )
+            baseline[pair[0],pair[1]].append(bl)
         
             # Apply optical path length correction for cross correlations
             binshift = timebin(tdiff)
@@ -220,10 +212,8 @@ def corr_parts(folder, start, stop, telcombi):
             dbaseline[i,j] = np.nanstd(baseline[i,j])  # first the error, bc the baseline array will be changed in the next line
             baseline[i,j]  = np.nanmean(baseline[i,j]) # this transfers the array of lists into a simple array with the mean baseline
 
-    #print ("Baselines:")
-    #print (baseline)
-    #print ("Baseline errors:")
-    #print (dbaseline)
+    #print ("Baselines:"); print (baseline)
+    #print ("Baseline errors:"); print (dbaseline)
 
     # save data into correct arrays
     for pair in telpairs:
