@@ -50,6 +50,15 @@ while "[end]" not in line:
     line = f.readline()
 f.close()
 
+combicolorsA = np.zeros((5,5), dtype=object); combicolorsA[:] = np.nan
+combicolorsA[1,3] = 'lightblue'
+combicolorsA[1,4] = 'deepskyblue'
+combicolorsA[3,4] = 'dodgerblue'
+
+combicolorsB = np.zeros((5,5), dtype=object); combicolorsB[:] = np.nan
+combicolorsB[1,3] = 'mediumpurple'
+combicolorsB[1,4] = 'blueviolet'
+combicolorsB[3,4] = 'purple'
 
 combicolors = np.zeros((5,5), dtype=object); combicolors[:] = np.nan
 combicolors[1,3] = "blue"
@@ -108,7 +117,7 @@ def par_fixing(star, telcombi):
     integral, dintegral = uti.integral(popt, perr)
     print("{} A 470nm amp: {:.2f}e-7 +/- {:.2f}e-7 \t mean: {:.2f} +/- {:.2f} ns \t sigma: {:.2f} +/- {:.2f} ns \t integral: {:.2f} +/- {:.2f} fs \t A Noise: {:.2f} \t Ratio: {:.2f}".format(telstring, amp_A[c1][c2], perr[0]*1e7, mu_A[c1][c2], perr[1],sigma_A[c1][c2],perr[2],1e6*integral,1e6*dintegral, noise_A, amp_A[c1][c2]/noise_A))
     ratioA.append(amp_A[c1][c2]/noise_A)
-    plt.plot(x, g2_allA, label=telstring + "A", color="green")
+    plt.plot(x, g2_allA, label=telstring + "A", color=uti.color_chA)
     plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--")
     # Channel B
     xplot, popt, perr = uti.fit(g2_allB, x, -50, +50)
@@ -118,7 +127,7 @@ def par_fixing(star, telcombi):
     integral, dintegral = uti.integral(popt, perr)
     print ("{} B 375nm amp: {:.2f}e-7 +/- {:.2f}e-7 \t mean: {:.2f} +/- {:.2f} ns \t sigma: {:.2f} +/- {:.2f} ns \t integral: {:.2f} +/- {:.2f} fs \t B Noise: {:.2f} \t Ratio: {:.2f}".format(telstring,amp_B[c1][c2], perr[0]*1e7, mu_B[c1][c2],perr[1],sigma_B[c1][c2],perr[2],1e6*integral,1e6*dintegral, noise_B, amp_B[c1][c2]/noise_B))
     ratioB.append(amp_B[c1][c2]/noise_B)
-    plt.plot(x, g2_allB, label=telstring + "B", color="blue")
+    plt.plot(x, g2_allB, label=telstring + "B", color=uti.color_chB)
     plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--")
     
     plt.legend(); plt.xlim(-100,100); plt.grid()
@@ -403,8 +412,8 @@ def plotting(star):
     # plot limb darkening fit
     plt.figure("SC")
     plt.subplot(121)
-    #plt.plot(xplot, uti.spatial_coherence_LD(xplot,*popt_odrG_LD, lam_g, u=u), linewidth=2, color='orange', label='limb darkening')
-    #plt.fill_between(xplot, uti.spatial_coherence_LD(xplot,popt_odrG_LD[0]+perr_odrG_LD[0],popt_odrG_LD[1]-perr_odrG_LD[1], lam_g, u=u), uti.spatial_coherence_LD(xplot,popt_odrG_LD[0]-perr_odrG_LD[0],popt_odrG_LD[1]+perr_odrG_LD[1], lam_g, u=0.37), alpha=0.3, color='orange')
+    plt.plot(xplot, uti.spatial_coherence_LD(xplot,*popt_odrG_LD, lam_g, u=u), linewidth=2, color='orange', label='limb darkening')
+    plt.fill_between(xplot, uti.spatial_coherence_LD(xplot,popt_odrG_LD[0]+perr_odrG_LD[0],popt_odrG_LD[1]-perr_odrG_LD[1], lam_g, u=u), uti.spatial_coherence_LD(xplot,popt_odrG_LD[0]-perr_odrG_LD[0],popt_odrG_LD[1]+perr_odrG_LD[1], lam_g, u=0.37), alpha=0.3, color='orange')
     # legend 
     handles, labels = plt.gca().get_legend_handles_labels()
     by_label = OrderedDict(zip(labels, handles)) 
@@ -413,8 +422,8 @@ def plotting(star):
     ymin, ymax = plt.gca().get_ylim()
     plt.text(85, ymax-3.5, s='Angular diameter: {:.3f} +/- {:.3f} (mas)'.format(uti.rad2mas(popt_odrA[1]), uti.rad2mas(perr_odrA[1])), color='grey')
     plt.text(85, ymax-4, s='$\chi^2$/dof={:.2f}'.format(chi_odrA), color='grey')
-    #plt.text(85, ymax-4.5, s='Angular diameter: {:.3f} +/- {:.3f} (mas)'.format(uti.rad2mas(popt_odrG_LD[1]), uti.rad2mas(perr_odrG_LD[1])), color='orange')
-    #plt.text(85, ymax-5, s='$\chi^2$/dof={:.2f}'.format(chi_odrG_LD), color='orange')
+    plt.text(85, ymax-4.5, s='Angular diameter: {:.3f} +/- {:.3f} (mas)'.format(uti.rad2mas(popt_odrG_LD[1]), uti.rad2mas(perr_odrG_LD[1])), color='orange')
+    plt.text(85, ymax-5, s='$\chi^2$/dof={:.2f}'.format(chi_odrG_LD), color='orange')
     plt.xlim(0,200)
     plt.xlabel("Projected baseline (m)")
     plt.ylabel("Spatial coherence (fs)")

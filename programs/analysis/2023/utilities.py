@@ -8,20 +8,11 @@ import random
 import matplotlib.pyplot as plt
 import scipy
 
-# Define colors of the different channels for usage in all the plottings
-color_3A = "#8f0303"
-color_3B = "#f7a488"
-color_4A = "#003366" # ECAP Blue
-color_4B = "#98cced"
-
 # Define colors for the correlation channels for usage in all the plottings
-color_CT3   = "#c35446"
-color_CT4   = "#4c80aa"
-
 color_chA   = "deepskyblue"
-color_chB   = "darkviolet"
-color_c3A4B = "#581894"
-color_c4A3B = "#d980ff"
+color_chB   = "blueviolet"
+
+
 
 
 # Operating wavelength
@@ -291,23 +282,25 @@ def get_u(temp_star, logg_star):
         f = scipy.interpolate.interp1d(logg, u,'cubic', bounds_error=False, fill_value='extrapolate')
         ynew = f(xnew)
         plt.plot(xnew, ynew, color='green')
-        x_want = round(float(f(logg_star)),2)
+        u_want = round(float(f(logg_star)),2)
+        plt.plot( float(logg_star), u_want, marker='o', color='black')
         
     elif len(logg) == 0:
-        plt.plot(logg1, u1, marker='o',linestyle='', color='green', label=str(temp1))
-        plt.plot(logg2, u2, marker='x',linestyle='', color='blue', label=str(temp2))
+        plt.plot(logg1, u1, marker='o',linestyle='', color='blue', label=str(temp1))
+        plt.plot(logg2, u2, marker='x',linestyle='', color='red', label=str(temp2))
         f1 = scipy.interpolate.interp1d(logg1, u1,'cubic', bounds_error=False, fill_value='extrapolate')
         f2 = scipy.interpolate.interp1d(logg2, u2,'cubic', bounds_error=False, fill_value='extrapolate')
         y1new = f1(xnew)
         y2new = f2(xnew)
-        plt.plot(xnew, y1new, color='green')
-        plt.plot(xnew, y2new, color='blue')
-        x1_want = f1(logg_star)
-        x2_want = f2(logg_star)
-        print(round(float(x1_want),2))
-        print(round(float(x2_want),2))
-        x_want = round(float(np.mean([x1_want, x2_want])),2)
+        plt.plot(xnew, y1new, color='blue')
+        plt.plot(xnew, y2new, color='red')
+        u1_want = f1(logg_star)
+        u2_want = f2(logg_star)
+        print(round(float(u1_want),2))
+        print(round(float(u2_want),2))
+        u_want = round(float(np.mean([u1_want, u2_want])),2)
+        plt.plot(float(logg_star), u_want, marker='o', color='black')
     plt.legend()    
-    return(x_want)
+    return(u_want)
 
     
