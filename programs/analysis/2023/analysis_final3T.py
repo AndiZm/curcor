@@ -320,7 +320,7 @@ def plotting(star):
     handles, labels = plt.gca().get_legend_handles_labels()
     by_label = OrderedDict(zip(labels, handles)) 
     plt.legend(by_label.values(), by_label.keys()); plt.tight_layout()
-    print('LENGTHS', len(baselinesA), len(ints_fixedA), len(baselinesB), len(ints_fixedB))
+    print('LENGTHS', len(baselinesA), len(ints_fixedA), len(baselinesB), len(ints_fixedB), len(baselines_all))
 
     #--------------------#
     # Try fitting with ods
@@ -448,8 +448,23 @@ def plotting(star):
     plt.xlim(0,200)
     plt.tight_layout()
 
+    #### plot both colors in one plot ###
+    plt.figure("SC combi")
+    # plot channel A 470nm blue and  channel B 375nm uv
+    for k in range(len(baselinesA)):
+        plt.errorbar(x=baselinesA[k]/lam_g,  xerr=dbaselinesA[k]/lam_g,  y=ints_fixedA[k], yerr=dints_fixedA[k], marker='o', linestyle=' ', color=uti.color_chA)
+    for k in range(len(baselinesB)):
+        plt.errorbar(x=baselinesB[k]/lam_uv, xerr=dbaselinesB[k]/lam_uv, y=ints_fixedB[k], yerr=dints_fixedB[k], marker='o', linestyle=' ', color=uti.color_chB)
 
-    
+    plt.plot(xplot_g, uti.spatial_coherence(xplot,*popt_odrA, lam_g), linewidth=2, color=uti.color_chA, label='chA 470nm UD')
+    plt.fill_between(xplot_g, uti.spatial_coherence(xplot,popt_odrA[0]+perr_odrA[0],popt_odrA[1]-perr_odrA[1], lam_g), uti.spatial_coherence(xplot,popt_odrA[0]-perr_odrA[0],popt_odrA[1]+perr_odrA[1], lam_g), alpha=0.3, color=uti.color_chA)
+    plt.plot(xplot_uv, uti.spatial_coherence(xplot,*popt_odrB, lam_uv), linewidth=2, color=uti.color_chB, label='chB 375nm UD')
+    plt.fill_between(xplot_uv, uti.spatial_coherence(xplot,popt_odrB[0]+perr_odrB[0],popt_odrB[1]-perr_odrB[1], lam_uv), uti.spatial_coherence(xplot,popt_odrB[0]-perr_odrB[0],popt_odrB[1]+perr_odrB[1], lam_uv), alpha=0.3, color=uti.color_chB)
+    plt.title("Spatial coherence of {}".format(star))
+    plt.xlabel("Baseline/Wavelength"); plt.ylabel("Spatial coherence (fs)") 
+    plt.axhline(y=0, color='black', linestyle="--")
+    plt.xlim(0,4e8)
+    plt.legend()
 
 '''
     # Make additional scaled parameters

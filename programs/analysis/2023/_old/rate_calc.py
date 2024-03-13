@@ -73,7 +73,7 @@ def rate_calc (folder, start, stop):
 	# add a big axes, hide frame
 	fig1.add_subplot(111, frameon=False)
 
-	# Define files to analyzed for rates of one night 
+	# Define files to analyze for rates of one night 
 	files =[]
 	for i in range(start, stop):
 		files.append("{}/{}/size10000/{}_{:05d}.fcorr6".format(folderpath, folder, star_small, i))
