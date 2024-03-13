@@ -280,6 +280,7 @@ def chunk_ana(star, telcombi, ratioA, ratioB):
     #by_label = OrderedDict(zip(labels, handles)) 
     #plt.legend(by_label.values(), by_label.keys()); plt.tight_layout()
 
+amplitudes = []
 
 def plotting(star): 
     ##### plot baselines vs time #####
@@ -371,13 +372,16 @@ def plotting(star):
     print("SC fit limb darkening")
     print("A 470nm: Angular diameter: {:.2f} +/- {:.2f} (mas)\t Amplitude: {:.2f} +/- {:.2f}\t Chi^2 reduced: {:.2f}".format(uti.rad2mas(popt_odrG_LD[1]), uti.rad2mas(perr_odrG_LD[1]), popt_odrG_LD[0], perr_odrG_LD[0], chi_odrG_LD))
 
-#
-#        # save fitted amplitude
-#        amplitudes_odr.append(popt_odrA[0]); amplitudes_odr.append(perr_odrA[0])
-#        amplitudes_odr.append(popt_odrB[0]); amplitudes_odr.append(perr_odrB[0])
-#        ang_odr.append(popt_odrA[1]); ang_odr.append(perr_odrA[1])
-#        ang_odr.append(popt_odrB[1]); ang_odr.append(perr_odrB[1])
-#
+    # save fitted amplitude
+    amplitudes.append(popt_odrA[0]); amplitudes.append(perr_odrA[0])
+    amplitudes.append(popt_odrB[0]); amplitudes.append(perr_odrB[0])
+    #ang_odr.append(popt_odrA[1]); ang_odr.append(perr_odrA[1])
+    #ang_odr.append(popt_odrB[1]); ang_odr.append(perr_odrB[1])
+
+    global onlys
+    if onlys != "None" and len(onlys) == 1:
+        print(onlys, onlys[0])
+        np.savetxt('g2_functions/{}/{}/amplitudes.txt'.format(star,onlys[0]), np.c_[amplitudes], header='ampA, dampA, ampB, dampB')
 
     
     # make x-axis wavelength indepedent 
@@ -465,6 +469,7 @@ def plotting(star):
     plt.axhline(y=0, color='black', linestyle="--")
     plt.xlim(0,4e8)
     plt.legend()
+
 
 '''
     # Make additional scaled parameters
