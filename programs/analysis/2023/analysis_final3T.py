@@ -114,6 +114,8 @@ def par_fixing(star, telcombi):
     mu_A[c1][c2] = popt[1]; sigma_A[c1][c2] = popt[2] # fixing mu and sigma
     amp_A[c1][c2] = popt[0]*1e7
     noise_A = np.std(g2_allA)*1e7
+    dmuA = []; dsigA = []
+    dmuA = perr[1]; dsigA = perr[2]
     integral, dintegral = uti.integral(popt, perr)
     print("{} A 470nm amp: {:.2f}e-7 +/- {:.2f}e-7 \t mean: {:.2f} +/- {:.2f} ns \t sigma: {:.2f} +/- {:.2f} ns \t integral: {:.2f} +/- {:.2f} fs \t A Noise: {:.2f} \t Ratio: {:.2f}".format(telstring, amp_A[c1][c2], perr[0]*1e7, mu_A[c1][c2], perr[1],sigma_A[c1][c2],perr[2],1e6*integral,1e6*dintegral, noise_A, amp_A[c1][c2]/noise_A))
     ratioA.append(amp_A[c1][c2]/noise_A)
@@ -124,6 +126,8 @@ def par_fixing(star, telcombi):
     mu_B[c1][c2] = popt[1]; sigma_B[c1][c2] = popt[2]
     amp_B[c1][c2] = popt[0]*1e7
     noise_B = np.std(g2_allB)*1e7
+    dmuB = []; dsigB = []
+    dmuB = perr[1]; dsigB = perr[2]
     integral, dintegral = uti.integral(popt, perr)
     print ("{} B 375nm amp: {:.2f}e-7 +/- {:.2f}e-7 \t mean: {:.2f} +/- {:.2f} ns \t sigma: {:.2f} +/- {:.2f} ns \t integral: {:.2f} +/- {:.2f} fs \t B Noise: {:.2f} \t Ratio: {:.2f}".format(telstring,amp_B[c1][c2], perr[0]*1e7, mu_B[c1][c2],perr[1],sigma_B[c1][c2],perr[2],1e6*integral,1e6*dintegral, noise_B, amp_B[c1][c2]/noise_B))
     ratioB.append(amp_B[c1][c2]/noise_B)
@@ -134,8 +138,9 @@ def par_fixing(star, telcombi):
     plt.ticklabel_format(useOffset=False)
     plt.xlabel("Time delay (ns)"); plt.ylabel("$g^{(2)}$")
     plt.tight_layout()
-#    np.savetxt("g2_functions/fixed_parameters/{}/{}/mu_sig_{}.txt".format(star,telcombi, telcombi), np.c_[mu_A, sigma_A, mu_B, sigma_B], header="muA, sigA, muB, sigB")
-
+    
+    np.savetxt("g2_functions/{}/{}/mu_sig.txt".format(star,telstring), np.c_[mu_A[c1][c2], dmuA, sigma_A[c1][c2], dsigA, mu_B[c1][c2], dmuB, sigma_B[c1][c2], dsigB], header="muA, dmuA, sigA, dsigA, muB, dmuB, sigB, dsigB")
+    np.savetxt('g2_functions/{}/{}/g2_allA.txt'.format(star,telstring), np.c_[x, g2_allA])
 ##########################################
 ####### Chunk analysis ###################
 ##########################################
@@ -460,9 +465,9 @@ def plotting(star):
     for k in range(len(baselinesB)):
         plt.errorbar(x=baselinesB[k]/lam_uv, xerr=dbaselinesB[k]/lam_uv, y=ints_fixedB[k], yerr=dints_fixedB[k], marker='o', linestyle=' ', color=uti.color_chB)
 
-    plt.plot(xplot_g, uti.spatial_coherence(xplot,*popt_odrA, lam_g), linewidth=2, color=uti.color_chA, label='chA 470nm UD')
+    plt.plot(xplot_g, uti.spatial_coherence(xplot,*popt_odrA, lam_g), linewidth=2, color=uti.color_chA, label='470nm UD')
     plt.fill_between(xplot_g, uti.spatial_coherence(xplot,popt_odrA[0]+perr_odrA[0],popt_odrA[1]-perr_odrA[1], lam_g), uti.spatial_coherence(xplot,popt_odrA[0]-perr_odrA[0],popt_odrA[1]+perr_odrA[1], lam_g), alpha=0.3, color=uti.color_chA)
-    plt.plot(xplot_uv, uti.spatial_coherence(xplot,*popt_odrB, lam_uv), linewidth=2, color=uti.color_chB, label='chB 375nm UD')
+    plt.plot(xplot_uv, uti.spatial_coherence(xplot,*popt_odrB, lam_uv), linewidth=2, color=uti.color_chB, label='375nm UD')
     plt.fill_between(xplot_uv, uti.spatial_coherence(xplot,popt_odrB[0]+perr_odrB[0],popt_odrB[1]-perr_odrB[1], lam_uv), uti.spatial_coherence(xplot,popt_odrB[0]-perr_odrB[0],popt_odrB[1]+perr_odrB[1], lam_uv), alpha=0.3, color=uti.color_chB)
     plt.title("Spatial coherence of {}".format(star))
     plt.xlabel("Baseline/Wavelength"); plt.ylabel("Spatial coherence (fs)") 
