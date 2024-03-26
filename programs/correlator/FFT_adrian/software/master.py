@@ -12,9 +12,9 @@ ct4_disk = "F"
 commands = []
 
 # Baseline 134, Dschubba II
-datapath = "20240221_tests/measurement"
-start = 0
-end   = 3600
+datapath = "20240319_cable_lengths/short"
+start = 940
+end   = 7250
 index = start
 while index < end+1:
     start_send = index
@@ -23,6 +23,7 @@ while index < end+1:
     #commands.append( "python subanalysis2C13.py -s {} -e {} --t3 {} --t4 {} -d {}".format(start_send, end_send, ct3_disk, ct4_disk, datapath) )
     #commands.append( "python subanalysis3T.py -s {} -e {} --t1 {} --t3 {} --t4 {} -d {}".format(start_send, end_send, ct1_disk, ct3_disk, ct4_disk, datapath) )
     commands.append( "python subanalysis_roof.py -s {} -e {} --t3 {} --t4 {} -d {}".format(start_send, end_send, ct3_disk, ct4_disk, datapath) )
+    #commands.append( "python subanalysis_auto.py -s {} -e {} --t {}  -d {}".format(start_send, end_send, ct3_disk, datapath) )
 
 
 for i in tqdm(range(len(commands))):

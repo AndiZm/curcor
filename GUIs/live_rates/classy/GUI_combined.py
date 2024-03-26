@@ -38,7 +38,7 @@ chBcolor = "blue"#"#00bfff"
 #----------------#
 tel_nos = []; tel_names = []; spcm_ports = []; datapaths = []; ports = []; modes = []
 # Read in the data of the connected telescopes and digitizer cards
-tel_data = np.loadtxt("../../telescopes.conf", dtype={'names': ('tel_nos', 'tel_names', 'spcm_ports', 'datapaths', 'ports', 'modes'), 'formats': ('<f8', 'U15', '<f8', 'U15', '<f8', 'U15')})
+tel_data = np.loadtxt("../../telescopes.conf", dtype={'names': ('tel_nos', 'tel_names', 'spcm_ports', 'datapaths', 'ports', 'modes'), 'formats': ('<f8', 'U15', '<f8', 'U15', '<f8', 'U15')}, ndmin=1)
 for i in range (0,len(tel_data)):
 	tel_nos.append   (int(tel_data[i][0]))
 	tel_names.append (str(tel_data[i][1]))

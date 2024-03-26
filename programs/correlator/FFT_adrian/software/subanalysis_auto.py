@@ -13,49 +13,33 @@ from optparse import OptionParser
 parser = OptionParser()
 parser.add_option("-s", "--start", dest="start")
 parser.add_option("-e", "--end",   dest="end")
+parser.add_option("--t", dest="t_disk")
+parser.add_option("-d", "--datapath", dest="datapath")
 (options, args) = parser.parse_args()
 
 start = int(options.start)
 end   = int(options.end)
+t_disk = str(options.t_disk)
+datapath = str(options.datapath)
+
+# Combine data paths for the telescope
+t_path = t_disk + ":/roof_MT1_2/" + datapath
 
 # File creation time
 def file_time(file):
-    # Check for both file creation times and see whether there is a big difference due to not-synchronized computer clocks or not.
     pctime = os.path.getctime(file)
-    diff = pctime
-    return pc1time
-
-
-# Rate calculations
-off   = -3.603750420000000343e-01
-calib = -65.2418293569126
-def calculate_rate (filenumber):
-    pc1_file = pc1_body + filepath + "{:05d}.bin".format(filenumber)
-    pc2_file = pc2_body + filepath + "{:05d}.bin".format(filenumber)
-
-    data_pc1 = np.fromfile(pc1_file,dtype=np.int8)
-    data_pc2 = np.fromfile(pc2_file,dtype=np.int8)
-
-    mean_1 = np.mean(data_pc1); mean_2 = np.mean(data_pc2)
-    rate_1 = 1e-6 * mean_1/(calib_1 * 1.6e-9)
-    rate_2 = 1e-6 * mean_2/(calib_2 * 1.6e-9)
-
-    return rate_1, rate_2
+    return pctime
 
 ##########
 ## MAIN ##
 ##########
-# Analyzing path
-pc_body = "G:/20220416_halogentest/"
-filepath = "halogen_no_ndfilter_"
-
 # Number of parallel file runs
 n_parallel = int(5)
 
 startfull=time.time()
 
 corlen=50000
-files = 10
+#files = 10
 length=int(2**22)
 
 acorlen=corlen+1
@@ -65,41 +49,46 @@ totalfiles = 0
 bunchtimes = []
 
 def readfile():
-    global pc_filename, readfiles, stime, analyzefiles, totalfiles
+    global t_filename, readfiles, stime, analyzefiles, totalfiles
 
-    this_pc_filename = pc_filename
-    resultfilename = "../results/20220416_halogen/" + this_pc_filename.split("/")[-1].split(".")[0] + ".fcorr"
+    this_pc_filename = t_filename
 
-    data = np.fromfile(this_pc_filename,dtype=np.int8)
+    resultfilename = "C:/Users/ii/Documents/curcor/corr_results/results_roof/" + datapath + "_" + this_pc_filename.split("_")[-1].split(".")[0] + ".autocorr"
+
+    data_pc = np.fromfile(this_pc_filename,dtype=np.int8)
     endtime = time.time(); dtime = endtime - stime
 
+    data_pc = data_pc.reshape(int(len(data_pc)/2),2)
+    data_pcA = data_pc[:,0]; data_pcB = data_pc[:,1]
+
     # Calculate means
-    #mean_pc1 = np.mean(data_pc1)
-    #mean_pc2 = np.mean(data_pc2)
-    ## Get file creation time
-    #ctime = file_time(this_pc1_filename, this_pc2_filename)
+    mean_pcA = np.mean(data_pcA)
+    mean_pcB = np.mean(data_pcB)
+    # Get file creation time
+    ctime = file_time(this_pc_filename)
 
     readfiles += 1
     print ("\tReading {} files in {:.2f} seconds : {:.2f} s per file".format(readfiles, dtime, dtime/readfiles))
 
-    data=data.reshape(int(len(data)/2),2)
-    dataA=data[:,0]; dataB=data[:,1]
-
-    iterations=int(len(dataB)/length)-1
+    iterations=int(len(data_pc)/length)-1
     this_cor = cupy.zeros((acorlen))
+
+    # Do the correlation
     for i in range(iterations):
-        dataB_cu=cupy.array(dataB[int(corlen/2)+(length*i):(-1)*int(corlen/2)+(length*(i+1))]).astype(np.float32)
-        dataA_cu=cupy.array(dataA[length*i:length*(i+1)]).astype(np.float32)
-        this_cor+=cupy.correlate(dataB_cu,dataA_cu,"valid")
+        # Auto correlation PC1A X PC1B
+        data_pcB_cu = cupy.array(data_pcB[ int(corlen/2)+(length*i) : (-1)*int(corlen/2)+(length*(i+1)) ]).astype(np.float32)
+        data_pcA_cu = cupy.array(data_pcA[length*i:length*(i+1)]).astype(np.float32)
+        this_cor   += cupy.correlate(data_pcB_cu, data_pcA_cu, "valid")
 
     this_cor = cupy.asnumpy(this_cor)
-    #np.savetxt(resultfilename, this_cor, header="{} {} {}".format(ctime, mean_pc1, mean_pc2))
-    np.savetxt(resultfilename, this_cor)
+
+    np.savetxt(resultfilename, this_cor[20000:30000], header="{} {} {}".format(ctime, mean_pcA, mean_pcB))
     endtime = time.time(); dtime = endtime - stime
     analyzefiles += 1; totalfiles += 1
-    del this_cor; del dataA; del dataB
+    del this_cor
+    del data_pcA_cu; data_pcB_cu
+    del data_pc; del data_pcA; del data_pcB
     print ("\tAnalyzing {} files in {:.2f} seconds : {:.2f} s per file. Total files: {}".format(analyzefiles, dtime, dtime/analyzefiles, totalfiles))
-
 
 
 fileindex = start
@@ -113,9 +102,10 @@ while fileindex <= end:
     
     threads = []
     stime = time.time()
-    print ("New parallel computing of {} files".format(n_parallel))
+    print ("\nNew parallel computing of {} files".format(n_parallel))
     for run in range(fileindex,min(fileindex+n_parallel,end)):
-        pc_filename = pc_body + filepath + "{:05d}.bin".format(run)
+
+        t_filename = t_path + "_{:05d}.bin".format(run)
         
         threads.append(Thread(target=readfile, args=()))
         threads[-1].start()
@@ -128,4 +118,5 @@ while fileindex <= end:
 endfull = time.time()
 fulltime = endfull - startfull
 print ("########################################################################")
+print ("\tAnalyzing {} files in {:.2f} seconds".format(totalfiles, fulltime))
 print ("\tAnalyzing {} files in {:.2f} seconds : {:.2f} s per file".format(totalfiles, fulltime, fulltime/totalfiles))

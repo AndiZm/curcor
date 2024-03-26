@@ -25,8 +25,8 @@ ct4_disk = str(options.ct4_disk)
 datapath = str(options.datapath)
 
 # Combine data paths for both telescopes
-ct3_path = ct3_disk + ":/roof_MT1/" + datapath
-ct4_path = ct4_disk + ":/roof_MT2/" + datapath
+ct3_path = ct3_disk + ":/lab_ch0/" + datapath
+ct4_path = ct4_disk + ":/lab_ch1/" + datapath
 
 # File creation time
 def file_time(file1, file2):
@@ -69,7 +69,7 @@ def readfile():
     this_pc1_filename = ct3_filename
     this_pc2_filename = ct4_filename
 
-    resultfilename = "C:/Users/ii/Documents/curcor/corr_results/results_roof/" + datapath + "_" + this_pc1_filename.split("_")[-1].split(".")[0] + ".fcorr"
+    resultfilename = "C:/Users/ii/Documents/curcor/corr_results/results_lab/" + datapath + "_" + this_pc1_filename.split("_")[-1].split(".")[0] + ".fcorr"
 
     data_pc1 = np.fromfile(this_pc1_filename,dtype=np.int8)
     data_pc2 = np.fromfile(this_pc2_filename,dtype=np.int8)

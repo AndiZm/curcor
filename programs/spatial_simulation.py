@@ -10,19 +10,19 @@ Ly  = 9.46e15 	# Light year
 # For a star #
 ##############
 #Alle angaben in mm
-wellenlaenge    = 465e-6
-entfernung      = 1e3 * 570*Ly
-pinhole         = 1e3 * 8.8*R_s
-oeffnungsradius = 6*1e3
+#wellenlaenge    = 465e-6
+#entfernung      = 1e3 * 570*Ly
+#pinhole         = 1e3 * 8.8*R_s
+#oeffnungsradius = 6*1e3
 
 ##############
 # In the lab #
 ##############
 ##Alle angaben in mm
-#wellenlaenge    = 532e-6
-#entfernung      = 3.8e3
-#pinhole         = 0.3
-#oeffnungsradius = 3/2
+wellenlaenge    = 470e-6
+entfernung      = 1.75e3
+pinhole         = 0.030
+oeffnungsradius = 25.4/2
 
 
 
