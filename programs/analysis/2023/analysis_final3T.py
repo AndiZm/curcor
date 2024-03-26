@@ -32,7 +32,6 @@ onlys = str(options.onlys)
 if onlys != "None":
     onlys = onlys.split(",")
 
-
 bl_HBT = []
 # Open text file with star data from HBT
 f = open("stars_HBT.txt")
@@ -76,6 +75,8 @@ amp_B = np.zeros((5,5)); amp_B[:] = np.nan
 lam_g = 470e-9
 lam_uv = 375e-9
 lam_all = 422.5e-9
+amp_g = 21.25
+amp_uv = 10
 
 ratioA = []; ratioB = []
 
@@ -101,8 +102,10 @@ def par_fixing(star, telcombi):
     g2_allA = np.zeros(len(x)); g2_allB = np.zeros(len(x))
     for i in range (0,len(chAs)):
         #plt.plot(chAs[i]); plt.plot(chBs[i]); plt.show()
-        g2_allA += chAs[i]/len(chAs)
-        g2_allB += chBs[i]/len(chBs)
+        g2_allA += chAs[i]/np.std(chAs[i][0:4500])**2
+        g2_allB += chBs[i]/np.std(chBs[i][0:4500])**2
+    g2_allA /= np.mean(g2_allA[0:4500])
+    g2_allB /= np.mean(g2_allB[0:4500])
 
     # Fit for gaining mu and sigma to fix these parameters for different baseline combis
     plt.figure("CrossCorr")
@@ -110,7 +113,7 @@ def par_fixing(star, telcombi):
     plt.title("Cross correlation data of {} for {}".format(star, telstring))
     print("Fixed parameters")
     # Channel A
-    xplot, popt, perr = uti.fit(g2_allA, x, -50, +50)
+    xplot, popt, perr = uti.fit(g2_allA, x, -100, +100)
     mu_A[c1][c2] = popt[1]; sigma_A[c1][c2] = popt[2] # fixing mu and sigma
     amp_A[c1][c2] = popt[0]*1e7
     noise_A = np.std(g2_allA)*1e7
@@ -122,7 +125,7 @@ def par_fixing(star, telcombi):
     plt.plot(x, g2_allA, label=telstring + "A", color=uti.color_chA)
     plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--")
     # Channel B
-    xplot, popt, perr = uti.fit(g2_allB, x, -50, +50)
+    xplot, popt, perr = uti.fit(g2_allB, x, -100, +100)
     mu_B[c1][c2] = popt[1]; sigma_B[c1][c2] = popt[2]
     amp_B[c1][c2] = popt[0]*1e7
     noise_B = np.std(g2_allB)*1e7
@@ -146,6 +149,9 @@ def par_fixing(star, telcombi):
 ##########################################
 plt.figure('SC', figsize=(12,8))
 plt.suptitle("Spatial coherence of {}".format(star))
+
+plt.figure('SC Amp', figsize=(12,8))
+plt.suptitle("Spatial coherence of {} with fixed zero baseline".format(star))
 
 intsA = []; dintsA = []; times = []
 intsB = []; dintsB = []
@@ -235,6 +241,39 @@ def chunk_ana(star, telcombi, ratioA, ratioB):
         plt.close()
         '''    
 
+        ### taking all data into account
+        xplotf, popt_A, perr_A = uti.fit_fixed(chA, x, -50, 50, mu_A[c1][c2], sigma_A[c1][c2])
+        Int, dInt = uti.integral_fixed(popt_A, perr_A, sigma_A[c1][c2], factor=2.3)
+        #dInt = np.sqrt( dInt**2 + (np.std(chA)*sigma_A[c1][c2]*np.sqrt(2*np.pi))**2 ) # this is the empirical formula from the simulations
+        ints_fixedA.append(1e6*Int); dints_fixedA.append(1e6*dInt)# in femtoseconds
+        baselinesA.append(baseline); dbaselinesA.append(dbaseline)
+        plt.figure('SC')
+        plt.subplot(121)
+        plt.title("470nm")
+        plt.errorbar(x=baseline, xerr=dbaseline, y=1e6*Int, yerr=1e6*dInt, marker='o', color=combicolors[c1][c2], label=telstring)
+        plt.figure('SC Amp')
+        plt.subplot(121)
+        plt.title("470nm")
+        plt.errorbar(x=baseline, xerr=dbaseline, y=1e6*Int, yerr=1e6*dInt, marker='o', color=combicolors[c1][c2], label=telstring)
+
+        xplotf, popt_B, perr_B = uti.fit_fixed(chB, x, -50, 50, mu_B[c1][c2], sigma_B[c1][c2])
+        Int, dInt = uti.integral_fixed(popt_B, perr_B, sigma_B[c1][c2], factor=2.38)
+        #dInt = np.sqrt( dInt**2 + (np.std(chB)*sigma_B[c1][c2]*np.sqrt(2*np.pi))**2 ) # this is the empirical formula from the simulations
+        ints_fixedB.append(1e6*Int); dints_fixedB.append(1e6*dInt)# in femtoseconds
+        baselinesB.append(baseline); dbaselinesB.append(dbaseline)
+        plt.figure("SC")
+        plt.subplot(122)
+        plt.title("375nm")
+        plt.errorbar(x=baseline, xerr=dbaseline, y=1e6*Int, yerr=1e6*dInt, marker='o', color=combicolors[c1][c2], label=telstring)
+        plt.figure('SC Amp')
+        plt.subplot(122)
+        plt.title("375nm")
+        plt.errorbar(x=baseline, xerr=dbaseline, y=1e6*Int, yerr=1e6*dInt, marker='o', color=combicolors[c1][c2], label=telstring)
+        print("{}".format(i), timestring, Int, dInt) 
+
+
+        '''
+        ### cutting out data where CrossCorr doesn't make sense
         if ratioA[-1] >= 2.5:
             # Fit with fixed mu and sigma
             xplotf, popt_A, perr_A = uti.fit_fixed(chA, x, -50, 50, mu_A[c1][c2], sigma_A[c1][c2])
@@ -245,6 +284,10 @@ def chunk_ana(star, telcombi, ratioA, ratioB):
             baselinesA.append(baseline); dbaselinesA.append(dbaseline)
             
             plt.figure('SC')
+            plt.subplot(121)
+            plt.title("470nm")
+            plt.errorbar(x=baseline, xerr=dbaseline, y=1e6*Int, yerr=1e6*dInt, marker='o', color=combicolors[c1][c2], label=telstring)
+            plt.figure('SC Amp')
             plt.subplot(121)
             plt.title("470nm")
             plt.errorbar(x=baseline, xerr=dbaseline, y=1e6*Int, yerr=1e6*dInt, marker='o', color=combicolors[c1][c2], label=telstring)
@@ -262,10 +305,14 @@ def chunk_ana(star, telcombi, ratioA, ratioB):
             plt.subplot(122)
             plt.title("375nm")
             plt.errorbar(x=baseline, xerr=dbaseline, y=1e6*Int, yerr=1e6*dInt, marker='o', color=combicolors[c1][c2], label=telstring)
+            plt.figure('SC Amp')
+            plt.subplot(122)
+            plt.title("375nm")
+            plt.errorbar(x=baseline, xerr=dbaseline, y=1e6*Int, yerr=1e6*dInt, marker='o', color=combicolors[c1][c2], label=telstring)
             print("{}".format(i), timestring, Int, dInt) 
 
         #print("{}".format(i), timestring, Int, dInt) 
-
+        '''
 
 #        # save cleaned data and fit parameter
 #        chA_clean.append(chA)
@@ -280,10 +327,6 @@ def chunk_ana(star, telcombi, ratioA, ratioB):
 #    np.savetxt("spatial_coherence/{}/{}_{}_data_fixed.sc".format(star,star,telcombi), np.c_[timestrings,baselines, dbaselines, ints_fixedA, dints_fixedA, ints_fixedB, dints_fixedB])
 
     print("DONE Chunks {}".format(telcombi))
-    #plt.figure("baselines")
-    #handles, labels = plt.gca().get_legend_handles_labels()
-    #by_label = OrderedDict(zip(labels, handles)) 
-    #plt.legend(by_label.values(), by_label.keys()); plt.tight_layout()
 
 amplitudes = []
 
@@ -360,6 +403,11 @@ def plotting(star):
     print("A 470nm: Angular diameter: {:.2f} +/- {:.2f} (mas)\t Amplitude: {:.2f} +/- {:.2f}\t Chi^2 reduced: {:.2f}".format(uti.rad2mas(popt_odrA[1]), uti.rad2mas(perr_odrA[1]), popt_odrA[0], perr_odrA[0], chi_odrA))
     print("B 375nm: Angular diameter: {:.2f} +/- {:.2f} (mas)\t Amplitude: {:.2f} +/- {:.2f}\t Chi^2 reduced: {:.2f}".format(uti.rad2mas(popt_odrB[1]), uti.rad2mas(perr_odrB[1]), popt_odrB[0], perr_odrB[0], chi_odrB))
     
+    #### Fix the LD issue with u !!!!!
+    ## get LD coeff
+    #u = uti.get_u(temp_star, logg_star)
+    #print(u)
+
     #--------------------#
     # Try fitting with ods
     # Limb darkening model object
@@ -476,6 +524,79 @@ def plotting(star):
     plt.legend()
 
 
+    #### Make SC fit with fixed zero baseline ####
+    
+    #--------------------#
+    # Try fitting with ods
+    # Uniform disk model object    
+    sc_modelG = odr.Model(uti.spatial_coherence_odrG_amp)
+    # RealData object
+    rdataG = odr.RealData( baselinesA, ints_fixedA, sx=dbaselinesA, sy=dints_fixedA )
+    # Set up ODR with model and data
+    odrODRG = odr.ODR(rdataG, sc_modelG, beta0=[2.2e-9])
+    # Run the regression
+    outG = odrODRG.run()
+    # Fit parameters
+    popt_odrA = outG.beta
+    perr_odrA = outG.sd_beta
+    chi_odrA = outG.res_var # chi squared value
+    
+    sc_modelUV = odr.Model(uti.spatial_coherence_odrUV_amp)
+    # RealData object
+    rdataUV = odr.RealData( baselinesB, ints_fixedB, sx=dbaselinesB, sy=dints_fixedB )
+    # Set up ODR with model and data
+    odrODRUV = odr.ODR(rdataUV, sc_modelUV, beta0=[3.2e-9])
+    # Run the regression
+    outUV = odrODRUV.run()
+    # Fit parameters
+    popt_odrB = outUV.beta
+    perr_odrB = outUV.sd_beta
+    chi_odrB  = outUV.res_var # chi squared value
+    #--------------------#
+
+    print("SC fits")
+    print("A 470nm: Angular diameter: {:.2f} +/- {:.2f} (mas)\t Chi^2 reduced: {:.2f}".format(uti.rad2mas(popt_odrA[0]), uti.rad2mas(perr_odrA[0]), chi_odrA))
+    print("B 375nm: Angular diameter: {:.2f} +/- {:.2f} (mas)\t Chi^2 reduced: {:.2f}".format(uti.rad2mas(popt_odrB[0]), uti.rad2mas(perr_odrB[0]), chi_odrB))
+    
+    # plot SC fit and error band
+    # plot channel A 470nm green
+    plt.figure("SC Amp")
+    plt.subplot(121)
+    plt.plot(xplot, uti.spatial_coherence(xplot,amp_g,popt_odrA, lam_g), linewidth=2, color='darkgrey', label='uniform disk')
+    plt.fill_between(xplot, uti.spatial_coherence(xplot,amp_g,popt_odrA-perr_odrA, lam_g), uti.spatial_coherence(xplot,amp_g,popt_odrA+perr_odrA, lam_g), alpha=0.3, color='darkgrey')
+    # legend 
+    handles, labels = plt.gca().get_legend_handles_labels()
+    by_label = OrderedDict(zip(labels, handles)) 
+    plt.legend(by_label.values(), by_label.keys())
+    # text
+    ymin, ymax = plt.gca().get_ylim()
+    plt.text(85, ymax-3.5, s='Angular diameter: {:.3f} +/- {:.3f} (mas)'.format(uti.rad2mas(popt_odrA[0]), uti.rad2mas(perr_odrA[0])), color='grey')
+    plt.text(85, ymax-4, s='$\chi^2$/dof={:.2f}'.format(chi_odrA), color='grey')
+    plt.xlim(0,200)
+    plt.xlabel("Projected baseline (m)")
+    plt.ylabel("Spatial coherence (fs)")
+    plt.axhline(y=0, color="black", linestyle="--")  
+    plt.tight_layout()
+
+    # plot channel B 375nm uv
+    plt.subplot(122)
+    plt.plot(xplot, uti.spatial_coherence(xplot,amp_uv,popt_odrB, lam_uv), linewidth=2, color='darkgrey', label='uniform disk')
+    plt.fill_between(xplot, uti.spatial_coherence(xplot,amp_uv,popt_odrB-perr_odrB, lam_uv), uti.spatial_coherence(xplot,amp_uv,popt_odrB+perr_odrB, lam_uv), alpha=0.2, color='darkgrey')
+    plt.xlabel("Projected baseline (m)")
+    plt.ylabel("Spatial coherence (fs)")
+    plt.axhline(y=0, color='black', linestyle="--")
+    # legend
+    handles, labels = plt.gca().get_legend_handles_labels()
+    by_label = OrderedDict(zip(labels, handles)) 
+    plt.legend(by_label.values(), by_label.keys())
+    # text
+    ymin, ymax = plt.gca().get_ylim()
+    plt.text(80, ymax-3.5, s='Angular diameter: {:.3f} +/- {:.3f} (mas)'.format(uti.rad2mas(popt_odrB[0]), uti.rad2mas(perr_odrB[0])), color='grey')
+    plt.text(80, ymax-4, s='$\chi^2$/dof={:.2f}'.format(chi_odrB), color='grey')
+    plt.xlim(0,200)
+    plt.tight_layout()
+
+
 '''
     # Make additional scaled parameters
     ints_fixedA_scaled = []; dints_fixedA_scaled = []; ints_fixedB_scaled = []; dints_fixedB_scaled = []
@@ -559,7 +680,6 @@ for c1 in range (1,5):
         if os.path.isfile("g2_functions/{}/{}{}/ac_times.txt".format(star,c1,c2,)):
             telcombis.append("{}{}".format(c1,c2))
 
-#plt.figure("CrossCorr", figsize=(12,8))
 for c1 in range (1,5):
     for c2 in range(1,5):
         if os.path.isfile("g2_functions/{}/{}{}/ac_times.txt".format(star,c1,c2,)):

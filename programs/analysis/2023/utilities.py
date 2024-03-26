@@ -106,16 +106,18 @@ def fit_fixed(data, x, s, e, mu,sigma, d=1):
     popt, cov = curve_fit(lambda x, a: gauss(x,a, mu,sigma,d), xfit, yfit, p0=[1e-6])
     #popt, cov = curve_fit(lambda x, a, d: gauss(x,a, mu,sigma,d), xfit, yfit, p0=[1e-6,1.])
     perr = np.sqrt(np.diag(cov))
+    #chi = chi_squared(yfit, gauss(xfit, popt[0], popt[1], sigma, d), error, N, par)
     return xplot, popt, perr
-def fit_fixed1(data,x,s,e,sigma,mu_start, error, par, d=1):
+def fit_fixed1(data,x,s,e,sigma,mu_start, d=1):
     xfit = x[(x>s) & (x<e)]
     yfit = data[(x>s) & (x<e)]
     N = len(yfit)
     xplot = np.arange(s, e, 0.01)
+    #mu_start = -1
     popt, cov = curve_fit(lambda x, a, mu: gauss(x,a, mu,sigma,d), xfit, yfit, p0=[1e-6,mu_start])
     perr = np.sqrt(np.diag(cov))
-    chi = chi_squared(yfit, gauss(xfit, popt[0], popt[1], sigma, d), error, N, par)
-    return xplot, popt, perr, chi
+    #chi = chi_squared(yfit, gauss(xfit, popt[0], popt[1], sigma, d), error, N, par)
+    return xplot, popt, perr #, chi
 
 def integral(fitpar, fitpar_err):
     a = fitpar[0]; d_a = fitpar_err[0]
@@ -188,10 +190,19 @@ def spatial_coherence_odrUV(p, x):
     lam=375e-9
     amp, ang = p
     return amp * (2*scp.j1(np.pi * x * ang/lam) / (np.pi* x * ang/lam))**2
+def spatial_coherence_odrG_amp(p, x):
+    lam=470e-9
+    amp = 21.25; ang = p
+    return amp * (2*scp.j1(np.pi * x * ang/lam) / (np.pi* x * ang/lam))**2
+def spatial_coherence_odrUV_amp(p, x):
+    lam=375e-9
+    amp = 10; ang = p 
+    return amp * (2*scp.j1(np.pi * x * ang/lam) / (np.pi* x * ang/lam))**2
+
 
 def spatial_coherence_odrG_LD(p,x):
     lam=470e-9
-    u = 0.37 # Mimosa
+    u = 0.37
     amp, ang = p
     return amp * ( (1-u)/2 + u/3 )**(-2) * ( (1-u) * scp.j1(np.pi * x * ang/lam) / (np.pi* x * ang/lam) + (u*(np.pi/2)**0.5) * bessel32(ang, x, lam) / ((np.pi*x*ang/lam)**(3/2)))**2
 

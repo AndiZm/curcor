@@ -20,7 +20,7 @@ import utilities as uti
 import corrections as cor
 import geometry as geo
 
-
+### compare amplitudes of SC fit between stars and telcombis ###
 
 stars = ['Mimosa', 'Etacen', 'Nunki']
 
@@ -119,5 +119,27 @@ plt.errorbar(x=stars, y=sigmasA, yerr=dsigmasA, marker='x', linestyle=' ', color
 plt.title('Telcombi 34')
 plt.legend()
 plt.tight_layout()
+
+
+### compare gaus fit parameters between telcombis and for different fit range ###
+
+telcombis = ['14','34']
+# mean for fit range 50
+meanA1 = [2.165,  -0.527]; dmeanA1 = [0.113, 0.072]
+meanB1 = [-0.306,  -1.862]; dmeanB1 = [0.383,0.389]
+# mean for fit range 100
+meanA2 = [2.172, -0.524] ; dmeanA2 = [0.104, 0.102]
+meanB2 = [-0.306, -1.841]; dmeanB2 = [0.328, 0.596]
+
+
+plt.figure('parameters')
+plt.errorbar(x=telcombis, y=meanA1, yerr=dmeanA1, marker='o', ls='', label='470nm 50')
+plt.errorbar(x=telcombis, y=meanB1, yerr=dmeanB1, marker='o', ls='', label='375nm 50')
+plt.errorbar(x=telcombis, y=meanA2, yerr=dmeanA2, marker='x', ls='', label='470nm 100')
+plt.errorbar(x=telcombis, y=meanB2, yerr=dmeanB2, marker='x', ls='', label='375nm 100')
+plt.title('Mimosa: mean')
+plt.xlabel('Telcombis')
+plt.legend()
+
 
 plt.show()
