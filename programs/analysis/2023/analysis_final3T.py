@@ -15,6 +15,7 @@ from scipy import odr
 from collections import OrderedDict
 from matplotlib.offsetbox import AnchoredText
 from optparse import OptionParser
+import math
 
 import utilities as uti
 import corrections as cor
@@ -81,6 +82,73 @@ amp_uv = 10
 ratioA = []; ratioB = []
 
 ################################################
+####### Cleaning the measurement data ##########
+################################################
+chA_clean = np.zeros((5,5), dtype=object); chA_clean[:] = np.nan 
+chB_clean = np.zeros((5,5), dtype=object); chB_clean[:] = np.nan 
+def cleaning(star, telcombi):
+    c1 = telcombi[0]
+    c2 = telcombi[1]
+    telstring = "{}{}".format(c1,c2)  
+
+    chAs = np.loadtxt("g2_functions/{}/{}/chA.g2".format(star, telstring))
+    chBs = np.loadtxt("g2_functions/{}/{}/chB.g2".format(star, telstring))
+    chA_clean[c1][c2] = np.zeros(len(chAs), dtype=object)
+    chB_clean[c1][c2] = np.zeros(len(chBs), dtype=object)
+
+    # loop over every g2 function chunk
+    for i in range(0,len(chAs)):
+        # Read g2 function
+        chA = chAs[i]
+        chB = chBs[i]
+        # Do some more data cleaning, e.g. lowpass filters
+        chA = cor.lowpass(chA)
+        chB = cor.lowpass(chB)
+
+        '''
+        ### building fft of g2 to cut out noise ###
+        F_fft = plt.figure(figsize=(12,7))
+        ax1 = F_fft.add_subplot(121)
+        stepsize = 1.6e-3                   # sampling bin size
+        N = len(chA)
+        chAfft = chA # für auto corr teil ohne crosstalk [5500:10000]            
+        N = len(chAfft)
+        xfft = np.linspace(0.0, stepsize*N, N)
+        ax1.plot(xfft, chAfft, label='A') 
+        x_fft = np.linspace(0.0, 1./(2.*stepsize), N//2) #N2//2)
+        chA_fft = np.abs(np.fft.fft(chAfft)/(N/2)) # ct4_fft = np.abs(np.fft.fft(ct4)/(N2))
+        #chA_freq, rest = find_peaks(chA_fft, threshold=[0.5e-8, 1.e-8], width=[0,5])
+        #print(chA_freq)
+        ax2 = F_fft.add_subplot(122)
+        ax2.plot(x_fft, chA_fft[0:N//2], label='A')
+        '''
+        # more data cleaning with notch filter for higher frequencies
+        freqA = [45,95,110,145,155,175,195]
+        for j in range(len(freqA)):
+            chA = cor.notch(chA, freqA[j]*1e6, 80)
+        freqB = [50]
+        for j in range(len(freqB)):
+            chB = cor.notch(chB, freqB[j]*1e6, 80)
+    
+        '''
+        ### Plot g2 after cleaning ####
+        chAfft = chA
+        ax1.plot(xfft, chAfft, label='A')
+        ax1.legend()
+        ax1.set_xlabel('bins of 1.6ns')
+        chA_fft = np.abs(np.fft.fft(chAfft)/(N/2))
+        ax2.plot(x_fft, chA_fft[0:N//2], label='A')
+        ax2.set_ylim(0,8e-8)
+        ax2.legend()
+        ax2.set_xlabel('MHz')
+        #plt.show()
+        plt.close()
+        '''    
+        chA_clean[c1,c2][i] = chA
+        chB_clean[c1,c2][i] = chB
+    print("Cleaning done")
+
+################################################
 #### Analysis over whole measurement time #####
 ################################################
 plt.figure("CrossCorr", figsize=(12,8))
@@ -91,8 +159,10 @@ def par_fixing(star, telcombi):
     plotnumber = len(telcombis)*100 + 10 + telcombis.index(telstring) + 1
 
     # Read in the data g2 functions
-    chAs    = np.loadtxt("g2_functions/{}/{}/chA.g2".format(star, telstring))     
-    chBs    = np.loadtxt("g2_functions/{}/{}/chB.g2".format(star, telstring))      
+    #chAs    = np.loadtxt("g2_functions/{}/{}/chA.g2".format(star, telstring))     
+    #chBs    = np.loadtxt("g2_functions/{}/{}/chB.g2".format(star, telstring))  
+    chAs = chA_clean[c1,c2]  
+    chBs = chB_clean[c1,c2]    
 
     # Demo function for initializing x axis and some stuff
     demo = chAs[0]
@@ -144,6 +214,8 @@ def par_fixing(star, telcombi):
     
     np.savetxt("g2_functions/{}/{}/mu_sig.txt".format(star,telstring), np.c_[mu_A[c1][c2], dmuA, sigma_A[c1][c2], dsigA, mu_B[c1][c2], dmuB, sigma_B[c1][c2], dsigB], header="muA, dmuA, sigA, dsigA, muB, dmuB, sigB, dsigB")
     np.savetxt('g2_functions/{}/{}/g2_allA.txt'.format(star,telstring), np.c_[x, g2_allA])
+    print(f'DONE par fixing for {telstring}')
+
 ##########################################
 ####### Chunk analysis ###################
 ##########################################
@@ -162,17 +234,19 @@ time_all = [] ; telstrings =[]
 baselinesA = []; dbaselinesA = []
 baselinesB = []; dbaselinesB = []
 
-
 def chunk_ana(star, telcombi, ratioA, ratioB):
     c1 = telcombi[0]
     c2 = telcombi[1]
     telstring = "{}{}".format(c1,c2)  
     
     # initialize cleaned arrays
-    chA_clean = []; chB_clean = []; ampA = []; ampB = []; muA = []; muB =[] ; chiA =[]; chiB = []; dmuA = []; dmuB =[]
+    #chA_clean = []; chB_clean = []
+    ampA = []; ampB = []; muA = []; muB =[] ; chiA =[]; chiB = []; dmuA = []; dmuB =[]
     ffts = []
-    chAs    = np.loadtxt("g2_functions/{}/{}/chA.g2".format(star, telstring))
-    chBs    = np.loadtxt("g2_functions/{}/{}/chB.g2".format(star, telstring))
+    #chAs    = np.loadtxt("g2_functions/{}/{}/chA.g2".format(star, telstring))
+    #chBs    = np.loadtxt("g2_functions/{}/{}/chB.g2".format(star, telstring))
+    chAs = chA_clean[c1,c2]  
+    chBs = chB_clean[c1,c2]  
 
     # Read the telescope data (acquisition times of chunks, baselines and baseline uncertainties)
     timestrings = np.loadtxt("g2_functions/{}/{}/ac_times.txt".format(star,telstring))
@@ -197,49 +271,6 @@ def chunk_ana(star, telcombi, ratioA, ratioB):
         # Read g2 function
         chA = chAs[i]
         chB = chBs[i]
-        # Do some more data cleaning, e.g. lowpass filters
-        chA = cor.lowpass(chA)
-        chB = cor.lowpass(chB)
-    
-        '''
-        ### building fft of g2 to cut out noise ###
-        F_fft = plt.figure(figsize=(12,7))
-        ax1 = F_fft.add_subplot(121)
-        stepsize = 1.6e-3                   # sampling bin size
-        N = len(chA)
-        chAfft = chA # für auto corr teil ohne crosstalk [5500:10000]            
-        N = len(chAfft)
-        xfft = np.linspace(0.0, stepsize*N, N)
-        ax1.plot(xfft, chAfft, label='A') 
-        x_fft = np.linspace(0.0, 1./(2.*stepsize), N//2) #N2//2)
-        chA_fft = np.abs(np.fft.fft(chAfft)/(N/2)) # ct4_fft = np.abs(np.fft.fft(ct4)/(N2))
-        #chA_freq, rest = find_peaks(chA_fft, threshold=[0.5e-8, 1.e-8], width=[0,5])
-        #print(chA_freq)
-        ax2 = F_fft.add_subplot(122)
-        ax2.plot(x_fft, chA_fft[0:N//2], label='A')
-        '''
-        # more data cleaning with notch filter for higher frequencies
-        freqA = [45,95,110,145,155,175,195]
-        for j in range(len(freqA)):
-            chA = cor.notch(chA, freqA[j]*1e6, 80)
-        freqB = [50]
-        for j in range(len(freqB)):
-            chB = cor.notch(chB, freqB[j]*1e6, 80)
-    
-        '''
-        ### Plot g2 after cleaning ####
-        chAfft = chA
-        ax1.plot(xfft, chAfft, label='A')
-        ax1.legend()
-        ax1.set_xlabel('bins of 1.6ns')
-        chA_fft = np.abs(np.fft.fft(chAfft)/(N/2))
-        ax2.plot(x_fft, chA_fft[0:N//2], label='A')
-        ax2.set_ylim(0,8e-8)
-        ax2.legend()
-        ax2.set_xlabel('MHz')
-        #plt.show()
-        plt.close()
-        '''    
 
         ### taking all data into account
         xplotf, popt_A, perr_A = uti.fit_fixed(chA, x, -50, 50, mu_A[c1][c2], sigma_A[c1][c2])
@@ -687,6 +718,7 @@ for c1 in range (1,5):
             telcombistring = str(c1) + str(c2)
             print ("Found telescope combination {}".format(telcombi))
             if telcombistring in onlys or onlys == "None":
+                cleaning(star, telcombi)
                 par_fixing(star, telcombi)
                 chunk_ana(star, telcombi, ratioA, ratioB)
 plotting(star)
