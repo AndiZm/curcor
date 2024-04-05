@@ -92,29 +92,29 @@ def gauss_shifted(x, a, mu, sigma, shift, d=1, inverse=False, ntotal=1):
     else:
         return a*np.exp(-(x-mu)**2/(2*sigma**2)) + d + 1e-6*(ntotal-shift-1)
 
-def fit(data, x, s, e, mu_start=-2):
+def fit(data, x, s, e, mu_start=-2): # used in parameter fixing
     xfit = x[(x>s) & (x<e)]
     yfit = data[(x>s) & (x<e)]
     xplot = np.arange(s, e, 0.01)
     popt, cov = curve_fit(gauss, xfit, yfit, p0=[1e-6,mu_start,3,1])
     perr = np.sqrt(np.diag(cov))
     return xplot, popt, perr
-def fit_fixed(data, x, s, e, mu,sigma, d=1):
+def fit_fixed(data, x, s, e, mu,sigma): # fixes mu and sigma and offset d free
     xfit = x[(x>s) & (x<e)]
     yfit = data[(x>s) & (x<e)]
     xplot = np.arange(s, e, 0.01)
-    popt, cov = curve_fit(lambda x, a: gauss(x,a, mu,sigma,d), xfit, yfit, p0=[1e-6])
-    #popt, cov = curve_fit(lambda x, a, d: gauss(x,a, mu,sigma,d), xfit, yfit, p0=[1e-6,1.])
+    #popt, cov = curve_fit(lambda x, a: gauss(x,a, mu,sigma,d), xfit, yfit, p0=[1e-6])
+    popt, cov = curve_fit(lambda x, a, d: gauss(x,a, mu,sigma,d), xfit, yfit, p0=[1e-6,1.])
     perr = np.sqrt(np.diag(cov))
     #chi = chi_squared(yfit, gauss(xfit, popt[0], popt[1], sigma, d), error, N, par)
     return xplot, popt, perr
-def fit_fixed1(data,x,s,e,sigma,mu_start, d=1):
+def fit_fixed_offset(data,x,s,e,mu,sigma, d=1): # fixes mu and sigma and offset fixed
     xfit = x[(x>s) & (x<e)]
     yfit = data[(x>s) & (x<e)]
     N = len(yfit)
     xplot = np.arange(s, e, 0.01)
     #mu_start = -1
-    popt, cov = curve_fit(lambda x, a, mu: gauss(x,a, mu,sigma,d), xfit, yfit, p0=[1e-6,mu_start])
+    popt, cov = curve_fit(lambda x, a: gauss(x,a, mu,sigma,d), xfit, yfit, p0=[1e-6])
     perr = np.sqrt(np.diag(cov))
     #chi = chi_squared(yfit, gauss(xfit, popt[0], popt[1], sigma, d), error, N, par)
     return xplot, popt, perr #, chi
