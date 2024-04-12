@@ -219,7 +219,7 @@ def par_fixing(star, telcombi):
 ##########################################
 ####### Chunk analysis ###################
 ##########################################
-plt.figure('SC', figsize=(12,8))
+plt.figure('SC', figsize=(8,4))
 plt.suptitle("Spatial coherence of {}".format(star))
 
 plt.figure('SC Amp', figsize=(12,8))
@@ -281,7 +281,7 @@ def chunk_ana(star, telcombi, ratioA, ratioB):
         plt.figure('SC')
         plt.subplot(121)
         plt.title("470nm")
-        plt.errorbar(x=baseline, xerr=dbaseline, y=1e6*Int, yerr=1e6*dInt, marker='o', color=combicolors[c1][c2], label=telstring)
+        plt.errorbar(x=baseline, xerr=dbaseline, y=1e6*Int, yerr=1e6*dInt, marker='o', markersize=3, color=combicolors[c1][c2], label=telstring)
         plt.figure('SC Amp')
         plt.subplot(121)
         plt.title("470nm")
@@ -295,7 +295,7 @@ def chunk_ana(star, telcombi, ratioA, ratioB):
         plt.figure("SC")
         plt.subplot(122)
         plt.title("375nm")
-        plt.errorbar(x=baseline, xerr=dbaseline, y=1e6*Int, yerr=1e6*dInt, marker='o', color=combicolors[c1][c2], label=telstring)
+        plt.errorbar(x=baseline, xerr=dbaseline, y=1e6*Int, yerr=1e6*dInt, marker='o', markersize=3, color=combicolors[c1][c2], label=telstring)
         plt.figure('SC Amp')
         plt.subplot(122)
         plt.title("375nm")
@@ -508,10 +508,10 @@ def plotting(star):
     plt.legend(by_label.values(), by_label.keys())
     # text
     ymin, ymax = plt.gca().get_ylim()
-    plt.text(80, ymax-3.5, s='Angular diameter: {:.3f} +/- {:.3f} (mas)'.format(uti.rad2mas(popt_odrA[1]), uti.rad2mas(perr_odrA[1])), color='grey')
-    plt.text(80, ymax-4, s='$\chi^2$/dof={:.2f}'.format(chi_odrA), color='grey')
-    plt.text(80, ymax-4.5, s='Angular diameter: {:.3f} +/- {:.3f} (mas)'.format(uti.rad2mas(popt_odrG_LD[1]), uti.rad2mas(perr_odrG_LD[1])), color='orange')
-    plt.text(80, ymax-5, s='$\chi^2$/dof={:.2f}'.format(chi_odrG_LD), color='orange')
+    plt.text(75, ymax*0.58, s=r'$\theta$ = {:.3f} +/- {:.3f} (mas)'.format(uti.rad2mas(popt_odrA[1]), uti.rad2mas(perr_odrA[1])), color='grey')
+    #plt.text(80, ymax-4, s='$\chi^2$/dof={:.2f}'.format(chi_odrA), color='grey')
+    plt.text(75, ymax*0.53, s=r'$\theta$ = {:.3f} +/- {:.3f} (mas)'.format(uti.rad2mas(popt_odrG_LD[1]), uti.rad2mas(perr_odrG_LD[1])), color='orange')
+    #plt.text(80, ymax-5, s='$\chi^2$/dof={:.2f}'.format(chi_odrG_LD), color='orange')
     plt.xlim(0,200)
     plt.xlabel("Projected baseline (m)")
     plt.ylabel("Spatial coherence (fs)")
@@ -531,10 +531,11 @@ def plotting(star):
     plt.legend(by_label.values(), by_label.keys())
     # text
     ymin, ymax = plt.gca().get_ylim()
-    plt.text(80, ymax-5, s='Angular diameter: {:.3f} +/- {:.3f} (mas)'.format(uti.rad2mas(popt_odrB[1]), uti.rad2mas(perr_odrB[1])), color='grey')
-    plt.text(80, ymax-5.5, s='$\chi^2$/dof={:.2f}'.format(chi_odrB), color='grey')
+    plt.text(75, ymax*0.58, s=r'$\theta$ = {:.3f} +/- {:.3f} (mas)'.format(uti.rad2mas(popt_odrB[1]), uti.rad2mas(perr_odrB[1])), color='grey')
+    #plt.text(80, ymax-4, s='$\chi^2$/dof={:.2f}'.format(chi_odrB), color='grey')
     plt.xlim(0,200)
     plt.tight_layout()
+    plt.savefig("sc_small.pdf")
 
     #### plot both colors in one plot ###
     plt.figure("SC combi")
