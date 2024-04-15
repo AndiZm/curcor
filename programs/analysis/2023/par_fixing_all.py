@@ -35,31 +35,31 @@ if onlys != "None":
     onlys = onlys.split(",")
 
 # Create array of fixed parameters
-mu_A = np.zeros((5,5)); mu_A[:] = np.nan
-dmu_A = np.zeros((5,5)); dmu_A[:] = np.nan
-mu_B = np.zeros((5,5)); mu_B[:] = np.nan
+#mu_A = np.zeros((5,5)); mu_A[:] = np.nan
+#dmu_A = np.zeros((5,5)); dmu_A[:] = np.nan
+#mu_B = np.zeros((5,5)); mu_B[:] = np.nan
 sigma_A = np.zeros((5,5)); sigma_A[:] = np.nan
+dsigma_A = np.zeros((5,5)); dsigma_A[:] = np.nan
 sigma_B = np.zeros((5,5)); sigma_B[:] = np.nan
-amp_A = np.zeros((5,5)); amp_A[:] = np.nan
-amp_B = np.zeros((5,5)); amp_B[:] = np.nan
+dsigma_B = np.zeros((5,5)); dsigma_B[:] = np.nan
+#amp_A = np.zeros((5,5)); amp_A[:] = np.nan
+#amp_B = np.zeros((5,5)); amp_B[:] = np.nan
 
 ################################################
 ####### Cleaning the measurement data ##########
 ################################################
-chA_clean = np.zeros((5,5), dtype=object); chA_clean[:] = 'nan'
-chB_clean = np.zeros((5,5), dtype=object); chB_clean[:] = 'nan'
-def cleaning(star, telcombi):
+g2_allA = np.zeros((5,5), dtype=object); g2_allA[:] = 'nan'
+g2_allB = np.zeros((5,5), dtype=object); g2_allB[:] = 'nan'
+def cleaning_adding(star, telcombi):
     c1 = telcombi[0]
     c2 = telcombi[1]
     telstring = "{}{}".format(c1,c2)  
 
     chAs = np.loadtxt("g2_functions/{}/{}/chA.g2".format(star, telstring))
     chBs = np.loadtxt("g2_functions/{}/{}/chB.g2".format(star, telstring))
-    #chA_clean[c1][c2] = np.zeros(len(chAs), dtype=object)
-    #chB_clean[c1][c2] = np.zeros(len(chBs), dtype=object)
-    if chA_clean[c1,c2] == 'nan':
-        chA_clean[c1,c2] = np.zeros(len(chAs[0]))
-        chB_clean[c1,c2] = np.zeros(len(chAs[0]))
+    if g2_allA[c1,c2] == 'nan':
+        g2_allA[c1,c2] = np.zeros(len(chAs[0]))
+        g2_allB[c1,c2] = np.zeros(len(chAs[0]))
 
     # loop over every g2 function chunk
     for i in range(0,len(chAs)):
@@ -91,7 +91,7 @@ def cleaning(star, telcombi):
         freqA = [45,95,110,145,155,175,195]
         for j in range(len(freqA)):
             chA = cor.notch(chA, freqA[j]*1e6, 80)
-        freqB = [50]
+        freqB = [50,90,110]
         for j in range(len(freqB)):
             chB = cor.notch(chB, freqB[j]*1e6, 80)
     
@@ -109,22 +109,77 @@ def cleaning(star, telcombi):
         #plt.show()
         plt.close()
         '''    
-        chA_clean[c1,c2] += chA/np.std(chA[0:4500])**2
-        chB_clean[c1,c2] += chB/np.std(chB[0:4500])**2
+        g2_allA[c1,c2] += chA/np.std(chA)**2
+        g2_allB[c1,c2] += chB/np.std(chB)**2
     print("Cleaning done")
+
+################################################
+#### Analysis over whole measurement time #####
+################################################
+plt.figure("CrossCorr", figsize=(12,8))
+def par_fixing(telcombi):
+    c1 = telcombi[0]
+    c2 = telcombi[1]
+    telstring = "{}{}".format(c1,c2)
+    plotnumber = len(telcombis)*100 + 10 + telcombis.index(telstring) + 1
+    # read in g2 fct for telcombi
+    chA = g2_allA[c1,c2]  
+    chB = g2_allB[c1,c2]  
+
+    # Demo function for initializing x axis
+    demo = chA
+    x = np.arange(-1.6*len(demo)//2,+1.6*len(demo)//2,1.6)
+    # normalizing g2 fct
+    chA /= np.mean(chA)
+    chB /= np.mean(chB)
+
+    # Fit for gaining mu and sigma to fix these parameters for different baseline combis
+    plt.figure("CrossCorr")
+    plt.subplot(plotnumber)
+    plt.title("Cross correlation data of all stars for {}".format(telstring))
+    print("Fixed parameters")
+    # Channel A
+    xplot, popt, perr = uti.fit(chA, x, -50, +50)
+    #mu_A[c1][c2] = popt[1] 
+    sigma_A[c1][c2] = popt[2] 
+    #amp_A[c1][c2] = popt[0]*1e7
+    #noise_A = np.std(chA)*1e7
+    #dmu_A[c1][c2] = perr[1]
+    dsigma_A[c1,c2] = perr[2]
+    #print(dsigma_A[c1,c2])
+    integral, dintegral = uti.integral(popt, perr)
+    #print("{} A 470nm amp: {:.2f}e-7 +/- {:.2f}e-7 \t mean: {:.2f} +/- {:.2f} ns \t sigma: {:.2f} +/- {:.2f} ns \t integral: {:.2f} +/- {:.2f} fs \t A Noise: {:.2f} \t Ratio: {:.2f}".format(telstring, amp_A[c1][c2], perr[0]*1e7, mu_A[c1][c2], perr[1],sigma_A[c1][c2],perr[2],1e6*integral,1e6*dintegral, noise_A, amp_A[c1][c2]/noise_A))
+    plt.plot(x, chA, label=telstring + "A", color=uti.color_chA)
+    plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--")
+    # Channel B
+    xplot, popt, perr = uti.fit(chB, x, -50, +50)
+    #mu_B[c1][c2] = popt[1]
+    sigma_B[c1][c2] = popt[2]
+    #amp_B[c1][c2] = popt[0]*1e7
+    #noise_B = np.std(chB)*1e7
+    #dmuB = []
+    #dmuB = perr[1]
+    dsigma_B[c1,c2] = perr[2]
+    #print(dsigma_B[c1,c2])
+    integral, dintegral = uti.integral(popt, perr)
+    #print ("{} B 375nm amp: {:.2f}e-7 +/- {:.2f}e-7 \t mean: {:.2f} +/- {:.2f} ns \t sigma: {:.2f} +/- {:.2f} ns \t integral: {:.2f} +/- {:.2f} fs \t B Noise: {:.2f} \t Ratio: {:.2f}".format(telstring,amp_B[c1][c2], perr[0]*1e7, mu_B[c1][c2],perr[1],sigma_B[c1][c2],perr[2],1e6*integral,1e6*dintegral, noise_B, amp_B[c1][c2]/noise_B))
+    plt.plot(x, chB, label=telstring + "B", color=uti.color_chB)
+    plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--")
+    
+    plt.legend(); plt.grid()
+    plt.xlim(-100,100)
+    plt.ticklabel_format(useOffset=False)
+    plt.xlabel("Time delay (ns)"); plt.ylabel("$g^{(2)}$")
+    plt.tight_layout()
+    print(f'DONE par fixing for {telstring}')
+
+    #np.savetxt(f'g2_functions/mu_sig_{telstring}.txt', np.c_[mu_A[c1,c2], dmu_A[c1,c2], sigma_A[c1,c2], dsigma_A[c1,c2], mu_B[c1,c2], dmuB, sigma_B[c1,c2], dsigma_B[c1,c2]], header='A: mu, dmu, sig, dsig /t B: mu, dmu, sig, dsig')
 
 
 # Loop over all the stars
 for i in range(len(stars)):
     star = stars[i]
     print(star)
-    # Loop over every potential telescope combination and check if it exists
-    #telcombis = []
-    #for c1 in range (1,5):
-    #    for c2 in range(1,5):
-    #        if os.path.isfile("g2_functions/{}/{}{}/ac_times.txt".format(star,c1,c2,)):
-    #            telcombis.append("{}{}".format(c1,c2))
-
     for c1 in range (1,5):
         for c2 in range(1,5):
             if os.path.isfile("g2_functions/{}/{}{}/ac_times.txt".format(star,c1,c2,)):
@@ -132,66 +187,30 @@ for i in range(len(stars)):
                 telcombistring = str(c1) + str(c2)
                 print ("Found telescope combination {}".format(telcombi))
                 if telcombistring in onlys or onlys == "None":
-                    cleaning(star, telcombi)
+                    cleaning_adding(star, telcombi)
 
-print(chA_clean)
+#print(chA_clean)
 telcombis = []
 for c1 in range (1,5):
     for c2 in range(1,5):
-        if chA_clean[c1,c2] != 'nan':
+        if g2_allA[c1,c2] != 'nan':
             telcombis.append(f'{c1}{c2}')
-
-
-# normalizing final g2
-plt.figure("CrossCorr")
+mean_sigA = []; weightA = []; mean_sigB = []; weightB = []
 for c1 in range (1,5):
     for c2 in range(1,5):
-        if chA_clean[c1,c2] != 'nan':
-            chA_clean[c1,c2] /= np.mean(chA_clean[c1,c2][0:4500])
-            chB_clean[c1,c2] /= np.mean(chB_clean[c1,c2][0:4500])
-            telstring = f"{c1}{c2}"
-
-            # Demo function for initializing x axis and some stuff
-            demo = chA_clean[c1,c2]
-            x = np.arange(-1.6*len(demo)//2,+1.6*len(demo)//2,1.6)
-
-            # Fit for gaining mu and sigma to fix these parameters for different baseline combis
-            plotnumber = len(telcombis)*100 + 10 + telcombis.index(telstring) + 1
-            plt.subplot(plotnumber)
-            plt.title(f"Cross correlation data of all stars for {telstring}")
-            print("Fixed parameters")
-            ## Channel A
-            xplot, popt, perr = uti.fit(chA_clean[c1,c2], x, -50, +50)
-            mu_A[c1][c2] = popt[1]; sigma_A[c1][c2] = popt[2] # fixing mu and sigma
-            amp_A[c1][c2] = popt[0]*1e7
-            noise_A = np.std(chA_clean[c1,c2])*1e7
-            dmu_A[c1][c2] = perr[1]
-            dsigA = []; dsigA = perr[2]
-            integral, dintegral = uti.integral(popt, perr)
-            print("{} A 470nm amp: {:.2f}e-7 +/- {:.2f}e-7 \t mean: {:.2f} +/- {:.2f} ns \t sigma: {:.2f} +/- {:.2f} ns \t integral: {:.2f} +/- {:.2f} fs \t A Noise: {:.2f} \t Ratio: {:.2f}".format(telstring, amp_A[c1][c2], perr[0]*1e7, mu_A[c1][c2], perr[1],sigma_A[c1][c2],perr[2],1e6*integral,1e6*dintegral, noise_A, amp_A[c1][c2]/noise_A))
-            #ratioA.append(amp_A[c1][c2]/noise_A)
-            plt.plot(x, chA_clean[c1,c2], label=telstring + "A", color=uti.color_chA)
-            plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--")
-            # Channel B
-            xplot, popt, perr = uti.fit(chB_clean[c1,c2], x, -50, +50)
-            mu_B[c1][c2] = popt[1]; sigma_B[c1][c2] = popt[2]
-            amp_B[c1][c2] = popt[0]*1e7
-            noise_B = np.std(chB_clean[c1,c2])*1e7
-            dmuB = []; dsigB = []
-            dmuB = perr[1]; dsigB = perr[2]
-            integral, dintegral = uti.integral(popt, perr)
-            print ("{} B 375nm amp: {:.2f}e-7 +/- {:.2f}e-7 \t mean: {:.2f} +/- {:.2f} ns \t sigma: {:.2f} +/- {:.2f} ns \t integral: {:.2f} +/- {:.2f} fs \t B Noise: {:.2f} \t Ratio: {:.2f}".format(telstring,amp_B[c1][c2], perr[0]*1e7, mu_B[c1][c2],perr[1],sigma_B[c1][c2],perr[2],1e6*integral,1e6*dintegral, noise_B, amp_B[c1][c2]/noise_B))
-            #ratioB.append(amp_B[c1][c2]/noise_B)
-            plt.plot(x, chB_clean[c1,c2], label=telstring + "B", color=uti.color_chB)
-            plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--")
-            
-            plt.legend(); plt.grid()
-            #plt.xlim(-100,100)
-            plt.ticklabel_format(useOffset=False)
-            plt.xlabel("Time delay (ns)"); plt.ylabel("$g^{(2)}$")
-            plt.tight_layout()
-            print(f'DONE par fixing for {telstring}')
-        else:
-            print(f'{c1}{c2} nothing found here')
-            
+        if g2_allA[c1,c2] != 'nan':
+            telcombi = [c1,c2]
+            par_fixing(telcombi)
+            mean_sigA.append(sigma_A[c1,c2])
+            weightA.append(1/dsigma_A[c1,c2]**2)
+            print(dsigma_A[c1,c2])
+            if telcombi != [1,3]:
+                mean_sigB.append(sigma_B[c1,c2])
+                weightB.append(1/dsigma_B[c1,c2]**2)
+                print(dsigma_B[c1,c2])
+print(mean_sigA, mean_sigB)
+print(weightA, weightB)
+mean_sigA = np.average(mean_sigA, weights=weightA)
+mean_sigB = np.average(mean_sigB, weights=weightB)
+np.savetxt('g2_functions/mean_sig.txt', np.c_[mean_sigA, mean_sigB])
 plt.show()

@@ -172,10 +172,10 @@ def par_fixing(star, telcombi):
     g2_allA = np.zeros(len(x)); g2_allB = np.zeros(len(x))
     for i in range (0,len(chAs)):
         #plt.plot(chAs[i]); plt.plot(chBs[i]); plt.show()
-        g2_allA += chAs[i]/np.std(chAs[i][0:4500])**2
-        g2_allB += chBs[i]/np.std(chBs[i][0:4500])**2
-    g2_allA /= np.mean(g2_allA[0:4500])
-    g2_allB /= np.mean(g2_allB[0:4500])
+        g2_allA += chAs[i]/np.std(chAs[i])**2
+        g2_allB += chBs[i]/np.std(chBs[i])**2
+    g2_allA /= np.mean(g2_allA)
+    g2_allB /= np.mean(g2_allB)
 
     # Fit for gaining mu and sigma to fix these parameters for different baseline combis
     plt.figure("CrossCorr")
