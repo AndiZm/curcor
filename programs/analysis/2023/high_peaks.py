@@ -120,19 +120,23 @@ def cleaning_adding(star, telcombi):
         noise_B = np.std(chB)
         ampB = max(chB[(x>-20) & (x<20)]) - 1
         ratioB = ampB/noise_B
-        print(ratioA, ratioB)
+        print(i, ratioA, ratioB)
 
         if telstring == '13':
             if ratioA >= 3:
+                print(f'A: {i}')
                 g2_allA[c1,c2] += chA/np.std(chA)**2
-            if ratioB >= 2:    
+            if ratioB >= 2: 
+                print(f'B: {i}')   
                 g2_allB[c1,c2] += chB/np.std(chB)**2
 
         
         if ratioA >= 5:
+            print(f'A: {i}')
             g2_allA[c1,c2] += chA/np.std(chA)**2
         if ratioB >= 2:    
             g2_allB[c1,c2] += chB/np.std(chB)**2
+            print(f'B: {i}')
    
     print("Cleaning done")
 

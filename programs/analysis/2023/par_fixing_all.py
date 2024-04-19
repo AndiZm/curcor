@@ -116,7 +116,7 @@ def cleaning_adding(star, telcombi):
 ################################################
 #### Analysis over whole measurement time #####
 ################################################
-plt.figure("CrossCorr", figsize=(12,8))
+plt.figure("CrossCorr", figsize=(8,7))
 def par_fixing(telcombi):
     c1 = telcombi[0]
     c2 = telcombi[1]
@@ -174,6 +174,7 @@ def par_fixing(telcombi):
     print(f'DONE par fixing for {telstring}')
 
     #np.savetxt(f'g2_functions/mu_sig_{telstring}.txt', np.c_[mu_A[c1,c2], dmu_A[c1,c2], sigma_A[c1,c2], dsigma_A[c1,c2], mu_B[c1,c2], dmuB, sigma_B[c1,c2], dsigma_B[c1,c2]], header='A: mu, dmu, sig, dsig /t B: mu, dmu, sig, dsig')
+    np.savetxt(f'g2_functions/sig_{telstring}.txt', np.c_[sigma_A[c1,c2], dsigma_A[c1,c2], sigma_B[c1,c2], dsigma_B[c1,c2]], header='A: sig, dsig /t B: sig, dsig')
 
 
 # Loop over all the stars
@@ -195,22 +196,24 @@ for c1 in range (1,5):
     for c2 in range(1,5):
         if g2_allA[c1,c2] != 'nan':
             telcombis.append(f'{c1}{c2}')
-mean_sigA = []; weightA = []; mean_sigB = []; weightB = []
+avg_sigA = []; weightA = []; avg_sigB = []; weightB = []
 for c1 in range (1,5):
     for c2 in range(1,5):
         if g2_allA[c1,c2] != 'nan':
             telcombi = [c1,c2]
             par_fixing(telcombi)
-            mean_sigA.append(sigma_A[c1,c2])
+            avg_sigA.append(sigma_A[c1,c2])
             weightA.append(1/dsigma_A[c1,c2]**2)
-            print(dsigma_A[c1,c2])
+            #print(dsigma_A[c1,c2])
             if telcombi != [1,3]:
-                mean_sigB.append(sigma_B[c1,c2])
+                avg_sigB.append(sigma_B[c1,c2])
                 weightB.append(1/dsigma_B[c1,c2]**2)
                 print(dsigma_B[c1,c2])
-print(mean_sigA, mean_sigB)
-print(weightA, weightB)
-mean_sigA = np.average(mean_sigA, weights=weightA)
-mean_sigB = np.average(mean_sigB, weights=weightB)
-np.savetxt('g2_functions/mean_sig.txt', np.c_[mean_sigA, mean_sigB])
+#print(mean_sigA, mean_sigB)
+#print(weightA, weightB)
+avg_sigA = np.average(avg_sigA, weights=weightA)
+avg_sigB = np.average(avg_sigB, weights=weightB)
+print('A: {:.2f}'.format(avg_sigA))
+print('B: {:.2f}'.format(avg_sigB))
+np.savetxt('g2_functions/avg_sig.txt', np.c_[avg_sigA, avg_sigB], header='chA, chB')
 plt.show()
