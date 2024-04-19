@@ -20,6 +20,8 @@ import math
 import utilities as uti
 import corrections as cor
 import geometry as geo
+import par_fixing_all as pfa
+print("DONE par fixing all")
 
 star = sys.argv[1]
 stars = ['Mimosa', 'Etacen', 'Nunki', 'Dschubba']
@@ -76,10 +78,6 @@ sigma_B = np.zeros((5,5)); sigma_B[:] = np.nan
 dsigma_B = np.zeros((5,5)); dsigma_B[:] = np.nan
 #amp_A = np.zeros((5,5)); amp_A[:] = np.nan
 #amp_B = np.zeros((5,5)); amp_B[:] = np.nan
-
-# read in mean of sigmas
-mean_sigA = np.loadtxt('g2_functions/mean_sig.txt')[0]
-mean_sigB = np.loadtxt('g2_functions/mean_sig.txt')[1]
 
 lam_g = 470e-9
 lam_uv = 375e-9
@@ -301,27 +299,27 @@ def chunk_ana(star, telcombi):
 
         # Fit with fixed sigma of each telcombi
         # chA
-        xplotf, popt_A, perr_A = uti.fit_fixed(chA, x, -50, 50, sigma_A[c1,c2])
-        Int, dInt = uti.integral_fixed(popt_A, perr_A, sigma_A[c1,c2]) #, factor=2.3)
+        xplotf, popt_A, perr_A = uti.fit_fixed(chA, x, -50, 50, pfa.sigma_A[c1,c2])
+        Int, dInt = uti.integral_fixed(popt_A, perr_A, pfa.sigma_A[c1,c2]) #, factor=2.3)
         ints_fixedA.append(1e6*Int); dints_fixedA.append(1e6*dInt)# in femtoseconds
         #noise_A = np.std(chA); ratioA = popt_A[0]/noise_A
         #print(popt_A)
         # chB
-        xplotf, popt_B, perr_B = uti.fit_fixed(chB, x, -50, 50, sigma_B[c1,c2])
-        Int, dInt = uti.integral_fixed(popt_B, perr_B, sigma_B[c1,c2]) #, factor=2.38)
+        xplotf, popt_B, perr_B = uti.fit_fixed(chB, x, -50, 50, pfa.sigma_B[c1,c2])
+        Int, dInt = uti.integral_fixed(popt_B, perr_B, pfa.sigma_B[c1,c2]) #, factor=2.38)
         ints_fixedB.append(1e6*Int); dints_fixedB.append(1e6*dInt)# in femtoseconds
         #noise_B = np.std(chB); ratioB = popt_B[0]/noise_B
         #print(f'{i} ratio SN A = {ratioA} \t ratio SN B = {ratioB}')
         
-        # Fit with mean of fixed sigmas of each telcombis (all telcombis get same sigma)
+        # Fit with average of fixed sigmas of each telcombis (all telcombis get same sigma)
         # chA
-        xplotf1, popt_A1, perr_A1 = uti.fit_fixed(chA, x, -50, 50, mean_sigA )
-        Int1, dInt1 = uti.integral_fixed(popt_A1, perr_A1, mean_sigA)#, factor=2.3)
+        xplotf1, popt_A1, perr_A1 = uti.fit_fixed(chA, x, -50, 50, pfa.avg_sigA )
+        Int1, dInt1 = uti.integral_fixed(popt_A1, perr_A1, pfa.avg_sigA)#, factor=2.3)
         ints_fixedA1.append(1e6*Int1); dints_fixedA1.append(1e6*dInt1)# in femtoseconds
         #print('CHIA = {}'.format(chi_A1))
         # chB
-        xplotf1, popt_B1, perr_B1 = uti.fit_fixed(chB, x, -50, 50, mean_sigB)
-        Int1, dInt1 = uti.integral_fixed(popt_B1, perr_B1, mean_sigB) #, factor=2.38)
+        xplotf1, popt_B1, perr_B1 = uti.fit_fixed(chB, x, -50, 50, pfa.avg_sigB)
+        Int1, dInt1 = uti.integral_fixed(popt_B1, perr_B1, pfa.avg_sigB) #, factor=2.38)
         ints_fixedB1.append(1e6*Int1); dints_fixedB1.append(1e6*dInt1)# in femtoseconds
         #print('CHIB = {}'.format(chi_B1))
 
@@ -397,7 +395,7 @@ def chunk_ana(star, telcombi):
         plt.subplot(121)
         plt.title('470nm')
         plt.errorbar(i, ints_fixedA[-1], dints_fixedA[-1], marker='o', ls='', color='red', alpha=0.7, label='telcombi sigma')
-        plt.errorbar(i, ints_fixedA1[-1], dints_fixedA1[-1], marker='o', ls='', color='blue', alpha=0.7, label='mean of sigmas')
+        plt.errorbar(i, ints_fixedA1[-1], dints_fixedA1[-1], marker='o', ls='', color='blue', alpha=0.7, label='average of sigmas')
         plt.xlabel("# time chunk") 
         plt.ylabel("Spatial coherence (fs)") 
         # legend 
@@ -407,7 +405,7 @@ def chunk_ana(star, telcombi):
         plt.subplot(122)
         plt.title('375nm')
         plt.errorbar(i, ints_fixedB[-1], dints_fixedB[-1], marker='o', ls='', color='red', alpha=0.7, label='telcombi sigma')
-        plt.errorbar(i, ints_fixedB1[-1], dints_fixedB1[-1], marker='o', ls='', color='blue', alpha=0.7, label='mean of sigmas')
+        plt.errorbar(i, ints_fixedB1[-1], dints_fixedB1[-1], marker='o', ls='', color='blue', alpha=0.7, label='average of sigmas')
         plt.xlabel("# time chunk") 
         plt.ylabel("Spatial coherence (fs)") 
         # legend 
@@ -419,7 +417,7 @@ def chunk_ana(star, telcombi):
         plt.figure('SC')
         plt.subplot(121)
         plt.errorbar(x=baseline, xerr=dbaseline, y=ints_fixedA[-1], yerr=dints_fixedA[-1], marker='o', color='red', label='telcombi sigma')
-        plt.errorbar(x=baseline, xerr=dbaseline, y=ints_fixedA1[-1], yerr=dints_fixedA1[-1], marker='o', color='blue', label='mean of sigmas')
+        plt.errorbar(x=baseline, xerr=dbaseline, y=ints_fixedA1[-1], yerr=dints_fixedA1[-1], marker='o', color='blue', label='average of sigmas')
         plt.axhline(y=0, color="black", linestyle="--") 
         plt.xlabel("Projected baseline (m)")
         plt.ylabel("Spatial coherence (fs)") 
@@ -429,7 +427,7 @@ def chunk_ana(star, telcombi):
         plt.legend(by_label.values(), by_label.keys())
         plt.subplot(122)
         plt.errorbar(x=baseline, xerr=dbaseline, y=ints_fixedB[-1], yerr=dints_fixedB[-1], marker='o', color='red', label='telcombi sigma')
-        plt.errorbar(x=baseline, xerr=dbaseline, y=ints_fixedB1[-1], yerr=dints_fixedB1[-1], marker='o', color='blue', label='mean of sigmas')
+        plt.errorbar(x=baseline, xerr=dbaseline, y=ints_fixedB1[-1], yerr=dints_fixedB1[-1], marker='o', color='blue', label='average of sigmas')
         plt.axhline(y=0, color="black", linestyle="--") 
         plt.xlabel("Projected baseline (m)")
         plt.ylabel("Spatial coherence (fs)") 
@@ -456,8 +454,8 @@ def chunk_ana(star, telcombi):
         #axsA[a,b].errorbar(xnew, chAss, yerr=errorA, linestyle="-", color = uti.color_chA,   alpha=0.7)
         #axsA[a,b].errorbar(x, chA, yerr=errorA, linestyle="-", color = uti.color_chA,   alpha=0.7)
         axsA[a,b].plot(x, chA, linestyle="-", color = uti.color_chA,   alpha=0.7)
-        axsA[a,b].plot(xplotf, uti.gauss(xplotf, popt_A[0], popt_A[1], sigma_A[c1,c2], popt_A[2]), color='red', linestyle="--", zorder=4, label='telcombi sigma')                
-        axsA[a,b].plot(xplotf1, uti.gauss(xplotf1, popt_A1[0], popt_A1[1], mean_sigA, popt_A1[2]), color='blue', ls='--', zorder=4, label='mean of sigmas')
+        axsA[a,b].plot(xplotf, uti.gauss(xplotf, popt_A[0], popt_A[1], pfa.sigma_A[c1,c2], popt_A[2]), color='red', linestyle="--", zorder=4, label='telcombi sigma')                
+        axsA[a,b].plot(xplotf1, uti.gauss(xplotf1, popt_A1[0], popt_A1[1], pfa.avg_sigA, popt_A1[2]), color='blue', ls='--', zorder=4, label='average of sigmas')
         #plt.ylim(np.min(chAss), np.max(chAss))
         axsA[a,b].set_xlim(-100,100)
         axsA[a,b].text(x=-100, y=0.5e-6+1, s=tstring_short, fontweight="bold", bbox=dict(boxstyle="round", ec="white", fc="white", alpha=0.75))
@@ -467,8 +465,8 @@ def chunk_ana(star, telcombi):
         #axsB[a,b].errorbar(xnew, chBss, yerr=errorB, linestyle="-", color = uti.color_chB,   alpha=0.7)
         #axsB[a,b].errorbar(x, chB, yerr=errorB, linestyle="-", color = uti.color_chB,   alpha=0.7)
         axsB[a,b].plot(x, chB, linestyle="-", color = uti.color_chB,   alpha=0.7)
-        axsB[a,b].plot(xplotf, uti.gauss(xplotf, popt_B[0], popt_B[1], sigma_B[c1,c2], popt_B[2]), color='red', linestyle="--", zorder=4, label='telcombi sigma')                
-        axsB[a,b].plot(xplotf1, uti.gauss(xplotf1, popt_B1[0], popt_B1[1], mean_sigB, popt_B1[2]), color='blue', ls='--', zorder=4, label='mean of sigmas')
+        axsB[a,b].plot(xplotf, uti.gauss(xplotf, popt_B[0], popt_B[1], pfa.sigma_B[c1,c2], popt_B[2]), color='red', linestyle="--", zorder=4, label='telcombi sigma')                
+        axsB[a,b].plot(xplotf1, uti.gauss(xplotf1, popt_B1[0], popt_B1[1], pfa.avg_sigB, popt_B1[2]), color='blue', ls='--', zorder=4, label='average of sigmas')
         axsB[a,b].set_xlim(-100,100)
         axsB[a,b].text(x=-100, y=0.5e-6+1, s=tstring_short, fontweight="bold", bbox=dict(boxstyle="round", ec="white", fc="white", alpha=0.75))
         axsB[a,b].axhline(y=1, color='black', linestyle='--', linewidth=1)
@@ -528,10 +526,10 @@ for c1 in range (1,5):
         if os.path.isfile("g2_functions/{}/{}{}/ac_times.txt".format(star,c1,c2,)):
             telcombis.append("{}{}".format(c1,c2))
             telstring = f"{c1}{c2}"
-            sigma_A[c1,c2] = np.loadtxt(f"g2_functions/mu_sig_{telstring}.txt")[2]
-            dsigma_A[c1,c2] = np.loadtxt(f"g2_functions/mu_sig_{telstring}.txt")[3]
-            sigma_B[c1,c2] = np.loadtxt(f"g2_functions/mu_sig_{telstring}.txt")[6]
-            dsigma_A[c1,c2] = np.loadtxt(f"g2_functions/mu_sig_{telstring}.txt")[7]
+            #sigma_A[c1,c2] = np.loadtxt(f"g2_functions/mu_sig_{telstring}.txt")[2]
+            #dsigma_A[c1,c2] = np.loadtxt(f"g2_functions/mu_sig_{telstring}.txt")[3]
+            #sigma_B[c1,c2] = np.loadtxt(f"g2_functions/mu_sig_{telstring}.txt")[6]
+            #dsigma_A[c1,c2] = np.loadtxt(f"g2_functions/mu_sig_{telstring}.txt")[7]
 
 for c1 in range (1,5):
     for c2 in range(1,5):

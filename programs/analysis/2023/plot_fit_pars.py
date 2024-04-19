@@ -26,8 +26,8 @@ import geometry as geo
 stars = ['Mimosa', 'Etacen', 'Nunki', 'Dschubba']
 telcombis = ['13', '14', '34']
 
-plt.figure('Amps', figsize=(9,5))
-plt.suptitle('Zero baseline')
+#plt.figure('Amps', figsize=(9,5))
+#plt.suptitle('Zero baseline')
 plt.figure('mean_all_high', figsize=(9,5))
 plt.suptitle('CrossCorr guassian mean')
 plt.figure('sigma_all_high', figsize=(9,5))
@@ -37,11 +37,13 @@ for i in  range(len(stars)):
 	for j in range(len(telcombis)):
 		if os.path.isdir(f"g2_functions/{stars[i]}/{telcombis[j]}"):
 			telstring = telcombis[j]
+			# read in zero baseline amplitudes of SC plots
 			data = np.loadtxt(f"g2_functions/{stars[i]}/{telcombis[j]}/amplitudes.txt")
 			ampsA = (data[0])
 			dampsA = (data[1])
 			ampsB = (data[2])
 			dampsB = (data[3])
+			# read in gaussian mean and sigma for each star and telcombi
 			data = np.loadtxt(f'g2_functions/{stars[i]}/{telcombis[j]}/mu_sig.txt')
 			musA = (data[0])
 			dmusA = (data[1])
@@ -54,15 +56,15 @@ for i in  range(len(stars)):
 
 			plotnumber = 100 + len(telcombis)*10 + telcombis.index(telstring) + 1
 
-			if stars[i] != 'Dschubba':
-				plt.figure('Amps')
-				plt.subplot(plotnumber)
-				plt.title(telstring)
-				plt.ylabel('zero baseline (fs)')
-				plt.errorbar(x=stars[i], y=ampsB, yerr=dampsB, marker='o', linestyle=' ', color=uti.color_chB, label='375nm')
-				plt.errorbar(x=stars[i], y=ampsA, yerr=dampsA, marker='o', linestyle=' ', color=uti.color_chA, label='470nm')
-				handles1, labels1 = plt.gca().get_legend_handles_labels()
-				by_label1 = OrderedDict(zip(labels1, handles1))
+			#if stars[i] != 'Dschubba':
+			#	plt.figure('Amps')
+			#	plt.subplot(plotnumber)
+			#	plt.title(telstring)
+			#	plt.ylabel('zero baseline (fs)')
+			#	plt.errorbar(x=stars[i], y=ampsB, yerr=dampsB, marker='o', linestyle=' ', color=uti.color_chB, label='375nm')
+			#	plt.errorbar(x=stars[i], y=ampsA, yerr=dampsA, marker='o', linestyle=' ', color=uti.color_chA, label='470nm')
+			#	handles1, labels1 = plt.gca().get_legend_handles_labels()
+			#	by_label1 = OrderedDict(zip(labels1, handles1))
 
 			plt.figure('mean_all_high')
 			plt.subplot(plotnumber)
@@ -80,9 +82,10 @@ for i in  range(len(stars)):
 			by_label3 = OrderedDict(zip(labels3, handles3)) 
 
 
-
+# mean and sigma for gaussian of all data
 for j in range(len(telcombis)):
 	telstring = telcombis[j]
+	# read in gaussian mean and sigma of all data 
 	data = np.loadtxt(f'g2_functions/mu_sig_{telcombis[j]}.txt')
 	muA = (data[0])
 	dmuA = (data[1])
@@ -92,6 +95,7 @@ for j in range(len(telcombis)):
 	dmuB = (data[5])
 	sigB = (data[6])
 	dsigB = (data[7])
+	# read in data when only taking high peaks into account
 	data = np.loadtxt(f'g2_functions/mu_sig_{telcombis[j]}_high.txt')
 	muA_h = (data[0])
 	dmuA_h = (data[1])
@@ -101,9 +105,18 @@ for j in range(len(telcombis)):
 	dmuB_h = (data[5])
 	sigB_h = (data[6])
 	dsigB_h = (data[7])
+	# read in only sigma of all data
+	data = np.loadtxt(f'g2_functions/sig_{telcombis[j]}.txt')
+	sigA_all = data[0]
+	dsigA_all = data[1]
+	sigB_all = data[2]
+	dsigB_all = data[3]
 
-	print('{} all: {:.2f} +/- {:.2f}'.format(telstring, sigA, dsigA))
-	print('{} high: {:.2f} +/- {:.2f}'.format(telstring, sigA_h, dsigA_h))
+	#print('{} all: {:.2f} +/- {:.2f}'.format(telstring, sigA, dsigA))
+	print('A{} all: {:.2f} +/- {:.2f}'.format(telstring, sigA_all, dsigA_all))
+	print('A{} high: {:.2f} +/- {:.2f}'.format(telstring, sigA_h, dsigA_h))
+	print('B{} all: {:.2f} +/- {:.2f}'.format(telstring, sigB_all, dsigB_all))
+	print('B{} high: {:.2f} +/- {:.2f}'.format(telstring, sigB_h, dsigB_h))
 
 	plotnumber = 100 + len(telcombis)*10 + telcombis.index(telstring) + 1
 	plt.figure('mean_all_high')
@@ -120,8 +133,8 @@ for j in range(len(telcombis)):
 
 	plt.figure('sigma_all_high')
 	plt.subplot(plotnumber)
-	plt.axhline(y=sigA, ls='--', color=uti.color_chA, label='fixed sigma')
-	plt.axhline(y=sigB, ls='--', color=uti.color_chB)
+	plt.axhline(y=sigA_all, ls='--', color=uti.color_chA, label='fixed sigma')
+	plt.axhline(y=sigB_all, ls='--', color=uti.color_chB)
 	plt.axhline(y=sigA_h, ls='-', color=uti.color_chA, label='fixed sigma high')
 	plt.axhline(y=sigB_h, ls='-', color=uti.color_chB)
 	handles5, labels5 = plt.gca().get_legend_handles_labels()
@@ -129,13 +142,13 @@ for j in range(len(telcombis)):
 	#if telstring != '13':
 	#	plt.fill_between(x=stars, y1=(sigA-dsigA), y2=(sigA+dsigA), alpha=0.5, color=uti.color_chA)
 	#	plt.fill_between(x=stars, y1=(sigB-dsigB), y2=(sigB+dsigB), alpha=0.5, color=uti.color_chB)
-	plt.ylim([3,6])
+	#plt.ylim([3,6])
 
 
 
-plt.figure('Amps')
-plt.legend(by_label1.values(), by_label1.keys())
-plt.tight_layout()
+#plt.figure('Amps')
+#plt.legend(by_label1.values(), by_label1.keys())
+#plt.tight_layout()
 plt.figure('mean_all_high')
 plt.legend(by_label2.values(), by_label2.keys())
 plt.legend(by_label4.values(), by_label4.keys())
