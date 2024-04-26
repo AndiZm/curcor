@@ -66,21 +66,11 @@ combicolors[1,3] = "blue"
 combicolors[1,4] = "fuchsia"
 combicolors[3,4] = "turquoise"
 
-# Create array of fixed parameters
-mu_A = np.zeros((5,5)); mu_A[:] = np.nan
-mu_B = np.zeros((5,5)); mu_B[:] = np.nan
-sigma_A = np.zeros((5,5)); sigma_A[:] = np.nan
-sigma_B = np.zeros((5,5)); sigma_B[:] = np.nan
-amp_A = np.zeros((5,5)); amp_A[:] = np.nan
-amp_B = np.zeros((5,5)); amp_B[:] = np.nan
-
 lam_g = 470e-9
 lam_uv = 375e-9
 lam_all = 422.5e-9
 amp_g = 21.25
 amp_uv = 10
-
-ratioA = []; ratioB = []
 
 ################################################
 ####### Cleaning the measurement data ##########
@@ -149,74 +139,6 @@ def cleaning(star, telcombi):
         chB_clean[c1,c2][i] = chB
     print("Cleaning done")
 
-################################################
-#### Analysis over whole measurement time #####
-################################################
-#plt.figure("CrossCorr", figsize=(12,8))
-#def par_fixing(star, telcombi):
-#    c1 = telcombi[0]
-#    c2 = telcombi[1]
-#    telstring = "{}{}".format(c1,c2)
-#    plotnumber = len(telcombis)*100 + 10 + telcombis.index(telstring) + 1
-#
-#    # Read in the data g2 functions
-#    #chAs    = np.loadtxt("g2_functions/{}/{}/chA.g2".format(star, telstring))     
-#    #chBs    = np.loadtxt("g2_functions/{}/{}/chB.g2".format(star, telstring))  
-#    chAs = chA_clean[c1,c2]  
-#    chBs = chB_clean[c1,c2]    
-#
-#    # Demo function for initializing x axis and some stuff
-#    demo = chAs[0]
-#    x = np.arange(-1.6*len(demo)//2,+1.6*len(demo)//2,1.6)
-#    
-#    # Combine all data for channel A and B each for initial parameter estimation and fixing
-#    g2_allA = np.zeros(len(x)); g2_allB = np.zeros(len(x))
-#    for i in range (0,len(chAs)):
-#        #plt.plot(chAs[i]); plt.plot(chBs[i]); plt.show()
-#        g2_allA += chAs[i]/np.std(chAs[i])**2
-#        g2_allB += chBs[i]/np.std(chBs[i])**2
-#    g2_allA /= np.mean(g2_allA)
-#    g2_allB /= np.mean(g2_allB)
-#
-#    # Fit for gaining mu and sigma to fix these parameters for different baseline combis
-#    plt.figure("CrossCorr")
-#    plt.subplot(plotnumber)
-#    plt.title("Cross correlation data of {} for {}".format(star, telstring))
-#    print("Fixed parameters")
-#    # Channel A
-#    xplot, popt, perr = uti.fit(g2_allA, x, -100, +100)
-#    mu_A[c1][c2] = popt[1]; sigma_A[c1][c2] = popt[2] # fixing mu and sigma
-#    amp_A[c1][c2] = popt[0]*1e7
-#    noise_A = np.std(g2_allA)*1e7
-#    dmuA = []; dsigA = []
-#    dmuA = perr[1]; dsigA = perr[2]
-#    integral, dintegral = uti.integral(popt, perr)
-#    print("{} A 470nm amp: {:.2f}e-7 +/- {:.2f}e-7 \t mean: {:.2f} +/- {:.2f} ns \t sigma: {:.2f} +/- {:.2f} ns \t integral: {:.2f} +/- {:.2f} fs \t A Noise: {:.2f} \t Ratio: {:.2f}".format(telstring, amp_A[c1][c2], perr[0]*1e7, mu_A[c1][c2], perr[1],sigma_A[c1][c2],perr[2],1e6*integral,1e6*dintegral, noise_A, amp_A[c1][c2]/noise_A))
-#    ratioA.append(amp_A[c1][c2]/noise_A)
-#    plt.plot(x, g2_allA, label=telstring + "A", color=uti.color_chA)
-#    plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--")
-#    # Channel B
-#    xplot, popt, perr = uti.fit(g2_allB, x, -100, +100)
-#    mu_B[c1][c2] = popt[1]; sigma_B[c1][c2] = popt[2]
-#    amp_B[c1][c2] = popt[0]*1e7
-#    noise_B = np.std(g2_allB)*1e7
-#    dmuB = []; dsigB = []
-#    dmuB = perr[1]; dsigB = perr[2]
-#    integral, dintegral = uti.integral(popt, perr)
-#    print ("{} B 375nm amp: {:.2f}e-7 +/- {:.2f}e-7 \t mean: {:.2f} +/- {:.2f} ns \t sigma: {:.2f} +/- {:.2f} ns \t integral: {:.2f} +/- {:.2f} fs \t B Noise: {:.2f} \t Ratio: {:.2f}".format(telstring,amp_B[c1][c2], perr[0]*1e7, mu_B[c1][c2],perr[1],sigma_B[c1][c2],perr[2],1e6*integral,1e6*dintegral, noise_B, amp_B[c1][c2]/noise_B))
-#    ratioB.append(amp_B[c1][c2]/noise_B)
-#    plt.plot(x, g2_allB, label=telstring + "B", color=uti.color_chB)
-#    plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--")
-#    
-#    plt.legend(); plt.xlim(-100,100); plt.grid()
-#    plt.ticklabel_format(useOffset=False)
-#    plt.xlabel("Time delay (ns)"); plt.ylabel("$g^{(2)}$")
-#    plt.tight_layout()
-#    
-#    np.savetxt("g2_functions/{}/{}/mu_sig.txt".format(star,telstring), np.c_[mu_A[c1][c2], dmuA, sigma_A[c1][c2], dsigA, mu_B[c1][c2], dmuB, sigma_B[c1][c2], dsigB], header="muA, dmuA, sigA, dsigA, muB, dmuB, sigB, dsigB")
-#    np.savetxt('g2_functions/{}/{}/g2_allA.txt'.format(star,telstring), np.c_[x, g2_allA])
-#    print(f'DONE par fixing for {telstring}')
-
 ##########################################
 ####### Chunk analysis ###################
 ##########################################
@@ -226,8 +148,6 @@ plt.suptitle("Spatial coherence of {}".format(star))
 plt.figure('SC Amp', figsize=(12,8))
 plt.suptitle("Spatial coherence of {} with fixed zero baseline".format(star))
 
-intsA = []; dintsA = []; times = []
-intsB = []; dintsB = []
 ints_fixedA = []; dints_fixedA = []
 ints_fixedB = []; dints_fixedB = []
 baselines_all = []; dbaselines_all = []
@@ -235,7 +155,7 @@ time_all = [] ; telstrings =[]
 baselinesA = []; dbaselinesA = []
 baselinesB = []; dbaselinesB = []
 
-def chunk_ana(star, telcombi, ratioA, ratioB):
+def chunk_ana(star, telcombi):
     c1 = telcombi[0]
     c2 = telcombi[1]
     telstring = "{}{}".format(c1,c2)  
@@ -268,9 +188,9 @@ def chunk_ana(star, telcombi, ratioA, ratioB):
         chB = chBs[i]
 
         ### taking all data into account
-        xplotf, popt_A, perr_A = uti.fit_fixed(chA, x, -50, 50,  pfa.sigma_A[c1][c2])
-        Int  = uti.integral_fixed(popt_A, perr_A, pfa.sigma_A[c1][c2])
-        dInt = uti.simulate_uncertainty(g2=chA, x=x, popt=popt_A, sigma=pfa.sigma_A[c1][c2])
+        xplotf, popt_A, perr_A = uti.fit_fixed(chA, x, -50, 50,  pfa.avg_sigA)
+        Int  = uti.integral_fixed(popt_A, perr_A, pfa.avg_sigA)
+        dInt = uti.simulate_uncertainty(g2=chA, x=x, popt=popt_A, sigma=pfa.avg_sigA)
         ints_fixedA.append(1e6*Int); dints_fixedA.append(1e6*dInt)# in femtoseconds
         baselinesA.append(baseline); dbaselinesA.append(dbaseline)
         plt.figure('SC')
@@ -282,10 +202,9 @@ def chunk_ana(star, telcombi, ratioA, ratioB):
         plt.title("470nm")
         plt.errorbar(x=baseline, xerr=dbaseline, y=1e6*Int, yerr=1e6*dInt, marker='o', color=combicolors[c1][c2], label=telstring)
 
-        xplotf, popt_B, perr_B = uti.fit_fixed(chB, x, -50, 50, pfa.sigma_B[c1][c2])
-        Int  = uti.integral_fixed(popt_B, perr_B, pfa.sigma_B[c1][c2])
-        dInt = uti.simulate_uncertainty(g2=chB, x=x, popt=popt_B, sigma=pfa.sigma_B[c1][c2])
-
+        xplotf, popt_B, perr_B = uti.fit_fixed(chB, x, -50, 50, pfa.avg_sigB)
+        Int  = uti.integral_fixed(popt_B, perr_B, pfa.avg_sigB)
+        dInt = uti.simulate_uncertainty(g2=chB, x=x, popt=popt_B, sigma=pfa.avg_sigB)
         ints_fixedB.append(1e6*Int); dints_fixedB.append(1e6*dInt)# in femtoseconds
         baselinesB.append(baseline); dbaselinesB.append(dbaseline)
         plt.figure("SC")
@@ -660,8 +579,7 @@ for c1 in range (1,5):
             print ("Found telescope combination {}".format(telcombi))
             if telcombistring in onlys or onlys == "None":
                 cleaning(star, telcombi)
-                #par_fixing(star, telcombi)
-                chunk_ana(star, telcombi, ratioA, ratioB)
+                chunk_ana(star, telcombi)
 plotting(star)
 
 
