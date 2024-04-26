@@ -1,25 +1,9 @@
-
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib as mpl  
-from scipy.optimize import curve_fit
-from scipy.signal import butter, filtfilt, find_peaks
-import scipy.stats as stats
-from matplotlib.pyplot import cm
-import ephem
-import scipy.special as scp
-import sys
-from brokenaxes import brokenaxes
-from matplotlib.gridspec import GridSpec
 import os
-from scipy import odr
 from collections import OrderedDict
-from matplotlib.offsetbox import AnchoredText
-from optparse import OptionParser
 
 import utilities as uti
-import corrections as cor
-import geometry as geo
 
 ### compare amplitudes of SC fit between stars and telcombis and mean and sigma of CrossCorr gaussian fit ###
 

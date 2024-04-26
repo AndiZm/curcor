@@ -1,25 +1,16 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib as mpl  
 from scipy.optimize import curve_fit
-from scipy.signal import butter, filtfilt, find_peaks
-import scipy.stats as stats
-from matplotlib.pyplot import cm
+from scipy.signal import find_peaks
 import ephem
-import scipy.special as scp
 import sys
-from brokenaxes import brokenaxes
-from matplotlib.gridspec import GridSpec
 import os
 from scipy import odr
 from collections import OrderedDict
-from matplotlib.offsetbox import AnchoredText
 from optparse import OptionParser
-import math
 
 import utilities as uti
 import corrections as cor
-import geometry as geo
 import par_fixing_all as pfa
 
 star = sys.argv[1]

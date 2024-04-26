@@ -1,26 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib as mpl  
-from scipy.optimize import curve_fit
-from scipy.signal import butter, filtfilt, find_peaks
-import scipy.stats as stats
-from matplotlib.pyplot import cm
-import ephem
-import scipy.special as scp
-import sys
-from brokenaxes import brokenaxes
-from matplotlib.gridspec import GridSpec
+from scipy.signal import find_peaks
 import os
-from scipy import odr
-from collections import OrderedDict
-from matplotlib.offsetbox import AnchoredText
 from optparse import OptionParser
-import math
 
 import utilities as uti
 import corrections as cor
-import geometry as geo
-
 
 stars = ['Mimosa', 'Etacen', 'Nunki', 'Dschubba']
 
@@ -147,7 +132,6 @@ def par_fixing(telcombi):
     #dmu_A[c1][c2] = perr[1]
     dsigma_A[c1,c2] = perr[2]
     #print(dsigma_A[c1,c2])
-    integral, dintegral = uti.integral(popt, perr)
     #print("{} A 470nm amp: {:.2f}e-7 +/- {:.2f}e-7 \t mean: {:.2f} +/- {:.2f} ns \t sigma: {:.2f} +/- {:.2f} ns \t integral: {:.2f} +/- {:.2f} fs \t A Noise: {:.2f} \t Ratio: {:.2f}".format(telstring, amp_A[c1][c2], perr[0]*1e7, mu_A[c1][c2], perr[1],sigma_A[c1][c2],perr[2],1e6*integral,1e6*dintegral, noise_A, amp_A[c1][c2]/noise_A))
     plt.plot(x, chA, label=telstring + "A", color=uti.color_chA)
     plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--")
@@ -161,7 +145,6 @@ def par_fixing(telcombi):
     #dmuB = perr[1]
     dsigma_B[c1,c2] = perr[2]
     #print(dsigma_B[c1,c2])
-    integral, dintegral = uti.integral(popt, perr)
     #print ("{} B 375nm amp: {:.2f}e-7 +/- {:.2f}e-7 \t mean: {:.2f} +/- {:.2f} ns \t sigma: {:.2f} +/- {:.2f} ns \t integral: {:.2f} +/- {:.2f} fs \t B Noise: {:.2f} \t Ratio: {:.2f}".format(telstring,amp_B[c1][c2], perr[0]*1e7, mu_B[c1][c2],perr[1],sigma_B[c1][c2],perr[2],1e6*integral,1e6*dintegral, noise_B, amp_B[c1][c2]/noise_B))
     plt.plot(x, chB, label=telstring + "B", color=uti.color_chB)
     plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--")

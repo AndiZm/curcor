@@ -1,26 +1,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib as mpl  
 from scipy.optimize import curve_fit
-from scipy.signal import butter, filtfilt, find_peaks
-import scipy.stats as stats
 from matplotlib.pyplot import cm
 import ephem
 import math
-import scipy.special as scp
 import sys
-from brokenaxes import brokenaxes
-from matplotlib.gridspec import GridSpec
 import os
-from scipy import odr
-from collections import OrderedDict
-from matplotlib.offsetbox import AnchoredText
-from optparse import OptionParser
 from tqdm import tqdm
-from datetime import datetime, timezone
+from datetime import datetime
 
-import utilities as uti
-import corrections as cor
 import geometry_3T as geo3T
 
 star = sys.argv[1]

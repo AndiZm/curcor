@@ -1,19 +1,12 @@
-import matplotlib.pyplot as plt
 import numpy as np
-import matplotlib.dates as mdates
-from matplotlib.pyplot import cm
-import matplotlib as mpl
 from tqdm import tqdm
-from datetime import datetime, timezone
+from datetime import datetime
 import ephem
 import sys
 import os
 
 import geometry_3T as geo3T
 import corrections as cor
-import utilities as uti
-
-from threading import Thread
 
 star = sys.argv[1]
 

@@ -9,15 +9,19 @@ import corrections as cor
 
 # Hard coded sigma (change later)
 #sigma = 4.325852372387855027e+00
-sigma = 4.166702120960136
+#sigma = 4.166702120960136
 
-show = False
+# Globally fixed:
+#sigma = 4.325852372387855027e+00 # Ch A
+sigma = 4.057232596282005943e+00 # Ch B
+
+show = True
 
 #################################################
 # READ DATA AND EXTRACT PEAK AND NOISE TEMPLATE #
 #################################################
 # read in data
-data = np.loadtxt("../../../g2_functions/Mimosa/14/chA.g2")
+data = np.loadtxt("../../../g2_functions/Mimosa/14/chB.g2")
 #data = np.loadtxt("../../../g2_functions/Etacen/34/chA.g2")
 
 # Time axis in ns

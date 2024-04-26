@@ -1,19 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib as mpl  
-from scipy.optimize import curve_fit
-from scipy.signal import butter, filtfilt, find_peaks
-from matplotlib.pyplot import cm
-import ephem
-import scipy.special as scp
-import sys
-from brokenaxes import brokenaxes
-from matplotlib.gridspec import GridSpec
 
 import utilities as uti
-import corrections as cor
-import geometry as geo
-
 
 star = 'Nunki'
 xplot = np.arange(0.1,300,0.1)

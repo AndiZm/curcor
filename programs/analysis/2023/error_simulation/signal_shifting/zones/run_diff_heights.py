@@ -1,21 +1,27 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
+import sys
+sys.path.append('../../../')
 import utilities as uti
 import corrections as cor
 
-from tqdm import tqdm
-
 
 # Hard coded sigma (change later)
-sigma = 4.325852372387855027e+00
+#sigma = 4.325852372387855027e+00
+#sigma = 4.166702120960136
 
+# Globally fixed:
+#sigma = 4.325852372387855027e+00 # Ch A
+sigma = 4.057232596282005943e+00 # Ch B
 
 #################################################
 # READ DATA AND EXTRACT PEAK AND NOISE TEMPLATE #
 #################################################
 # read in data
-data = np.loadtxt("../../../g2_functions/Mimosa/14/chA.g2")
+#data = np.loadtxt("../../../g2_functions/Mimosa/14/chA.g2")
+data = np.loadtxt("../../../g2_functions/Mimosa/14/chB.g2")
 
 # Time axis in ns
 x = np.arange(-1.6*len(data[0])//2, +1.6*len(data[0])//2, 1.6)
@@ -38,7 +44,7 @@ def single_zone_analysis(g2, center, amp_0, mu_0, ax_plot, plot):
 		y_zone[i] += uti.gauss(x_zone[i], amp_0, mu_0+center, sigma, 0)
 	# Re-fit
 	xplotf, popt, perr = uti.fit_fixed(y_zone, x_zone, s, e, sigma, mu_start=center-2)
-	Int, dInt = uti.integral_fixed(popt, perr, sigma)
+	Int = uti.integral_fixed(popt, perr, sigma)
 
 	#if plot == True:
 	#	ax_plot.plot(x_zone, y_zone, "o", color="#21d6eb", markersize=4, label="resulting g2")
@@ -55,7 +61,7 @@ def error_analysis(g2, scaler=1):
 
 	amp_0 = popt_orig[0]
 	mu_0  = popt_orig[1]
-	Int_orig, dInt_orig = uti.integral_fixed(popt_orig, perr_orig, sigma)
+	Int_orig = uti.integral_fixed(popt_orig, perr_orig, sigma)
 
 	#plt.figure(figsize=(10,6))
 	#plt.plot (x, g2, "o--", label="data")
@@ -125,7 +131,7 @@ def error_analysis(g2, scaler=1):
 	##plt.savefig("img/correlation_test.png")	
 	##plt.show()
 
-	return rms_error
+	return Int_orig, rms_error
 
 
 
@@ -133,14 +139,24 @@ g2 = data[0]
 freqA = [45,95,110,145,155,175,195]
 for j in range(len(freqA)):
 	g2 = cor.notch(g2, freqA[j]*1e6, 80)
+
+ints = []
 uncertainties = []
-scalers = np.arange(0.001,1,0.001)
+#scalers = np.arange(0.001,1,0.001)
+scalers = np.arange(0.5,10,0.5)
 for scaler in tqdm( scalers ):
-	uncertainties.append(error_analysis(g2, scaler))
+	Int, dInt = error_analysis(g2, scaler)
+	ints.append(1e6*Int)
+	uncertainties.append(dInt)
 
 plt.figure(figsize=(10,6))
+
 plt.plot(scalers, uncertainties, "o--")
-plt.xlabel("relative signal height")
+plt.xlabel("Scaler factor")
+
+plt.plot(ints, uncertainties, "o--")
+plt.xlabel("Signal integral (fs)")
+
 plt.ylabel("Uncertainty (fs)")
 plt.tight_layout()
 plt.show()
