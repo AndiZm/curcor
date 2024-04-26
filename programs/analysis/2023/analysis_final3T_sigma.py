@@ -269,7 +269,8 @@ def chunk_ana(star, telcombi, ratioA, ratioB):
 
         ### taking all data into account
         xplotf, popt_A, perr_A = uti.fit_fixed(chA, x, -50, 50,  pfa.sigma_A[c1][c2])
-        Int, dInt = uti.integral_fixed(popt_A, perr_A, pfa.sigma_A[c1][c2], factor=2.3)
+        Int  = uti.integral_fixed(popt_A, perr_A, pfa.sigma_A[c1][c2])
+        dInt = uti.simulate_uncertainty(g2=chA, x=x, popt=popt_A, sigma=pfa.sigma_A[c1][c2])
         ints_fixedA.append(1e6*Int); dints_fixedA.append(1e6*dInt)# in femtoseconds
         baselinesA.append(baseline); dbaselinesA.append(dbaseline)
         plt.figure('SC')
@@ -282,7 +283,9 @@ def chunk_ana(star, telcombi, ratioA, ratioB):
         plt.errorbar(x=baseline, xerr=dbaseline, y=1e6*Int, yerr=1e6*dInt, marker='o', color=combicolors[c1][c2], label=telstring)
 
         xplotf, popt_B, perr_B = uti.fit_fixed(chB, x, -50, 50, pfa.sigma_B[c1][c2])
-        Int, dInt = uti.integral_fixed(popt_B, perr_B, pfa.sigma_B[c1][c2], factor=2.38)
+        Int  = uti.integral_fixed(popt_B, perr_B, pfa.sigma_B[c1][c2])
+        dInt = uti.simulate_uncertainty(g2=chB, x=x, popt=popt_B, sigma=pfa.sigma_B[c1][c2])
+
         ints_fixedB.append(1e6*Int); dints_fixedB.append(1e6*dInt)# in femtoseconds
         baselinesB.append(baseline); dbaselinesB.append(dbaseline)
         plt.figure("SC")

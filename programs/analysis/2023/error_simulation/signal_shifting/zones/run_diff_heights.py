@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import utilities as uti
 import corrections as cor
 
+from tqdm import tqdm
+
 
 # Hard coded sigma (change later)
 sigma = 4.325852372387855027e+00
@@ -13,7 +15,7 @@ sigma = 4.325852372387855027e+00
 # READ DATA AND EXTRACT PEAK AND NOISE TEMPLATE #
 #################################################
 # read in data
-data = np.loadtxt("../../../g2_functions/Mimosa/34/chA.g2")
+data = np.loadtxt("../../../g2_functions/Mimosa/14/chA.g2")
 
 # Time axis in ns
 x = np.arange(-1.6*len(data[0])//2, +1.6*len(data[0])//2, 1.6)
@@ -96,7 +98,7 @@ def error_analysis(g2, scaler=1):
 	#plt.show()
 
 	rms_error = np.std(ints)
-	print (f"Reconstruction uncertainty: {rms_error:.2f} fs")
+	#print (f"Reconstruction uncertainty: {rms_error:.2f} fs")
 	
 	#plt.figure(figsize=(10,6))
 	#plt.subplot(211)
@@ -127,13 +129,13 @@ def error_analysis(g2, scaler=1):
 
 
 
-g2 = data[7]
+g2 = data[0]
 freqA = [45,95,110,145,155,175,195]
 for j in range(len(freqA)):
 	g2 = cor.notch(g2, freqA[j]*1e6, 80)
 uncertainties = []
-scalers = np.arange(0.01,1,0.001)
-for scaler in scalers:
+scalers = np.arange(0.001,1,0.001)
+for scaler in tqdm( scalers ):
 	uncertainties.append(error_analysis(g2, scaler))
 
 plt.figure(figsize=(10,6))

@@ -104,6 +104,7 @@ def fit_fixed(data, x, s, e, sigma, mu_start=-2): # fixes sigma, offset d free
     yfit = data[(x>s) & (x<e)]
     xplot = np.arange(s, e, 0.01)
     popt, cov = curve_fit(lambda x, a, mu, d: gauss(x,a, mu,sigma,d), xfit, yfit, p0=[1e-6,mu_start,1.])
+
     perr = np.sqrt(np.diag(cov))
     #chi = chi_squared(yfit, gauss(xfit, popt[0], popt[1], sigma, d), error, N, par)
     return xplot, popt, perr
@@ -131,7 +132,7 @@ def integral_fixed(fitpar, fitpar_err, sigma, factor=1):
     dInt = factor * np.sqrt(2*np.pi)*np.sqrt((a*d_s)**2 + (s*d_a)**2)
     # Use the formula from Master thesis
     #dInt = 2 * rms * np.sqrt(1.6e-9 * sigma)
-    return Int, dInt
+    return Int#, dInt
 
 def calc_array_mean(array, darray):
     mean = np.mean(array)
@@ -313,4 +314,39 @@ def get_u(temp_star, logg_star):
     plt.legend()    
     return(u_want)
 
-    
+############################################
+# Functions for simulating the uncertainty #
+############################################
+def single_zone_analysis(g2, x, center, amp_0, mu_0, sigma):
+
+    s = center-50; e = center+50
+    # Extract the g2 zone
+    x_zone = x[(x>s) & (x<e)]
+    y_zone = g2[(x>s) & (x<e)]
+
+    # Add the peak
+    for i in range (0, len(y_zone)):
+        y_zone[i] += gauss(x_zone[i], amp_0, mu_0+center, sigma, 0)
+    # Re-fit
+    xplotf, popt, perr = fit_fixed(y_zone, x_zone, s, e, sigma, mu_start=center-2)
+    Int = integral_fixed(popt, perr, sigma)
+
+    return Int
+
+def simulate_uncertainty(g2, x, popt, sigma):
+    amp_0 = popt[0]
+    mu_0  = popt[1]
+
+    # Now add it onto consecutive g2 sections
+    ints = []    
+    # Positive range
+    for j in range (1,80):      
+        center = j*100
+        ints.append(single_zone_analysis(g2, x, center, amp_0, mu_0, sigma))        
+    # Negative range
+    for j in range (1,80):  
+        center = -j*100
+        ints.append(single_zone_analysis(g2, x, center, amp_0, mu_0, sigma))
+
+    rms_error = np.std(ints)
+    return rms_error

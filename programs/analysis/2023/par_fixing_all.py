@@ -57,7 +57,7 @@ def cleaning_adding(star, telcombi):
 
     chAs = np.loadtxt("g2_functions/{}/{}/chA.g2".format(star, telstring))
     chBs = np.loadtxt("g2_functions/{}/{}/chB.g2".format(star, telstring))
-    if g2_allA[c1,c2] == 'nan':
+    if len(g2_allA[c1,c2]) == 3: # instead of == 'nan':
         g2_allA[c1,c2] = np.zeros(len(chAs[0]))
         g2_allB[c1,c2] = np.zeros(len(chAs[0]))
 
@@ -194,12 +194,12 @@ for i in range(len(stars)):
 telcombis = []
 for c1 in range (1,5):
     for c2 in range(1,5):
-        if g2_allA[c1,c2] != 'nan':
+        if len(g2_allA[c1,c2]) != 3: # instead of != 'nan':
             telcombis.append(f'{c1}{c2}')
 avg_sigA = []; weightA = []; avg_sigB = []; weightB = []
 for c1 in range (1,5):
     for c2 in range(1,5):
-        if g2_allA[c1,c2] != 'nan':
+        if len(g2_allA[c1,c2]) != 3: # instead of != 'nan':
             telcombi = [c1,c2]
             par_fixing(telcombi)
             avg_sigA.append(sigma_A[c1,c2])
