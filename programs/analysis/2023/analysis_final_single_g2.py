@@ -24,7 +24,6 @@ import par_fixing_all as pfa
 print("DONE par fixing all")
 
 star = sys.argv[1]
-stars = ['Mimosa', 'Etacen', 'Nunki', 'Dschubba']
 
 # Option parser for options
 parser = OptionParser()
@@ -150,89 +149,16 @@ def cleaning(star, telcombi):
         chB_clean[c1,c2][i] = chB
     print("Cleaning done")
 
-################################################
-#### Analysis over whole measurement time #####
-################################################
-#plt.figure("CrossCorr", figsize=(12,8))
-#def par_fixing(star, telcombi):
-#    c1 = telcombi[0]
-#    c2 = telcombi[1]
-#    telstring = "{}{}".format(c1,c2)
-#    plotnumber = len(telcombis)*100 + 10 + telcombis.index(telstring) + 1
-#
-#    # Read in the data g2 functions already cleaned
-#    #chAs    = np.loadtxt("g2_functions/{}/{}/chA.g2".format(star, telstring))     
-#    #chBs    = np.loadtxt("g2_functions/{}/{}/chB.g2".format(star, telstring)) 
-#    chAs = chA_clean[c1,c2]  
-#    chBs = chB_clean[c1,c2]  
-#
-#    # Demo function for initializing x axis and some stuff
-#    demo = chAs[0]
-#    x = np.arange(-1.6*len(demo)//2,+1.6*len(demo)//2,1.6)
-#    
-#    # Combine all data for channel A and B each for initial parameter estimation and fixing
-#    g2_allA = np.zeros(len(x)); g2_allB = np.zeros(len(x))
-#    for i in range (0,len(chAs)):
-#        #plt.plot(chAs[i]); plt.plot(chBs[i]); plt.show()
-#        g2_allA += chAs[i]/np.std(chAs[i])**2
-#        g2_allB += chBs[i]/np.std(chBs[i])**2
-#    g2_allA /= np.mean(g2_allA)
-#    g2_allB /= np.mean(g2_allB)
-#
-#    # Fit for gaining mu and sigma to fix these parameters for different baseline combis
-#    plt.figure("CrossCorr")
-#    plt.subplot(plotnumber)
-#    plt.title("Cross correlation data of {} for {}".format(star, telstring))
-#    print("Fixed parameters")
-#    # Channel A
-#    xplot, popt, perr = uti.fit(g2_allA, x, -50, +50)
-#    mu_A[c1][c2] = popt[1]; sigma_A[c1][c2] = popt[2] # fixing mu and sigma
-#    amp_A[c1][c2] = popt[0]*1e7
-#    noise_A = np.std(g2_allA)*1e7
-#    dmu_A[c1][c2] = perr[1]
-#    dsigA = []; dsigA = perr[2]
-#    integral, dintegral = uti.integral(popt, perr)
-#    print("{} A 470nm amp: {:.2f}e-7 +/- {:.2f}e-7 \t mean: {:.2f} +/- {:.2f} ns \t sigma: {:.2f} +/- {:.2f} ns \t integral: {:.2f} +/- {:.2f} fs \t A Noise: {:.2f} \t Ratio: {:.2f}".format(telstring, amp_A[c1][c2], perr[0]*1e7, mu_A[c1][c2], perr[1],sigma_A[c1][c2],perr[2],1e6*integral,1e6*dintegral, noise_A, amp_A[c1][c2]/noise_A))
-#    ratioA.append(amp_A[c1][c2]/noise_A)
-#    plt.plot(x, g2_allA, label=telstring + "A", color=uti.color_chA)
-#    plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--")
-#    # Channel B
-#    xplot, popt, perr = uti.fit(g2_allB, x, -50, +50)
-#    mu_B[c1][c2] = popt[1]; sigma_B[c1][c2] = popt[2]
-#    amp_B[c1][c2] = popt[0]*1e7
-#    noise_B = np.std(g2_allB)*1e7
-#    dmuB = []; dsigB = []
-#    dmuB = perr[1]; dsigB = perr[2]
-#    integral, dintegral = uti.integral(popt, perr)
-#    print ("{} B 375nm amp: {:.2f}e-7 +/- {:.2f}e-7 \t mean: {:.2f} +/- {:.2f} ns \t sigma: {:.2f} +/- {:.2f} ns \t integral: {:.2f} +/- {:.2f} fs \t B Noise: {:.2f} \t Ratio: {:.2f}".format(telstring,amp_B[c1][c2], perr[0]*1e7, mu_B[c1][c2],perr[1],sigma_B[c1][c2],perr[2],1e6*integral,1e6*dintegral, noise_B, amp_B[c1][c2]/noise_B))
-#    ratioB.append(amp_B[c1][c2]/noise_B)
-#    plt.plot(x, g2_allB, label=telstring + "B", color=uti.color_chB)
-#    plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--")
-#    
-#    plt.legend(); plt.grid()
-#    plt.xlim(-100,100)
-#    plt.ticklabel_format(useOffset=False)
-#    plt.xlabel("Time delay (ns)"); plt.ylabel("$g^{(2)}$")
-#    plt.tight_layout()
-#    print(f'DONE par fixing for {telstring}')
-
 #########################################
 ###### Chunk analysis ###################
 #########################################
 plt.figure('SC', figsize=(12,8))
 plt.suptitle("Spatial coherence of {}".format(star))
 
-intsA = []; dintsA = []; times = []
-intsB = []; dintsB = []
 ints_fixedA = []; dints_fixedA = []
 ints_fixedB = []; dints_fixedB = []
-ints_fixedA1 = []; dints_fixedA1 = []
-ints_fixedB1 = []; dints_fixedB1 = []
 baselines_all = []; dbaselines_all = []
 time_all = [] ; telstrings =[]
-baselinesA = []; dbaselinesA = []
-baselinesB = []; dbaselinesB = []
-
 
 def chunk_ana(star, telcombi):
     c1 = telcombi[0]
@@ -299,30 +225,17 @@ def chunk_ana(star, telcombi):
 
         # Fit with fixed sigma of each telcombi
         # chA
-        xplotf, popt_A, perr_A = uti.fit_fixed(chA, x, -50, 50, pfa.sigma_A[c1,c2])
-        Int, dInt = uti.integral_fixed(popt_A, perr_A, pfa.sigma_A[c1,c2]) #, factor=2.3)
+        xplotf, popt_A, perr_A = uti.fit_fixed(chA, x, -50, 50, pfa.avg_sigA)
+        Int, dInt = uti.integral_fixed(popt_A, perr_A, pfa.avg_sigA) #, factor=2.3)
         ints_fixedA.append(1e6*Int); dints_fixedA.append(1e6*dInt)# in femtoseconds
         #noise_A = np.std(chA); ratioA = popt_A[0]/noise_A
         #print(popt_A)
         # chB
-        xplotf, popt_B, perr_B = uti.fit_fixed(chB, x, -50, 50, pfa.sigma_B[c1,c2])
-        Int, dInt = uti.integral_fixed(popt_B, perr_B, pfa.sigma_B[c1,c2]) #, factor=2.38)
+        xplotf, popt_B, perr_B = uti.fit_fixed(chB, x, -50, 50, pfa.avg_sigB)
+        Int, dInt = uti.integral_fixed(popt_B, perr_B, pfa.avg_sigB) #, factor=2.38)
         ints_fixedB.append(1e6*Int); dints_fixedB.append(1e6*dInt)# in femtoseconds
         #noise_B = np.std(chB); ratioB = popt_B[0]/noise_B
         #print(f'{i} ratio SN A = {ratioA} \t ratio SN B = {ratioB}')
-        
-        # Fit with average of fixed sigmas of each telcombis (all telcombis get same sigma)
-        # chA
-        xplotf1, popt_A1, perr_A1 = uti.fit_fixed(chA, x, -50, 50, pfa.avg_sigA )
-        Int1, dInt1 = uti.integral_fixed(popt_A1, perr_A1, pfa.avg_sigA)#, factor=2.3)
-        ints_fixedA1.append(1e6*Int1); dints_fixedA1.append(1e6*dInt1)# in femtoseconds
-        #print('CHIA = {}'.format(chi_A1))
-        # chB
-        xplotf1, popt_B1, perr_B1 = uti.fit_fixed(chB, x, -50, 50, pfa.avg_sigB)
-        Int1, dInt1 = uti.integral_fixed(popt_B1, perr_B1, pfa.avg_sigB) #, factor=2.38)
-        ints_fixedB1.append(1e6*Int1); dints_fixedB1.append(1e6*dInt1)# in femtoseconds
-        #print('CHIB = {}'.format(chi_B1))
-
         
         ### Plots ###
         #plt.figure(f'means {telstring}')
@@ -394,47 +307,45 @@ def chunk_ana(star, telcombi):
         plt.figure(f'Integrals {telstring}')
         plt.subplot(121)
         plt.title('470nm')
-        plt.errorbar(i, ints_fixedA[-1], dints_fixedA[-1], marker='o', ls='', color='red', alpha=0.7, label='telcombi sigma')
-        plt.errorbar(i, ints_fixedA1[-1], dints_fixedA1[-1], marker='o', ls='', color='blue', alpha=0.7, label='average of sigmas')
+        plt.errorbar(i, ints_fixedA[-1], dints_fixedA[-1], marker='o', ls='', color=uti.color_chA, alpha=0.7)
         plt.xlabel("# time chunk") 
         plt.ylabel("Spatial coherence (fs)") 
         # legend 
-        handles, labels = plt.gca().get_legend_handles_labels()
-        by_label = OrderedDict(zip(labels, handles)) 
-        plt.legend(by_label.values(), by_label.keys())
+        #handles, labels = plt.gca().get_legend_handles_labels()
+        #by_label = OrderedDict(zip(labels, handles)) 
+        #plt.legend(by_label.values(), by_label.keys())
         plt.subplot(122)
         plt.title('375nm')
-        plt.errorbar(i, ints_fixedB[-1], dints_fixedB[-1], marker='o', ls='', color='red', alpha=0.7, label='telcombi sigma')
-        plt.errorbar(i, ints_fixedB1[-1], dints_fixedB1[-1], marker='o', ls='', color='blue', alpha=0.7, label='average of sigmas')
+        plt.errorbar(i, ints_fixedB[-1], dints_fixedB[-1], marker='o', ls='', color=uti.color_chB, alpha=0.7)
         plt.xlabel("# time chunk") 
         plt.ylabel("Spatial coherence (fs)") 
         # legend 
-        handles, labels = plt.gca().get_legend_handles_labels()
-        by_label = OrderedDict(zip(labels, handles)) 
-        plt.legend(by_label.values(), by_label.keys())
+        #handles, labels = plt.gca().get_legend_handles_labels()
+        #by_label = OrderedDict(zip(labels, handles)) 
+        #plt.legend(by_label.values(), by_label.keys())
 
 
         plt.figure('SC')
         plt.subplot(121)
-        plt.errorbar(x=baseline, xerr=dbaseline, y=ints_fixedA[-1], yerr=dints_fixedA[-1], marker='o', color='red', label='telcombi sigma')
-        plt.errorbar(x=baseline, xerr=dbaseline, y=ints_fixedA1[-1], yerr=dints_fixedA1[-1], marker='o', color='blue', label='average of sigmas')
+        plt.title('470nm')
+        plt.errorbar(x=baseline, xerr=dbaseline, y=ints_fixedA[-1], yerr=dints_fixedA[-1], marker='o', color=uti.color_chA)
         plt.axhline(y=0, color="black", linestyle="--") 
         plt.xlabel("Projected baseline (m)")
         plt.ylabel("Spatial coherence (fs)") 
         # legend 
-        handles, labels = plt.gca().get_legend_handles_labels()
-        by_label = OrderedDict(zip(labels, handles)) 
-        plt.legend(by_label.values(), by_label.keys())
+        #handles, labels = plt.gca().get_legend_handles_labels()
+        #by_label = OrderedDict(zip(labels, handles)) 
+        #plt.legend(by_label.values(), by_label.keys())
         plt.subplot(122)
-        plt.errorbar(x=baseline, xerr=dbaseline, y=ints_fixedB[-1], yerr=dints_fixedB[-1], marker='o', color='red', label='telcombi sigma')
-        plt.errorbar(x=baseline, xerr=dbaseline, y=ints_fixedB1[-1], yerr=dints_fixedB1[-1], marker='o', color='blue', label='average of sigmas')
+        plt.title('375nm')
+        plt.errorbar(x=baseline, xerr=dbaseline, y=ints_fixedB[-1], yerr=dints_fixedB[-1], marker='o', color=uti.color_chB)
         plt.axhline(y=0, color="black", linestyle="--") 
         plt.xlabel("Projected baseline (m)")
         plt.ylabel("Spatial coherence (fs)") 
         # legend 
-        handles, labels = plt.gca().get_legend_handles_labels()
-        by_label = OrderedDict(zip(labels, handles)) 
-        plt.legend(by_label.values(), by_label.keys())
+        #handles, labels = plt.gca().get_legend_handles_labels()
+        #by_label = OrderedDict(zip(labels, handles)) 
+        #plt.legend(by_label.values(), by_label.keys())
 
         # errorbars for g2 fct
         errorA = []; errorB = []
@@ -454,68 +365,22 @@ def chunk_ana(star, telcombi):
         #axsA[a,b].errorbar(xnew, chAss, yerr=errorA, linestyle="-", color = uti.color_chA,   alpha=0.7)
         #axsA[a,b].errorbar(x, chA, yerr=errorA, linestyle="-", color = uti.color_chA,   alpha=0.7)
         axsA[a,b].plot(x, chA, linestyle="-", color = uti.color_chA,   alpha=0.7)
-        axsA[a,b].plot(xplotf, uti.gauss(xplotf, popt_A[0], popt_A[1], pfa.sigma_A[c1,c2], popt_A[2]), color='red', linestyle="--", zorder=4, label='telcombi sigma')                
-        axsA[a,b].plot(xplotf1, uti.gauss(xplotf1, popt_A1[0], popt_A1[1], pfa.avg_sigA, popt_A1[2]), color='blue', ls='--', zorder=4, label='average of sigmas')
+        axsA[a,b].plot(xplotf, uti.gauss(xplotf, popt_A[0], popt_A[1], pfa.avg_sigA, popt_A[2]), color='red', linestyle="--", zorder=4)                
         #plt.ylim(np.min(chAss), np.max(chAss))
         axsA[a,b].set_xlim(-100,100)
         axsA[a,b].text(x=-100, y=0.5e-6+1, s=tstring_short, fontweight="bold", bbox=dict(boxstyle="round", ec="white", fc="white", alpha=0.75))
         axsA[a,b].axhline(y=1, color='black', linestyle='--', linewidth=1)
-        axsA[a,b].legend() 
+        #axsA[a,b].legend() 
 
         #axsB[a,b].errorbar(xnew, chBss, yerr=errorB, linestyle="-", color = uti.color_chB,   alpha=0.7)
         #axsB[a,b].errorbar(x, chB, yerr=errorB, linestyle="-", color = uti.color_chB,   alpha=0.7)
         axsB[a,b].plot(x, chB, linestyle="-", color = uti.color_chB,   alpha=0.7)
-        axsB[a,b].plot(xplotf, uti.gauss(xplotf, popt_B[0], popt_B[1], pfa.sigma_B[c1,c2], popt_B[2]), color='red', linestyle="--", zorder=4, label='telcombi sigma')                
-        axsB[a,b].plot(xplotf1, uti.gauss(xplotf1, popt_B1[0], popt_B1[1], pfa.avg_sigB, popt_B1[2]), color='blue', ls='--', zorder=4, label='average of sigmas')
+        axsB[a,b].plot(xplotf, uti.gauss(xplotf, popt_B[0], popt_B[1], pfa.avg_sigB, popt_B[2]), color='red', linestyle="--", zorder=4)                
         axsB[a,b].set_xlim(-100,100)
         axsB[a,b].text(x=-100, y=0.5e-6+1, s=tstring_short, fontweight="bold", bbox=dict(boxstyle="round", ec="white", fc="white", alpha=0.75))
         axsB[a,b].axhline(y=1, color='black', linestyle='--', linewidth=1)
-        axsB[a,b].legend() 
+        #axsB[a,b].legend() 
         
-       
-    #    for r in range(9,15):
-    #        if i == r:
-    #            # take into account SN ratio for summing up and fixing parameters
-    #            noise_As = []; ratio_As = []
-    #            noise_As = np.std(chA)*1e7
-    #            ratio_As = popt_A[0]*1e7/noise_As
-    #            print(ratio_As)
-    #
-    #            # Combine all data for channel A and B each for initial parameter estimation and fixing
-    #            g2A += chA/np.std(chA[0:4500])**2
-    #            g2B += chB/np.std(chB[0:4500])**2
-    #            g2A /= np.mean(g2A[0:4500])
-    #            g2B /= np.mean(g2B[0:4500])
-    ## Fit for gaining mu and sigma to fix these parameters for different baseline combis
-    #plt.figure("CrossCorr2")
-    #plt.subplot(plotnumber)
-    #plt.title(" Reduced cross correlation data of {} for {}".format(star, telstring))
-    #print("Fixed parameters reduced")
-    ## Channel A
-    #xplot, popt, perr = uti.fit(g2A, x, -50, +50)
-    #muA = popt[1]; sigmaA = popt[2] # fixing mu and sigma
-    #ampA = popt[0]*1e7
-    #noiseA = np.std(g2A)*1e7
-    #dmuA = []; dsigA = []
-    #dmuA = perr[1]; dsigA = perr[2]
-    #integral, dintegral = uti.integral(popt, perr)
-    #print("{} A 470nm amp: {:.2f}e-7 +/- {:.2f}e-7 \t mean: {:.2f} +/- {:.2f} ns \t sigma: {:.2f} +/- {:.2f} ns \t integral: {:.2f} +/- {:.2f} fs \t A Noise: {:.2f} \t Ratio: {:.2f}".format(telstring, ampA, perr[0]*1e7, muA, perr[1],sigmaA,perr[2],1e6*integral,1e6*dintegral, noiseA, ampA/noiseA))
-    #plt.plot(x, g2A, label=telstring + "A", color=uti.color_chA)
-    #plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--")
-    #plt.axvline(muA, ls='--', color='red', label='mean')
-    #plt.legend(); plt.xlim(-100,100); plt.grid()
-    #plt.ticklabel_format(useOffset=False)
-    #plt.xlabel("Time delay (ns)"); plt.ylabel("$g^{(2)}$")
-    #plt.tight_layout()
-    #
-    #plt.figure('means fixed')
-    #plt.errorbar(telstring, mu_A[c1][c2], dmu_A[c1][c2], marker='o', color=uti.color_chA, label='all data')
-    #plt.errorbar(telstring, muA,dmuA, marker='x', color=uti.color_chA, label='reduced data')
-    #plt.xlabel('Telcombi')
-    #plt.legend()
-
-
-
     print("DONE Chunks {}".format(telcombi))
 
 
@@ -526,11 +391,7 @@ for c1 in range (1,5):
         if os.path.isfile("g2_functions/{}/{}{}/ac_times.txt".format(star,c1,c2,)):
             telcombis.append("{}{}".format(c1,c2))
             telstring = f"{c1}{c2}"
-            #sigma_A[c1,c2] = np.loadtxt(f"g2_functions/mu_sig_{telstring}.txt")[2]
-            #dsigma_A[c1,c2] = np.loadtxt(f"g2_functions/mu_sig_{telstring}.txt")[3]
-            #sigma_B[c1,c2] = np.loadtxt(f"g2_functions/mu_sig_{telstring}.txt")[6]
-            #dsigma_A[c1,c2] = np.loadtxt(f"g2_functions/mu_sig_{telstring}.txt")[7]
-
+            
 for c1 in range (1,5):
     for c2 in range(1,5):
         if os.path.isfile("g2_functions/{}/{}{}/ac_times.txt".format(star,c1,c2,)):
@@ -539,7 +400,6 @@ for c1 in range (1,5):
             print ("Found telescope combination {}".format(telcombi))
             if telcombistring in onlys or onlys == "None":
                 cleaning(star, telcombi)
-                #par_fixing(star, telcombi)
                 chunk_ana(star, telcombi)
 
 plt.show()     
