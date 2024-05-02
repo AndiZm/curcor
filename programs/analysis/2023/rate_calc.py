@@ -9,7 +9,7 @@ import os
 from tqdm import tqdm
 from datetime import datetime
 
-import geometry_3T as geo3T
+import geometry as geo
 
 star = sys.argv[1]
 
@@ -131,13 +131,13 @@ def rate_calc (folder, start, stop, telcombi):
 
         # Get file parameters from header and ephem calculations ---- we only need alt
         if star == "Regor":
-            tdiff, bl, az, alt = geo3T.get_params_manual3T(time, ra=[8,10,12.5], dec=[-47,24,22.2], telcombi=[1,4])
+            tdiff, bl, az, alt = geo.get_params_manual(time, ra=[8,10,12.5], dec=[-47,24,22.2], telcombi=[1,4])
         elif star == "Etacen":
-            tdiff, bl, az, alt = geo3T.get_params_manual3T(time, ra=[14,35,30.42], dec=[-42,9,28.17], telcombi=[1,4])
+            tdiff, bl, az, alt = geo.get_params_manual(time, ra=[14,35,30.42], dec=[-42,9,28.17], telcombi=[1,4])
         elif star == "Dschubba":
-            tdiff, bl, az, alt = geo3T.get_params_manual3T(time, ra=[16,0,20], dec=[-22,37,18.14], telcombi=[1,4])
+            tdiff, bl, az, alt = geo.get_params_manual(time, ra=[16,0,20], dec=[-22,37,18.14], telcombi=[1,4])
         else:
-            tdiff, bl, az, alt = geo3T.get_params3T(time, starname=star, telcombi=[1,4])  # doesn't matter which telcombi, since we only need alt for rates
+            tdiff, bl, az, alt = geo.get_params(time, starname=star, telcombi=[1,4])  # doesn't matter which telcombi, since we only need alt for rates
 
         alt_all.append(alt)
         p_time = []; p_alt = []

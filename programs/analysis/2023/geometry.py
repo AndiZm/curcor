@@ -2,14 +2,6 @@ import ephem
 from datetime import datetime, timezone
 import numpy as np
 
-def get_baseline_entry(telcombi):
-    if telcombi == "13":
-        return int(0)
-    elif telcombi == "14":
-        return int(1)
-    elif telcombi == "34":
-        return int(2)
-
 # We are going to cartesian coordinates
 # HESS coordinates (already transfered so that x is west -> east and y is south -> north)
 ct1 = [ 85.04, -0.16,  0.97]
@@ -78,7 +70,7 @@ hess = ephem.Observer()
 hess.lat  = ephem.degrees("-23.271778")
 hess.long = ephem.degrees(" 16.50022")
 
-def get_params3T(time, starname, telcombi):
+def get_params(time, starname, telcombi):
 	
 	# Star coordinates
 	the_star = ephem.star(starname)
@@ -90,7 +82,7 @@ def get_params3T(time, starname, telcombi):
 
 	return tdiff, baseline, 180*the_star.az/np.pi, 180*the_star.alt/np.pi
 
-def get_params_manual3T(time, ra, dec, telcombi):
+def get_params_manual(time, ra, dec, telcombi):
 	# Star coordinates
 	the_star = ephem.FixedBody()
 	the_star._ra  = ephem.hours("{}:{}:{}".format(ra[0],ra[1],ra[2]))
