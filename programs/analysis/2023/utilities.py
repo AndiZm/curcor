@@ -84,11 +84,11 @@ def spatial_coherence_odrUV(p, x):
     return amp * (2*scp.j1(np.pi * x * ang/lam) / (np.pi* x * ang/lam))**2
 def spatial_coherence_odrG_amp(p, x):
     lam=470e-9
-    amp = 21.25; ang = p
+    amp = 19.60; ang = p
     return amp * (2*scp.j1(np.pi * x * ang/lam) / (np.pi* x * ang/lam))**2
 def spatial_coherence_odrUV_amp(p, x):
     lam=375e-9
-    amp = 10; ang = p 
+    amp = 8.75; ang = p 
     return amp * (2*scp.j1(np.pi * x * ang/lam) / (np.pi* x * ang/lam))**2
 
 def spatial_coherence_odrG_LD(p,x):

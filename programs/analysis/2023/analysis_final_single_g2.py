@@ -216,13 +216,15 @@ def chunk_ana(star, telcombi):
         # Fit with fixed sigma of each telcombi
         # chA
         xplotf, popt_A, perr_A = uti.fit_fixed(chA, x, -50, 50, pfa.avg_sigA)
-        Int, dInt = uti.integral_fixed(popt_A, perr_A, pfa.avg_sigA) #, factor=2.3)
+        Int = uti.integral_fixed(popt_A, perr_A, pfa.avg_sigA) 
+        dInt = uti.simulate_uncertainty(g2=chA, x=x, popt=popt_A, sigma=pfa.avg_sigA)
         ints_fixedA.append(1e6*Int); dints_fixedA.append(1e6*dInt)# in femtoseconds
         #noise_A = np.std(chA); ratioA = popt_A[0]/noise_A
         #print(popt_A)
         # chB
         xplotf, popt_B, perr_B = uti.fit_fixed(chB, x, -50, 50, pfa.avg_sigB)
-        Int, dInt = uti.integral_fixed(popt_B, perr_B, pfa.avg_sigB) #, factor=2.38)
+        Int = uti.integral_fixed(popt_B, perr_B, pfa.avg_sigB) 
+        dInt = uti.simulate_uncertainty(g2=chA, x=x, popt=popt_A, sigma=pfa.avg_sigA)
         ints_fixedB.append(1e6*Int); dints_fixedB.append(1e6*dInt)# in femtoseconds
         #noise_B = np.std(chB); ratioB = popt_B[0]/noise_B
         #print(f'{i} ratio SN A = {ratioA} \t ratio SN B = {ratioB}')

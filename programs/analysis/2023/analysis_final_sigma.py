@@ -12,6 +12,7 @@ from optparse import OptionParser
 import utilities as uti
 import corrections as cor
 import par_fixing_all as pfa
+import zero_baseline as zb 
 
 star = sys.argv[1]
 
@@ -60,8 +61,8 @@ combicolors[3,4] = "turquoise"
 lam_g = 470e-9
 lam_uv = 375e-9
 lam_all = 422.5e-9
-amp_g = 21.25
-amp_uv = 10
+amp_g = 19.60
+amp_uv = 8.75
 
 ################################################
 ####### Cleaning the measurement data ##########
@@ -136,9 +137,6 @@ def cleaning(star, telcombi):
 plt.figure('SC', figsize=(12,8))
 plt.suptitle("Spatial coherence of {}".format(star))
 
-plt.figure('SC Amp', figsize=(12,8))
-plt.suptitle("Spatial coherence of {} with fixed zero baseline".format(star))
-
 ints_fixedA = []; dints_fixedA = []
 ints_fixedB = []; dints_fixedB = []
 baselines_all = []; dbaselines_all = []
@@ -188,11 +186,7 @@ def chunk_ana(star, telcombi):
         plt.subplot(121)
         plt.title("470nm")
         plt.errorbar(x=baseline, xerr=dbaseline, y=1e6*Int, yerr=1e6*dInt, marker='o', color=combicolors[c1][c2], label=telstring)
-        plt.figure('SC Amp')
-        plt.subplot(121)
-        plt.title("470nm")
-        plt.errorbar(x=baseline, xerr=dbaseline, y=1e6*Int, yerr=1e6*dInt, marker='o', color=combicolors[c1][c2], label=telstring)
-
+        
         xplotf, popt_B, perr_B = uti.fit_fixed(chB, x, -50, 50, pfa.avg_sigB)
         Int  = uti.integral_fixed(popt_B, perr_B, pfa.avg_sigB)
         dInt = uti.simulate_uncertainty(g2=chB, x=x, popt=popt_B, sigma=pfa.avg_sigB)
@@ -202,15 +196,61 @@ def chunk_ana(star, telcombi):
         plt.subplot(122)
         plt.title("375nm")
         plt.errorbar(x=baseline, xerr=dbaseline, y=1e6*Int, yerr=1e6*dInt, marker='o', color=combicolors[c1][c2], label=telstring)
-        plt.figure('SC Amp')
-        plt.subplot(122)
-        plt.title("375nm")
-        plt.errorbar(x=baseline, xerr=dbaseline, y=1e6*Int, yerr=1e6*dInt, marker='o', color=combicolors[c1][c2], label=telstring)
         print("{}".format(i), timestring, Int, dInt) 
 
+    #np.savetxt("g2_functions/{}/{}/SC_data.txt".format(star,telstring), np.c_[baselinesA, dbaselinesA, ints_fixedA, dints_fixedA], header='ChA: baseline, error baseline, integral, error integral')
     print("DONE Chunks {}".format(telcombi))
 
 amplitudes = []
+
+def fitting(star):
+    print('Start fitting')
+    print('LENGTHS', len(baselinesA), len(ints_fixedA), len(baselinesB), len(ints_fixedB), len(baselines_all))
+
+    #--------------------#
+    # Try fitting with ods
+    # Uniform disk model object    
+    sc_modelG = odr.Model(uti.spatial_coherence_odrG)
+    # RealData object
+    rdataG = odr.RealData( baselinesA, ints_fixedA, sx=dbaselinesA, sy=dints_fixedA )
+    # Set up ODR with model and data
+    odrODRG = odr.ODR(rdataG, sc_modelG, beta0=[15,2.2e-9])
+    # Run the regression
+    outG = odrODRG.run()
+    # Fit parameters
+    popt_odrA = outG.beta
+    perr_odrA = outG.sd_beta
+    chi_odrA = outG.res_var # chi squared value
+    
+    sc_modelUV = odr.Model(uti.spatial_coherence_odrUV)
+    # RealData object
+    rdataUV = odr.RealData( baselinesB, ints_fixedB, sx=dbaselinesB, sy=dints_fixedB )
+    # Set up ODR with model and data
+    odrODRUV = odr.ODR(rdataUV, sc_modelUV, beta0=[10,3.2e-9])
+    # Run the regression
+    outUV = odrODRUV.run()
+    # Fit parameters
+    popt_odrB = outUV.beta
+    perr_odrB = outUV.sd_beta
+    chi_odrB  = outUV.res_var # chi squared value
+    #--------------------#
+
+    print("SC fits")
+    print("A 470nm: Angular diameter: {:.2f} +/- {:.2f} (mas)\t Amplitude: {:.2f} +/- {:.2f}\t Chi^2 reduced: {:.2f}".format(uti.rad2mas(popt_odrA[1]), uti.rad2mas(perr_odrA[1]), popt_odrA[0], perr_odrA[0], chi_odrA))
+    print("B 375nm: Angular diameter: {:.2f} +/- {:.2f} (mas)\t Amplitude: {:.2f} +/- {:.2f}\t Chi^2 reduced: {:.2f}".format(uti.rad2mas(popt_odrB[1]), uti.rad2mas(perr_odrB[1]), popt_odrB[0], perr_odrB[0], chi_odrB))
+    
+    # save fitted amplitude
+    amplitudes.append(popt_odrA[0]); amplitudes.append(perr_odrA[0])
+    amplitudes.append(popt_odrB[0]); amplitudes.append(perr_odrB[0])
+    #ang_odr.append(popt_odrA[1]); ang_odr.append(perr_odrA[1])
+    #ang_odr.append(popt_odrB[1]); ang_odr.append(perr_odrB[1])
+
+    global onlys
+    if onlys != "None" and len(onlys) == 1:
+        print(onlys, onlys[0])
+        np.savetxt('g2_functions/{}/{}/amplitudes.txt'.format(star,onlys[0]), np.c_[amplitudes], header='ampA, dampA, ampB, dampB')
+    else:
+        np.savetxt('g2_functions/{}/amplitudes.txt'.format(star), np.c_[amplitudes], header='ampA, dampA, ampB, dampB')
 
 def plotting(star): 
     ##### plot baselines vs time #####
@@ -251,6 +291,15 @@ def plotting(star):
     handles, labels = plt.gca().get_legend_handles_labels()
     by_label = OrderedDict(zip(labels, handles)) 
     plt.legend(by_label.values(), by_label.keys()); plt.tight_layout()
+    
+    # add zero baseline value to lists
+    avgA, davgA, avgB, davgB = zb.zero_baseline()
+    ints_fixedA.append(avgA[0]); dints_fixedA.append(davgA)
+    ints_fixedB.append(avgB[0]); dints_fixedB.append(davgB)
+    baselinesA.append(0.11); dbaselinesA.append(0.001)
+    baselinesB.append(0.11); dbaselinesB.append(0.001)
+    #baselinesA.append(5); dbaselinesA.append(0.0001)
+    #baselinesB.append(5); dbaselinesB.append(0.0001)
     print('LENGTHS', len(baselinesA), len(ints_fixedA), len(baselinesB), len(ints_fixedB), len(baselines_all))
 
     #--------------------#
@@ -295,7 +344,7 @@ def plotting(star):
     # Limb darkening model object
     sc_model_ld = odr.Model(uti.spatial_coherence_odrG_LD)
     # Set up ODR with model and data
-    odrODR_ld = odr.ODR(rdataG, sc_model_ld, beta0=[15,2.7e-9])
+    odrODR_ld = odr.ODR(rdataG, sc_model_ld, beta0=[15,2.2e-9])
     # Run the regression
     out_ld = odrODR_ld.run()
     # Fit parameters
@@ -307,18 +356,6 @@ def plotting(star):
     print("SC fit limb darkening")
     print("A 470nm: Angular diameter: {:.2f} +/- {:.2f} (mas)\t Amplitude: {:.2f} +/- {:.2f}\t Chi^2 reduced: {:.2f}".format(uti.rad2mas(popt_odrG_LD[1]), uti.rad2mas(perr_odrG_LD[1]), popt_odrG_LD[0], perr_odrG_LD[0], chi_odrG_LD))
 
-    # save fitted amplitude
-    amplitudes.append(popt_odrA[0]); amplitudes.append(perr_odrA[0])
-    amplitudes.append(popt_odrB[0]); amplitudes.append(perr_odrB[0])
-    #ang_odr.append(popt_odrA[1]); ang_odr.append(perr_odrA[1])
-    #ang_odr.append(popt_odrB[1]); ang_odr.append(perr_odrB[1])
-
-    global onlys
-    if onlys != "None" and len(onlys) == 1:
-        print(onlys, onlys[0])
-        np.savetxt('g2_functions/{}/{}/amplitudes.txt'.format(star,onlys[0]), np.c_[amplitudes], header='ampA, dampA, ampB, dampB')
-
-    
     # make x-axis wavelength indepedent 
     xplot = np.arange(0.1,300,0.1)
     xplot_g = np.zeros(len(xplot))
@@ -343,6 +380,9 @@ def plotting(star):
     # plot channel A 470nm green
     plt.figure("SC")
     plt.subplot(121)
+    # plot zero baseline 
+    plt.errorbar(x=baselinesA[-1], xerr=dbaselinesA[-1], y=ints_fixedA[-1], yerr=dints_fixedA[-1], marker='o', color='black')
+    # plot SC fit
     plt.plot(xplot, uti.spatial_coherence(xplot,*popt_odrA, lam_g), linewidth=2, color='darkgrey', label='uniform disk')
     plt.fill_between(xplot, uti.spatial_coherence(xplot,popt_odrA[0]+perr_odrA[0],popt_odrA[1]-perr_odrA[1], lam_g), uti.spatial_coherence(xplot,popt_odrA[0]-perr_odrA[0],popt_odrA[1]+perr_odrA[1], lam_g), alpha=0.3, color='darkgrey')
     # get LD coeff
@@ -359,11 +399,11 @@ def plotting(star):
     plt.legend(by_label.values(), by_label.keys())
     # text
     ymin, ymax = plt.gca().get_ylim()
-    plt.text(80, ymax-3.5, s='Angular diameter: {:.3f} +/- {:.3f} (mas)'.format(uti.rad2mas(popt_odrA[1]), uti.rad2mas(perr_odrA[1])), color='grey')
-    plt.text(80, ymax-4, s='$\chi^2$/dof={:.2f}'.format(chi_odrA), color='grey')
-    plt.text(80, ymax-4.5, s='Angular diameter: {:.3f} +/- {:.3f} (mas)'.format(uti.rad2mas(popt_odrG_LD[1]), uti.rad2mas(perr_odrG_LD[1])), color='orange')
-    plt.text(80, ymax-5, s='$\chi^2$/dof={:.2f}'.format(chi_odrG_LD), color='orange')
-    plt.xlim(0,200)
+    plt.text(80, ymax-5.5, s='Angular diameter: {:.3f} +/- {:.3f} (mas)'.format(uti.rad2mas(popt_odrA[1]), uti.rad2mas(perr_odrA[1])), color='grey')
+    plt.text(80, ymax-6.5, s='$\chi^2$/dof={:.2f}'.format(chi_odrA), color='grey')
+    plt.text(80, ymax-7.5, s='Angular diameter: {:.3f} +/- {:.3f} (mas)'.format(uti.rad2mas(popt_odrG_LD[1]), uti.rad2mas(perr_odrG_LD[1])), color='orange')
+    plt.text(80, ymax-8.5, s='$\chi^2$/dof={:.2f}'.format(chi_odrG_LD), color='orange')
+    plt.xlim(-5,200)
     plt.xlabel("Projected baseline (m)")
     plt.ylabel("Spatial coherence (fs)")
     plt.axhline(y=0, color="black", linestyle="--")  
@@ -371,6 +411,9 @@ def plotting(star):
 
     # plot channel B 375nm uv
     plt.subplot(122)
+    # plot zero baseline
+    plt.errorbar(x=baselinesB[-1], xerr=dbaselinesB[-1], y=ints_fixedB[-1], yerr=dints_fixedB[-1], marker='o', color='black')
+    # plot SC fit
     plt.plot(xplot, uti.spatial_coherence(xplot,*popt_odrB, lam_uv), linewidth=2, color='darkgrey', label='uniform disk')
     plt.fill_between(xplot, uti.spatial_coherence(xplot,popt_odrB[0]+perr_odrB[0],popt_odrB[1]-perr_odrB[1], lam_uv), uti.spatial_coherence(xplot,popt_odrB[0]-perr_odrB[0],popt_odrB[1]+perr_odrB[1], lam_uv), alpha=0.2, color='darkgrey')
     plt.xlabel("Projected baseline (m)")
@@ -384,7 +427,7 @@ def plotting(star):
     ymin, ymax = plt.gca().get_ylim()
     plt.text(80, ymax-5, s='Angular diameter: {:.3f} +/- {:.3f} (mas)'.format(uti.rad2mas(popt_odrB[1]), uti.rad2mas(perr_odrB[1])), color='grey')
     plt.text(80, ymax-5.5, s='$\chi^2$/dof={:.2f}'.format(chi_odrB), color='grey')
-    plt.xlim(0,200)
+    plt.xlim(-5,200)
     plt.tight_layout()
 
     #### plot both colors in one plot ###
@@ -404,80 +447,6 @@ def plotting(star):
     plt.axhline(y=0, color='black', linestyle="--")
     plt.xlim(0,4e8)
     plt.legend()
-
-
-    #### Make SC fit with fixed zero baseline ####
-    
-    #--------------------#
-    # Try fitting with ods
-    # Uniform disk model object    
-    sc_modelG = odr.Model(uti.spatial_coherence_odrG_amp)
-    # RealData object
-    rdataG = odr.RealData( baselinesA, ints_fixedA, sx=dbaselinesA, sy=dints_fixedA )
-    # Set up ODR with model and data
-    odrODRG = odr.ODR(rdataG, sc_modelG, beta0=[2.2e-9])
-    # Run the regression
-    outG = odrODRG.run()
-    # Fit parameters
-    popt_odrA = outG.beta
-    perr_odrA = outG.sd_beta
-    chi_odrA = outG.res_var # chi squared value
-    
-    sc_modelUV = odr.Model(uti.spatial_coherence_odrUV_amp)
-    # RealData object
-    rdataUV = odr.RealData( baselinesB, ints_fixedB, sx=dbaselinesB, sy=dints_fixedB )
-    # Set up ODR with model and data
-    odrODRUV = odr.ODR(rdataUV, sc_modelUV, beta0=[3.2e-9])
-    # Run the regression
-    outUV = odrODRUV.run()
-    # Fit parameters
-    popt_odrB = outUV.beta
-    perr_odrB = outUV.sd_beta
-    chi_odrB  = outUV.res_var # chi squared value
-    #--------------------#
-
-    print("SC fits")
-    print("A 470nm: Angular diameter: {:.2f} +/- {:.2f} (mas)\t Chi^2 reduced: {:.2f}".format(uti.rad2mas(popt_odrA[0]), uti.rad2mas(perr_odrA[0]), chi_odrA))
-    print("B 375nm: Angular diameter: {:.2f} +/- {:.2f} (mas)\t Chi^2 reduced: {:.2f}".format(uti.rad2mas(popt_odrB[0]), uti.rad2mas(perr_odrB[0]), chi_odrB))
-    
-    # plot SC fit and error band
-    # plot channel A 470nm green
-    plt.figure("SC Amp")
-    plt.subplot(121)
-    plt.plot(xplot, uti.spatial_coherence(xplot,amp_g,popt_odrA, lam_g), linewidth=2, color='darkgrey', label='uniform disk')
-    plt.fill_between(xplot, uti.spatial_coherence(xplot,amp_g,popt_odrA-perr_odrA, lam_g), uti.spatial_coherence(xplot,amp_g,popt_odrA+perr_odrA, lam_g), alpha=0.3, color='darkgrey')
-    # legend 
-    handles, labels = plt.gca().get_legend_handles_labels()
-    by_label = OrderedDict(zip(labels, handles)) 
-    plt.legend(by_label.values(), by_label.keys())
-    # text
-    ymin, ymax = plt.gca().get_ylim()
-    plt.text(85, ymax-3.5, s='Angular diameter: {:.3f} +/- {:.3f} (mas)'.format(uti.rad2mas(popt_odrA[0]), uti.rad2mas(perr_odrA[0])), color='grey')
-    plt.text(85, ymax-4, s='$\chi^2$/dof={:.2f}'.format(chi_odrA), color='grey')
-    plt.xlim(0,200)
-    plt.xlabel("Projected baseline (m)")
-    plt.ylabel("Spatial coherence (fs)")
-    plt.axhline(y=0, color="black", linestyle="--")  
-    plt.tight_layout()
-
-    # plot channel B 375nm uv
-    plt.subplot(122)
-    plt.plot(xplot, uti.spatial_coherence(xplot,amp_uv,popt_odrB, lam_uv), linewidth=2, color='darkgrey', label='uniform disk')
-    plt.fill_between(xplot, uti.spatial_coherence(xplot,amp_uv,popt_odrB-perr_odrB, lam_uv), uti.spatial_coherence(xplot,amp_uv,popt_odrB+perr_odrB, lam_uv), alpha=0.2, color='darkgrey')
-    plt.xlabel("Projected baseline (m)")
-    plt.ylabel("Spatial coherence (fs)")
-    plt.axhline(y=0, color='black', linestyle="--")
-    # legend
-    handles, labels = plt.gca().get_legend_handles_labels()
-    by_label = OrderedDict(zip(labels, handles)) 
-    plt.legend(by_label.values(), by_label.keys())
-    # text
-    ymin, ymax = plt.gca().get_ylim()
-    plt.text(80, ymax-3.5, s='Angular diameter: {:.3f} +/- {:.3f} (mas)'.format(uti.rad2mas(popt_odrB[0]), uti.rad2mas(perr_odrB[0])), color='grey')
-    plt.text(80, ymax-4, s='$\chi^2$/dof={:.2f}'.format(chi_odrB), color='grey')
-    plt.xlim(0,200)
-    plt.tight_layout()
-
 
 '''
     # Make additional scaled parameters
@@ -571,6 +540,7 @@ for c1 in range (1,5):
             if telcombistring in onlys or onlys == "None":
                 cleaning(star, telcombi)
                 chunk_ana(star, telcombi)
+fitting(star)
 plotting(star)
 
 

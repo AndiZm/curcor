@@ -119,6 +119,13 @@ def add_spectrum(spectrum_x, spectrum_y, name, pcolor, pmarker="", plinestyle="-
 	specx = xy[0]
 	specy = xy[1]
 
+	if name=="Alluxa 375-10":
+		lam = 375
+		dlam = 10
+	elif name=="Alluxa 470-10":
+		lam = 470
+		dlam = 10
+
 	plt.figure("Wavelength spectrum")
 	# Extend spectrum to have finer sampling for the FFT
 	specx, specy = extend_spectrum(specx, specy, factor=50)
@@ -144,6 +151,12 @@ def add_spectrum(spectrum_x, spectrum_y, name, pcolor, pmarker="", plinestyle="-
 	int_g2 = g2_integral(g2y, g2stepsize)
 	print ("Coherence time {} :\t{:.3f} ps  / {:.3f} ps (unpolarized)".format(name, 1e12*int_g2, 0.5*1e12*int_g2))
 	plt.figure("g2 function"); plt.plot(gx, g2y, label="{}    {:.3f} ps".format(name,1e12*int_g2), color=pcolor, marker=pmarker, linestyle=plinestyle, linewidth=plinewidth)
+
+	# to calculate the factor added in the equation of the coherence time at zero baseline, devide the unpolarized time by the equation
+	k_T = (0.5*int_g2) / (0.5*(lam*1e-9)**2/ (2.998e8*dlam*1e-9))
+	print("k_T {} : {:.2f}".format(name, k_T))
+	A = 0.5*k_T*(lam*1e-9)**2/ (2.998e8*dlam*1e-9)
+	print("expected ZB coherence time {} : {:.2f} fs".format(name,A*1e15))
 
 ####################################
 ######### Adding the stuff #########

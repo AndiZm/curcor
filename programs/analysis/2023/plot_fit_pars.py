@@ -5,13 +5,79 @@ from collections import OrderedDict
 
 import utilities as uti
 
-### compare amplitudes of SC fit between stars and telcombis and mean and sigma of CrossCorr gaussian fit ###
+### compare amplitudes of SC fit between stars and telcombis ###
 
-stars = ['Mimosa', 'Etacen', 'Nunki', 'Dschubba']
+stars = ['Mimosa', 'Etacen', 'Nunki']
 telcombis = ['13', '14', '34']
 
-#plt.figure('Amps', figsize=(9,5))
-#plt.suptitle('Zero baseline')
+plt.figure('Zerobaseline', figsize=(9,5))
+plt.suptitle('Zero baseline')
+#plt.figure('Zerobaseline telcombis', figsize=(9,5))
+#plt.suptitle('Zero baseline for each telcombi')
+
+avgA = []; weightA = []; avgB = []; weightB = []
+
+for i in  range(len(stars)):
+	data = np.loadtxt(f"g2_functions/{stars[i]}/amplitudes.txt")
+	ampsA = (data[0])
+	dampsA = (data[1])
+	ampsB = (data[2])
+	dampsB = (data[3])
+
+	avgA.append(ampsA); weightA.append(1/dampsA**2)
+	avgB.append(ampsB); weightB.append(1/dampsB**2)
+
+	plt.figure('Zerobaseline')
+	plt.subplot(121)
+	plt.title("470nm")
+	plt.errorbar(x=stars[i], y=ampsA, yerr=dampsA, marker='o', linestyle=' ', color=uti.color_chA)
+	plt.subplot(122)
+	plt.title("375nm")
+	plt.errorbar(x=stars[i], y=ampsB, yerr=dampsB, marker='o', linestyle=' ', color=uti.color_chB)
+
+	#for j in range(len(telcombis)):
+	#	if os.path.isdir(f"g2_functions/{stars[i]}/{telcombis[j]}"):
+	#		telstring = telcombis[j]
+	#		# read in zero baseline amplitudes of SC plots
+	#		data = np.loadtxt(f"g2_functions/{stars[i]}/{telcombis[j]}/amplitudes.txt")
+	#		ampsA = (data[0])
+	#		dampsA = (data[1])
+	#		ampsB = (data[2])
+	#		dampsB = (data[3])
+	#
+	#		plotnumber = 100 + len(telcombis)*10 + telcombis.index(telstring) + 1
+	#
+	#		plt.figure('Zerobaseline telcombis')
+	#		plt.subplot(plotnumber)
+	#		plt.title(telstring)
+	#		plt.errorbar(x=stars[i], y=ampsB, yerr=dampsB, marker='o', linestyle=' ', color=uti.color_chB, label='375nm')
+	#		plt.errorbar(x=stars[i], y=ampsA, yerr=dampsA, marker='o', linestyle=' ', color=uti.color_chA, label='470nm')
+	#		handles, labels = plt.gca().get_legend_handles_labels()
+	#		by_label = OrderedDict(zip(labels, handles)) 
+
+avgA = np.average(avgA, weights=weightA, returned=True)
+avgB = np.average(avgB, weights=weightB, returned=True)
+davgA = np.sqrt(1/avgA[1])
+davgB = np.sqrt(1/avgB[1])
+print("ZB A: {:.2f} +/- {:.2f} \t ZB B: {:.2f} +/- {:.2f}".format(avgA[0], davgA, avgB[0], davgB))
+
+plt.figure('Zerobaseline')
+plt.subplot(121)
+plt.axhline(avgA[0], ls='--', color=uti.color_chA, label='weighted average')
+plt.fill_between(x=stars, y1=(avgA[0]-davgA), y2=(avgA[0]+davgA), alpha=0.5, color=uti.color_chA)
+plt.subplot(122)
+plt.axhline(avgB[0], ls='--', color=uti.color_chB, label='weighted average')
+plt.fill_between(x=stars, y1=(avgB[0]-davgB), y2=(avgB[0]+davgB), alpha=0.5, color=uti.color_chB)
+plt.tight_layout()
+
+#plt.figure('Zerobaseline telcombis')
+#plt.legend(by_label.values(), by_label.keys())
+#plt.tight_layout()
+
+
+### compare mean and sigma of CrossCorr gaussian fit ###
+stars = ['Mimosa', 'Etacen', 'Nunki', 'Dschubba']
+
 plt.figure('mean_all_high', figsize=(9,5))
 plt.suptitle('CrossCorr guassian mean')
 plt.figure('sigma_all_high', figsize=(9,5))
@@ -21,12 +87,6 @@ for i in  range(len(stars)):
 	for j in range(len(telcombis)):
 		if os.path.isdir(f"g2_functions/{stars[i]}/{telcombis[j]}"):
 			telstring = telcombis[j]
-			# read in zero baseline amplitudes of SC plots
-			data = np.loadtxt(f"g2_functions/{stars[i]}/{telcombis[j]}/amplitudes.txt")
-			ampsA = (data[0])
-			dampsA = (data[1])
-			ampsB = (data[2])
-			dampsB = (data[3])
 			# read in gaussian mean and sigma for each star and telcombi
 			data = np.loadtxt(f'g2_functions/{stars[i]}/{telcombis[j]}/mu_sig.txt')
 			musA = (data[0])
@@ -39,16 +99,6 @@ for i in  range(len(stars)):
 			dsigmasB = (data[7])
 
 			plotnumber = 100 + len(telcombis)*10 + telcombis.index(telstring) + 1
-
-			#if stars[i] != 'Dschubba':
-			#	plt.figure('Amps')
-			#	plt.subplot(plotnumber)
-			#	plt.title(telstring)
-			#	plt.ylabel('zero baseline (fs)')
-			#	plt.errorbar(x=stars[i], y=ampsB, yerr=dampsB, marker='o', linestyle=' ', color=uti.color_chB, label='375nm')
-			#	plt.errorbar(x=stars[i], y=ampsA, yerr=dampsA, marker='o', linestyle=' ', color=uti.color_chA, label='470nm')
-			#	handles1, labels1 = plt.gca().get_legend_handles_labels()
-			#	by_label1 = OrderedDict(zip(labels1, handles1))
 
 			plt.figure('mean_all_high')
 			plt.subplot(plotnumber)
@@ -97,10 +147,10 @@ for j in range(len(telcombis)):
 	dsigB_all = data[3]
 
 	#print('{} all: {:.2f} +/- {:.2f}'.format(telstring, sigA, dsigA))
-	print('A{} all: {:.2f} +/- {:.2f}'.format(telstring, sigA_all, dsigA_all))
-	print('A{} high: {:.2f} +/- {:.2f}'.format(telstring, sigA_h, dsigA_h))
-	print('B{} all: {:.2f} +/- {:.2f}'.format(telstring, sigB_all, dsigB_all))
-	print('B{} high: {:.2f} +/- {:.2f}'.format(telstring, sigB_h, dsigB_h))
+	#print('A{} all: {:.2f} +/- {:.2f}'.format(telstring, sigA_all, dsigA_all))
+	#print('A{} high: {:.2f} +/- {:.2f}'.format(telstring, sigA_h, dsigA_h))
+	#print('B{} all: {:.2f} +/- {:.2f}'.format(telstring, sigB_all, dsigB_all))
+	#print('B{} high: {:.2f} +/- {:.2f}'.format(telstring, sigB_h, dsigB_h))
 
 	plotnumber = 100 + len(telcombis)*10 + telcombis.index(telstring) + 1
 	plt.figure('mean_all_high')
@@ -128,11 +178,6 @@ for j in range(len(telcombis)):
 	#	plt.fill_between(x=stars, y1=(sigB-dsigB), y2=(sigB+dsigB), alpha=0.5, color=uti.color_chB)
 	#plt.ylim([3,6])
 
-
-
-#plt.figure('Amps')
-#plt.legend(by_label1.values(), by_label1.keys())
-#plt.tight_layout()
 plt.figure('mean_all_high')
 plt.legend(by_label2.values(), by_label2.keys())
 plt.legend(by_label4.values(), by_label4.keys())
