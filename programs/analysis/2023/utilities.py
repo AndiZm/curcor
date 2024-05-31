@@ -151,7 +151,7 @@ def get_u(temp_star, logg_star):
         f = scipy.interpolate.interp1d(logg, u,'cubic', bounds_error=False, fill_value='extrapolate')
         ynew = f(xnew)
         plt.plot(xnew, ynew, color='green')
-        u_want = round(float(f(logg_star)),2)
+        u_want = round(float(f(logg_star)),3)
         plt.plot( float(logg_star), u_want, marker='o', color='black')
         
     elif len(logg) == 0:
@@ -165,9 +165,9 @@ def get_u(temp_star, logg_star):
         plt.plot(xnew, y2new, color='red')
         u1_want = f1(logg_star)
         u2_want = f2(logg_star)
-        print(round(float(u1_want),2))
-        print(round(float(u2_want),2))
-        u_want = round(float(np.mean([u1_want, u2_want])),2)
+        print(round(float(u1_want),3))
+        print(round(float(u2_want),3))
+        u_want = round(float(np.mean([u1_want, u2_want])),3)
         plt.plot(float(logg_star), u_want, marker='o', color='black')
     plt.legend()    
     return(u_want)

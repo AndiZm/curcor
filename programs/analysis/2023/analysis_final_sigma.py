@@ -336,8 +336,8 @@ def plotting(star):
     
     #### Fix the LD issue with u !!!!!
     ## get LD coeff
-    #u = uti.get_u(temp_star, logg_star)
-    #print(u)
+    u = uti.get_u(temp_star, logg_star)
+    print(f"LD coefficient: {u}")
 
     #--------------------#
     # Try fitting with ods
