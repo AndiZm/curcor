@@ -101,12 +101,13 @@ def cleaning_adding(star, telcombi):
 ################################################
 #### Analysis over whole measurement time #####
 ################################################
-plt.figure("CrossCorr", figsize=(8,7))
+plt.figure("CrossCorr", figsize=(5,5))
 def par_fixing(telcombi):
     c1 = telcombi[0]
     c2 = telcombi[1]
-    telstring = "{}{}".format(c1,c2)
-    plotnumber = len(telcombis)*100 + 10 + telcombis.index(telstring) + 1
+    telstring1 = "{}{}".format(c1,c2)
+    telstring = "{}-{}".format(c1,c2)
+    plotnumber = len(telcombis)*100 + 10 + telcombis.index(telstring1) + 1
     # read in g2 fct for telcombi
     chA = g2_allA[c1,c2]  
     chB = g2_allB[c1,c2]  
@@ -121,7 +122,7 @@ def par_fixing(telcombi):
     # Fit for gaining mu and sigma to fix these parameters for different baseline combis
     plt.figure("CrossCorr")
     plt.subplot(plotnumber)
-    plt.title("Correlation data of all stars for {}".format(telstring))
+    #plt.title("Correlation data of all stars for {}".format(telstring))
     print("Fixed parameters")
     # Channel A
     xplot, popt, perr = uti.fit(chA, x, -50, +50)
@@ -133,7 +134,8 @@ def par_fixing(telcombi):
     dsigma_A[c1,c2] = perr[2]
     #print(dsigma_A[c1,c2])
     #print("{} A 470nm amp: {:.2f}e-7 +/- {:.2f}e-7 \t mean: {:.2f} +/- {:.2f} ns \t sigma: {:.2f} +/- {:.2f} ns \t integral: {:.2f} +/- {:.2f} fs \t A Noise: {:.2f} \t Ratio: {:.2f}".format(telstring, amp_A[c1][c2], perr[0]*1e7, mu_A[c1][c2], perr[1],sigma_A[c1][c2],perr[2],1e6*integral,1e6*dintegral, noise_A, amp_A[c1][c2]/noise_A))
-    plt.plot(x, chA, label=telstring + "A", color=uti.color_chA)
+    mask = (x >= -75) & (x <= 125)
+    plt.plot(x[mask], chA[mask], label=telstring + "A", color=uti.color_chA)
     plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--")
     # Channel B
     xplot, popt, perr = uti.fit(chB, x, -50, +50)
@@ -146,11 +148,12 @@ def par_fixing(telcombi):
     dsigma_B[c1,c2] = perr[2]
     #print(dsigma_B[c1,c2])
     #print ("{} B 375nm amp: {:.2f}e-7 +/- {:.2f}e-7 \t mean: {:.2f} +/- {:.2f} ns \t sigma: {:.2f} +/- {:.2f} ns \t integral: {:.2f} +/- {:.2f} fs \t B Noise: {:.2f} \t Ratio: {:.2f}".format(telstring,amp_B[c1][c2], perr[0]*1e7, mu_B[c1][c2],perr[1],sigma_B[c1][c2],perr[2],1e6*integral,1e6*dintegral, noise_B, amp_B[c1][c2]/noise_B))
-    plt.plot(x, chB, label=telstring + "B", color=uti.color_chB)
+    plt.plot(x[mask], chB[mask], label=telstring + "B", color=uti.color_chB)
     plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--", label='Gaussian fit')
     
     plt.legend(loc='right'); plt.grid()
-    plt.xlim(-100,100)
+    #plt.xlim(-100,100)
+    plt.xlim(-75,125)
     plt.ticklabel_format(useOffset=False)
     plt.xlabel("Time delay (ns)"); plt.ylabel("$g^{(2)}$")
     plt.tight_layout()

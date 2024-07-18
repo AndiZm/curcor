@@ -93,7 +93,13 @@ def spatial_coherence_odrUV_amp(p, x):
 
 def spatial_coherence_odrG_LD(p,x):
     lam=470e-9
-    u = 0.37
+    u = 0.385 # 0.385 for Nunki else 0.37
+    amp, ang = p
+    return amp * ( (1-u)/2 + u/3 )**(-2) * ( (1-u) * scp.j1(np.pi * x * ang/lam) / (np.pi* x * ang/lam) + (u*(np.pi/2)**0.5) * bessel32(ang, x, lam) / ((np.pi*x*ang/lam)**(3/2)))**2
+
+def spatial_coherence_odrUV_LD(p,x):
+    lam=375e-9
+    u = 0.385 # 0.385 for Nunki else 0.37
     amp, ang = p
     return amp * ( (1-u)/2 + u/3 )**(-2) * ( (1-u) * scp.j1(np.pi * x * ang/lam) / (np.pi* x * ang/lam) + (u*(np.pi/2)**0.5) * bessel32(ang, x, lam) / ((np.pi*x*ang/lam)**(3/2)))**2
 
@@ -152,6 +158,7 @@ def get_u(temp_star, logg_star):
         ynew = f(xnew)
         plt.plot(xnew, ynew, color='green')
         u_want = round(float(f(logg_star)),3)
+        #print("LD u = {}".format(u_want))
         plt.plot( float(logg_star), u_want, marker='o', color='black')
         
     elif len(logg) == 0:
@@ -168,6 +175,7 @@ def get_u(temp_star, logg_star):
         print(round(float(u1_want),3))
         print(round(float(u2_want),3))
         u_want = round(float(np.mean([u1_want, u2_want])),3)
+        #print("LD u = {}".format(u_want))
         plt.plot(float(logg_star), u_want, marker='o', color='black')
     plt.legend()    
     return(u_want)

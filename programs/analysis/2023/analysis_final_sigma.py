@@ -134,8 +134,8 @@ def cleaning(star, telcombi):
 ##########################################
 ####### Chunk analysis ###################
 ##########################################
-plt.figure('SC', figsize=(12,8))
-plt.suptitle("Spatial coherence of {}".format(star))
+plt.figure('SC', figsize=(10,6))
+plt.suptitle("Spatial coherence of {}".format(star), fontsize=14)
 
 ints_fixedA = []; dints_fixedA = []
 ints_fixedB = []; dints_fixedB = []
@@ -148,6 +148,7 @@ def chunk_ana(star, telcombi):
     c1 = telcombi[0]
     c2 = telcombi[1]
     telstring = "{}{}".format(c1,c2)  
+    telstring1 = "{}-{}".format(c1,c2)  
     
     chAs = chA_clean[c1,c2]  
     chBs = chB_clean[c1,c2]  
@@ -184,8 +185,8 @@ def chunk_ana(star, telcombi):
         baselinesA.append(baseline); dbaselinesA.append(dbaseline)
         plt.figure('SC')
         plt.subplot(121)
-        plt.title("470nm")
-        plt.errorbar(x=baseline, xerr=dbaseline, y=1e6*Int, yerr=1e6*dInt, marker='o', color=combicolors[c1][c2], label=telstring)
+        plt.title("470nm", fontsize=14)
+        plt.errorbar(x=baseline, xerr=dbaseline, y=1e6*Int, yerr=1e6*dInt, marker='o', color=combicolors[c1][c2], label=telstring1)
         
         xplotf, popt_B, perr_B = uti.fit_fixed(chB, x, -50, 50, pfa.avg_sigB)
         Int  = uti.integral_fixed(popt_B, perr_B, pfa.avg_sigB)
@@ -194,8 +195,8 @@ def chunk_ana(star, telcombi):
         baselinesB.append(baseline); dbaselinesB.append(dbaseline)
         plt.figure("SC")
         plt.subplot(122)
-        plt.title("375nm")
-        plt.errorbar(x=baseline, xerr=dbaseline, y=1e6*Int, yerr=1e6*dInt, marker='o', color=combicolors[c1][c2], label=telstring)
+        plt.title("375nm", fontsize=14)
+        plt.errorbar(x=baseline, xerr=dbaseline, y=1e6*Int, yerr=1e6*dInt, marker='o', color=combicolors[c1][c2], label=telstring1)
         print("{}".format(i), timestring, Int, dInt) 
 
     #np.savetxt("g2_functions/{}/{}/SC_data.txt".format(star,telstring), np.c_[baselinesA, dbaselinesA, ints_fixedA, dints_fixedA], header='ChA: baseline, error baseline, integral, error integral')
@@ -235,9 +236,9 @@ def fitting(star):
     chi_odrB  = outUV.res_var # chi squared value
     #--------------------#
 
-    print("SC fits")
-    print("A 470nm: Angular diameter: {:.2f} +/- {:.2f} (mas)\t Amplitude: {:.2f} +/- {:.2f}\t Chi^2 reduced: {:.2f}".format(uti.rad2mas(popt_odrA[1]), uti.rad2mas(perr_odrA[1]), popt_odrA[0], perr_odrA[0], chi_odrA))
-    print("B 375nm: Angular diameter: {:.2f} +/- {:.2f} (mas)\t Amplitude: {:.2f} +/- {:.2f}\t Chi^2 reduced: {:.2f}".format(uti.rad2mas(popt_odrB[1]), uti.rad2mas(perr_odrB[1]), popt_odrB[0], perr_odrB[0], chi_odrB))
+    #print("SC fits")
+    #print("A 470nm: Angular diameter: {:.2f} +/- {:.2f} (mas)\t Amplitude: {:.2f} +/- {:.2f}\t Chi^2 reduced: {:.2f}".format(uti.rad2mas(popt_odrA[1]), uti.rad2mas(perr_odrA[1]), popt_odrA[0], perr_odrA[0], chi_odrA))
+    #print("B 375nm: Angular diameter: {:.2f} +/- {:.2f} (mas)\t Amplitude: {:.2f} +/- {:.2f}\t Chi^2 reduced: {:.2f}".format(uti.rad2mas(popt_odrB[1]), uti.rad2mas(perr_odrB[1]), popt_odrB[0], perr_odrB[0], chi_odrB))
     
     # save fitted amplitude
     amplitudes.append(popt_odrA[0]); amplitudes.append(perr_odrA[0])
@@ -252,11 +253,12 @@ def fitting(star):
     else:
         np.savetxt('g2_functions/{}/amplitudes.txt'.format(star), np.c_[amplitudes], header='ampA, dampA, ampB, dampB')
 
+ints_fixedA_scaled = []; dints_fixedA_scaled = []; ints_fixedB_scaled = []; dints_fixedB_scaled = []; odrA = []
 def plotting(star): 
     ##### plot baselines vs time #####
     print('Start plotting')
     print('BASELINES')
-    plt.figure("baselines")
+    plt.figure("baselines", figsize=(5,4))
     plt.title("{}".format(star))
     plt.xlabel("Acquisition time")
     plt.ylabel("Telescope baseline (m)")
@@ -266,11 +268,13 @@ def plotting(star):
     sorted_baselines = np.array(baselines_all)[sorted_indices]
     sorted_db = np.array(dbaselines_all)[sorted_indices]
     sorted_telstring = np.array(telstrings)[sorted_indices]
+    t_shorts = []
 
     for i in range(0,len(time_all)):
         # Check acquisition time of original data
         timestring = ephem.Date(sorted_time[i])
         t_short = str(timestring)[5:-3]
+        t_shorts.append(t_short)
         baseline = sorted_baselines[i]
         dbaseline = sorted_db[i]
         telstr = sorted_telstring[i]
@@ -285,12 +289,14 @@ def plotting(star):
             if np.floor(t2) - np.floor(t1) > 0:
                 plt.axvline(t_short, color='darkgrey', label='new night')
 
-        plt.errorbar(x=t_short, y=baseline, yerr=dbaseline, marker="o", linestyle="", label=telstr, color=combicolors[c1][c2])
-        plt.xticks(rotation=45)
+        plt.errorbar(x=t_shorts[-1], y=baseline, yerr=dbaseline, marker="o", markersize=4, linestyle="", label=telstr, color=combicolors[c1][c2])
+        #plt.xticks(t_short[::5], rotation=45)
 
     handles, labels = plt.gca().get_legend_handles_labels()
     by_label = OrderedDict(zip(labels, handles)) 
-    plt.legend(by_label.values(), by_label.keys()); plt.tight_layout()
+    plt.legend(by_label.values(), by_label.keys(), loc="lower left")
+    plt.xticks(t_shorts[::3], rotation=45)
+    plt.tight_layout()
     
     # add zero baseline value to lists
     avgA, davgA, avgB, davgB = zb.zero_baseline()
@@ -316,6 +322,7 @@ def plotting(star):
     popt_odrA = outG.beta
     perr_odrA = outG.sd_beta
     chi_odrA = outG.res_var # chi squared value
+    odrA.append(popt_odrA)
     
     sc_modelUV = odr.Model(uti.spatial_coherence_odrUV)
     # RealData object
@@ -342,19 +349,30 @@ def plotting(star):
     #--------------------#
     # Try fitting with ods
     # Limb darkening model object
-    sc_model_ld = odr.Model(uti.spatial_coherence_odrG_LD)
+    sc_modelG_ld = odr.Model(uti.spatial_coherence_odrG_LD)
     # Set up ODR with model and data
-    odrODR_ld = odr.ODR(rdataG, sc_model_ld, beta0=[15,2.2e-9])
+    odrODRG_ld = odr.ODR(rdataG, sc_modelG_ld, beta0=[15,2.2e-9])
     # Run the regression
-    out_ld = odrODR_ld.run()
+    outG_ld = odrODRG_ld.run()
     # Fit parameters
-    popt_odrG_LD = out_ld.beta
-    perr_odrG_LD = out_ld.sd_beta
-    chi_odrG_LD  = out_ld.res_var # chi squared value
+    popt_odrG_LD = outG_ld.beta
+    perr_odrG_LD = outG_ld.sd_beta
+    chi_odrG_LD  = outG_ld.res_var # chi squared value
+
+    sc_modelUV_ld = odr.Model(uti.spatial_coherence_odrUV_LD)
+    # Set up ODR with model and data
+    odrODRUV_ld = odr.ODR(rdataUV, sc_modelUV_ld, beta0=[10,3.2e-9])
+    # Run the regression
+    outUV_ld = odrODRUV_ld.run()
+    # Fit parameters
+    popt_odrUV_LD = outUV_ld.beta
+    perr_odrUV_LD = outUV_ld.sd_beta
+    chi_odrUV_LD  = outUV_ld.res_var # chi squared value
     #--------------------#
 
     print("SC fit limb darkening")
     print("A 470nm: Angular diameter: {:.2f} +/- {:.2f} (mas)\t Amplitude: {:.2f} +/- {:.2f}\t Chi^2 reduced: {:.2f}".format(uti.rad2mas(popt_odrG_LD[1]), uti.rad2mas(perr_odrG_LD[1]), popt_odrG_LD[0], perr_odrG_LD[0], chi_odrG_LD))
+    print("B 375nm: Angular diameter: {:.2f} +/- {:.2f} (mas)\t Amplitude: {:.2f} +/- {:.2f}\t Chi^2 reduced: {:.2f}".format(uti.rad2mas(popt_odrUV_LD[1]), uti.rad2mas(perr_odrUV_LD[1]), popt_odrUV_LD[0], perr_odrUV_LD[0], chi_odrUV_LD))
 
     # make x-axis wavelength indepedent 
     xplot = np.arange(0.1,300,0.1)
@@ -383,29 +401,27 @@ def plotting(star):
     # plot zero baseline 
     plt.errorbar(x=baselinesA[-1], xerr=dbaselinesA[-1], y=ints_fixedA[-1], yerr=dints_fixedA[-1], marker='o', color='black')
     # plot SC fit
-    plt.plot(xplot, uti.spatial_coherence(xplot,*popt_odrA, lam_g), linewidth=2, color='darkgrey', label='uniform disk')
-    plt.fill_between(xplot, uti.spatial_coherence(xplot,popt_odrA[0]+perr_odrA[0],popt_odrA[1]-perr_odrA[1], lam_g), uti.spatial_coherence(xplot,popt_odrA[0]-perr_odrA[0],popt_odrA[1]+perr_odrA[1], lam_g), alpha=0.3, color='darkgrey')
-    # get LD coeff
-    u = uti.get_u(temp_star, logg_star)
-    print(u)
+    #plt.plot(xplot, uti.spatial_coherence(xplot,*popt_odrA, lam_g), linewidth=2, color='darkgrey', label='uniform disk')
+    #plt.fill_between(xplot, uti.spatial_coherence(xplot,popt_odrA[0]+perr_odrA[0],popt_odrA[1]-perr_odrA[1], lam_g), uti.spatial_coherence(xplot,popt_odrA[0]-perr_odrA[0],popt_odrA[1]+perr_odrA[1], lam_g), alpha=0.3, color='darkgrey')
     # plot limb darkening fit
     plt.figure("SC")
     plt.subplot(121)
-    plt.plot(xplot, uti.spatial_coherence_LD(xplot,*popt_odrG_LD, lam_g, u=u), linewidth=2, color='orange', label='limb darkening')
-    plt.fill_between(xplot, uti.spatial_coherence_LD(xplot,popt_odrG_LD[0]+perr_odrG_LD[0],popt_odrG_LD[1]-perr_odrG_LD[1], lam_g, u=u), uti.spatial_coherence_LD(xplot,popt_odrG_LD[0]-perr_odrG_LD[0],popt_odrG_LD[1]+perr_odrG_LD[1], lam_g, u=0.37), alpha=0.3, color='orange')
+    plt.plot(xplot, uti.spatial_coherence_LD(xplot,*popt_odrG_LD, lam_g, u=u), linewidth=2, color='darkgrey', label='single star fit')
+    plt.fill_between(xplot, uti.spatial_coherence_LD(xplot,popt_odrG_LD[0]+perr_odrG_LD[0],popt_odrG_LD[1]-perr_odrG_LD[1], lam_g, u=u), uti.spatial_coherence_LD(xplot,popt_odrG_LD[0]-perr_odrG_LD[0],popt_odrG_LD[1]+perr_odrG_LD[1], lam_g, u=u), alpha=0.3, color='darkgrey')
     # legend 
     handles, labels = plt.gca().get_legend_handles_labels()
     by_label = OrderedDict(zip(labels, handles)) 
-    plt.legend(by_label.values(), by_label.keys())
+    plt.legend(by_label.values(), by_label.keys(), fontsize=13)
     # text
     ymin, ymax = plt.gca().get_ylim()
-    plt.text(80, ymax-5.5, s='Angular diameter: {:.3f} +/- {:.3f} (mas)'.format(uti.rad2mas(popt_odrA[1]), uti.rad2mas(perr_odrA[1])), color='grey')
-    plt.text(80, ymax-6.5, s='$\chi^2$/dof={:.2f}'.format(chi_odrA), color='grey')
-    plt.text(80, ymax-7.5, s='Angular diameter: {:.3f} +/- {:.3f} (mas)'.format(uti.rad2mas(popt_odrG_LD[1]), uti.rad2mas(perr_odrG_LD[1])), color='orange')
-    plt.text(80, ymax-8.5, s='$\chi^2$/dof={:.2f}'.format(chi_odrG_LD), color='orange')
+    #plt.text(80, ymax-5.5, s='$\Theta$: {:.3f} +/- {:.3f} (mas)'.format(uti.rad2mas(popt_odrA[1]), uti.rad2mas(perr_odrA[1])), color='grey', fontsize=13)
+    #plt.text(80, ymax-6.5, s='$\chi^2$/dof={:.2f}'.format(chi_odrA), color='grey', fontsize=13)
+    #plt.text(80, ymax-7.5, s='$\Theta$: {:.3f} +/- {:.3f} (mas)'.format(uti.rad2mas(popt_odrG_LD[1]), uti.rad2mas(perr_odrG_LD[1])), color='orange', fontsize=13)
+    #plt.text(80, ymax-8.5, s='$\chi^2$/dof={:.2f}'.format(chi_odrG_LD), color='orange', fontsize=13)
     plt.xlim(-5,200)
-    plt.xlabel("Projected baseline (m)")
-    plt.ylabel("Spatial coherence (fs)")
+    plt.xlabel("Projected baseline (m)", fontsize=14)
+    plt.ylabel("Spatial coherence (fs)", fontsize=14)
+    plt.xticks(fontsize=13); plt.yticks(fontsize=13)
     plt.axhline(y=0, color="black", linestyle="--")  
     plt.tight_layout()
 
@@ -414,20 +430,24 @@ def plotting(star):
     # plot zero baseline
     plt.errorbar(x=baselinesB[-1], xerr=dbaselinesB[-1], y=ints_fixedB[-1], yerr=dints_fixedB[-1], marker='o', color='black')
     # plot SC fit
-    plt.plot(xplot, uti.spatial_coherence(xplot,*popt_odrB, lam_uv), linewidth=2, color='darkgrey', label='uniform disk')
-    plt.fill_between(xplot, uti.spatial_coherence(xplot,popt_odrB[0]+perr_odrB[0],popt_odrB[1]-perr_odrB[1], lam_uv), uti.spatial_coherence(xplot,popt_odrB[0]-perr_odrB[0],popt_odrB[1]+perr_odrB[1], lam_uv), alpha=0.2, color='darkgrey')
-    plt.xlabel("Projected baseline (m)")
-    plt.ylabel("Spatial coherence (fs)")
-    plt.axhline(y=0, color='black', linestyle="--")
+    #plt.plot(xplot, uti.spatial_coherence(xplot,*popt_odrB, lam_uv), linewidth=2, color='darkgrey', label='uniform disk')
+    #plt.fill_between(xplot, uti.spatial_coherence(xplot,popt_odrB[0]+perr_odrB[0],popt_odrB[1]-perr_odrB[1], lam_uv), uti.spatial_coherence(xplot,popt_odrB[0]-perr_odrB[0],popt_odrB[1]+perr_odrB[1], lam_uv), alpha=0.2, color='darkgrey')
+    # plot limb darkening
+    plt.plot(xplot, uti.spatial_coherence_LD(xplot,*popt_odrUV_LD, lam_uv, u=u), linewidth=2, color='darkgrey', label='single star fit')
+    plt.fill_between(xplot, uti.spatial_coherence_LD(xplot,popt_odrUV_LD[0]+perr_odrUV_LD[0],popt_odrUV_LD[1]-perr_odrUV_LD[1], lam_uv, u=u), uti.spatial_coherence_LD(xplot,popt_odrUV_LD[0]-perr_odrUV_LD[0],popt_odrUV_LD[1]+perr_odrUV_LD[1], lam_uv, u=u), alpha=0.3, color='darkgrey')
     # legend
     handles, labels = plt.gca().get_legend_handles_labels()
     by_label = OrderedDict(zip(labels, handles)) 
-    plt.legend(by_label.values(), by_label.keys())
+    plt.legend(by_label.values(), by_label.keys(), fontsize=13)
     # text
     ymin, ymax = plt.gca().get_ylim()
-    plt.text(80, ymax-5, s='Angular diameter: {:.3f} +/- {:.3f} (mas)'.format(uti.rad2mas(popt_odrB[1]), uti.rad2mas(perr_odrB[1])), color='grey')
-    plt.text(80, ymax-5.5, s='$\chi^2$/dof={:.2f}'.format(chi_odrB), color='grey')
+    #plt.text(90, ymax-3, s='$\Theta$: {:.3f} +/- {:.3f} (mas)'.format(uti.rad2mas(popt_odrB[1]), uti.rad2mas(perr_odrB[1])), color='grey', fontsize=13)
+    #plt.text(90, ymax-3.5, s='$\chi^2$/dof={:.2f}'.format(chi_odrB), color='grey', fontsize=13)
     plt.xlim(-5,200)
+    plt.xlabel("Projected baseline (m)", fontsize=14)
+    plt.ylabel("Spatial coherence (fs)", fontsize=14)
+    plt.xticks(fontsize=13); plt.yticks(fontsize=13)
+    plt.axhline(y=0, color='black', linestyle="--")
     plt.tight_layout()
 
     #### plot both colors in one plot ###
@@ -448,9 +468,9 @@ def plotting(star):
     plt.xlim(0,4e8)
     plt.legend()
 
-'''
+
     # Make additional scaled parameters
-    ints_fixedA_scaled = []; dints_fixedA_scaled = []; ints_fixedB_scaled = []; dints_fixedB_scaled = []
+    
     #ints_fixed_all_scaled = []; dints_fixed_all_scaled = []
     #baselines_all2 = []
     for k in range (0,len(ints_fixedA)):
@@ -470,7 +490,7 @@ def plotting(star):
     #ints_fixed_all_scaled.append(ints_fixedA_scaled); ints_fixed_all_scaled.append(ints_fixedB_scaled); dints_fixed_all_scaled.append(dints_fixedA_scaled); dints_fixed_all_scaled.append(dints_fixedB_scaled)
     
     print(len(baselines_all), len(ints_fixedA_scaled))
-    
+'''   
     # Figure showing both colors in one plot scaled
     plt.figure('combi', figsize=(10,7))
     plt.title("Spatial coherence of {}". format(star))
