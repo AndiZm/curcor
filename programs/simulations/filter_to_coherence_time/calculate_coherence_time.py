@@ -125,6 +125,9 @@ def add_spectrum(spectrum_x, spectrum_y, name, pcolor, pmarker="", plinestyle="-
 	elif name=="Alluxa 470-10":
 		lam = 470
 		dlam = 10
+	elif name=="Semrock 655-40":
+		lam = 655
+		dlam = 47
 
 	plt.figure("Wavelength spectrum")
 	# Extend spectrum to have finer sampling for the FFT
@@ -163,6 +166,7 @@ def add_spectrum(spectrum_x, spectrum_y, name, pcolor, pmarker="", plinestyle="-
 ####################################
 add_spectrum(spectrum_x=np.loadtxt("Alluxa_375-10.txt")[:,0],spectrum_y=np.loadtxt("Alluxa_375-10.txt")[:,1], name="Alluxa 375-10", pcolor="violet", plinewidth=2)
 add_spectrum(spectrum_x=np.loadtxt("Alluxa_470-10.txt")[:,0],spectrum_y=np.loadtxt("Alluxa_470-10.txt")[:,1], name="Alluxa 470-10", pcolor="#003366", plinewidth=2)
+add_spectrum(spectrum_x=np.loadtxt("655-40.txt")[:,0],spectrum_y=np.loadtxt("655-40.txt")[:,1], name="Semrock 655-40", pcolor="red", plinewidth=2)
 
 
 #########################
