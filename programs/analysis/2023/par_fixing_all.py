@@ -122,6 +122,7 @@ def par_fixing(telcombi):
     # Fit for gaining mu and sigma to fix these parameters for different baseline combis
     plt.figure("CrossCorr")
     plt.subplot(plotnumber)
+    plt.axhline(y=1, color="darkgrey", linestyle="--") 
     #plt.title("Correlation data of all stars for {}".format(telstring))
     print("Fixed parameters")
     # Channel A
@@ -151,8 +152,10 @@ def par_fixing(telcombi):
     plt.plot(x[mask], chB[mask], label=telstring + "B", color=uti.color_chB)
     plt.plot(xplot, uti.gauss(xplot,*popt), color="black", linestyle="--", label='Gaussian fit')
     
-    plt.legend(loc='right'); plt.grid()
+    plt.legend(loc='right')
+    #plt.grid()
     #plt.xlim(-100,100)
+
     plt.xlim(-75,125)
     plt.ticklabel_format(useOffset=False)
     plt.xlabel("Time delay (ns)"); plt.ylabel("$g^{(2)}$")
