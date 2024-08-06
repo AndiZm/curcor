@@ -18,6 +18,26 @@ for i in range (1,5):
 	for j in range (1,5):
 		teldiffs[i][j] = np.subtract(ct_locs[j], ct_locs[i])
 
+def get_uv (b_vec, h, dec):
+	u = np.sin(h)*b_vec[0] + np.cos(h)*b_vec[1]
+	v = -np.sin(dec)*np.cos(h)*b_vec[0] + np.sin(dec)*np.sin(h)*b_vec[1] + np.cos(dec)*b_vec[2]
+	return u,v
+
+def get_uv_star (time, starname, telcombi):
+	# Star coordinates
+	the_star = ephem.star(starname)
+	hess.date = ephem.date(time)
+	the_star.compute(hess)
+
+	u,v = get_uv( b_vec=teldiffs[telcombi[0]][telcombi[1]], h=the_star.ha, dec=the_star.dec )
+	print (u,v)
+	return u,v
+
+
+
+
+
+
 # Define plane of incident light from star by normal vector from the telescopes in direction of star
 # For the baseline, we define the plane perpendicular to that one
 n_vec   = [] # for the optical path delay
@@ -77,6 +97,27 @@ hess = ephem.Observer()
 hess.lat  = ephem.degrees("-23.271778")
 hess.long = ephem.degrees(" 16.50022")
 
+the_star = ephem.star("Canopus")
+azs = []
+has = []
+
+for i in np.arange(0,24,1):
+	hess.date = ephem.date(f"2024/08/02 {i}:00:00")
+	the_star.compute(hess)
+
+	has.append (180/np.pi * the_star.ha)
+	azs.append (180/np.pi * the_star.az)
+
+import matplotlib.pyplot as plt
+plt.plot(np.arange(0,24,1), has)
+plt.show()
+
+
+
+
+
+
+
 def get_params(time, starname, telcombi):
 	
 	# Star coordinates
@@ -101,3 +142,26 @@ def get_params_manual(time, ra, dec, telcombi):
 	tdiff, baseline = get_time_delay_azalt(the_star.az, the_star.alt, telcombi)
 
 	return tdiff, baseline, 180*the_star.az/np.pi, 180*the_star.alt/np.pi
+
+
+
+
+
+
+the_date = ephem.date("2024/08/02 00:00:00")
+us = []; vs = []; baselines_uv = []; baselines_trad = []
+for i in np.arange(the_date, the_date+1, 0.01):
+	u,v = get_uv_star(time=i, starname="Canopus", telcombi=[1,3])
+	us.append(u)
+	vs.append(v)
+	baselines_uv.append( np.sqrt( u**2 + v**2 ) )
+
+	t, baseline, azz, altt = get_params(time=i, starname="Canopus", telcombi=[2,4])
+	baselines_trad.append(baseline)
+
+plt.plot(us,vs)
+plt.show()
+
+plt.plot(baselines_uv)
+plt.plot(baselines_trad)
+plt.show()
